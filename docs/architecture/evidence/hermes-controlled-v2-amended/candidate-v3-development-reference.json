@@ -1,0 +1,20 @@
+{
+  "batch": "/private/tmp/atlas-hermes-evaluation/controlled-v2-amended/batches/development-2026-09-06T16-19-34-043Z-3cfbd0d9",
+  "files": [
+    {
+      "path": "candidate-v3-development-summary.json",
+      "source": "/private/tmp/atlas-hermes-evaluation/controlled-v2-amended-development-v3-analysis.json",
+      "sha256": "2164ef1affc43ea47db6306ce7aed2f0e0bbb8104e33ec3e7af8b7c19f552b07"
+    },
+    {
+      "path": "candidate-v3-development-attempts.jsonl",
+      "source": "/private/tmp/atlas-hermes-evaluation/controlled-v2-amended/batches/development-2026-09-06T16-19-34-043Z-3cfbd0d9/attempts.jsonl",
+      "sha256": "98ae0a54ec9d974953a196c16b4153d31c19c17d6274e0f4be7ea5932c12b683"
+    },
+    {
+      "path": "candidate-v3-development-completed.json",
+      "source": "/private/tmp/atlas-hermes-evaluation/controlled-v2-amended/batches/development-2026-09-06T16-19-34-043Z-3cfbd0d9/completed.json",
+      "sha256": "647fedc8b1c2141bf5dff952267da93d673cd38aa0622e011de9fa3f34b09a6a"
+    }
+  ]
+}

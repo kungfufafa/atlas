@@ -6,6 +6,14 @@
     "ultracite/biome/tanstack",
     "ultracite/biome/vitest"
   ],
+  "files": {
+    "includes": [
+      "!!scripts/harness-native-files-mimo-v2/file-markdown-vendor.mjs",
+      "!!scripts/harness-native-files-mimo-v2/file-markdown-vendor.d.mts",
+      "!!scripts/harness-native-files-mimo-v3/file-markdown-vendor.mjs",
+      "!!scripts/harness-native-files-mimo-v3/file-markdown-vendor.d.mts"
+    ]
+  },
   "css": {
     "parser": {
       "cssModules": true

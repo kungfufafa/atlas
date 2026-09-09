@@ -15,10 +15,8 @@ env:
   LLM_VCR_MODE: replay
 
 jobs:
-  docker-startup:
-    # Main/tag publication builds and verifies its image after the reusable checks.
-    if: github.event_name == 'pull_request'
-    timeout-minutes: 25
+  docker-files:
+    timeout-minutes: 35
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,20 +25,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
-      - name: Build production image
-        id: build
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          load: true
-          tags: atlas:startup-check
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Verify production startup and onboarding
-        env:
-          IMAGE_ID: ${{ steps.build.outputs.imageid }}
-        run: bash scripts/verify-docker-startup.sh "$IMAGE_ID"
+      - name: Build production image and exercise its file runtime and isolation
+        run: bash scripts/verify-docker-files.sh
 
   static:
     timeout-minutes: 10
@@ -63,6 +49,9 @@ jobs:
       - name: Type-check web
         run: bun run typecheck:web
 
+      - name: Type-check file and live verification scripts
+        run: bunx tsc --noEmit -p scripts/file-runtime/tsconfig.json
+
   unit:
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -77,6 +66,11 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Install native media codecs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
 
       - name: Run unit tests
         run: bun run test

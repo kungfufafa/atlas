@@ -1,0 +1,96 @@
+{
+  "at": "2026-09-07T06:21:20.630310+00:00",
+  "status": "CLOSED unscored live pilot, instrumentation valid; no parity/gain/efficiency claim",
+  "batch": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/pilot-1788760838773-224fd017",
+  "softwareSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "controlSourceHash": "b3673405fab43fdd268aa286d4f6f0164ea00c2332ba43d00e28abd3d538fde5",
+  "selectedCopies": {
+    "analysis-final.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/pilot-1788760838773-224fd017/analysis-final.json",
+      "sha256": "0835662e035ccd55ca11d4ff6bee15d8e54d3b2262b213eb8f742596834186ec",
+      "bytes": 17624,
+      "mode": "0o644"
+    },
+    "completed.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/pilot-1788760838773-224fd017/completed.json",
+      "sha256": "b987363b6dddb4bd99c5cb3db7862743b6b6bcdd2d3509ac35ee14f2cb9e5eea",
+      "bytes": 301,
+      "mode": "0o644"
+    },
+    "review.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-live-pilot-independent-review/review.json",
+      "sha256": "1aa27eba4eba8360ec7db946cb345eb2fa2293ecab42b11625ab06afbd574543",
+      "bytes": 3704,
+      "mode": "0o644"
+    },
+    "review.md": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-live-pilot-independent-review/review.md",
+      "sha256": "032759efd4340040aa1680d9d9ebc8794b8263aec0a706b5629deb8df242da85",
+      "bytes": 1137,
+      "mode": "0o644"
+    },
+    "review-manifest.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-live-pilot-independent-review/manifest.json",
+      "sha256": "f7d8d535c4120b702e32aa7ee30f650ad0eeb18d0a3497333e590a2c31f56b82",
+      "bytes": 2650,
+      "mode": "0o644"
+    },
+    "review-seal.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-live-pilot-independent-review/seal.json",
+      "sha256": "dbabb3b038db72b22c9caf9ed99b4c2ca7deba59622e3c924f12db2832c4e876",
+      "bytes": 379,
+      "mode": "0o644"
+    },
+    "archive-receipt.json": {
+      "source": "/private/tmp/atlas-file-v3-c9-live-pilot-archive/archive-receipt.json",
+      "sha256": "ed54b58eb81ba70d5768434ad9a461e0a0f0030f964fb22611a9d7543f575251",
+      "bytes": 575,
+      "mode": "0o644"
+    }
+  },
+  "reportSha256": "ec628886255f7d332c31c0bc9a7db0f60750fcdb807db6abeb9105b8a9300305",
+  "completeArchive": {
+    "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-live-pilot",
+    "archiverProviderCalls": 0,
+    "archiverRescores": 0,
+    "archiverTests": 0,
+    "at": "2026-09-07T06:19:29.602155+00:00",
+    "bytes": 51293566,
+    "copiedRuntimeRegularFiles": 54,
+    "files": 278,
+    "manifestSha256": "0e0f3cb73c19c375739ca8edb817746e67235413e2ddafa3dcbb338549bca0c8",
+    "nativeRoots": 4,
+    "postPromotionHashesModesCensusVerified": true,
+    "recordedSymlinks": 0,
+    "scannerBytes": 304261373,
+    "scannerStreams": 10130,
+    "sourceRetained": true
+  },
+  "runtimeSnapshotRegistrationSha256": "5db637558728d291cb962b828c701bd37a7ae077ede27a92d7f873f41cfc14b4",
+  "runtimeSnapshotLimits": "Exact four roots came from the completed pilot runtime-identity index, verified against four native identity hashes and parent outcomes with direct-child close. Fifty-four regular files were byte-copied with stable fingerprints and full inventories before/after. No symlink encountered or followed, DB opened or process action performed; no atomic filesystem/SQLite or all-descendants-closed claim.",
+  "rootRecords": "Only live-pilot-admission.json, live-pilot-execution.json, live-pilot-console.log and live-pilot-analysis.log under the root admission directory; no development wildcard or active data.",
+  "observedUnscoredResults": {
+    "atlasPrimary": "2/2",
+    "hermesPrimary": "2/2",
+    "usage": {
+      "atlas": {
+        "requests": 13,
+        "promptTokens": 82673,
+        "generatedTokens": 5437
+      },
+      "hermes": {
+        "requests": 20,
+        "promptTokens": 143800,
+        "generatedTokens": 5725
+      }
+    },
+    "all33RecordedResponsesHttp200": true,
+    "mandatoryUsageKnownAllFourArms": true,
+    "costKnown": false
+  },
+  "analysisAndReviewNotRerun": true,
+  "activeDevelopmentExcluded": true,
+  "archiverProviderCalls": 0,
+  "archiverTests": 0,
+  "archiverRescores": 0
+}

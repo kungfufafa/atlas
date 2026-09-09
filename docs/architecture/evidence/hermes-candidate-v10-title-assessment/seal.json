@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-07T10:26:54.498462+00:00",
+  "assessment": {
+    "path": "/private/tmp/atlas-c10-title-ux-assessment/assessment.json",
+    "bytes": 1338,
+    "sha256": "b1638b2fe99e2385d8923f4c7916b568f5462bde83c0a39a63d2a421fce291d7"
+  },
+  "memo": {
+    "path": "/private/tmp/atlas-c10-title-ux-assessment/memo.md",
+    "bytes": 7317,
+    "sha256": "5dfac435fe6ed98338f18a3ad5927306a75489bd0b2bd601b0e8ba33fb764202"
+  },
+  "manifest": {
+    "path": "/private/tmp/atlas-c10-title-ux-assessment/manifest.json",
+    "bytes": 1243,
+    "sha256": "2a135458b6be17507862b30fd86c43da42a222aa5aa4a4a23ca41ca6cbbce9f8"
+  },
+  "allMembersReverified": true,
+  "allSelectedFrozenSourcesUnchanged": true
+}

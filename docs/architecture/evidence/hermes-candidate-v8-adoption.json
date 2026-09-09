@@ -1,0 +1,48 @@
+{
+  "candidate": "C8",
+  "sourceHash": "8a47a96403d91b06a7df7de4e4208862874651f42641c55646a09927f4b12bb2",
+  "sourceFiles": 2119,
+  "previousRootCandidate": "C5",
+  "previousRootSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "changedPaths": 86,
+  "existingFilesBackedUp": 45,
+  "newPaths": 41,
+  "combinedPatchSha256": "a178b48dcfb2a339c6d5d545ecf988134d1d7ed10b4744754b63a95340b49a19",
+  "candidateManifestSha256": "120cd89f2382e125ea166fec7f1229d35662cbf3fdef59c75abaf1e9a71510ce",
+  "independentIntegrationReviewSha256": "ab7cb3c524c4d99c5fc458cc379868d73a3e09e8ac412d515944ca5fb99413f3",
+  "localArchive": "outputs/hermes-evidence/2026-09-07/candidate8-adoption",
+  "archiveManifestSha256": "bf8637e5cecab0a6e0e12a5f26947dcc283b06a6cdad2349ecf124fcb0f35475",
+  "archivedFilesExcludingArchiveManifest": 2223,
+  "archivedBytesExcludingArchiveManifest": 25627792,
+  "archiveMembers": {
+    "candidate": "candidate/",
+    "review": "review/",
+    "application": "application/application.json",
+    "originalAffectedFiles": "application/before/",
+    "postAdoptionValidation": "application/post-adoption-validation.json"
+  },
+  "validation": {
+    "ownerTests": 490,
+    "ownerAssertions": 2488,
+    "ownerTestFiles": 35,
+    "ownerTestGroups": 5,
+    "ownerFailures": 0,
+    "ownerProductionTypecheckExitCode": 0,
+    "ownerFullSelectedTestTypecheckExitCode": 0,
+    "ownerLintExitCode": 0,
+    "independentReviewTestReruns": 0,
+    "rootPostAdoptionProductionTypecheckExitCode": 0,
+    "rootLocalAtlasDependencyLinksVerified": 21,
+    "allRootInventoriedBytesMatchCandidate": true,
+    "preexistingAffectedModesPreserved": true
+  },
+  "limitations": [
+    "Source adoption is not deployment or a new live benchmark admission.",
+    "Optional runtime admission policies and publication components are not globally wired or enabled.",
+    "Actual confinement tests establish their bounded macOS scope; Linux and Windows are not certified.",
+    "The 35-file union is not the entire monorepo suite, and component counts overlap.",
+    "No C8 live model-quality result, Hermes parity or superiority claim exists.",
+    "Old C5 FILE V2 invalidity and all previous candidate outcomes remain unchanged.",
+    "Archive scan covers the known supplied credential and finite encodings, not arbitrary unknown secrets. Dependencies outside the candidate manifests and active V3/other work are excluded."
+  ]
+}

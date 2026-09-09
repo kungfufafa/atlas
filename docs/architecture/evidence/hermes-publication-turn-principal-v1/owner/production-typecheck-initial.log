@@ -1,0 +1,84 @@
+apps/platform/discord/src/attachments.ts(27,42): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/bot.ts(7,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/bot.ts(46,42): error TS7006: Parameter 'readyClient' implicitly has an 'any' type.
+apps/platform/discord/src/bot.ts(63,46): error TS7006: Parameter 'interaction' implicitly has an 'any' type.
+apps/platform/discord/src/bot.ts(111,39): error TS7006: Parameter '_previous' implicitly has an 'any' type.
+apps/platform/discord/src/bot.ts(111,50): error TS7006: Parameter 'current' implicitly has an 'any' type.
+apps/platform/discord/src/channel-artifact-flow.ts(14,39): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/chat-handler.ts(41,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/chat-handler.ts(42,29): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/chat-handler.ts(157,35): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/guild-message.ts(1,30): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/messenger.ts(5,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-actions.ts(18,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-approval-message.ts(2,62): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-audio.ts(1,49): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-interaction-handler.ts(1,30): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-origin.ts(1,39): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-questionnaire.ts(17,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/send-artifact-attachment.ts(7,58): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/slash-commands.ts(7,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/slash-commands.ts(50,30): error TS7006: Parameter 'option' implicitly has an 'any' type.
+apps/platform/discord/src/test-helpers.ts(18,30): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/test-helpers.ts(632,23): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/test-helpers.ts(709,26): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/voice-session.ts(12,8): error TS2307: Cannot find module '@discordjs/voice' or its corresponding type declarations.
+apps/platform/discord/src/voice-session.ts(13,43): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/voice-session.ts(14,37): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/voice-session.ts(15,24): error TS2307: Cannot find module 'opusscript' or its corresponding type declarations.
+apps/platform/telegram/src/attachments.ts(19,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/audio.ts(4,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/bot.ts(2,35): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/bot.ts(62,22): error TS7006: Parameter 'ctx' implicitly has an 'any' type.
+apps/platform/telegram/src/bot.ts(65,34): error TS7006: Parameter 'ctx' implicitly has an 'any' type.
+apps/platform/telegram/src/channel-artifact-flow.ts(13,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/chat-handler.ts(40,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/group-message.ts(1,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/images.ts(6,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/index.ts(130,15): error TS7006: Parameter 'info' implicitly has an 'any' type.
+apps/platform/telegram/src/native-actions.ts(9,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/native-actions.ts(10,40): error TS2307: Cannot find module 'grammy/types' or its corresponding type declarations.
+apps/platform/telegram/src/native-controls.ts(7,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/rich-message.ts(1,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/send-artifact-document.ts(5,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/send-artifact-document.ts(6,27): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/test-helpers.ts(23,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/typing-indicator.ts(1,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/video.ts(7,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/whatsapp/src/attachments.ts(39,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/attachments.ts(403,31): error TS7006: Parameter 'message' implicitly has an 'any' type.
+apps/platform/whatsapp/src/attachments.ts(410,9): error TS2345: Argument of type 'Transform | null' is not assignable to parameter of type 'Transform'.
+  Type 'null' is not assignable to type 'Transform'.
+apps/platform/whatsapp/src/audio.ts(6,32): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/auth-state.ts(7,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/channel-artifact-flow.ts(14,31): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/chat-handler.ts(38,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/chat-handler.ts(1971,20): error TS2339: Property 'key' does not exist on type '{}'.
+apps/platform/whatsapp/src/group-message.ts(1,45): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/inbound-message.ts(9,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/inbound-message.ts(271,14): error TS7006: Parameter 'jid' implicitly has an 'any' type.
+apps/platform/whatsapp/src/inbound-message.ts(272,11): error TS7006: Parameter 'jid' implicitly has an 'any' type.
+apps/platform/whatsapp/src/native-actions.ts(10,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/native-controls.ts(7,45): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/send-artifact-media.ts(6,31): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/socket.ts(13,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/socket.ts(194,46): error TS7006: Parameter 'update' implicitly has an 'any' type.
+apps/platform/whatsapp/src/socket.ts(286,46): error TS7006: Parameter 'events' implicitly has an 'any' type.
+apps/platform/whatsapp/src/socket.ts(291,56): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ key: WAMessageKey; reaction: { key?: any; text?: string | null | undefined; }; }'.
+apps/platform/whatsapp/src/socket.ts(309,45): error TS7006: Parameter 'share' implicitly has an 'any' type.
+apps/platform/whatsapp/src/socket.ts(315,44): error TS7006: Parameter 'm' implicitly has an 'any' type.
+apps/platform/whatsapp/src/socket.ts(343,33): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(344,33): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(345,47): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(346,61): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(347,61): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ key: WhatsAppInboundKey; message?: any; }'.
+apps/platform/whatsapp/src/socket.ts(354,59): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ key: WhatsAppInboundKey; message?: any; }'.
+apps/platform/whatsapp/src/socket.ts(365,67): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(370,17): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(371,19): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(372,19): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(398,30): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(447,25): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(451,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ key: WhatsAppInboundKey; message?: any; }'.
+apps/platform/whatsapp/src/todo-status-message.ts(2,31): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/typing-indicator.ts(1,31): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.

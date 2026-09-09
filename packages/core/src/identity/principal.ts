@@ -22,6 +22,21 @@ export interface CanonicalPrincipal {
   userId: string;
 }
 
+export interface ChannelPrincipalAuthorizationInput {
+  /** When supplied, must match the scoped worker credential. */
+  channel?: "telegram" | "whatsapp" | "discord";
+  channelAddressed?: boolean;
+  channelChatId?: string;
+  channelIsGroup?: boolean;
+  channelThreadId?: string;
+  channelUserAliases?: string[];
+  channelUserId: string;
+  intent?: "files" | "invoke" | "read";
+  nativeAction?: import("../channel-native-actions").ChannelNativeActionKind;
+  profileId?: string;
+  sessionId?: string;
+}
+
 export class PrincipalRequiredError extends Error {
   readonly code = "PRINCIPAL_REQUIRED";
 

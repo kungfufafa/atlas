@@ -1,0 +1,613 @@
+{
+  "evidence": {
+    "frozenManifestSha256": "88ac7eb6014a5efb6b8f1b8c22e90db63fc34e510d2e4446c54251cbfa68d233",
+    "ledgerSha256": "9f9d1eb80aeec5d13a682349cf7cb0cf42096222d88903fcd09e8697da201710",
+    "phaseDir": "/private/tmp/atlas-hermes-evaluation/runs/development-2026-09-06T12-18-54-546Z-700c14",
+    "scheduleSha256": "a5682237507656f5353f9a40d14b266b9b8753773174eb7b698e545a20e0a5f0"
+  },
+  "admittedPairs": {
+    "atlasSuccess": 0.4444444444444444,
+    "counts": {
+      "atlasOnly": 4,
+      "bothFail": 13,
+      "bothPass": 12,
+      "hermesOnly": 7
+    },
+    "difference": -0.08333333333333333,
+    "hermesSuccess": 0.5277777777777778,
+    "pairs": 36
+  },
+  "allEndedAttempts": 72,
+  "candidateSourceHash": "9bfd25e7215227dc46fe9afdb7089e9ebe1187a65cb1896934b75a500f3511f0",
+  "categories": [
+    {
+      "category": "corrections_and_supplied_memory",
+      "atlasSuccess": 0.16666666666666666,
+      "counts": {
+        "atlasOnly": 1,
+        "bothFail": 5,
+        "bothPass": 0,
+        "hermesOnly": 0
+      },
+      "difference": 0.16666666666666666,
+      "hermesSuccess": 0,
+      "pairs": 6
+    },
+    {
+      "category": "evidence_and_recovery",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 2,
+        "bothFail": 0,
+        "bothPass": 4,
+        "hermesOnly": 0
+      },
+      "difference": 0.3333333333333333,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 6
+    },
+    {
+      "category": "file_transformation",
+      "atlasSuccess": 0.5,
+      "counts": {
+        "atlasOnly": 1,
+        "bothFail": 1,
+        "bothPass": 2,
+        "hermesOnly": 2
+      },
+      "difference": -0.16666666666666666,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 6
+    },
+    {
+      "category": "long_context_and_continuation",
+      "atlasSuccess": 0.5,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 2,
+        "bothPass": 3,
+        "hermesOnly": 1
+      },
+      "difference": -0.16666666666666666,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 6
+    },
+    {
+      "category": "numeric_fidelity",
+      "atlasSuccess": 0.3333333333333333,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 3,
+        "bothPass": 2,
+        "hermesOnly": 1
+      },
+      "difference": -0.16666666666666666,
+      "hermesSuccess": 0.5,
+      "pairs": 6
+    },
+    {
+      "category": "source_grounding",
+      "atlasSuccess": 0.16666666666666666,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 2,
+        "bothPass": 1,
+        "hermesOnly": 3
+      },
+      "difference": -0.5,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 6
+    }
+  ],
+  "decision": {
+    "classification": "exploratory_only",
+    "equivalenceClaim": false,
+    "reasons": [
+      "Pilot and development results are unscored or exploratory, not confirmatory.",
+      "Atlas aggregate strict success is below 90%.",
+      "Atlas strict success is below 80% in at least one family.",
+      "At least one family regresses by more than ten percentage points."
+    ],
+    "regressedFamilies": [
+      "configuration_migration",
+      "inventory_allocation",
+      "paged_ledger",
+      "source_grounded_comparison",
+      "source_latest_policy"
+    ]
+  },
+  "families": [
+    {
+      "family": "configuration_migration",
+      "atlasSuccess": 0,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 1,
+        "bothPass": 0,
+        "hermesOnly": 2
+      },
+      "difference": -0.6666666666666666,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 1,
+          "bothPass": 0,
+          "hermesOnly": 2
+        },
+        "difference": -0.6666666666666666,
+        "hermesSuccess": 0.6666666666666666,
+        "pairs": 3
+      },
+      "equalWeightDifference": -0.6666666666666666,
+      "instances": 3
+    },
+    {
+      "family": "customer_order_join",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 1,
+        "bothFail": 0,
+        "bothPass": 2,
+        "hermesOnly": 0
+      },
+      "difference": 0.3333333333333333,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 1,
+          "bothFail": 0,
+          "bothPass": 2,
+          "hermesOnly": 0
+        },
+        "difference": 0.3333333333333333,
+        "hermesSuccess": 0.6666666666666666,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0.3333333333333333,
+      "instances": 3
+    },
+    {
+      "family": "explicit_correction",
+      "atlasSuccess": 0,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 3,
+        "bothPass": 0,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 0,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 3,
+          "bothPass": 0,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 0,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "invalid_path_recovery",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 3,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 3,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "inventory_allocation",
+      "atlasSuccess": 0.6666666666666666,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 2,
+        "hermesOnly": 1
+      },
+      "difference": -0.3333333333333333,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0.6666666666666666,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 2,
+          "hermesOnly": 1
+        },
+        "difference": -0.3333333333333333,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": -0.3333333333333333,
+      "instances": 3
+    },
+    {
+      "family": "invoice_reconciliation",
+      "atlasSuccess": 0,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 3,
+        "bothPass": 0,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 0,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 3,
+          "bothPass": 0,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 0,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "linked_workflow",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 3,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 3,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "missing_evidence",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 2,
+        "bothFail": 0,
+        "bothPass": 1,
+        "hermesOnly": 0
+      },
+      "difference": 0.6666666666666666,
+      "hermesSuccess": 0.3333333333333333,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 2,
+          "bothFail": 0,
+          "bothPass": 1,
+          "hermesOnly": 0
+        },
+        "difference": 0.6666666666666666,
+        "hermesSuccess": 0.3333333333333333,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0.6666666666666666,
+      "instances": 3
+    },
+    {
+      "family": "paged_ledger",
+      "atlasSuccess": 0,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 2,
+        "bothPass": 0,
+        "hermesOnly": 1
+      },
+      "difference": -0.3333333333333333,
+      "hermesSuccess": 0.3333333333333333,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 2,
+          "bothPass": 0,
+          "hermesOnly": 1
+        },
+        "difference": -0.3333333333333333,
+        "hermesSuccess": 0.3333333333333333,
+        "pairs": 3
+      },
+      "equalWeightDifference": -0.3333333333333333,
+      "instances": 3
+    },
+    {
+      "family": "portable_memory_application",
+      "atlasSuccess": 0.3333333333333333,
+      "counts": {
+        "atlasOnly": 1,
+        "bothFail": 2,
+        "bothPass": 0,
+        "hermesOnly": 0
+      },
+      "difference": 0.3333333333333333,
+      "hermesSuccess": 0,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0.3333333333333333,
+        "counts": {
+          "atlasOnly": 1,
+          "bothFail": 2,
+          "bothPass": 0,
+          "hermesOnly": 0
+        },
+        "difference": 0.3333333333333333,
+        "hermesSuccess": 0,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0.3333333333333333,
+      "instances": 3
+    },
+    {
+      "family": "source_grounded_comparison",
+      "atlasSuccess": 0,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 2,
+        "bothPass": 0,
+        "hermesOnly": 1
+      },
+      "difference": -0.3333333333333333,
+      "hermesSuccess": 0.3333333333333333,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 2,
+          "bothPass": 0,
+          "hermesOnly": 1
+        },
+        "difference": -0.3333333333333333,
+        "hermesSuccess": 0.3333333333333333,
+        "pairs": 3
+      },
+      "equalWeightDifference": -0.3333333333333333,
+      "instances": 3
+    },
+    {
+      "family": "source_latest_policy",
+      "atlasSuccess": 0.3333333333333333,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 1,
+        "hermesOnly": 2
+      },
+      "difference": -0.6666666666666666,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0.3333333333333333,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 1,
+          "hermesOnly": 2
+        },
+        "difference": -0.6666666666666666,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": -0.6666666666666666,
+      "instances": 3
+    }
+  ],
+  "familyBootstrap": {
+    "draws": 100000,
+    "seed": 20260906,
+    "clusters": 12,
+    "degenerate": false,
+    "lower": -0.3055555555555555,
+    "method": "Percentile paired bootstrap of equal-weight family effects; repeats averaged within seeded instance.",
+    "pointEstimate": -0.08333333333333333,
+    "upper": 0.13888888888888887
+  },
+  "intentionToRun": {
+    "atlasSuccess": 0.4444444444444444,
+    "counts": {
+      "atlasOnly": 4,
+      "bothFail": 13,
+      "bothPass": 12,
+      "hermesOnly": 7
+    },
+    "difference": -0.08333333333333333,
+    "hermesSuccess": 0.5277777777777778,
+    "pairs": 36
+  },
+  "limitations": [
+    "Results concern the frozen synthetic task distribution, exact model/provider, harness revisions and resource limits only.",
+    "Twelve task families are the uncertainty clusters; repeated variants are not independent task concepts.",
+    "Diagnostic artifact/factual/protocol outcomes do not relax strict task success.",
+    "Unknown costs remain unknown; token counts are not monetary cost or subscription-quota evidence."
+  ],
+  "missingExecutions": [],
+  "perHarness": {
+    "atlas": {
+      "artifactCorrect": 17,
+      "artifactFailures": 19,
+      "criticalIntegrityFailures": 0,
+      "endedAttempts": 36,
+      "evaluatedAttempts": 36,
+      "evidenceFailures": 3,
+      "factualFailures": 9,
+      "falseCompletion": 15,
+      "integrityFailures": 0,
+      "missingUsage": 0,
+      "protocolFailures": 11,
+      "resources": {
+        "cachedTokens": {
+          "mean": 17877.333333333332,
+          "measuredCount": 36,
+          "median": 10304,
+          "missingCount": 0,
+          "p95": 64384,
+          "total": 643584
+        },
+        "elapsedMs": {
+          "mean": 19867.833333333332,
+          "measuredCount": 36,
+          "median": 14476.5,
+          "missingCount": 0,
+          "p95": 40701.5,
+          "total": 715242
+        },
+        "generatedTokens": {
+          "mean": 1757.9166666666667,
+          "measuredCount": 36,
+          "median": 1086.5,
+          "missingCount": 0,
+          "p95": 4548.25,
+          "total": 63285
+        },
+        "observedCostUsd": {
+          "mean": null,
+          "measuredCount": 0,
+          "median": null,
+          "missingCount": 36,
+          "p95": null,
+          "total": null
+        },
+        "promptTokens": {
+          "mean": 22798.305555555555,
+          "measuredCount": 36,
+          "median": 14290.5,
+          "missingCount": 0,
+          "p95": 81848.75,
+          "total": 820739
+        },
+        "providerRequests": {
+          "mean": 5.166666666666667,
+          "measuredCount": 36,
+          "median": 4,
+          "missingCount": 0,
+          "p95": 15,
+          "total": 186
+        },
+        "scope": "All ended attempts including failures, unavailable executions and duplicates; no successful-run-only filtering."
+      },
+      "unavailable": 0
+    },
+    "hermes": {
+      "artifactCorrect": 23,
+      "artifactFailures": 13,
+      "criticalIntegrityFailures": 0,
+      "endedAttempts": 36,
+      "evaluatedAttempts": 36,
+      "evidenceFailures": 0,
+      "factualFailures": 2,
+      "falseCompletion": 15,
+      "integrityFailures": 2,
+      "missingUsage": 0,
+      "protocolFailures": 6,
+      "resources": {
+        "cachedTokens": {
+          "mean": 33166.22222222222,
+          "measuredCount": 36,
+          "median": 25408,
+          "missingCount": 0,
+          "p95": 100896,
+          "total": 1193984
+        },
+        "elapsedMs": {
+          "mean": 22216,
+          "measuredCount": 36,
+          "median": 16003.5,
+          "missingCount": 0,
+          "p95": 54564.75,
+          "total": 799776
+        },
+        "generatedTokens": {
+          "mean": 1725.4444444444443,
+          "measuredCount": 36,
+          "median": 1015,
+          "missingCount": 0,
+          "p95": 6050,
+          "total": 62116
+        },
+        "observedCostUsd": {
+          "mean": null,
+          "measuredCount": 0,
+          "median": null,
+          "missingCount": 36,
+          "p95": null,
+          "total": null
+        },
+        "promptTokens": {
+          "mean": 41530.555555555555,
+          "measuredCount": 36,
+          "median": 32322,
+          "missingCount": 0,
+          "p95": 139410.75,
+          "total": 1495100
+        },
+        "providerRequests": {
+          "mean": 6.5,
+          "measuredCount": 36,
+          "median": 6,
+          "missingCount": 0,
+          "p95": 13,
+          "total": 234
+        },
+        "scope": "All ended attempts including failures, unavailable executions and duplicates; no successful-run-only filtering."
+      },
+      "unavailable": 0
+    }
+  },
+  "phase": "development",
+  "session": "development-2026-09-06T12-18-54-546Z-700c14",
+  "unavailableExecutions": [],
+  "validity": {
+    "issues": [],
+    "valid": true
+  }
+}

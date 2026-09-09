@@ -1,0 +1,223 @@
+{
+  "at": "2026-09-07T06:56:10.959443+00:00",
+  "softwareSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "sourceInventoryPath": "/private/tmp/atlas-candidate9-integration/source-inventory.json",
+  "sourceInventorySha256": "51c56e6b17b85ca8bc8d77606398b8b29329f10330f4e7c1be559131718d721c",
+  "scope": "Sumber C9 beku dan bukti adopsi yang ditutup; hanya 18 path produk terpilih dicocokkan dengan root, bukan rehash seluruh root atau review ulang perilaku. Tidak membaca studi aktif/schedule/fixture.",
+  "references": {
+    "adoption-c8": {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v8-adoption.json",
+      "supports": "Adopsi C5 ke C8, cakupan tes dan batas platform/aktivasi.",
+      "sha256": "81ed5c1eafbaf0856c8589f2dd8b89fd0d1111ce645ea6e620c0dad292b991f3",
+      "bytes": 2434
+    },
+    "adoption-c9": {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-adoption.json",
+      "supports": "Adopsi C8 ke C9, subset tes/TypeScript dan tidak ada aktivasi global/publikasi privat.",
+      "sha256": "e854a1a9fd79fb0211bf11bd16d54f63dfc0d87a9052e7856b7f8450a7c83eb0",
+      "bytes": 2774
+    },
+    "c6-limits": {
+      "path": "/private/tmp/atlas-candidate6-integration/readiness-before-review.json",
+      "supports": "Fondasi belum mencakup kepemilikan giliran durabel, seluruh pengawatan publikasi atau validasi Linux/UI.",
+      "sha256": "9dfca2885fbefcc33068d5b8ce48d9b103668887c41a56ddb4567a3c47264128",
+      "bytes": 3549
+    },
+    "c9-owner-gates": {
+      "path": "/private/tmp/atlas-candidate9-integration/readiness.json",
+      "supports": "183 tes/867 assertion/11 file; test typecheck 8 file; tiga file legacy punya batas tipe yang dipertahankan.",
+      "sha256": "87e9e2e673321f9c319545583bb34727750a139e2a2f76f793aa558b267b3f45",
+      "bytes": 2448
+    },
+    "c9-independent-review": {
+      "path": "/private/tmp/atlas-candidate9-integration-independent-review/review.json",
+      "supports": "Review sumber/integrasi terpisah, tanpa menjalankan ulang tes; batas otorisasi asinkron.",
+      "sha256": "6bc69cdf1b48ec02aa845d9e90f5dcba79237231a8d248e37f8255a0287108c7",
+      "bytes": 1597
+    },
+    "guard-service": {
+      "relative": "apps/server/src/services/agent-service.ts",
+      "line": 3260,
+      "supports": "prepareAuthenticatedSessionTurnOptions segar; eksplisit tidak memasang publikasi privat atau admission proses.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/agent-service.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/agent-service.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "19fd6318364e4329cc70077c4d5ece9277ea9cc4e222d75ede36e32fc6b9b832",
+      "bytes": 204095
+    },
+    "guard-principal": {
+      "relative": "apps/server/src/services/publication-turn-principal.ts",
+      "line": 25,
+      "supports": "Identitas pemanggil asli, owner efek, pemeriksaan ACL dan identitas lagi; bukan lease atomik.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/publication-turn-principal.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/publication-turn-principal.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "4a5a39c455fddd1afb5b6d98fe789e4e7049b7e425b93a4ccad2d8858b1689d5",
+      "bytes": 3548
+    },
+    "guard-route": {
+      "relative": "apps/server/src/http/routes/sessions.ts",
+      "line": 950,
+      "supports": "HTTP meminta opsi giliran tepercaya sebelum resolve/eksekusi.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/http/routes/sessions.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/http/routes/sessions.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "80922edb348e8809f3060ea8ec4ade397216139c1675166e82a6a42ff2c81807",
+      "bytes": 32265
+    },
+    "option-capture": {
+      "relative": "apps/server/src/services/session-persistence.ts",
+      "line": 268,
+      "supports": "Snapshot dangkal field opsi sebelum antrean/await; callback checkpoint mempertahankan receiver asli.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/session-persistence.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/session-persistence.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "47669c3108236424b39d65e263dad263c153e00715d940edeb1d45714bb11107",
+      "bytes": 14233
+    },
+    "agent-guard-and-recovery": {
+      "relative": "packages/agent/src/chat.ts",
+      "line": 612,
+      "supports": "Guard tambahan setelah guard lama; petunjuk pemulihan output-limit di baris966, tanpa mengganti kelayakan atau jumlah retry.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/packages/agent/src/chat.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/chat.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "1b43b71ac25c73d225127a85a08e2fc001e151b37b8c71cfb260823c9464a249",
+      "bytes": 64303
+    },
+    "skill-core": {
+      "relative": "packages/core/src/skills/load-tool.ts",
+      "line": 18,
+      "supports": "Core tidak mengimpor executable skill pada host; butuh runtime dan error jika tidak tersedia.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/packages/core/src/skills/load-tool.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/skills/load-tool.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "e2269b442b9beb214b0618490cddaa0734ad3a3aed05ae256452e95c7ea2fc03",
+      "bytes": 2814
+    },
+    "skill-server": {
+      "relative": "apps/server/src/services/skills-service.ts",
+      "line": 1047,
+      "supports": "Jalur tool skill server menggunakan createSkillToolRuntime.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/skills-service.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/skills-service.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "7d14eaebcfcfb71354146cc8906fa64cbadbf4ce5cc92d493fbb545c9a6c1873",
+      "bytes": 40313
+    },
+    "skill-runtime": {
+      "relative": "apps/server/src/services/skill-tool-runtime.ts",
+      "line": 175,
+      "supports": "Metadata dan run dieksekusi lewat subprocess, lokasi profil/global eksplisit dan pemeriksaan scope.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/skill-tool-runtime.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/skill-tool-runtime.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "a10c84ea9db8b0937e3c00368b0ec541c2c6848195ed3fb67856422c5ca32bcb",
+      "bytes": 7973
+    },
+    "custom-runtime": {
+      "relative": "apps/server/src/services/custom-tool-subprocess.ts",
+      "line": 15,
+      "supports": "Batas proses/default sandbox, opt-out host eksplisit, async policy opsional; tidak universal semua OS.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/custom-tool-subprocess.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/custom-tool-subprocess.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "318409da3668777e1bb1437bb60f94a90c54f77664d03d2a9ffae7dcabd5926d",
+      "bytes": 22324
+    },
+    "mcp-runtime": {
+      "relative": "apps/server/src/services/mcp-stdio-runtime.ts",
+      "line": 71,
+      "supports": "MCP stdio lewat preparer: argv/env ditangkap, workspace/discovery terpisah, reserved env ditolak, receipt dibersihkan.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/mcp-stdio-runtime.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/mcp-stdio-runtime.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "ab13e78745248a0b64de8f03060d5797a93dcc13166eded995f0eea743018813",
+      "bytes": 6477
+    },
+    "mcp-caller": {
+      "relative": "apps/server/src/services/mcp-client-manager.ts",
+      "line": 41,
+      "supports": "Caller aktual memakai preparer; policy server opsional; HTTP transport tetap jalur terpisah.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/mcp-client-manager.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/mcp-client-manager.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "fe537bb1fd63dcf6a86f4b876d0bddaaf3151f1366e5b609ebc49592b8c06a3d",
+      "bytes": 12883
+    },
+    "process-policy": {
+      "relative": "apps/server/src/services/tool-resolver.ts",
+      "line": 132,
+      "supports": "Bash/Python policy hanya dipasang jika opsi host processAdmission tersedia; default bukan aktivasi global baru.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/tool-resolver.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/tool-resolver.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "03b26dea0094c23c43c5f00b2dc6e373ab73ce8689062a178fc28d6a36beb050",
+      "bytes": 6026
+    },
+    "file-bytes": {
+      "relative": "packages/core/src/files/assets.ts",
+      "line": 106,
+      "supports": "Byte disalin sebelum await; penulisan, ukuran, revision dan staging memakai salinan yang sama.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/packages/core/src/files/assets.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/files/assets.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "d70c4079f818d3e8a67c2dae5c5d41eea76487cc3a1b0250c746f8b624f8ad94",
+      "bytes": 6407
+    },
+    "versioned-bytes": {
+      "relative": "packages/core/src/files/versioned-write.ts",
+      "line": 11,
+      "supports": "Buffer pada helper versioned-write ditangkap sebelum await; tidak mengklaim versioning sebagai fitur baru C9.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/packages/core/src/files/versioned-write.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/files/versioned-write.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "085c66de3bea577da2b24d3aad154dfe69f99a9b4460e79e9416ac610a26a055",
+      "bytes": 1716
+    },
+    "verification-guidance": {
+      "relative": "packages/agent/src/chat-prompt.ts",
+      "line": 124,
+      "supports": "Instruksi memeriksa hasil sebenarnya sebelum klaim selesai; perubahan prompt bukan bukti kenaikan kualitas.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/packages/agent/src/chat-prompt.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/chat-prompt.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "794c3c881744e3e00ca433c5949e63018f7bfa9c37e608c4dfd029d6c7a4f0ee",
+      "bytes": 18302
+    },
+    "publication-lifecycle": {
+      "relative": "apps/server/src/services/artifact-publication-lifecycle.ts",
+      "line": 40,
+      "supports": "Adapter host mengharuskan root tool aktual; komentar mewajibkan pengawatan admission dan consumer sebelum cutover.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/services/artifact-publication-lifecycle.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/artifact-publication-lifecycle.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "eda45b53daa1030a2a9616f1616034cbd58ca65a6b32dc0cf0cdba869555fe05",
+      "bytes": 7035
+    },
+    "publication-producer": {
+      "relative": "packages/core/src/artifact-publication.ts",
+      "line": 96,
+      "supports": "Tanpa publisher staging tidak aktif; kegagalan staging tidak mengulang producer atau menghapus receipt efek.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/packages/core/src/artifact-publication.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/artifact-publication.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "989fe1f083aff7347010fb66f892fb284aff043fe4d73bfd7e8a77033da9d5f5",
+      "bytes": 4117
+    },
+    "publication-routes": {
+      "relative": "apps/server/src/http/routes/artifact-publications.ts",
+      "line": 89,
+      "supports": "API publikasi aditif tersedia; belum menggantikan workspace browsing/alur consumer lama.",
+      "path": "/private/tmp/atlas-candidate9-integration/source/apps/server/src/http/routes/artifact-publications.ts",
+      "rootCurrentPath": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/http/routes/artifact-publications.ts",
+      "matchesFrozenC9InventoryAndSelectedRootBytes": true,
+      "sha256": "041c819bf6e7e67c9530764d5fe0b6c184ba4d02b6c4fb102feaa0844f5d2a46",
+      "bytes": 5258
+    }
+  },
+  "inspectionNotes": [
+    "Percobaan awal membaca authenticated-session-turn.ts tidak menemukan file; metode yang benar berada di agent-service.ts:3260. Tidak ada perubahan produk atau kesimpulan yang didasarkan pada nama file yang salah.",
+    "Beberapa keluaran gabungan terpotong oleh batas tampilan; referensi dan klaim memakai bagian sumber relevan yang terlihat serta bukti adopsi tertutup."
+  ]
+}

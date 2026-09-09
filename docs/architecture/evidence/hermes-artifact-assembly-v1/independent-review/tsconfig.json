@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["bun"],
+    "paths": {
+      "@atlas/agent": [
+        "/private/tmp/atlas-artifact-assembly-c5/source/packages/agent/src/index.ts"
+      ],
+      "@atlas/client": [
+        "/private/tmp/atlas-artifact-assembly-c5/source/packages/client/src/index.ts"
+      ],
+      "@atlas/core": [
+        "/private/tmp/atlas-artifact-assembly-c5/source/packages/core/src/index.ts"
+      ],
+      "@atlas/core/*": [
+        "/private/tmp/atlas-artifact-assembly-c5/source/packages/core/src/*"
+      ],
+      "@atlas/db": [
+        "/private/tmp/atlas-artifact-assembly-c5/source/packages/db/src/index.ts"
+      ],
+      "@atlas/design-tokens": [
+        "/private/tmp/atlas-artifact-assembly-c5/source/packages/design-tokens/src/index.ts"
+      ]
+    }
+  }
+}

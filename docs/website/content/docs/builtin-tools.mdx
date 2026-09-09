@@ -50,6 +50,11 @@ Atlas includes these builtins:
 |------|---------------------------|-------------|-------|
 | `write_file` | Yes | Yes | |
 | `write_docx` | Yes | Yes | Create real `.docx` files from Markdown |
+| `write_pptx` | Yes | Yes | Create PowerPoint presentations |
+| `office_document` | Yes | Yes | Read and edit existing Word and PowerPoint files |
+| `pdf_document` | Yes | Yes | Create, combine, split, inspect, and extract PDFs |
+| `spreadsheet` | Yes | Yes | Work with Excel and CSV data; recalculate with LibreOffice |
+| `file_asset` | Yes | Yes | Make an exact working copy of an uploaded file |
 | `delete_file` | Yes | Yes | |
 | `edit_file` | Yes | Yes | |
 | `read_file` | Yes | Yes | |
@@ -58,7 +63,7 @@ Atlas includes these builtins:
 | `web_search` | Yes | Yes | |
 | `web_fetch` | Yes | Yes | |
 | `email` | Yes | Yes | Omitted at runtime when mailbox is unconfigured |
-| `extract_document_text` | Yes | Yes | Extracts text from PDF, Word, or Excel files (email `documentRef`, stored attachment, or workspace path) |
+| `extract_document_text` | Yes | Yes | Extracts text from PDF, Word, PowerPoint, or Excel files (email `documentRef`, stored attachment, or workspace path) |
 | `bash` | No | Yes | Run shell commands in the profile workspace |
 | `sub_agent` | No | No | Opt-in: delegate to a same-profile sub-agent (see below) |
 
@@ -74,6 +79,76 @@ Good starting patterns:
 - **Ops agent**: file tools, bundled `save-artifact` skill, `email`
 - **Delegation agent**: `sub_agent` for in-process research/review/planning subtasks
 - **Coding agent (Super Agent or custom)**: `bash` + `coding-agent` skill
+
+## Work with everyday files
+
+Attach a document in web chat, WhatsApp, Telegram, or Discord and describe the
+result you need. Atlas keeps the original file available for processing and saves
+edits as a new version by default. For example:
+
+- “Update the status table in this Word report and keep the logo and header.”
+- “Revise slide two and its speaker notes in this PowerPoint.”
+- “Combine these PDFs, then send pages three through five as a separate PDF.”
+- “Update this Excel input, recalculate the totals, and preserve the customer IDs.”
+
+Word and PowerPoint edits support text and simple tables while preserving other
+parts of the file. PDF extraction identifies which pages were read and includes
+the names and values of ordinary PDF form fields. Spreadsheet
+results distinguish stored formulas from verified calculations, and CSV imports
+preserve leading zeroes and long identifiers unless you explicitly request a
+numeric conversion. For decimal-comma data, specify the decimal separator when
+requesting numeric columns.
+
+The four bundled file skills guide the agent through checking its output. If an
+existing profile cannot use a file tool, a Workspace Admin can assign it under
+**System → Tools**. Existing custom tool selections are kept when Atlas updates.
+
+Scanned PDFs can use OCR when Tesseract and its requested language are installed.
+PDF merging retains bookmarks, internal links, and embedded attachments. Word
+replacements can record tracked changes while retaining earlier reviewer history.
+Workbooks with charts support cell edits; their charts refresh when reopened in
+Excel. Atlas reports chart calculations as unverified until a suitable application
+refreshes them. Signed PDFs, PDF forms during merging, tracked moves in Word,
+and workbook layout changes involving charts still need specialized handling.
+Formatting checks require a renderer; text extraction alone cannot verify layout.
+
+Channel upload limits still apply. If a returned file cannot be attached, Atlas
+keeps the saved artifact available and reports its location or available link.
+Find saved results under **Files → Artifacts**. Temporary working copies of
+uploaded inputs are not automatically sent back as new deliverables.
+
+### Self-hosted file runtime
+
+The Docker image includes LibreOffice for Office rendering and Excel
+recalculation, Poppler and Tesseract with English and Indonesian OCR, and a managed
+Python environment for file analysis. For a
+source installation, use Python 3.11 or later and run:
+
+```bash
+bash scripts/setup-file-runtime.sh
+```
+
+The script installs the analysis libraries in Atlas's configuration directory.
+For a custom installation directory, pass its absolute path and set the printed
+`ATLAS_PYTHON_PATH` before starting Atlas. LibreOffice is installed separately;
+`ATLAS_OFFICE_CONVERTER_PATH` can select its executable. A missing calculation
+engine is reported, and cached formula values are not treated as recalculated.
+
+Source installations also need Poppler and Tesseract for OCR. Install the
+Tesseract language packs needed by your team. `ATLAS_PDFTOPPM_PATH` and
+`ATLAS_TESSERACT_PATH` can select their executables. Missing OCR dependencies
+leave the affected pages marked as unread; Atlas does not claim complete coverage.
+
+Rendering also needs fonts that cover the document's languages. The Docker
+configuration includes Noto fonts for Arabic and CJK; source installations must
+provide suitable fonts to LibreOffice.
+
+Python and shell tools require macOS `sandbox-exec` or Linux Landlock ABI 3.
+They can read and write the assigned profile and private temporary directory,
+and read installed runtime libraries. They cannot use another profile's files
+or the host account's login files. Execution is blocked when the filesystem
+boundary is unavailable. Network access remains enabled; this boundary does
+not provide a separate virtual machine or resource quota for each organization.
 
 ## Memory workflows
 
@@ -134,7 +209,7 @@ Write text to a file in the profile workspace.
 
 **Scope:** `~/.atlas/orgs/{orgId}/profiles/{profileId}/` and `~/.atlas/tools/` (custom JS modules)
 
-**Restrictions:** Rejects `.docx` and `.doc` paths — a `.docx` is a ZIP archive, not UTF-8 text. Use `write_docx` instead.
+**Restrictions:** Refuses binary document and archive formats such as Word, PowerPoint, Excel, PDF, and ZIP. Use the corresponding document tool to create a valid file.
 
 **Availability:** When assigned to the profile.
 
@@ -326,7 +401,7 @@ Run a one-off shell command in the profile workspace and return stdout, stderr, 
 
 **Coding-agent spawn env:** When the command starts with a known harness binary (`codex`, `claude`, `opencode`, `pi`, or `agent`), or when `codingAgent: true` is set with such a command, Atlas merges provider passthrough env vars on the server before spawn. `codingAgent: true` without a known binary fails closed. See [Coding agent — Provider passthrough](/coding-agent#provider-passthrough). Optional `env` keys are merged on top (credential keys cannot override passthrough).
 
-**Scope:** Profile workspace only. Do not use `bash` to create persistent tools or `.sh` wrappers — register JavaScript tools under `~/.atlas/tools/` instead.
+**Working directory:** The profile workspace. Shell commands retain the server account's filesystem access. Do not use `bash` to create persistent tools or `.sh` wrappers — register JavaScript tools under `~/.atlas/tools/` instead.
 
 **Availability:** When assigned to the profile. Super Agent receives `bash` by default. Required for the [coding agent](/coding-agent) workflow and the opt-in [agent-browser](/agent-browser) skill. Browser runs inherit optional host `AGENT_BROWSER_EXECUTABLE_PATH` / `AGENT_BROWSER_ARGS` when the operator configures CloakBrowser.
 

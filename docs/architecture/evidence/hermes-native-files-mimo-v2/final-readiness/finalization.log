@@ -1,0 +1,16 @@
+{
+  "freezeReady": true,
+  "checksPassed": 71,
+  "checksFailed": 0,
+  "failedChecks": [],
+  "readiness": {
+    "path": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/readiness-final.json",
+    "sha256": "381d960e289ecdec9f26460ceb508432e42763f3375240d2d36ef07d85d39ff7",
+    "bytes": 18957
+  },
+  "verification": {
+    "path": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/verification.json",
+    "sha256": "d87af0b34d3ac6555550d2204e3d7b58444d0e255d3f2fa403ed027d5d507df3",
+    "bytes": 47201
+  }
+}

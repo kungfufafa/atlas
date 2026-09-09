@@ -1,0 +1,22 @@
+{
+  "name": "final-lint",
+  "command": [
+    "bun",
+    "x",
+    "--no-install",
+    "ultracite",
+    "check",
+    "apps/server/src/services/artifact-publication-service.ts",
+    "apps/server/src/services/selected-artifact-publication.test.ts",
+    "packages/core/src/artifact-publication.ts",
+    "packages/db/src/artifact-publication-evidence.ts",
+    "packages/db/src/artifact-publication-identity.ts",
+    "packages/db/src/index.ts",
+    "packages/db/src/types.ts"
+  ],
+  "startedAt": "2026-09-07T02:09:44.992546+00:00",
+  "endedAt": "2026-09-07T02:09:46.434605+00:00",
+  "exitCode": 0,
+  "log": "final-lint.log",
+  "sha256": "fe34813e2ca233b1cd780dec987a31fccdd5eb99a0bfbb65d7c7d1b4bb69ada1"
+}

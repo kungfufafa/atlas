@@ -1,0 +1,100 @@
+{
+  "createdAt": "2026-09-07T00:43:10.101745+00:00",
+  "scope": "offline-component",
+  "candidateSourceHash": "17a262bf4fd5ab96f72fe4e7ca741cc0066542c321b037c70f713e35a621faeb",
+  "files": {
+    "README.md": {
+      "sha256": "c6d1c8ac74b89587ef399a5b3e1fa981869a48dde257efab484eb1a755457634",
+      "bytes": 2032
+    },
+    "gate-summary.json": {
+      "sha256": "876c4235db1da7bf07fb9ef82f49f0a3e1441936820ade9c259e20da541fe148",
+      "bytes": 757
+    },
+    "independent-review/bindings.json": {
+      "sha256": "d6914a79cb4d2886ec818ce672cf2681da4268bef8280ed017869e3cd1a9f4d3",
+      "bytes": 1648
+    },
+    "independent-review/review.json": {
+      "sha256": "fc12e4ab0656d736d09210934fbefd6e19b97cb4cf44236587d9d4d691bcb8f4",
+      "bytes": 483
+    },
+    "independent-review/review.md": {
+      "sha256": "f29f04ed6937db0cdbde266c58eba8f720e940778bab5de10a8a084586bfcba4",
+      "bytes": 3160
+    },
+    "owner/combined.patch": {
+      "sha256": "4809370cdce4ab3f756107576b605f6266d5f4c8d3b5190d8a47b33f18dbd4fc",
+      "bytes": 42186
+    },
+    "owner/evidence-reference.json": {
+      "sha256": "50663b94168d362653c8a0180452cf3e63e461b19d7470b19e71a6c92a51b736",
+      "bytes": 1891
+    },
+    "owner/final-lint.log": {
+      "sha256": "4e07ac9498f4ceb2bcb8405851a3904ca0191770c25f5b27f6a5fdbb819693c9",
+      "bytes": 45
+    },
+    "owner/final-regressions.log": {
+      "sha256": "2bccbee530c99703acad2416d5ab2f70d71518374c2f65b95d2fad4c18c9664b",
+      "bytes": 8593
+    },
+    "owner/final-typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "owner/gates.json": {
+      "sha256": "70b9a86f940dd4803dcf71d7c729d4b2b4d9f9dfb840c3cf78303cf32397c116",
+      "bytes": 1305
+    },
+    "owner/implementation-notes.md": {
+      "sha256": "97d631ca4c4dea19f3f742ffc9778af2d7defd34b66a3a567b5168b7bd7cd2ee",
+      "bytes": 6776
+    },
+    "owner/initial-tests.log": {
+      "sha256": "5a5c50f35dc31779946216122a321f517a3ef86db6c15e2507a54acfb6e3bdb1",
+      "bytes": 5413
+    },
+    "owner/initial-typecheck.log": {
+      "sha256": "a13469b76257fb1b01618c63c371ec5c9f5a3a54353725faf67035c57645d3a7",
+      "bytes": 1718
+    },
+    "owner/inspection-errors.md": {
+      "sha256": "7c4f4b53206d8215e7c0ceb867f795393ed2bdc7676c2a09cdaf294be67047c0",
+      "bytes": 265
+    },
+    "owner/patch-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "owner/production.patch": {
+      "sha256": "776a6e5235cf5ebd0739f47daa7bb1e2eac35ff03130210ba723f6729c70b4e6",
+      "bytes": 20620
+    },
+    "owner/readiness.json": {
+      "sha256": "4f6c5524f0da0cc8fac3138ec3a10d5061d65e90f26e8fe11868aa7646c7eb43",
+      "bytes": 4170
+    },
+    "owner/second-tests.log": {
+      "sha256": "efa0d357c0b10722306976601a5f0915258f2738798f35b48de5fbf8529cdd13",
+      "bytes": 1628
+    },
+    "owner/source-inventory.json": {
+      "sha256": "b78f0aa65a6f06a54ab682499904370d1abc896dcbafcc179480109a12008f62",
+      "bytes": 255531
+    },
+    "source-copies.json": {
+      "sha256": "bbe7081360b6e991a4708ac8738862991db30156c696dbeabc6b300e33cedad8",
+      "bytes": 5294
+    }
+  },
+  "copiedFiles": 18,
+  "totalPayloadBytes": 363515,
+  "exactCopyHashesVerified": true,
+  "privateCredentialLiteralScan": "passed; value not copied or printed",
+  "sourceOriginalsRetained": true,
+  "sourceOrControlEdits": false,
+  "newProviderCalls": 0,
+  "testReruns": false,
+  "claimLimits": "Unwired lifecycle/legacy consumers, selected-existing-file capture and foundation authorization/host limits remain. Generic support/intermediate writes do not automatically gain publication authority."
+}

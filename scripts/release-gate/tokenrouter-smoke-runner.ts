@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import { createOpenAICompatibleProvider } from "../../apps/server/src/providers/openai-compatible/index";
 import { redactSensitiveData } from "../../packages/core/src/index";
 import type {
@@ -113,26 +112,7 @@ export class TokenRouterSmokeRunner {
       };
     }
 
-    let apiKey = process.env.TOKENROUTER_API_KEY?.trim();
-
-    if (!apiKey) {
-      const scratchEnvPath =
-        "/Users/apriansyahrs/.gemini/antigravity-ide/brain/3c9586c6-d30c-4676-a367-b862b525dcf8/scratch/tokenrouter.env";
-      if (existsSync(scratchEnvPath)) {
-        try {
-          const lines = readFileSync(scratchEnvPath, "utf8").split("\n");
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.startsWith("TOKENROUTER_API_KEY=")) {
-              apiKey = trimmed.slice("TOKENROUTER_API_KEY=".length).trim();
-              break;
-            }
-          }
-        } catch {
-          // ignore
-        }
-      }
-    }
+    const apiKey = process.env.TOKENROUTER_API_KEY?.trim();
 
     if (!apiKey) {
       const errorMessage =

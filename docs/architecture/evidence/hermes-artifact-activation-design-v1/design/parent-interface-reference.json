@@ -1,0 +1,20 @@
+{
+  "status": "parent-reported planned interface; scratch not inspected or bound",
+  "sourceMessage": "/root collaboration message during current audit",
+  "factory": "createPublicationTurnPrincipal({actor:SessionActor,agent:Pick<AgentService,canAccessSession>,db,orgId,sessionId})",
+  "returns": [
+    "effectUserId",
+    "invoker snapshot",
+    "scope {actorId:effectUserId,orgId,profileId,sessionId}",
+    "beforeToolCall():Promise<void>",
+    "authorizePublication(scope,action:publish|read|revoke):Promise<void>",
+    "validateContext(Readonly<ToolContext>):Promise<void>"
+  ],
+  "perSendHooks": [
+    "toolExecutionGuard(context:Readonly<ToolContext>,toolName?:string):Promise<void>",
+    "toolExecutionLifecycle?:ToolExecutionLifecycle|null"
+  ],
+  "semantics": "null clears default, undefined inherits; hooks captured before first await; new guard awaited before old",
+  "independentSourceVerification": false,
+  "testsClaimedHere": 0
+}

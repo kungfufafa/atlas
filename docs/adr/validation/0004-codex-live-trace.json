@@ -1,0 +1,62 @@
+[
+  {
+    "event": "auth",
+    "authenticated": true,
+    "status": "authenticated",
+    "runtimeVersion": "codex-cli 0.150.1"
+  },
+  {
+    "event": "selected_model",
+    "model": "gpt-5.6-sol"
+  },
+  {
+    "event": "tool_start",
+    "tool": "read_fixture"
+  },
+  {
+    "event": "tool_end",
+    "tool": "read_fixture"
+  },
+  {
+    "event": "checkpoint",
+    "completedTools": 1
+  },
+  {
+    "event": "approval_requested",
+    "deletions": 0,
+    "fixtureExists": true
+  },
+  {
+    "event": "tool_start",
+    "tool": "delete_file"
+  },
+  {
+    "event": "tool_end",
+    "tool": "delete_file"
+  },
+  {
+    "event": "checkpoint",
+    "completedTools": 2
+  },
+  {
+    "event": "tool_start",
+    "tool": "verify_fixture"
+  },
+  {
+    "event": "tool_end",
+    "tool": "verify_fixture"
+  },
+  {
+    "event": "checkpoint",
+    "completedTools": 3
+  },
+  {
+    "event": "verified",
+    "reads": 1,
+    "deletions": 1,
+    "verifications": 1,
+    "persistedTools": 3,
+    "approvedStep": "succeeded",
+    "replyPresent": true
+  }
+]

@@ -1,0 +1,1057 @@
+{
+  "name": "live-service-gemini-f650b27152d5",
+  "recordedAt": "2026-09-06T08:21:30.644Z",
+  "request": {
+    "body": {
+      "contents": [
+        {
+          "parts": [
+            {
+              "text": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4 (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions."
+            }
+          ],
+          "role": "user"
+        }
+      ],
+      "systemInstruction": {
+        "parts": [
+          {
+            "text": "Execute the requested file verification using your assigned tools. Do not delegate.\n\n# Atlas documentation\nFor Atlas product questions, web_fetch https://kungfufafa.github.io/atlas/llms.txt, then web_fetch the matching .md page from that index. Do not use knowledge_base_search for inherited docs.\n\n## Work quality (mandatory)\nYou are a capable working agent — not a junior copy of Super Agent. Super Agent orchestrates the workspace (profiles, host tools, shell). You finish user work with the tools you have, at the same quality bar.\n\n- Finish the request in this turn with a ready-to-use result. Do not leave an outline, a teaser, or a promise to do it later.\n- Use assigned tools before you reply when they would improve accuracy or completeness (search, fetch, research, knowledge base, browser, files, documents, slides, spreadsheets, python).\n- Prefer evidence over memory for current, local, or org-specific facts. Include the links you used.\n- Choose sensible defaults (format, layout, count, tone) instead of asking extra questions unless a missing fact would make the answer wrong.\n- Durable and interactive deliverables (HTML, SVG, Mermaid, React/JSX, reports, docs, decks, spreadsheets) belong under artifacts/ via write_file / write_docx / write_pptx / spreadsheet — not pasted as the whole answer in chat. The chat reply is a short summary; the file is the product.\n- After tools, summarize the outcome clearly: key findings, links, and where files were saved.\n- If a needed capability is missing, say so. Do not invent tools, URLs, or results.\n- Stay in this profile's identity. Do not create profiles, author host tools, or use bash unless those tools are actually assigned.\n- Sound like this profile in the room, not a generic chatbot overlay.\n- Work as their personal assistant: use USER.md and MEMORY.md so they do not repeat themselves; deliver the file, answer, or next step in this turn.\nTalk like a capable personal assistant: direct, specific, no filler openers.\n\n# Presence\nYou are their assistant in this conversation now. This turn is live — do the work here rather than describing a plan to do it later.\nSkip empty openers such as \"Great question!\", \"I'd be happy to help!\", and \"Absolutely!\". Answer.\nBe concise in wording and complete in the work: finish the request in this turn with a ready-to-use answer, not a thin outline, a teaser, or a promise to do the work later.\nIf assigned tools would make the answer better, use them before you reply.\nChoose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.\nWhen follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.\nAlways focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics.\n\nThe user's timezone is UTC.\n\nYou have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.\nAtlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.\nIf a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work.\nUse todo_write only when the work genuinely needs multiple todos, such as complex requests with 3+ distinct steps.\nDo not call todo_write for a single-step request or when the plan would contain only one todo.\nKeep exactly one todo in_progress at a time, mark todos completed immediately after finishing them, and use merge: true for incremental updates.\nUse merge: false only when replacing the entire task plan.\nWhen an active task plan is present in your context, continue unfinished tasks on the next turn before taking on new work unless the user changes direction.\nUse ask_user_question when you need missing information before you can continue.\nAsk one concise batch at a time, prefer predefined choices when possible, and wait for the user's answers before proceeding.\nSkills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.\nWhen producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat.\nThat includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.\nThe chat reply is a short summary. The web UI opens a live preview for these files.\nDurable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.\nDo not use artifacts/ for soul files or MEMORY.md.\n\nCurrent local time: Sunday, September 6, 2026 at 8:21 AM UTC."
+          }
+        ],
+        "role": "user"
+      },
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "description": "Read text from a file in the active profile workspace. Word .docx files are converted to Markdown. Use offset/limit for large files.",
+              "name": "read_file",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "cwd": {
+                    "type": "STRING"
+                  },
+                  "limit": {
+                    "minimum": 1,
+                    "type": "INTEGER",
+                    "maximum": 9007199254740991
+                  },
+                  "offset": {
+                    "minimum": 1,
+                    "type": "INTEGER",
+                    "maximum": 9007199254740991
+                  },
+                  "path": {
+                    "type": "STRING",
+                    "minLength": 1
+                  }
+                },
+                "required": ["path"]
+              }
+            },
+            {
+              "description": "Write text content to a file in the active profile workspace. Creates parent directories if needed. Cannot produce Word documents — use write_docx for .docx.",
+              "name": "write_file",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "content": {
+                    "type": "STRING"
+                  },
+                  "cwd": {
+                    "type": "STRING"
+                  },
+                  "path": {
+                    "type": "STRING",
+                    "minLength": 1
+                  }
+                },
+                "required": ["content", "path"]
+              }
+            },
+            {
+              "description": "Create or update the internal task plan for complex multi-step work. Use when a request has 3+ distinct steps. Initialize at the start, keep one task in_progress, and mark tasks completed as you finish them.",
+              "name": "todo_write",
+              "parameters": {
+                "properties": {
+                  "merge": {
+                    "description": "If true, update todos by id. If false, replace the entire task plan.",
+                    "type": "BOOLEAN"
+                  },
+                  "todos": {
+                    "description": "Todo items to create or update.",
+                    "items": {
+                      "properties": {
+                        "content": {
+                          "description": "Todo description. Required when creating a new todo.",
+                          "type": "STRING"
+                        },
+                        "id": {
+                          "description": "Stable todo identifier.",
+                          "type": "STRING"
+                        },
+                        "status": {
+                          "description": "Current todo status.",
+                          "enum": [
+                            "pending",
+                            "in_progress",
+                            "completed",
+                            "cancelled"
+                          ],
+                          "type": "STRING"
+                        }
+                      },
+                      "required": ["id", "status"],
+                      "type": "OBJECT"
+                    },
+                    "type": "ARRAY"
+                  }
+                },
+                "required": ["merge", "todos"],
+                "type": "OBJECT"
+              }
+            },
+            {
+              "description": "Ask a short multiple-choice questionnaire when you need missing info before continuing.",
+              "name": "ask_user_question",
+              "parameters": {
+                "properties": {
+                  "questions": {
+                    "items": {
+                      "properties": {
+                        "allowCustomAnswer": {
+                          "type": "BOOLEAN"
+                        },
+                        "choices": {
+                          "items": {
+                            "type": "STRING"
+                          },
+                          "type": "ARRAY"
+                        },
+                        "prompt": {
+                          "type": "STRING"
+                        }
+                      },
+                      "required": ["prompt", "choices"],
+                      "type": "OBJECT"
+                    },
+                    "type": "ARRAY"
+                  },
+                  "title": {
+                    "type": "STRING"
+                  }
+                },
+                "required": ["title", "questions"],
+                "type": "OBJECT"
+              }
+            },
+            {
+              "description": "Search the organization's shared memory (pinned facts, recent dated log, and archives) for facts relevant to the query. Use this when the injected org memory summary is missing detail or when you need the full history.",
+              "name": "org_memory_search",
+              "parameters": {
+                "properties": {
+                  "query": {
+                    "description": "Text to search for across org memory bullets.",
+                    "type": "STRING"
+                  }
+                },
+                "required": ["query"],
+                "type": "OBJECT"
+              }
+            },
+            {
+              "description": "List the organization's live org memory markdown (pinned and recent-log sections). Returns the current MEMORY.md content.",
+              "name": "org_memory_list",
+              "parameters": {
+                "properties": {},
+                "type": "OBJECT"
+              }
+            },
+            {
+              "description": "Propose a durable org-wide fact (team conventions, policies, shared context) for admin approval. Never propose secrets, credentials, API keys, tokens, or PII. Facts require admin approval before appearing in org memory. Do not re-propose if the tool reports the fact is already pending, pinned, or in the recent log.",
+              "name": "propose_org_memory",
+              "parameters": {
+                "properties": {
+                  "bullet": {
+                    "description": "A single concise org-wide fact to propose for admin review.",
+                    "type": "STRING"
+                  }
+                },
+                "required": ["bullet"],
+                "type": "OBJECT"
+              }
+            }
+          ]
+        }
+      ],
+      "generationConfig": {}
+    },
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+  },
+  "response": {
+    "body": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "functionCall": {
+                  "name": "write_file",
+                  "args": {
+                    "content": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4",
+                    "path": "artifacts/provider-proof.txt"
+                  },
+                  "id": "call_3900910"
+                },
+                "thoughtSignature": "Et4ECtsEARFNMg+bvusNmFiXl0Z5vVMnNpzduIGphqN4NmfJ57cafMCyIWE2oYcnyqipnC9+/ZPzobOolpT9o4t0wXX9NLNbKuq4HcbHmP+cGHUnu1oH7GFTrrdV+DKZw02ZROX4P4P5vt5Ymp3kK8TIz+NNVQaS+hcELh6wFQpyLFI4BQmBtWP0Z88okrcfogZLiNSiOoQLjyzUDoS1ZUN8JKHXUTI5s2gFI0CHQhhkhsYUgcgAc/5rAgpPBdb6SumT2W1b7D6sDLksWzWv2g5QbPjzgfgJIv6etT2+9sANkYgVuBIcujCqC6nhUhmG5S/Q/nPG44fKCJbzJ4xschVSfqIyqfVSiVhUFNyQvDtfni4n0GAm4QoN7sh4ZaIoFBirLEMZ93DWuXo+tpaEAFZYpkqwV+k8o+IZjHha83IWIMfxPJeI3nQuuKJEwa4nraw2BHsbUJl0t8HOWWcsjqALDJhu4iwK1aKFwKhovHjqmzQdWpcfJq/Z9P3rpU9INsO2i79JUbf4vYfB+R3r9N1ki5zd81kBYQHzaYwpMMo4GwSXB+MmofLVtmI4ODMysTzaGogAuBU+HY52hHPQLJPKDfFkhyjupUoAaJHgBEZv5e2o6zRmdece4gZPY2Y7jzAg++5VORf9vtBOoAK/9bcF5UCZ1eIYVV7GlX/Rr0b96FUzYoLFXIDYYSfL8hh7Eo4I47IeE2YKn7ghvRDVKjx4Lkd2f45KbcgdZc/1iy/GEujPbUFyGqpCQRnwxffgW8dRe10NJ+uKsD7UmnRX9MgUQJ/Fd/EMsA7QtAW+9J4n"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0,
+          "finishMessage": "Model generated function call(s)."
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 2124,
+        "candidatesTokenCount": 66,
+        "totalTokenCount": 2398,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2124
+          }
+        ],
+        "thoughtsTokenCount": 208,
+        "serviceTier": "standard"
+      },
+      "modelVersion": "gemini-3-flash-preview",
+      "responseId": "hSKdapLIL4Otg8UP-JC52Qc"
+    },
+    "encoding": "json",
+    "status": 200
+  },
+  "version": 2,
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "contents": [
+            {
+              "parts": [
+                {
+                  "text": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4 (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions."
+                }
+              ],
+              "role": "user"
+            }
+          ],
+          "systemInstruction": {
+            "parts": [
+              {
+                "text": "Execute the requested file verification using your assigned tools. Do not delegate.\n\n# Atlas documentation\nFor Atlas product questions, web_fetch https://kungfufafa.github.io/atlas/llms.txt, then web_fetch the matching .md page from that index. Do not use knowledge_base_search for inherited docs.\n\n## Work quality (mandatory)\nYou are a capable working agent — not a junior copy of Super Agent. Super Agent orchestrates the workspace (profiles, host tools, shell). You finish user work with the tools you have, at the same quality bar.\n\n- Finish the request in this turn with a ready-to-use result. Do not leave an outline, a teaser, or a promise to do it later.\n- Use assigned tools before you reply when they would improve accuracy or completeness (search, fetch, research, knowledge base, browser, files, documents, slides, spreadsheets, python).\n- Prefer evidence over memory for current, local, or org-specific facts. Include the links you used.\n- Choose sensible defaults (format, layout, count, tone) instead of asking extra questions unless a missing fact would make the answer wrong.\n- Durable and interactive deliverables (HTML, SVG, Mermaid, React/JSX, reports, docs, decks, spreadsheets) belong under artifacts/ via write_file / write_docx / write_pptx / spreadsheet — not pasted as the whole answer in chat. The chat reply is a short summary; the file is the product.\n- After tools, summarize the outcome clearly: key findings, links, and where files were saved.\n- If a needed capability is missing, say so. Do not invent tools, URLs, or results.\n- Stay in this profile's identity. Do not create profiles, author host tools, or use bash unless those tools are actually assigned.\n- Sound like this profile in the room, not a generic chatbot overlay.\n- Work as their personal assistant: use USER.md and MEMORY.md so they do not repeat themselves; deliver the file, answer, or next step in this turn.\nTalk like a capable personal assistant: direct, specific, no filler openers.\n\n# Presence\nYou are their assistant in this conversation now. This turn is live — do the work here rather than describing a plan to do it later.\nSkip empty openers such as \"Great question!\", \"I'd be happy to help!\", and \"Absolutely!\". Answer.\nBe concise in wording and complete in the work: finish the request in this turn with a ready-to-use answer, not a thin outline, a teaser, or a promise to do the work later.\nIf assigned tools would make the answer better, use them before you reply.\nChoose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.\nWhen follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.\nAlways focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics.\n\nThe user's timezone is UTC.\n\nYou have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.\nAtlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.\nIf a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work.\nUse todo_write only when the work genuinely needs multiple todos, such as complex requests with 3+ distinct steps.\nDo not call todo_write for a single-step request or when the plan would contain only one todo.\nKeep exactly one todo in_progress at a time, mark todos completed immediately after finishing them, and use merge: true for incremental updates.\nUse merge: false only when replacing the entire task plan.\nWhen an active task plan is present in your context, continue unfinished tasks on the next turn before taking on new work unless the user changes direction.\nUse ask_user_question when you need missing information before you can continue.\nAsk one concise batch at a time, prefer predefined choices when possible, and wait for the user's answers before proceeding.\nSkills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.\nWhen producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat.\nThat includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.\nThe chat reply is a short summary. The web UI opens a live preview for these files.\nDurable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.\nDo not use artifacts/ for soul files or MEMORY.md.\n\nCurrent local time: Sunday, September 6, 2026 at 8:21 AM UTC."
+              }
+            ],
+            "role": "user"
+          },
+          "tools": [
+            {
+              "functionDeclarations": [
+                {
+                  "description": "Read text from a file in the active profile workspace. Word .docx files are converted to Markdown. Use offset/limit for large files.",
+                  "name": "read_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "limit": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "offset": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["path"]
+                  }
+                },
+                {
+                  "description": "Write text content to a file in the active profile workspace. Creates parent directories if needed. Cannot produce Word documents — use write_docx for .docx.",
+                  "name": "write_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "content": {
+                        "type": "STRING"
+                      },
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["content", "path"]
+                  }
+                },
+                {
+                  "description": "Create or update the internal task plan for complex multi-step work. Use when a request has 3+ distinct steps. Initialize at the start, keep one task in_progress, and mark tasks completed as you finish them.",
+                  "name": "todo_write",
+                  "parameters": {
+                    "properties": {
+                      "merge": {
+                        "description": "If true, update todos by id. If false, replace the entire task plan.",
+                        "type": "BOOLEAN"
+                      },
+                      "todos": {
+                        "description": "Todo items to create or update.",
+                        "items": {
+                          "properties": {
+                            "content": {
+                              "description": "Todo description. Required when creating a new todo.",
+                              "type": "STRING"
+                            },
+                            "id": {
+                              "description": "Stable todo identifier.",
+                              "type": "STRING"
+                            },
+                            "status": {
+                              "description": "Current todo status.",
+                              "enum": [
+                                "pending",
+                                "in_progress",
+                                "completed",
+                                "cancelled"
+                              ],
+                              "type": "STRING"
+                            }
+                          },
+                          "required": ["id", "status"],
+                          "type": "OBJECT"
+                        },
+                        "type": "ARRAY"
+                      }
+                    },
+                    "required": ["merge", "todos"],
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "Ask a short multiple-choice questionnaire when you need missing info before continuing.",
+                  "name": "ask_user_question",
+                  "parameters": {
+                    "properties": {
+                      "questions": {
+                        "items": {
+                          "properties": {
+                            "allowCustomAnswer": {
+                              "type": "BOOLEAN"
+                            },
+                            "choices": {
+                              "items": {
+                                "type": "STRING"
+                              },
+                              "type": "ARRAY"
+                            },
+                            "prompt": {
+                              "type": "STRING"
+                            }
+                          },
+                          "required": ["prompt", "choices"],
+                          "type": "OBJECT"
+                        },
+                        "type": "ARRAY"
+                      },
+                      "title": {
+                        "type": "STRING"
+                      }
+                    },
+                    "required": ["title", "questions"],
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "Search the organization's shared memory (pinned facts, recent dated log, and archives) for facts relevant to the query. Use this when the injected org memory summary is missing detail or when you need the full history.",
+                  "name": "org_memory_search",
+                  "parameters": {
+                    "properties": {
+                      "query": {
+                        "description": "Text to search for across org memory bullets.",
+                        "type": "STRING"
+                      }
+                    },
+                    "required": ["query"],
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "List the organization's live org memory markdown (pinned and recent-log sections). Returns the current MEMORY.md content.",
+                  "name": "org_memory_list",
+                  "parameters": {
+                    "properties": {},
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "Propose a durable org-wide fact (team conventions, policies, shared context) for admin approval. Never propose secrets, credentials, API keys, tokens, or PII. Facts require admin approval before appearing in org memory. Do not re-propose if the tool reports the fact is already pending, pinned, or in the recent log.",
+                  "name": "propose_org_memory",
+                  "parameters": {
+                    "properties": {
+                      "bullet": {
+                        "description": "A single concise org-wide fact to propose for admin review.",
+                        "type": "STRING"
+                      }
+                    },
+                    "required": ["bullet"],
+                    "type": "OBJECT"
+                  }
+                }
+              ]
+            }
+          ],
+          "generationConfig": {}
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+      },
+      "response": {
+        "body": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "functionCall": {
+                      "name": "write_file",
+                      "args": {
+                        "content": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4",
+                        "path": "artifacts/provider-proof.txt"
+                      },
+                      "id": "call_3900910"
+                    },
+                    "thoughtSignature": "Et4ECtsEARFNMg+bvusNmFiXl0Z5vVMnNpzduIGphqN4NmfJ57cafMCyIWE2oYcnyqipnC9+/ZPzobOolpT9o4t0wXX9NLNbKuq4HcbHmP+cGHUnu1oH7GFTrrdV+DKZw02ZROX4P4P5vt5Ymp3kK8TIz+NNVQaS+hcELh6wFQpyLFI4BQmBtWP0Z88okrcfogZLiNSiOoQLjyzUDoS1ZUN8JKHXUTI5s2gFI0CHQhhkhsYUgcgAc/5rAgpPBdb6SumT2W1b7D6sDLksWzWv2g5QbPjzgfgJIv6etT2+9sANkYgVuBIcujCqC6nhUhmG5S/Q/nPG44fKCJbzJ4xschVSfqIyqfVSiVhUFNyQvDtfni4n0GAm4QoN7sh4ZaIoFBirLEMZ93DWuXo+tpaEAFZYpkqwV+k8o+IZjHha83IWIMfxPJeI3nQuuKJEwa4nraw2BHsbUJl0t8HOWWcsjqALDJhu4iwK1aKFwKhovHjqmzQdWpcfJq/Z9P3rpU9INsO2i79JUbf4vYfB+R3r9N1ki5zd81kBYQHzaYwpMMo4GwSXB+MmofLVtmI4ODMysTzaGogAuBU+HY52hHPQLJPKDfFkhyjupUoAaJHgBEZv5e2o6zRmdece4gZPY2Y7jzAg++5VORf9vtBOoAK/9bcF5UCZ1eIYVV7GlX/Rr0b96FUzYoLFXIDYYSfL8hh7Eo4I47IeE2YKn7ghvRDVKjx4Lkd2f45KbcgdZc/1iy/GEujPbUFyGqpCQRnwxffgW8dRe10NJ+uKsD7UmnRX9MgUQJ/Fd/EMsA7QtAW+9J4n"
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0,
+              "finishMessage": "Model generated function call(s)."
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 2124,
+            "candidatesTokenCount": 66,
+            "totalTokenCount": 2398,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 2124
+              }
+            ],
+            "thoughtsTokenCount": 208,
+            "serviceTier": "standard"
+          },
+          "modelVersion": "gemini-3-flash-preview",
+          "responseId": "hSKdapLIL4Otg8UP-JC52Qc"
+        },
+        "encoding": "json",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "body": {
+          "contents": [
+            {
+              "parts": [
+                {
+                  "text": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4 (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions."
+                }
+              ],
+              "role": "user"
+            },
+            {
+              "parts": [
+                {
+                  "functionCall": {
+                    "id": "call_3900910",
+                    "args": {
+                      "content": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4",
+                      "path": "artifacts/provider-proof.txt"
+                    },
+                    "name": "write_file"
+                  },
+                  "thoughtSignature": "Et4ECtsEARFNMg+bvusNmFiXl0Z5vVMnNpzduIGphqN4NmfJ57cafMCyIWE2oYcnyqipnC9+/ZPzobOolpT9o4t0wXX9NLNbKuq4HcbHmP+cGHUnu1oH7GFTrrdV+DKZw02ZROX4P4P5vt5Ymp3kK8TIz+NNVQaS+hcELh6wFQpyLFI4BQmBtWP0Z88okrcfogZLiNSiOoQLjyzUDoS1ZUN8JKHXUTI5s2gFI0CHQhhkhsYUgcgAc/5rAgpPBdb6SumT2W1b7D6sDLksWzWv2g5QbPjzgfgJIv6etT2+9sANkYgVuBIcujCqC6nhUhmG5S/Q/nPG44fKCJbzJ4xschVSfqIyqfVSiVhUFNyQvDtfni4n0GAm4QoN7sh4ZaIoFBirLEMZ93DWuXo+tpaEAFZYpkqwV+k8o+IZjHha83IWIMfxPJeI3nQuuKJEwa4nraw2BHsbUJl0t8HOWWcsjqALDJhu4iwK1aKFwKhovHjqmzQdWpcfJq/Z9P3rpU9INsO2i79JUbf4vYfB+R3r9N1ki5zd81kBYQHzaYwpMMo4GwSXB+MmofLVtmI4ODMysTzaGogAuBU+HY52hHPQLJPKDfFkhyjupUoAaJHgBEZv5e2o6zRmdece4gZPY2Y7jzAg++5VORf9vtBOoAK/9bcF5UCZ1eIYVV7GlX/Rr0b96FUzYoLFXIDYYSfL8hh7Eo4I47IeE2YKn7ghvRDVKjx4Lkd2f45KbcgdZc/1iy/GEujPbUFyGqpCQRnwxffgW8dRe10NJ+uKsD7UmnRX9MgUQJ/Fd/EMsA7QtAW+9J4n"
+                }
+              ],
+              "role": "model"
+            },
+            {
+              "parts": [
+                {
+                  "functionResponse": {
+                    "id": "call_3900910",
+                    "name": "write_file",
+                    "response": {
+                      "bytesWritten": 47,
+                      "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-EFGHJZ/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt",
+                      "artifacts": [
+                        {
+                          "createdAt": "2026-09-06T08:21:27.349Z",
+                          "filename": "provider-proof.txt",
+                          "id": "cWRyH7MTiXru",
+                          "mimeType": "text/plain",
+                          "path": "artifacts/provider-proof.txt",
+                          "sessionId": "7U5xPiP3kAItQ6HzZxuqU",
+                          "sizeBytes": 47
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "role": "user"
+            }
+          ],
+          "systemInstruction": {
+            "parts": [
+              {
+                "text": "Execute the requested file verification using your assigned tools. Do not delegate.\n\n# Atlas documentation\nFor Atlas product questions, web_fetch https://kungfufafa.github.io/atlas/llms.txt, then web_fetch the matching .md page from that index. Do not use knowledge_base_search for inherited docs.\n\n## Work quality (mandatory)\nYou are a capable working agent — not a junior copy of Super Agent. Super Agent orchestrates the workspace (profiles, host tools, shell). You finish user work with the tools you have, at the same quality bar.\n\n- Finish the request in this turn with a ready-to-use result. Do not leave an outline, a teaser, or a promise to do it later.\n- Use assigned tools before you reply when they would improve accuracy or completeness (search, fetch, research, knowledge base, browser, files, documents, slides, spreadsheets, python).\n- Prefer evidence over memory for current, local, or org-specific facts. Include the links you used.\n- Choose sensible defaults (format, layout, count, tone) instead of asking extra questions unless a missing fact would make the answer wrong.\n- Durable and interactive deliverables (HTML, SVG, Mermaid, React/JSX, reports, docs, decks, spreadsheets) belong under artifacts/ via write_file / write_docx / write_pptx / spreadsheet — not pasted as the whole answer in chat. The chat reply is a short summary; the file is the product.\n- After tools, summarize the outcome clearly: key findings, links, and where files were saved.\n- If a needed capability is missing, say so. Do not invent tools, URLs, or results.\n- Stay in this profile's identity. Do not create profiles, author host tools, or use bash unless those tools are actually assigned.\n- Sound like this profile in the room, not a generic chatbot overlay.\n- Work as their personal assistant: use USER.md and MEMORY.md so they do not repeat themselves; deliver the file, answer, or next step in this turn.\nTalk like a capable personal assistant: direct, specific, no filler openers.\n\n# Presence\nYou are their assistant in this conversation now. This turn is live — do the work here rather than describing a plan to do it later.\nSkip empty openers such as \"Great question!\", \"I'd be happy to help!\", and \"Absolutely!\". Answer.\nBe concise in wording and complete in the work: finish the request in this turn with a ready-to-use answer, not a thin outline, a teaser, or a promise to do the work later.\nIf assigned tools would make the answer better, use them before you reply.\nChoose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.\nWhen follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.\nAlways focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics.\n\nThe user's timezone is UTC.\n\nYou have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.\nAtlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.\nIf a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work.\nUse todo_write only when the work genuinely needs multiple todos, such as complex requests with 3+ distinct steps.\nDo not call todo_write for a single-step request or when the plan would contain only one todo.\nKeep exactly one todo in_progress at a time, mark todos completed immediately after finishing them, and use merge: true for incremental updates.\nUse merge: false only when replacing the entire task plan.\nWhen an active task plan is present in your context, continue unfinished tasks on the next turn before taking on new work unless the user changes direction.\nUse ask_user_question when you need missing information before you can continue.\nAsk one concise batch at a time, prefer predefined choices when possible, and wait for the user's answers before proceeding.\nSkills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.\nWhen producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat.\nThat includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.\nThe chat reply is a short summary. The web UI opens a live preview for these files.\nDurable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.\nDo not use artifacts/ for soul files or MEMORY.md.\n\nCurrent local time: Sunday, September 6, 2026 at 8:21 AM UTC."
+              }
+            ],
+            "role": "user"
+          },
+          "tools": [
+            {
+              "functionDeclarations": [
+                {
+                  "description": "Read text from a file in the active profile workspace. Word .docx files are converted to Markdown. Use offset/limit for large files.",
+                  "name": "read_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "limit": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "offset": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["path"]
+                  }
+                },
+                {
+                  "description": "Write text content to a file in the active profile workspace. Creates parent directories if needed. Cannot produce Word documents — use write_docx for .docx.",
+                  "name": "write_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "content": {
+                        "type": "STRING"
+                      },
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["content", "path"]
+                  }
+                },
+                {
+                  "description": "Create or update the internal task plan for complex multi-step work. Use when a request has 3+ distinct steps. Initialize at the start, keep one task in_progress, and mark tasks completed as you finish them.",
+                  "name": "todo_write",
+                  "parameters": {
+                    "properties": {
+                      "merge": {
+                        "description": "If true, update todos by id. If false, replace the entire task plan.",
+                        "type": "BOOLEAN"
+                      },
+                      "todos": {
+                        "description": "Todo items to create or update.",
+                        "items": {
+                          "properties": {
+                            "content": {
+                              "description": "Todo description. Required when creating a new todo.",
+                              "type": "STRING"
+                            },
+                            "id": {
+                              "description": "Stable todo identifier.",
+                              "type": "STRING"
+                            },
+                            "status": {
+                              "description": "Current todo status.",
+                              "enum": [
+                                "pending",
+                                "in_progress",
+                                "completed",
+                                "cancelled"
+                              ],
+                              "type": "STRING"
+                            }
+                          },
+                          "required": ["id", "status"],
+                          "type": "OBJECT"
+                        },
+                        "type": "ARRAY"
+                      }
+                    },
+                    "required": ["merge", "todos"],
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "Ask a short multiple-choice questionnaire when you need missing info before continuing.",
+                  "name": "ask_user_question",
+                  "parameters": {
+                    "properties": {
+                      "questions": {
+                        "items": {
+                          "properties": {
+                            "allowCustomAnswer": {
+                              "type": "BOOLEAN"
+                            },
+                            "choices": {
+                              "items": {
+                                "type": "STRING"
+                              },
+                              "type": "ARRAY"
+                            },
+                            "prompt": {
+                              "type": "STRING"
+                            }
+                          },
+                          "required": ["prompt", "choices"],
+                          "type": "OBJECT"
+                        },
+                        "type": "ARRAY"
+                      },
+                      "title": {
+                        "type": "STRING"
+                      }
+                    },
+                    "required": ["title", "questions"],
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "Search the organization's shared memory (pinned facts, recent dated log, and archives) for facts relevant to the query. Use this when the injected org memory summary is missing detail or when you need the full history.",
+                  "name": "org_memory_search",
+                  "parameters": {
+                    "properties": {
+                      "query": {
+                        "description": "Text to search for across org memory bullets.",
+                        "type": "STRING"
+                      }
+                    },
+                    "required": ["query"],
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "List the organization's live org memory markdown (pinned and recent-log sections). Returns the current MEMORY.md content.",
+                  "name": "org_memory_list",
+                  "parameters": {
+                    "properties": {},
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "Propose a durable org-wide fact (team conventions, policies, shared context) for admin approval. Never propose secrets, credentials, API keys, tokens, or PII. Facts require admin approval before appearing in org memory. Do not re-propose if the tool reports the fact is already pending, pinned, or in the recent log.",
+                  "name": "propose_org_memory",
+                  "parameters": {
+                    "properties": {
+                      "bullet": {
+                        "description": "A single concise org-wide fact to propose for admin review.",
+                        "type": "STRING"
+                      }
+                    },
+                    "required": ["bullet"],
+                    "type": "OBJECT"
+                  }
+                }
+              ]
+            }
+          ],
+          "generationConfig": {}
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+      },
+      "response": {
+        "body": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "functionCall": {
+                      "name": "read_file",
+                      "args": {
+                        "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-EFGHJZ/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt"
+                      },
+                      "id": "call_2596945"
+                    },
+                    "thoughtSignature": "EpoECpcEARFNMg+Iz42yVRuPau/S0ECQvaJG6lQTFhOUTdo/LzZIPHzD+o0EBHg3GriGA9DGjVyGCwJPS+N2gQfFQVrXPbql/xCsi16uHamj+ZklfLkNSSoVSdUDmzhNeQrjnHlrKELsd8FBIN+gHCFnRG9yNbHpBKYDcwn+tK3pfGq1HJ+0fcZ0qulUHA3yIAARZYrs86JI501cR95eL2reWgxTMUi13LJnPOJlAFS+bp2wyo5U11S0gvK+WUDLv9GNiinCYV/E9nCJTSHGobMGd9uM0ks10JjqY7ylehhwP1PFoQxZz3PWEHXoGyElBcM5zoWDjV5GuWKiJiHqUac7kumC1t7torwsDmLgpMNoY/4IOe/WJXtqjxAtbhOFZZUW+dmeqRWvxbSgzf5QzlhllLxRmfzxU5f1M9E67S00Gac4vA9dXQY3MTV4nB5R1j814uvZIw9S9gM9wDwR6R4jOOggaFm20T2vcTyH+03hT6Pq+orBQ5vC6v/FGv6BdVQNX/813A41gOrx+1QSmnaoRpYRMBC7u21NiEKZC1V98MPBp+VprXqkmO2JAunttAFlWYnUgflox55Px+tYBcZsNrsLUw2yoe63XxrPvXvAYCp8ZXTrn6BawZAnc+oHiKY+P4OXja3KYILgwmAwLXDDVIuvoRFfH2TRoIKvIkLpjA2Q/ZepJMGhSANSHh9WJ3rscwLql5lYkkFbSg=="
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0,
+              "finishMessage": "Model generated function call(s)."
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 2606,
+            "candidatesTokenCount": 100,
+            "totalTokenCount": 2846,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 2606
+              }
+            ],
+            "thoughtsTokenCount": 140,
+            "serviceTier": "standard"
+          },
+          "modelVersion": "gemini-3-flash-preview",
+          "responseId": "hyKdao_ZLJ-FjuMPvLLe-AY"
+        },
+        "encoding": "json",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "body": {
+          "contents": [
+            {
+              "parts": [
+                {
+                  "text": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4 (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions."
+                }
+              ],
+              "role": "user"
+            },
+            {
+              "parts": [
+                {
+                  "functionCall": {
+                    "id": "call_3900910",
+                    "args": {
+                      "content": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4",
+                      "path": "artifacts/provider-proof.txt"
+                    },
+                    "name": "write_file"
+                  },
+                  "thoughtSignature": "Et4ECtsEARFNMg+bvusNmFiXl0Z5vVMnNpzduIGphqN4NmfJ57cafMCyIWE2oYcnyqipnC9+/ZPzobOolpT9o4t0wXX9NLNbKuq4HcbHmP+cGHUnu1oH7GFTrrdV+DKZw02ZROX4P4P5vt5Ymp3kK8TIz+NNVQaS+hcELh6wFQpyLFI4BQmBtWP0Z88okrcfogZLiNSiOoQLjyzUDoS1ZUN8JKHXUTI5s2gFI0CHQhhkhsYUgcgAc/5rAgpPBdb6SumT2W1b7D6sDLksWzWv2g5QbPjzgfgJIv6etT2+9sANkYgVuBIcujCqC6nhUhmG5S/Q/nPG44fKCJbzJ4xschVSfqIyqfVSiVhUFNyQvDtfni4n0GAm4QoN7sh4ZaIoFBirLEMZ93DWuXo+tpaEAFZYpkqwV+k8o+IZjHha83IWIMfxPJeI3nQuuKJEwa4nraw2BHsbUJl0t8HOWWcsjqALDJhu4iwK1aKFwKhovHjqmzQdWpcfJq/Z9P3rpU9INsO2i79JUbf4vYfB+R3r9N1ki5zd81kBYQHzaYwpMMo4GwSXB+MmofLVtmI4ODMysTzaGogAuBU+HY52hHPQLJPKDfFkhyjupUoAaJHgBEZv5e2o6zRmdece4gZPY2Y7jzAg++5VORf9vtBOoAK/9bcF5UCZ1eIYVV7GlX/Rr0b96FUzYoLFXIDYYSfL8hh7Eo4I47IeE2YKn7ghvRDVKjx4Lkd2f45KbcgdZc/1iy/GEujPbUFyGqpCQRnwxffgW8dRe10NJ+uKsD7UmnRX9MgUQJ/Fd/EMsA7QtAW+9J4n"
+                }
+              ],
+              "role": "model"
+            },
+            {
+              "parts": [
+                {
+                  "functionResponse": {
+                    "id": "call_3900910",
+                    "name": "write_file",
+                    "response": {
+                      "bytesWritten": 47,
+                      "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-EFGHJZ/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt",
+                      "artifacts": [
+                        {
+                          "createdAt": "2026-09-06T08:21:27.349Z",
+                          "filename": "provider-proof.txt",
+                          "id": "cWRyH7MTiXru",
+                          "mimeType": "text/plain",
+                          "path": "artifacts/provider-proof.txt",
+                          "sessionId": "7U5xPiP3kAItQ6HzZxuqU",
+                          "sizeBytes": 47
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "role": "user"
+            },
+            {
+              "parts": [
+                {
+                  "functionCall": {
+                    "id": "call_2596945",
+                    "args": {
+                      "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-EFGHJZ/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt"
+                    },
+                    "name": "read_file"
+                  },
+                  "thoughtSignature": "EpoECpcEARFNMg+Iz42yVRuPau/S0ECQvaJG6lQTFhOUTdo/LzZIPHzD+o0EBHg3GriGA9DGjVyGCwJPS+N2gQfFQVrXPbql/xCsi16uHamj+ZklfLkNSSoVSdUDmzhNeQrjnHlrKELsd8FBIN+gHCFnRG9yNbHpBKYDcwn+tK3pfGq1HJ+0fcZ0qulUHA3yIAARZYrs86JI501cR95eL2reWgxTMUi13LJnPOJlAFS+bp2wyo5U11S0gvK+WUDLv9GNiinCYV/E9nCJTSHGobMGd9uM0ks10JjqY7ylehhwP1PFoQxZz3PWEHXoGyElBcM5zoWDjV5GuWKiJiHqUac7kumC1t7torwsDmLgpMNoY/4IOe/WJXtqjxAtbhOFZZUW+dmeqRWvxbSgzf5QzlhllLxRmfzxU5f1M9E67S00Gac4vA9dXQY3MTV4nB5R1j814uvZIw9S9gM9wDwR6R4jOOggaFm20T2vcTyH+03hT6Pq+orBQ5vC6v/FGv6BdVQNX/813A41gOrx+1QSmnaoRpYRMBC7u21NiEKZC1V98MPBp+VprXqkmO2JAunttAFlWYnUgflox55Px+tYBcZsNrsLUw2yoe63XxrPvXvAYCp8ZXTrn6BawZAnc+oHiKY+P4OXja3KYILgwmAwLXDDVIuvoRFfH2TRoIKvIkLpjA2Q/ZepJMGhSANSHh9WJ3rscwLql5lYkkFbSg=="
+                }
+              ],
+              "role": "model"
+            },
+            {
+              "parts": [
+                {
+                  "functionResponse": {
+                    "id": "call_2596945",
+                    "name": "read_file",
+                    "response": {
+                      "bytesRead": 47,
+                      "content": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4",
+                      "endLine": 1,
+                      "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-EFGHJZ/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt",
+                      "startLine": 1,
+                      "totalLines": 1,
+                      "truncated": false
+                    }
+                  }
+                }
+              ],
+              "role": "user"
+            }
+          ],
+          "systemInstruction": {
+            "parts": [
+              {
+                "text": "Execute the requested file verification using your assigned tools. Do not delegate.\n\n# Atlas documentation\nFor Atlas product questions, web_fetch https://kungfufafa.github.io/atlas/llms.txt, then web_fetch the matching .md page from that index. Do not use knowledge_base_search for inherited docs.\n\n## Work quality (mandatory)\nYou are a capable working agent — not a junior copy of Super Agent. Super Agent orchestrates the workspace (profiles, host tools, shell). You finish user work with the tools you have, at the same quality bar.\n\n- Finish the request in this turn with a ready-to-use result. Do not leave an outline, a teaser, or a promise to do it later.\n- Use assigned tools before you reply when they would improve accuracy or completeness (search, fetch, research, knowledge base, browser, files, documents, slides, spreadsheets, python).\n- Prefer evidence over memory for current, local, or org-specific facts. Include the links you used.\n- Choose sensible defaults (format, layout, count, tone) instead of asking extra questions unless a missing fact would make the answer wrong.\n- Durable and interactive deliverables (HTML, SVG, Mermaid, React/JSX, reports, docs, decks, spreadsheets) belong under artifacts/ via write_file / write_docx / write_pptx / spreadsheet — not pasted as the whole answer in chat. The chat reply is a short summary; the file is the product.\n- After tools, summarize the outcome clearly: key findings, links, and where files were saved.\n- If a needed capability is missing, say so. Do not invent tools, URLs, or results.\n- Stay in this profile's identity. Do not create profiles, author host tools, or use bash unless those tools are actually assigned.\n- Sound like this profile in the room, not a generic chatbot overlay.\n- Work as their personal assistant: use USER.md and MEMORY.md so they do not repeat themselves; deliver the file, answer, or next step in this turn.\nTalk like a capable personal assistant: direct, specific, no filler openers.\n\n# Presence\nYou are their assistant in this conversation now. This turn is live — do the work here rather than describing a plan to do it later.\nSkip empty openers such as \"Great question!\", \"I'd be happy to help!\", and \"Absolutely!\". Answer.\nBe concise in wording and complete in the work: finish the request in this turn with a ready-to-use answer, not a thin outline, a teaser, or a promise to do the work later.\nIf assigned tools would make the answer better, use them before you reply.\nChoose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.\nWhen follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.\nAlways focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics.\n\nThe user's timezone is UTC.\n\nYou have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.\nAtlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.\nIf a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work.\nUse todo_write only when the work genuinely needs multiple todos, such as complex requests with 3+ distinct steps.\nDo not call todo_write for a single-step request or when the plan would contain only one todo.\nKeep exactly one todo in_progress at a time, mark todos completed immediately after finishing them, and use merge: true for incremental updates.\nUse merge: false only when replacing the entire task plan.\nWhen an active task plan is present in your context, continue unfinished tasks on the next turn before taking on new work unless the user changes direction.\nUse ask_user_question when you need missing information before you can continue.\nAsk one concise batch at a time, prefer predefined choices when possible, and wait for the user's answers before proceeding.\nSkills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.\nWhen producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat.\nThat includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.\nThe chat reply is a short summary. The web UI opens a live preview for these files.\nDurable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.\nDo not use artifacts/ for soul files or MEMORY.md.\n\nCurrent local time: Sunday, September 6, 2026 at 8:21 AM UTC."
+              }
+            ],
+            "role": "user"
+          },
+          "tools": [
+            {
+              "functionDeclarations": [
+                {
+                  "description": "Read text from a file in the active profile workspace. Word .docx files are converted to Markdown. Use offset/limit for large files.",
+                  "name": "read_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "limit": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "offset": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["path"]
+                  }
+                },
+                {
+                  "description": "Write text content to a file in the active profile workspace. Creates parent directories if needed. Cannot produce Word documents — use write_docx for .docx.",
+                  "name": "write_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "content": {
+                        "type": "STRING"
+                      },
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["content", "path"]
+                  }
+                },
+                {
+                  "description": "Create or update the internal task plan for complex multi-step work. Use when a request has 3+ distinct steps. Initialize at the start, keep one task in_progress, and mark tasks completed as you finish them.",
+                  "name": "todo_write",
+                  "parameters": {
+                    "properties": {
+                      "merge": {
+                        "description": "If true, update todos by id. If false, replace the entire task plan.",
+                        "type": "BOOLEAN"
+                      },
+                      "todos": {
+                        "description": "Todo items to create or update.",
+                        "items": {
+                          "properties": {
+                            "content": {
+                              "description": "Todo description. Required when creating a new todo.",
+                              "type": "STRING"
+                            },
+                            "id": {
+                              "description": "Stable todo identifier.",
+                              "type": "STRING"
+                            },
+                            "status": {
+                              "description": "Current todo status.",
+                              "enum": [
+                                "pending",
+                                "in_progress",
+                                "completed",
+                                "cancelled"
+                              ],
+                              "type": "STRING"
+                            }
+                          },
+                          "required": ["id", "status"],
+                          "type": "OBJECT"
+                        },
+                        "type": "ARRAY"
+                      }
+                    },
+                    "required": ["merge", "todos"],
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "Ask a short multiple-choice questionnaire when you need missing info before continuing.",
+                  "name": "ask_user_question",
+                  "parameters": {
+                    "properties": {
+                      "questions": {
+                        "items": {
+                          "properties": {
+                            "allowCustomAnswer": {
+                              "type": "BOOLEAN"
+                            },
+                            "choices": {
+                              "items": {
+                                "type": "STRING"
+                              },
+                              "type": "ARRAY"
+                            },
+                            "prompt": {
+                              "type": "STRING"
+                            }
+                          },
+                          "required": ["prompt", "choices"],
+                          "type": "OBJECT"
+                        },
+                        "type": "ARRAY"
+                      },
+                      "title": {
+                        "type": "STRING"
+                      }
+                    },
+                    "required": ["title", "questions"],
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "Search the organization's shared memory (pinned facts, recent dated log, and archives) for facts relevant to the query. Use this when the injected org memory summary is missing detail or when you need the full history.",
+                  "name": "org_memory_search",
+                  "parameters": {
+                    "properties": {
+                      "query": {
+                        "description": "Text to search for across org memory bullets.",
+                        "type": "STRING"
+                      }
+                    },
+                    "required": ["query"],
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "List the organization's live org memory markdown (pinned and recent-log sections). Returns the current MEMORY.md content.",
+                  "name": "org_memory_list",
+                  "parameters": {
+                    "properties": {},
+                    "type": "OBJECT"
+                  }
+                },
+                {
+                  "description": "Propose a durable org-wide fact (team conventions, policies, shared context) for admin approval. Never propose secrets, credentials, API keys, tokens, or PII. Facts require admin approval before appearing in org memory. Do not re-propose if the tool reports the fact is already pending, pinned, or in the recent log.",
+                  "name": "propose_org_memory",
+                  "parameters": {
+                    "properties": {
+                      "bullet": {
+                        "description": "A single concise org-wide fact to propose for admin review.",
+                        "type": "STRING"
+                      }
+                    },
+                    "required": ["bullet"],
+                    "type": "OBJECT"
+                  }
+                }
+              ]
+            }
+          ],
+          "generationConfig": {}
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+      },
+      "response": {
+        "body": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "text": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4"
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 3013,
+            "candidatesTokenCount": 39,
+            "totalTokenCount": 3052,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 3013
+              }
+            ],
+            "serviceTier": "standard"
+          },
+          "modelVersion": "gemini-3-flash-preview",
+          "responseId": "iSKdasS9J8Kig8UPlZv1yAg"
+        },
+        "encoding": "json",
+        "status": 200
+      }
+    }
+  ]
+}

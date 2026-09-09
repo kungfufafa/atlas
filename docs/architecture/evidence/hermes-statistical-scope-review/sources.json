@@ -1,0 +1,30 @@
+{
+  "createdAt": "2026-09-06T17:24:26.200357+00:00",
+  "scope": "Source-only prospective statistical planning review of current native MiMo controls",
+  "globalBlindingClaim": false,
+  "priorContext": "Earlier DeepSeek development/native-memory evidence and offline instrumentation results were inherited.",
+  "newLiveMiMoScoredOutcomesRead": false,
+  "holdoutTaskContentsRead": false,
+  "testsOrSimulationsRun": false,
+  "inferenceCalls": 0,
+  "frozenControlsChanged": false,
+  "assessment": "No frozen-definition discrepancy identified; adequacy/coverage/power for formal population NI or superiority not established by count/nondegeneracy checks alone.",
+  "sources": {
+    "docs/architecture/hermes-memory-mimo-preregistration.md": {
+      "lines": [85, 89, 129, 131, 133],
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/hermes-memory-mimo-preregistration.md",
+      "sha256": "4cc1b37cc5c155284181ba0f23b7715744cf35c6a34119d791e2b4f684580914"
+    },
+    "docs/architecture/hermes-native-files-mimo-preregistration.md": {
+      "lines": [77, 78, 121, 123, 125],
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/hermes-native-files-mimo-preregistration.md",
+      "sha256": "b6bdbd0d5a820903007fea28af1abfc72e3f7906ac7e7eeea20cdc69589766eb"
+    },
+    "scripts/harness-native-mimo-v1/product-analysis.ts": {
+      "lines": [212, 230, 239, 567, 908, 936, 945, 964, 968, 991, 995, 1011],
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/product-analysis.ts",
+      "sha256": "742950ec31c46ad2ae796e5997a13f0750abe456ea2d5d9135858c2e89abac2a"
+    }
+  },
+  "reviewSha256": "edaacc68a2edf842762f8f2d77cba648fe1fd5679cc2ce5930f8daee2d4b1cd1"
+}

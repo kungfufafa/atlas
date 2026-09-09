@@ -1,0 +1,289 @@
+import { expect, test } from "bun:test";
+import type {
+  GenerateChatInput,
+  ProviderClient,
+  ToolDefinition,
+} from "@atlas/core";
+import { createAgentHarness } from "./index";
+
+function fixture(
+  kind: "stall" | "iterate" | "native-stop" | "native-natural" | "native-limit"
+) {
+  let requests = 0;
+  let effects = 0;
+  let ordinary = false;
+  let finalError: Error | undefined;
+  const finalText = "Observed results are saved; remaining work is unfinished.";
+  const tool: ToolDefinition = {
+    description: "Inspect current state",
+    name: "read_state",
+    parameters: { properties: {}, type: "object" },
+    async run() {
+      effects += 1;
+      return {
+        step: kind === "iterate" || kind === "native-limit" ? effects : 0,
+      };
+    },
+  };
+  async function generate(input: GenerateChatInput) {
+    requests += 1;
+    const end = () => ({
+      assistantMessage: { content: finalText, role: "assistant" as const },
+      content: finalText,
+      toolCalls: [],
+      usage: { inputTokens: 3, outputTokens: 2, totalTokens: 5 },
+    });
+    if (ordinary) {
+      return end();
+    }
+    if (!input.tools) {
+      if (finalError) {
+        throw finalError;
+      }
+      return end();
+    }
+    if (kind.startsWith("native")) {
+      for (
+        let index = 0;
+        index <
+        (kind === "native-limit" ? 101 : kind === "native-stop" ? 5 : 4);
+        index += 1
+      ) {
+        await input.executeToolCall!({
+          arguments: {},
+          id: "native-" + index,
+          name: "read_state",
+        });
+      }
+      return end();
+    }
+    const toolCalls = [
+      { arguments: {}, id: "call-" + requests, name: "read_state" },
+    ];
+    return {
+      assistantMessage: {
+        content: "Inspecting.",
+        role: "assistant" as const,
+        toolCalls,
+      },
+      content: "Inspecting.",
+      toolCalls,
+      usage: { inputTokens: 3, outputTokens: 2, totalTokens: 5 },
+    };
+  }
+  const provider: ProviderClient = {
+    generateChat: generate,
+    async generateText() {
+      return { content: "unused" };
+    },
+    name: "openai_compatible",
+    async streamChat(input, handlers) {
+      const result = await generate(input);
+      handlers.onChunk(result.content);
+      return result;
+    },
+  };
+  const usages: unknown[] = [];
+  const endings: string[] = [];
+  const session = createAgentHarness({
+    provider,
+    tools: [tool],
+  }).createChatSession({
+    toolContext: {
+      async onToolTurnEnd(_id, status) {
+        endings.push(status);
+      },
+      recordTurnUsage: (usage) => usages.push(usage),
+      runId: "test-run",
+    },
+  });
+  return {
+    counts: () => ({ effects, requests }),
+    endings,
+    failFinal: (error: Error) => {
+      finalError = error;
+    },
+    finalText,
+    session,
+    succeed: () => {
+      ordinary = true;
+    },
+    usages,
+  };
+}
+
+test.each(["send", "stream"] as const)(
+  "%s preserves strings/history and reports one typed stop only for that invocation",
+  async (mode) => {
+    const f = fixture("stall");
+    const reasons: string[] = [];
+    const chunks: string[] = [];
+    const options = {
+      onToolLoopStop: (reason: string) => {
+        reasons.push(reason);
+      },
+    };
+    const output =
+      mode === "send"
+        ? await f.session.send("Observe", options)
+        : await f.session.sendStream(
+            "Observe",
+            { onChunk: (chunk) => chunks.push(chunk) },
+            options
+          );
+    expect(output).toBe(f.finalText);
+    expect(reasons).toEqual(["no_progress"]);
+    expect(f.counts()).toEqual({ effects: 4, requests: 5 });
+    expect(
+      f.session.getHistory().filter((m) => m.role === "tool")
+    ).toHaveLength(4);
+    expect(f.session.getHistory().at(-1)?.content).toBe(f.finalText);
+    expect(f.usages).toHaveLength(5);
+    expect(f.endings).toEqual(["completed"]);
+    if (mode === "stream") {
+      expect(chunks.join("")).toContain(f.finalText);
+    }
+    f.succeed();
+    const next: string[] = [];
+    expect(
+      await f.session.send("Next invocation", {
+        onToolLoopStop: (reason) => {
+          next.push(reason);
+        },
+      })
+    ).toBe(f.finalText);
+    expect(next).toEqual([]);
+  }
+);
+
+test("iteration limit has a distinct typed reason without additional generation", async () => {
+  const f = fixture("iterate");
+  const reasons: string[] = [];
+  expect(
+    await f.session.send("Work", {
+      onToolLoopStop: (reason) => {
+        reasons.push(reason);
+      },
+    })
+  ).toBe(f.finalText);
+  expect(reasons).toEqual(["iteration_limit"]);
+  expect(f.counts()).toEqual({ effects: 100, requests: 101 });
+  expect(f.usages).toHaveLength(101);
+});
+
+test.each(["native-stop", "native-natural", "native-limit"] as const)(
+  "%s distinguishes rejected additional dispatch from a natural finish",
+  async (kind) => {
+    const f = fixture(kind);
+    const reasons: string[] = [];
+    expect(
+      await f.session.send("Work", {
+        onToolLoopStop: (reason) => {
+          reasons.push(reason);
+        },
+      })
+    ).toBe(f.finalText);
+    expect(reasons).toEqual(
+      kind === "native-limit"
+        ? ["iteration_limit"]
+        : kind === "native-stop"
+          ? ["no_progress"]
+          : []
+    );
+    expect(f.counts()).toEqual({
+      effects: kind === "native-limit" ? 100 : 4,
+      requests: kind === "native-natural" ? 1 : 2,
+    });
+    expect(
+      f.session.getHistory().filter((m) => m.role === "tool")
+    ).toHaveLength(kind === "native-limit" ? 100 : 4);
+  }
+);
+
+test.each([false, true])(
+  "observer failure does not replace final output, usage or cleanup (async=%s)",
+  async (asyncFailure) => {
+    const f = fixture("stall");
+    const error = new Error("Observer disconnected");
+    let observed = 0;
+    expect(
+      await f.session.send("Observe", {
+        onToolLoopStop: () => {
+          observed += 1;
+          if (asyncFailure) {
+            return Promise.reject(error);
+          }
+          throw error;
+        },
+      })
+    ).toBe(f.finalText);
+    await Promise.resolve();
+    expect(observed).toBe(1);
+    expect(f.usages).toHaveLength(5);
+    expect(f.endings).toEqual(["completed"]);
+  }
+);
+
+test.each(["send", "stream"] as const)(
+  "%s failed finalization retains original error and completed effects",
+  async (mode) => {
+    const f = fixture("stall");
+    const error = new Error("Final provider failed");
+    f.failFinal(error);
+    const reasons: string[] = [];
+    const chunks: string[] = [];
+    const options = {
+      onToolLoopStop: (reason: string) => {
+        reasons.push(reason);
+      },
+    };
+    const run =
+      mode === "send"
+        ? f.session.send("Observe", options)
+        : f.session.sendStream(
+            "Observe",
+            { onChunk: (chunk) => chunks.push(chunk) },
+            options
+          );
+    await expect(run).rejects.toBe(error);
+    if (mode === "stream") {
+      expect(chunks).toHaveLength(4);
+      expect(chunks).not.toContain(f.finalText);
+    }
+    expect(reasons).toEqual(["no_progress"]);
+    expect(f.session.getHistory().at(-1)?.role).toBe("tool");
+    expect(f.counts()).toEqual({ effects: 4, requests: 5 });
+    expect(f.usages).toHaveLength(4);
+    expect(f.endings).toEqual(["failed"]);
+  }
+);
+
+test.each(["send", "stream"] as const)(
+  "%s cancellation after stop prevents finalization and retains tool evidence",
+  async (mode) => {
+    const f = fixture("stall");
+    const controller = new AbortController();
+    const error = new Error("Cancelled by owner");
+    const chunks: string[] = [];
+    const options = {
+      onToolLoopStop: () => controller.abort(error),
+      signal: controller.signal,
+    };
+    const run =
+      mode === "send"
+        ? f.session.send("Observe", options)
+        : f.session.sendStream(
+            "Observe",
+            { onChunk: (chunk) => chunks.push(chunk) },
+            options
+          );
+    await expect(run).rejects.toBe(error);
+    if (mode === "stream") {
+      expect(chunks).toHaveLength(4);
+    }
+    expect(f.counts()).toEqual({ effects: 4, requests: 4 });
+    expect(f.session.getHistory().at(-1)?.role).toBe("tool");
+    expect(f.usages).toHaveLength(4);
+    expect(f.endings).toEqual(["cancelled"]);
+  }
+);

@@ -1,0 +1,116 @@
+{
+  "scope": "Frozen development fixtures and frozen-hash-matching task/oracle source only; no holdout or execution outcomes read",
+  "developmentSha256": "cb21ace6119f18f8ebed19de0b397c7be3f7e4fe3e42aa39086a129fb094d22d",
+  "independentlyRecomputedFixtures": 36,
+  "expectedCalculationsConsistent": true,
+  "fullArtifactContentRequiredInFinal": [
+    {
+      "id": "development:missing_evidence:3464653518",
+      "family": "missing_evidence",
+      "artifactFinalExactlyEqual": true
+    },
+    {
+      "id": "development:missing_evidence:674707535",
+      "family": "missing_evidence",
+      "artifactFinalExactlyEqual": true
+    },
+    {
+      "id": "development:missing_evidence:1249310751",
+      "family": "missing_evidence",
+      "artifactFinalExactlyEqual": true
+    },
+    {
+      "id": "development:invalid_path_recovery:1057376266",
+      "family": "invalid_path_recovery",
+      "artifactFinalExactlyEqual": true
+    },
+    {
+      "id": "development:invalid_path_recovery:2312592129",
+      "family": "invalid_path_recovery",
+      "artifactFinalExactlyEqual": true
+    },
+    {
+      "id": "development:invalid_path_recovery:2988740947",
+      "family": "invalid_path_recovery",
+      "artifactFinalExactlyEqual": true
+    },
+    {
+      "id": "development:linked_workflow:3367244925",
+      "family": "linked_workflow",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:linked_workflow:5318081",
+      "family": "linked_workflow",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:linked_workflow:4082347135",
+      "family": "linked_workflow",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:explicit_correction:178787654",
+      "family": "explicit_correction",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:explicit_correction:1928623996",
+      "family": "explicit_correction",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:explicit_correction:1679410104",
+      "family": "explicit_correction",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:portable_memory_application:3089998825",
+      "family": "portable_memory_application",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:portable_memory_application:133139522",
+      "family": "portable_memory_application",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:portable_memory_application:3462501014",
+      "family": "portable_memory_application",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:source_latest_policy:3797653785",
+      "family": "source_latest_policy",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:source_latest_policy:3931310535",
+      "family": "source_latest_policy",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:source_latest_policy:2373074706",
+      "family": "source_latest_policy",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:source_grounded_comparison:1108489308",
+      "family": "source_grounded_comparison",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:source_grounded_comparison:1148524795",
+      "family": "source_grounded_comparison",
+      "artifactFinalExactlyEqual": false
+    },
+    {
+      "id": "development:source_grounded_comparison:1215152541",
+      "family": "source_grounded_comparison",
+      "artifactFinalExactlyEqual": false
+    }
+  ],
+  "ambiguousProcessedStepsCountFamily": "linked_workflow",
+  "scriptsChanged": false,
+  "scoresChanged": false
+}

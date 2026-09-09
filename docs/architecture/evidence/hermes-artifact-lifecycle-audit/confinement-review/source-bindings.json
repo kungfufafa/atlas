@@ -1,0 +1,73 @@
+{
+  "at": "2026-09-06T19:28:08.256378+00:00",
+  "scope": "Additive read-only source-bound review, not a runtime security proof",
+  "sourceFiles": [
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/context.ts",
+      "sha256": "80a1bf8241cfe6d9205c88d7566f50af862f339f27eb77feae6bbbf4abfbc833"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/bash.ts",
+      "sha256": "20c74e8a143b3560a77af8a00d9e46a15846af7afb7d87e7dc7ca184e12652e6"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/python-execute-tool.ts",
+      "sha256": "c25b647c4bdad24bdee478f46956cdb7a725bca803429d5dd5ce11a0192a72f0"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/restricted-process.ts",
+      "sha256": "77985c02fdab7fe354fddde90c438c9494746e7b0232aa91a313acbbb9ab398a"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/restricted-process-linux.c",
+      "sha256": "225fe0d6ecbdc8d9865e986bfd17900222f03167d8ca34a7239a3e1436cc17e2"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/restricted-process-linux.js",
+      "sha256": "873a27ae6091fbbf6e4304a6d4718b5f2c654e80ce9249241b4a8497e94d2ea5"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/custom-tool-subprocess.ts",
+      "sha256": "36a7e19256dd8b7935601189bf776f0b8b2ac925f14e0ec31b5f1f9f93a71a4a"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/javascript-tool-loader.ts",
+      "sha256": "5a33208863910584ce049e2a23220d22ce13dfa37840ddb2e66faff0bc0ada5e"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/javascript-tool-runner.js",
+      "sha256": "c38d76e986d6e5cbd5a0877cef0e63ad987e24b57607020df81277cc2ec7ef8b"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/javascript-tool-sandbox-linux.c",
+      "sha256": "d896bb045e5c01286929c75622837ad652c8dae10eea7ff2ce2934a8c4c2599a"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/javascript-tool-sandbox-linux.js",
+      "sha256": "e606506fab0be13bbd4dad0bce24125fb8a22369a659c7154763834e57edc1fa"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/process-filesystem-isolation.test.ts",
+      "sha256": "5cbe48f7b24ffec9b2299df5853e4be50539f4da1970337ac69e1a569ba59833"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/process-network-isolation.test.ts",
+      "sha256": "9bf7d8484b0c35dbfa11a42790a94e97af12ee84408c55479e86466604a500c0"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/javascript-tool-loader.test.ts",
+      "sha256": "62b74d5d77d3edb71022990087e2cf1d246ab503cfe4a43d998d0fabc604e5c9"
+    }
+  ],
+  "reviewedDesign": {
+    "path": "/private/tmp/atlas-artifact-attribution-audit/publication-design.md",
+    "sha256": "1348b09332a5009d1895b634d86d10c1f7815126900a904e6bcacc7e37974292"
+  },
+  "review": {
+    "path": "/private/tmp/atlas-artifact-attribution-audit/confinement-review/review.md",
+    "sha256": "5387c0ac46623cbac792e69d7d1496c1d4126b3356646c2ed1e57d925102743b"
+  },
+  "testsRun": false,
+  "escapeExecution": false,
+  "sourceChanged": false
+}

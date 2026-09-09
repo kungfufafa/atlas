@@ -1,0 +1,6 @@
+{
+  "operation": "Read guessed metadata.json after successful pilot",
+  "error": "FileNotFoundError: batch uses another metadata filename",
+  "pilotResultUnaffected": true,
+  "noRerunOrScoreChange": true
+}

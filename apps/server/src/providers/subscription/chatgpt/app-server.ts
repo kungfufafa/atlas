@@ -1,9 +1,11 @@
 import {
   ATLAS_API_VERSION,
   type ChatCompletionResult,
+  computeActionHash,
   ensureDir,
   MAX_GENERATED_IMAGE_BYTES,
 } from "@atlas/core";
+import { captureProviderFailureEvidence } from "../../failure-evidence";
 import { resolveSubscriptionLaunch } from "../binary";
 import { buildSubscriptionRuntimeEnv, subscriptionRuntimeHome } from "../env";
 import {
@@ -36,6 +38,8 @@ const ISOLATED_CODEX_CONFIG = {
   web_search: "disabled",
 } as const;
 const DEFAULT_CODEX_IMAGE_MODEL = "gpt-image-2";
+const SUPPORTED_DYNAMIC_TOOLS_VERSION = "0.150.1";
+const CODEX_USER_AGENT_VERSION_RE = /^atlas\/([^\s]+)(?:\s|$)/;
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 const STRICT_BASE64_RE =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -109,9 +113,43 @@ export interface CodexTurnResult {
   usage?: CodexTurnUsage;
 }
 
+// Matches the experimental app-server protocol shipped in @openai/codex 0.150.1.
+// Atlas registers only function tools; native shell, MCP, and other builtins
+// remain controlled by the isolated thread configuration below.
+export interface CodexDynamicTool {
+  description: string;
+  inputSchema: unknown;
+  name: string;
+  type: "function";
+}
+
+export interface CodexDynamicToolCall {
+  arguments: Record<string, unknown>;
+  callId: string;
+  threadId: string;
+  tool: string;
+  turnId: string;
+}
+
+export interface CodexDynamicToolResult {
+  contentItems: (
+    | { text: string; type: "inputText" }
+    | { imageUrl: string; type: "inputImage" }
+    | { audioUrl: string; type: "inputAudio" }
+  )[];
+  success: boolean;
+}
+
+type CodexToolCallHandler = (
+  call: CodexDynamicToolCall,
+  signal: AbortSignal
+) => Promise<CodexDynamicToolResult>;
+
 export interface CodexAppServerOptions {
   client?: JsonRpcStdioClient;
   command?: string;
+  /** Protocol version of an injected, already initialized test transport. */
+  runtimeVersion?: string;
   turnTimeoutMs?: number;
 }
 
@@ -127,11 +165,17 @@ export class CodexAppServer {
   private readonly commandOverride?: string;
   private connecting: Promise<JsonRpcStdioClient> | null = null;
   private readonly turnTimeoutMs: number;
+  private toolRequestClient: JsonRpcStdioClient | null = null;
+  private readonly toolCallHandlers = new Map<string, CodexToolCallHandler>();
+  private readonly runtimeVersions = new WeakMap<JsonRpcStdioClient, string>();
 
   constructor(options: CodexAppServerOptions = {}) {
     this.client = options.client ?? null;
     this.commandOverride = options.command;
     this.turnTimeoutMs = options.turnTimeoutMs ?? DEFAULT_TURN_TIMEOUT_MS;
+    if (options.client && options.runtimeVersion) {
+      this.runtimeVersions.set(options.client, options.runtimeVersion);
+    }
   }
 
   isConnected(): boolean {
@@ -272,13 +316,21 @@ export class CodexAppServer {
   }
 
   async startThread(
-    options: CodexThreadOptions & { ephemeral?: boolean }
+    options: CodexThreadOptions & {
+      dynamicTools?: CodexDynamicTool[];
+      ephemeral?: boolean;
+    }
   ): Promise<string> {
-    const result = await this.request("thread/start", {
+    const client = await this.ensureClient();
+    if (options.dynamicTools !== undefined) {
+      this.assertStructuredToolsSupported(client);
+    }
+    const result = await client.request("thread/start", {
       approvalPolicy: "never",
       config: isolatedCodexConfig(options.imageGeneration === true),
       cwd: options.cwd,
       sandbox: "read-only",
+      ...(options.dynamicTools ? { dynamicTools: options.dynamicTools } : {}),
       ...(options.developerInstructions
         ? { developerInstructions: options.developerInstructions }
         : {}),
@@ -310,6 +362,7 @@ export class CodexAppServer {
     model?: string;
     onDelta?: (delta: string) => void;
     onThinking?: (delta: string) => void;
+    onToolCall?: CodexToolCallHandler;
     signal?: AbortSignal;
     summary?: "auto" | "concise" | "detailed" | "none";
     threadId: string;
@@ -317,16 +370,22 @@ export class CodexAppServer {
     if (options.signal?.aborted) {
       throw new Error("Turn cancelled.");
     }
-
     const client = await waitForTurnClient(this.ensureClient(), options.signal);
     if (options.signal?.aborted) {
       throw new Error("Turn cancelled.");
+    }
+    if (options.onToolCall) {
+      this.assertStructuredToolsSupported(client);
+    }
+    this.registerToolRequests(client);
+    if (this.toolCallHandlers.has(options.threadId)) {
+      throw new Error("A Codex turn is already active for this thread.");
     }
     let text = "";
     let thinking = "";
     const generatedImages: CodexGeneratedImage[] = [];
     const generatedImageIds = new Set<string>();
-    let usage: CodexTurnUsage | undefined;
+    let explicitTurnUsage: CodexTurnUsage | undefined;
     let contextUsage: CodexTurnResult["contextUsage"];
     let turnId: string | null = null;
     let settled = false;
@@ -336,8 +395,21 @@ export class CodexAppServer {
     let unsubscribe: () => void = () => undefined;
     let unsubscribeClose: () => void = () => undefined;
     let timeout: ReturnType<typeof setTimeout> | undefined;
+    let remainingMs = this.turnTimeoutMs;
+    let deadlineStartedAt = Date.now();
     let resolveCompletion: (value: CodexTurnResult) => void = () => undefined;
     let rejectCompletion: (error: Error) => void = () => undefined;
+    const toolController = new AbortController();
+    const toolCalls = new Map<
+      string,
+      { fingerprint: string; result: Promise<CodexDynamicToolResult> }
+    >();
+    let toolTail: Promise<unknown> = Promise.resolve();
+    let pendingToolCalls = 0;
+    let resolveTurnReady: (id: string | null) => void = () => undefined;
+    const turnReady = new Promise<string | null>((resolve) => {
+      resolveTurnReady = resolve;
+    });
 
     const waitForCompletion = new Promise<CodexTurnResult>(
       (resolve, reject) => {
@@ -347,6 +419,9 @@ export class CodexAppServer {
     );
 
     const cleanup = () => {
+      toolController.abort();
+      resolveTurnReady(null);
+      this.toolCallHandlers.delete(options.threadId);
       unsubscribe();
       unsubscribeClose();
       options.signal?.removeEventListener("abort", onAbort);
@@ -359,22 +434,37 @@ export class CodexAppServer {
         return;
       }
       interruptSent = true;
-      this.interruptTurn(options.threadId, turnId);
+      void client
+        .request("turn/interrupt", { threadId: options.threadId, turnId })
+        .catch(() => undefined);
     };
     const rejectTurn = (error: Error, shouldInterrupt = false) => {
-      if (shouldInterrupt) {
-        interruptRequired = true;
-        interruptTurnOnce();
-      }
       if (settled) {
         return;
       }
       settled = true;
+      interruptRequired = shouldInterrupt;
       cleanup();
-      rejectCompletion(error);
+      rejectCompletion(
+        captureProviderFailureEvidence(error, {
+          content: text,
+          contextUsage,
+          thinking,
+          toolInputFragments: [],
+          usage: explicitTurnUsage,
+        })
+      );
+      interruptTurnOnce();
     };
     const resolveTurn = () => {
       if (settled) {
+        return;
+      }
+      if (pendingToolCalls > 0) {
+        rejectTurn(
+          new Error("Codex completed a turn with unfinished Atlas tools."),
+          true
+        );
         return;
       }
       settled = true;
@@ -384,9 +474,74 @@ export class CodexAppServer {
         ...(generatedImages.length > 0 ? { generatedImages } : {}),
         text,
         thinking,
-        usage,
+        usage: explicitTurnUsage,
       });
     };
+    const executeTool = async (
+      call: CodexDynamicToolCall,
+      signal: AbortSignal,
+      previous: Promise<unknown>
+    ): Promise<CodexDynamicToolResult> => {
+      await previous;
+      const combinedSignal = AbortSignal.any([signal, toolController.signal]);
+      if (settled || combinedSignal.aborted || !options.onToolCall) {
+        throw new Error("Codex tool call has no active Atlas handler.");
+      }
+      try {
+        const result = await options.onToolCall(call, combinedSignal);
+        if (settled || combinedSignal.aborted) {
+          throw new Error("Codex tool call was cancelled.");
+        }
+        return result;
+      } catch (error) {
+        rejectTurn(
+          error instanceof Error ? error : new Error(String(error)),
+          true
+        );
+        throw error;
+      }
+    };
+    this.toolCallHandlers.set(options.threadId, async (call, signal) => {
+      const activeTurnId = await turnReady;
+      if (settled || !activeTurnId || call.turnId !== activeTurnId) {
+        throw new Error("Codex tool call does not belong to the active turn.");
+      }
+      const fingerprint = computeActionHash({
+        args: call.arguments,
+        tool: call.tool,
+      });
+      const previous = toolCalls.get(call.callId);
+      if (previous) {
+        if (previous.fingerprint !== fingerprint) {
+          const error = new Error(
+            "Codex reused a tool call id for another action."
+          );
+          rejectTurn(error, true);
+          throw error;
+        }
+        return previous.result;
+      }
+      if (pendingToolCalls === 0 && timeout !== undefined) {
+        clearTimeout(timeout);
+        timeout = undefined;
+        remainingMs = Math.max(
+          0,
+          remainingMs - (Date.now() - deadlineStartedAt)
+        );
+      }
+      pendingToolCalls += 1;
+      const result = executeTool(call, signal, toolTail).finally(() => {
+        pendingToolCalls -= 1;
+        if (!settled && pendingToolCalls === 0) {
+          armDeadline();
+        }
+      });
+      toolCalls.set(call.callId, { fingerprint, result });
+      // Keep mutating actions sequential. A failed callback settles the turn;
+      // queued callbacks check that state before dispatching another action.
+      toolTail = result.catch(() => undefined);
+      return result;
+    });
     const processNotification = (notification: JsonRpcNotification) => {
       const record = asRecord(notification.params);
       if (readString(record.threadId) !== options.threadId) {
@@ -432,10 +587,13 @@ export class CodexAppServer {
           generatedImages.push(generatedImage);
         }
       } else if (notification.method === "thread/tokenUsage/updated") {
-        usage = readUsage(notification.params) ?? usage;
         contextUsage = readContextUsage(notification.params);
       } else if (notification.method === "turn/completed") {
-        usage = readUsage(notification.params) ?? usage;
+        // tokenUsage.last is context occupancy; only explicit completion counters
+        // describe this turn's native-reported counters.
+        explicitTurnUsage = readUsage({
+          usage: notificationTurn.usage ?? record.usage,
+        });
         const status = readString(notificationTurn.status);
         if (status === "failed") {
           const error = asRecord(notificationTurn.error);
@@ -477,9 +635,13 @@ export class CodexAppServer {
       rejectTurn(error);
     });
     options.signal?.addEventListener("abort", onAbort, { once: true });
-    timeout = setTimeout(() => {
-      rejectTurn(new Error("Codex turn timed out."), true);
-    }, this.turnTimeoutMs);
+    const armDeadline = () => {
+      deadlineStartedAt = Date.now();
+      timeout = setTimeout(() => {
+        rejectTurn(new Error("Codex turn timed out."), true);
+      }, remainingMs);
+    };
+    armDeadline();
 
     void client
       .request("turn/start", {
@@ -501,6 +663,7 @@ export class CodexAppServer {
           rejectTurn(new Error("Codex did not return a turn id."));
           return;
         }
+        resolveTurnReady(turnId);
         interruptTurnOnce();
         if (settled) {
           return;
@@ -603,15 +766,33 @@ export class CodexAppServer {
     this.connecting = null;
   }
 
+  private registerToolRequests(client: JsonRpcStdioClient): void {
+    if (this.toolRequestClient === client) {
+      return;
+    }
+    this.toolRequestClient = client;
+    client.onRequest("item/tool/call", async (params, signal) => {
+      const call = readDynamicToolCall(params);
+      const handler = this.toolCallHandlers.get(call.threadId);
+      if (!handler) {
+        throw new Error("Codex tool call does not belong to an active thread.");
+      }
+      return await handler(call, signal);
+    });
+  }
+
+  private assertStructuredToolsSupported(client: JsonRpcStdioClient): void {
+    const version = this.runtimeVersions.get(client);
+    if (version !== SUPPORTED_DYNAMIC_TOOLS_VERSION) {
+      throw new Error(
+        `Atlas structured tools require the tested Codex ${SUPPORTED_DYNAMIC_TOOLS_VERSION} runtime; the connected runtime reported ${version ?? "an unknown version"}. Restore the bundled Codex dependency before retrying.`
+      );
+    }
+  }
+
   private async request(method: string, params?: unknown): Promise<unknown> {
     const client = await this.ensureClient();
     return client.request(method, params);
-  }
-
-  private interruptTurn(threadId: string, turnId: string): void {
-    void this.request("turn/interrupt", { threadId, turnId }).catch(
-      () => undefined
-    );
   }
 
   private async ensureClient(): Promise<JsonRpcStdioClient> {
@@ -648,20 +829,59 @@ export class CodexAppServer {
     );
     const client = new JsonRpcStdioClient(child);
     try {
-      await client.request("initialize", {
-        clientInfo: {
-          name: "atlas",
-          title: "Atlas",
-          version: String(ATLAS_API_VERSION),
-        },
-      });
-      client.notify("initialized");
+      const runtimeVersion = await initializeCodexClient(client);
+      if (runtimeVersion) {
+        this.runtimeVersions.set(client, runtimeVersion);
+      }
       return client;
     } catch (error) {
       client.close();
       throw error;
     }
   }
+}
+
+export async function initializeCodexClient(
+  client: JsonRpcStdioClient
+): Promise<string | undefined> {
+  const result = await client.request("initialize", {
+    // Opt into the dynamicTools protocol, without enabling runtime native tools.
+    capabilities: { experimentalApi: true },
+    clientInfo: {
+      name: "atlas",
+      title: "Atlas",
+      version: String(ATLAS_API_VERSION),
+    },
+  });
+  client.notify("initialized");
+  // The userAgent prefix contains the actual app-server build, not Atlas's
+  // clientInfo.version. Bind compatibility to this connection, including PATH
+  // fallbacks and reconnects; the installed package version alone is not proof.
+  const userAgent = readString(asRecord(result).userAgent);
+  return userAgent?.match(CODEX_USER_AGENT_VERSION_RE)?.[1];
+}
+
+function readDynamicToolCall(params: unknown): CodexDynamicToolCall {
+  const record = asRecord(params);
+  const callId = readString(record.callId);
+  const threadId = readString(record.threadId);
+  const tool = readString(record.tool);
+  const turnId = readString(record.turnId);
+  if (
+    !(callId && threadId && tool && turnId && record.arguments) ||
+    typeof record.arguments !== "object" ||
+    Array.isArray(record.arguments) ||
+    (record.namespace !== undefined && record.namespace !== null)
+  ) {
+    throw new Error("Codex returned an invalid Atlas tool call.");
+  }
+  return {
+    arguments: record.arguments as Record<string, unknown>,
+    callId,
+    threadId,
+    tool,
+    turnId,
+  };
 }
 
 function waitForTurnClient(
@@ -990,17 +1210,14 @@ function readTokenCount(value: unknown): number | undefined {
 function readUsage(params: unknown): CodexTurnUsage | undefined {
   const record = asRecord(params);
   const turn = asRecord(record.turn);
-  const tokenUsage = asRecord(record.tokenUsage);
-  const usage = asRecord(
-    turn.usage ?? record.usage ?? tokenUsage.last ?? record.tokenUsage
-  );
-  const inputTokens = readNumber(
+  const usage = asRecord(turn.usage ?? record.usage);
+  const inputTokens = readTokenCount(
     usage.inputTokens ?? usage.input_tokens ?? usage.promptTokens
   );
-  const outputTokens = readNumber(
+  const outputTokens = readTokenCount(
     usage.outputTokens ?? usage.output_tokens ?? usage.completionTokens
   );
-  const totalTokens = readNumber(usage.totalTokens ?? usage.total_tokens);
+  const totalTokens = readTokenCount(usage.totalTokens ?? usage.total_tokens);
   if (
     inputTokens === undefined &&
     outputTokens === undefined &&

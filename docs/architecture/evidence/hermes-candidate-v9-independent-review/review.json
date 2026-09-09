@@ -1,0 +1,41 @@
+{
+  "at": "2026-09-07T05:14:59.786359+00:00",
+  "disposition": "No blocker found within bounded source-only C9 integration review",
+  "independent": true,
+  "reviewerAuthoredInputs": false,
+  "newBehavioralTests": 0,
+  "sourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "canonicalSourceFiles": 2121,
+  "actualDeltaFilesVerified": 8,
+  "actualInheritedSupportFilesVerified": 6,
+  "fullC8RecursiveRehash": false,
+  "patchChecks": {
+    "combined": 0,
+    "production": 0
+  },
+  "ownerTestsInspected": {
+    "tests": 183,
+    "assertions": 867,
+    "files": 11,
+    "groups": 5
+  },
+  "ownerStaticGatesInspected": [
+    "production TypeScript",
+    "eight-file scoped test TypeScript",
+    "lint eight changed paths"
+  ],
+  "bindingSha256": "e2faba354358e4b16a7879dc9634e7dd6b6bbe5e30eff83b42cf843428c69bb4",
+  "notesSha256": "d2ae90648241d35cff7b47888ffae36333caa3724aaf76f7207b9f74fd27baf3",
+  "rootAdoption": "Already performed by root; eight changed root files match; owner additive post-adoption receipts bound",
+  "sourceEdits": 0,
+  "paidCalls": 0,
+  "globalActivationApproval": false,
+  "limits": [
+    "Source-only independent review; owner behavior gates remain owner evidence",
+    "No full C8 recursive rehash or full root verification repeated",
+    "Three legacy runtime-tested files excluded from scoped static test check",
+    "Current ACL checks are asynchronous, not a lease or atomic revocation barrier",
+    "Only ordinary authenticated HTTP send/stream gains this new hook",
+    "V3 C8 scripted pilot is separate from C9 software evidence"
+  ]
+}

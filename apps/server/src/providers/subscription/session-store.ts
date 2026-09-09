@@ -12,6 +12,8 @@ export interface SubscriptionSessionBinding {
   historyFingerprint?: string;
   lastMessageCount: number;
   runtimeSessionId: string;
+  /** Native tool declarations are immutable for the lifetime of a runtime session. */
+  toolCatalogFingerprint?: string;
   updatedAt?: string;
 }
 
@@ -565,8 +567,13 @@ function parseBinding(value: unknown): SubscriptionSessionBinding | null {
   if (!isRecord(value)) {
     return null;
   }
-  const { historyFingerprint, lastMessageCount, runtimeSessionId, updatedAt } =
-    value;
+  const {
+    historyFingerprint,
+    lastMessageCount,
+    runtimeSessionId,
+    toolCatalogFingerprint,
+    updatedAt,
+  } = value;
   if (
     typeof runtimeSessionId !== "string" ||
     !runtimeSessionId.trim() ||
@@ -581,6 +588,9 @@ function parseBinding(value: unknown): SubscriptionSessionBinding | null {
     runtimeSessionId,
     ...(typeof historyFingerprint === "string" && historyFingerprint
       ? { historyFingerprint }
+      : {}),
+    ...(typeof toolCatalogFingerprint === "string" && toolCatalogFingerprint
+      ? { toolCatalogFingerprint }
       : {}),
     ...(typeof updatedAt === "string" && updatedAt ? { updatedAt } : {}),
   };

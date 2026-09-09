@@ -43,7 +43,7 @@ const extractDocumentTextInputSchema = z
   })
   .strict();
 
-const WORKSPACE_DOCUMENT_EXT = /\.(pdf|docx|xlsx|xls|xlsm|xlsb)$/i;
+const WORKSPACE_DOCUMENT_EXT = /\.(pdf|docx|pptx|xlsx|xls|xlsm|xlsb)$/i;
 
 export const MISSING_DOCUMENT_REF_ERROR =
   "extract_document_text needs a documentRef from email, a stored attachment id (att_...), or a PDF/Word/Excel path in the profile workspace. This value is not one of those. Do not retry with a guessed reference. If the document is already shown as [File: ...] in this chat, use that text instead.";
@@ -76,7 +76,12 @@ export interface ExtractDocumentTextDependencies {
   loadConfig?: typeof loadEmailConfig;
 }
 
-const EXTRACTABLE_FORMATS = new Set<AnydocFormat>(["pdf", "docx", "xlsx"]);
+const EXTRACTABLE_FORMATS = new Set<AnydocFormat>([
+  "pdf",
+  "docx",
+  "pptx",
+  "xlsx",
+]);
 
 function isPdf(bytes: Buffer): boolean {
   return bytes.subarray(0, 5).toString("ascii") === "%PDF-";
@@ -105,7 +110,7 @@ function resolveExtractFormat(
 }
 
 function looksLikeWorkspaceDocumentRef(value: string): boolean {
-  if (!value || /\s/.test(value)) {
+  if (!value) {
     return false;
   }
 

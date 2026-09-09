@@ -1,0 +1,686 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-09-06T18:30:58.832Z",
+  "completedAt": "2026-09-06T18:30:58.867Z",
+  "elapsedMs": 35.21695799999999,
+  "productionCandidate": "candidate3",
+  "declaredCandidateSourceSha256": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "repository": "/Users/apriansyahrs/Documents/Code/atlas",
+  "executionRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4",
+  "sourceBefore": [
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/context.ts",
+      "sha256": "80a1bf8241cfe6d9205c88d7566f50af862f339f27eb77feae6bbbf4abfbc833"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/execution.ts",
+      "sha256": "67985f914b0c4c5a2acedc39546a3e66106f44e7eb490a579d7a9d58cbc58805"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/execution-contract.ts",
+      "sha256": "20109915845ff2e835b7e6298ec7889e66b61bc843ac29f66780ebe3e270c8d6"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/channel-artifacts.ts",
+      "sha256": "f95e58c4e62693b8fcdfcd54c69049450064682aab3a9afbcbde4d1cb82f018d"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/tool-loop.ts",
+      "sha256": "f57337ddf14b4dbcc7a720d27b4e1570f16178773c61e68ac23eb68ce5e4c7c3"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/chat.ts",
+      "sha256": "2e490dec43005a4d21756860c477f1097623ffb16b448183273775a420128eb5"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/http/workspace-worker-artifacts.ts",
+      "sha256": "b3597051fa56272e326fd1321ed1b985ce158a83ec89f8b0f59b294a044758a9"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/python-execute-tool.ts",
+      "sha256": "c25b647c4bdad24bdee478f46956cdb7a725bca803429d5dd5ce11a0192a72f0"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/agent-service.ts",
+      "sha256": "adf7d492e5ae1111d4346a2c613f8e53f9af80ef61e1fc764744f4703b6e08cb"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/task-runner.ts",
+      "sha256": "baedca4e3116bc5909875d8839a85da38c7504fdb23c154d669092f225aff397"
+    }
+  ],
+  "sourceAfter": [
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/context.ts",
+      "sha256": "80a1bf8241cfe6d9205c88d7566f50af862f339f27eb77feae6bbbf4abfbc833"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/execution.ts",
+      "sha256": "67985f914b0c4c5a2acedc39546a3e66106f44e7eb490a579d7a9d58cbc58805"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/execution-contract.ts",
+      "sha256": "20109915845ff2e835b7e6298ec7889e66b61bc843ac29f66780ebe3e270c8d6"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/channel-artifacts.ts",
+      "sha256": "f95e58c4e62693b8fcdfcd54c69049450064682aab3a9afbcbde4d1cb82f018d"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/tool-loop.ts",
+      "sha256": "f57337ddf14b4dbcc7a720d27b4e1570f16178773c61e68ac23eb68ce5e4c7c3"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/chat.ts",
+      "sha256": "2e490dec43005a4d21756860c477f1097623ffb16b448183273775a420128eb5"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/http/workspace-worker-artifacts.ts",
+      "sha256": "b3597051fa56272e326fd1321ed1b985ce158a83ec89f8b0f59b294a044758a9"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/python-execute-tool.ts",
+      "sha256": "c25b647c4bdad24bdee478f46956cdb7a725bca803429d5dd5ce11a0192a72f0"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/agent-service.ts",
+      "sha256": "adf7d492e5ae1111d4346a2c613f8e53f9af80ef61e1fc764744f4703b6e08cb"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/task-runner.ts",
+      "sha256": "baedca4e3116bc5909875d8839a85da38c7504fdb23c154d669092f225aff397"
+    }
+  ],
+  "selectedSourceUnchanged": true,
+  "providerCalls": 0,
+  "nativeModelCalls": 0,
+  "toolCalls": 6,
+  "toolRetries": 0,
+  "result": "counterexample_confirmed",
+  "scenarios": [
+    {
+      "mode": "serial",
+      "workspaceRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/serial/profile-workspace",
+      "contexts": {
+        "A": {
+          "orgId": "audit-organization",
+          "orgRole": "member",
+          "profileId": "audit-shared-profile",
+          "userId": "audit-user-A",
+          "sessionId": "audit-session-A",
+          "workspaceRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/serial/profile-workspace"
+        },
+        "B": {
+          "orgId": "audit-organization",
+          "orgRole": "member",
+          "profileId": "audit-shared-profile",
+          "userId": "audit-user-B",
+          "sessionId": "audit-session-B",
+          "workspaceRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/serial/profile-workspace"
+        }
+      },
+      "calls": {
+        "A": 1,
+        "B": 1
+      },
+      "effects": [
+        {
+          "sequence": 1,
+          "event": "protected_call_started",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 2,
+          "event": "tool_entered_after_protected_before_snapshot",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 3,
+          "event": "file_written",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A",
+          "path": "artifacts/a.txt",
+          "bytes": 22,
+          "sha256": "9c8ec86bd396597b520d1aaba09cfe37045ff3467ab92840cf47cf3afe1e698c"
+        },
+        {
+          "sequence": 4,
+          "event": "tool_returned_no_declared_artifact_references",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 5,
+          "event": "protected_call_resolved",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 6,
+          "event": "protected_call_started",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 7,
+          "event": "tool_entered_after_protected_before_snapshot",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 8,
+          "event": "file_written",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B",
+          "path": "artifacts/b.txt",
+          "bytes": 23,
+          "sha256": "122cd149e65f79c1584fe80c6ebd843f35a77c5a7431406ca0d78821595c5702"
+        },
+        {
+          "sequence": 9,
+          "event": "tool_returned_no_declared_artifact_references",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 10,
+          "event": "protected_call_resolved",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        }
+      ],
+      "files": [
+        {
+          "path": "artifacts/a.txt",
+          "filename": "a.txt",
+          "bytes": 22,
+          "content": "Report A: apples = 3.\n",
+          "sha256": "9c8ec86bd396597b520d1aaba09cfe37045ff3467ab92840cf47cf3afe1e698c",
+          "actualProducerSessionId": "audit-session-A"
+        },
+        {
+          "path": "artifacts/b.txt",
+          "filename": "b.txt",
+          "bytes": 23,
+          "content": "Report B: oranges = 7.\n",
+          "sha256": "122cd149e65f79c1584fe80c6ebd843f35a77c5a7431406ca0d78821595c5702",
+          "actualProducerSessionId": "audit-session-B"
+        }
+      ],
+      "executionA": {
+        "artifacts": [
+          {
+            "createdAt": "2026-09-06T18:30:58.863Z",
+            "filename": "a.txt",
+            "id": "vN6rNwTZ2C8y",
+            "mimeType": "text/plain",
+            "path": "artifacts/a.txt",
+            "sessionId": "audit-session-A",
+            "sizeBytes": 22
+          }
+        ],
+        "data": {
+          "producerSessionId": "audit-session-A",
+          "producerUserId": "audit-user-A",
+          "writtenPath": "artifacts/a.txt"
+        },
+        "metadata": {
+          "durationMs": 27,
+          "retries": 0
+        },
+        "success": true
+      },
+      "executionB": {
+        "artifacts": [
+          {
+            "createdAt": "2026-09-06T18:30:58.863Z",
+            "filename": "b.txt",
+            "id": "3oE1choXak1y",
+            "mimeType": "text/plain",
+            "path": "artifacts/b.txt",
+            "sessionId": "audit-session-B",
+            "sizeBytes": 23
+          }
+        ],
+        "data": {
+          "producerSessionId": "audit-session-B",
+          "producerUserId": "audit-user-B",
+          "writtenPath": "artifacts/b.txt"
+        },
+        "metadata": {
+          "durationMs": 0,
+          "retries": 0
+        },
+        "success": true
+      },
+      "historyA": [
+        {
+          "role": "tool",
+          "toolCallId": "audit-call-A",
+          "name": "audit_document_operation",
+          "content": "{\"producerSessionId\":\"audit-session-A\",\"producerUserId\":\"audit-user-A\",\"writtenPath\":\"artifacts/a.txt\",\"artifacts\":[{\"createdAt\":\"2026-09-06T18:30:58.863Z\",\"filename\":\"a.txt\",\"id\":\"vN6rNwTZ2C8y\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/a.txt\",\"sessionId\":\"audit-session-A\",\"sizeBytes\":22}]}"
+        }
+      ],
+      "historyB": [
+        {
+          "role": "tool",
+          "toolCallId": "audit-call-B",
+          "name": "audit_document_operation",
+          "content": "{\"producerSessionId\":\"audit-session-B\",\"producerUserId\":\"audit-user-B\",\"writtenPath\":\"artifacts/b.txt\",\"artifacts\":[{\"createdAt\":\"2026-09-06T18:30:58.863Z\",\"filename\":\"b.txt\",\"id\":\"3oE1choXak1y\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/b.txt\",\"sessionId\":\"audit-session-B\",\"sizeBytes\":23}]}"
+        }
+      ],
+      "sessionArtifactsA": [
+        {
+          "filename": "a.txt",
+          "mimeType": "text/plain",
+          "path": "a.txt",
+          "savedAt": "2026-09-06T18:30:58.863Z",
+          "sizeBytes": 22
+        }
+      ],
+      "sessionArtifactsB": [
+        {
+          "filename": "b.txt",
+          "mimeType": "text/plain",
+          "path": "b.txt",
+          "savedAt": "2026-09-06T18:30:58.863Z",
+          "sizeBytes": 23
+        }
+      ],
+      "crossSessionAttributionObserved": false
+    },
+    {
+      "mode": "concurrent_two_writers",
+      "workspaceRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/concurrent_two_writers/profile-workspace",
+      "contexts": {
+        "A": {
+          "orgId": "audit-organization",
+          "orgRole": "member",
+          "profileId": "audit-shared-profile",
+          "userId": "audit-user-A",
+          "sessionId": "audit-session-A",
+          "workspaceRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/concurrent_two_writers/profile-workspace"
+        },
+        "B": {
+          "orgId": "audit-organization",
+          "orgRole": "member",
+          "profileId": "audit-shared-profile",
+          "userId": "audit-user-B",
+          "sessionId": "audit-session-B",
+          "workspaceRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/concurrent_two_writers/profile-workspace"
+        }
+      },
+      "calls": {
+        "A": 1,
+        "B": 1
+      },
+      "effects": [
+        {
+          "sequence": 1,
+          "event": "protected_call_started",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 2,
+          "event": "tool_entered_after_protected_before_snapshot",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 3,
+          "event": "protected_call_started",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 4,
+          "event": "tool_entered_after_protected_before_snapshot",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 5,
+          "event": "file_written",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B",
+          "path": "artifacts/b.txt",
+          "bytes": 23,
+          "sha256": "122cd149e65f79c1584fe80c6ebd843f35a77c5a7431406ca0d78821595c5702"
+        },
+        {
+          "sequence": 6,
+          "event": "tool_returned_no_declared_artifact_references",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 7,
+          "event": "protected_call_resolved",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 8,
+          "event": "file_written",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A",
+          "path": "artifacts/a.txt",
+          "bytes": 22,
+          "sha256": "9c8ec86bd396597b520d1aaba09cfe37045ff3467ab92840cf47cf3afe1e698c"
+        },
+        {
+          "sequence": 9,
+          "event": "tool_returned_no_declared_artifact_references",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 10,
+          "event": "protected_call_resolved",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        }
+      ],
+      "files": [
+        {
+          "path": "artifacts/a.txt",
+          "filename": "a.txt",
+          "bytes": 22,
+          "content": "Report A: apples = 3.\n",
+          "sha256": "9c8ec86bd396597b520d1aaba09cfe37045ff3467ab92840cf47cf3afe1e698c",
+          "actualProducerSessionId": "audit-session-A"
+        },
+        {
+          "path": "artifacts/b.txt",
+          "filename": "b.txt",
+          "bytes": 23,
+          "content": "Report B: oranges = 7.\n",
+          "sha256": "122cd149e65f79c1584fe80c6ebd843f35a77c5a7431406ca0d78821595c5702",
+          "actualProducerSessionId": "audit-session-B"
+        }
+      ],
+      "executionA": {
+        "artifacts": [
+          {
+            "createdAt": "2026-09-06T18:30:58.866Z",
+            "filename": "b.txt",
+            "id": "Oeu8uqONPJiT",
+            "mimeType": "text/plain",
+            "path": "artifacts/b.txt",
+            "sessionId": "audit-session-A",
+            "sizeBytes": 23
+          },
+          {
+            "createdAt": "2026-09-06T18:30:58.866Z",
+            "filename": "a.txt",
+            "id": "oqVV8ODxRuC7",
+            "mimeType": "text/plain",
+            "path": "artifacts/a.txt",
+            "sessionId": "audit-session-A",
+            "sizeBytes": 22
+          }
+        ],
+        "data": {
+          "producerSessionId": "audit-session-A",
+          "producerUserId": "audit-user-A",
+          "writtenPath": "artifacts/a.txt"
+        },
+        "metadata": {
+          "durationMs": 2,
+          "retries": 0
+        },
+        "success": true
+      },
+      "executionB": {
+        "artifacts": [
+          {
+            "createdAt": "2026-09-06T18:30:58.866Z",
+            "filename": "b.txt",
+            "id": "Nyge8sRGaIIZ",
+            "mimeType": "text/plain",
+            "path": "artifacts/b.txt",
+            "sessionId": "audit-session-B",
+            "sizeBytes": 23
+          }
+        ],
+        "data": {
+          "producerSessionId": "audit-session-B",
+          "producerUserId": "audit-user-B",
+          "writtenPath": "artifacts/b.txt"
+        },
+        "metadata": {
+          "durationMs": 0,
+          "retries": 0
+        },
+        "success": true
+      },
+      "historyA": [
+        {
+          "role": "tool",
+          "toolCallId": "audit-call-A",
+          "name": "audit_document_operation",
+          "content": "{\"producerSessionId\":\"audit-session-A\",\"producerUserId\":\"audit-user-A\",\"writtenPath\":\"artifacts/a.txt\",\"artifacts\":[{\"createdAt\":\"2026-09-06T18:30:58.866Z\",\"filename\":\"b.txt\",\"id\":\"Oeu8uqONPJiT\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/b.txt\",\"sessionId\":\"audit-session-A\",\"sizeBytes\":23},{\"createdAt\":\"2026-09-06T18:30:58.866Z\",\"filename\":\"a.txt\",\"id\":\"oqVV8ODxRuC7\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/a.txt\",\"sessionId\":\"audit-session-A\",\"sizeBytes\":22}]}"
+        }
+      ],
+      "historyB": [
+        {
+          "role": "tool",
+          "toolCallId": "audit-call-B",
+          "name": "audit_document_operation",
+          "content": "{\"producerSessionId\":\"audit-session-B\",\"producerUserId\":\"audit-user-B\",\"writtenPath\":\"artifacts/b.txt\",\"artifacts\":[{\"createdAt\":\"2026-09-06T18:30:58.866Z\",\"filename\":\"b.txt\",\"id\":\"Nyge8sRGaIIZ\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/b.txt\",\"sessionId\":\"audit-session-B\",\"sizeBytes\":23}]}"
+        }
+      ],
+      "sessionArtifactsA": [
+        {
+          "filename": "b.txt",
+          "mimeType": "text/plain",
+          "path": "b.txt",
+          "savedAt": "2026-09-06T18:30:58.866Z",
+          "sizeBytes": 23
+        },
+        {
+          "filename": "a.txt",
+          "mimeType": "text/plain",
+          "path": "a.txt",
+          "savedAt": "2026-09-06T18:30:58.866Z",
+          "sizeBytes": 22
+        }
+      ],
+      "sessionArtifactsB": [
+        {
+          "filename": "b.txt",
+          "mimeType": "text/plain",
+          "path": "b.txt",
+          "savedAt": "2026-09-06T18:30:58.866Z",
+          "sizeBytes": 23
+        }
+      ],
+      "crossSessionAttributionObserved": true
+    },
+    {
+      "mode": "concurrent_no_write_a",
+      "workspaceRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/concurrent_no_write_a/profile-workspace",
+      "contexts": {
+        "A": {
+          "orgId": "audit-organization",
+          "orgRole": "member",
+          "profileId": "audit-shared-profile",
+          "userId": "audit-user-A",
+          "sessionId": "audit-session-A",
+          "workspaceRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/concurrent_no_write_a/profile-workspace"
+        },
+        "B": {
+          "orgId": "audit-organization",
+          "orgRole": "member",
+          "profileId": "audit-shared-profile",
+          "userId": "audit-user-B",
+          "sessionId": "audit-session-B",
+          "workspaceRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/concurrent_no_write_a/profile-workspace"
+        }
+      },
+      "calls": {
+        "A": 1,
+        "B": 1
+      },
+      "effects": [
+        {
+          "sequence": 1,
+          "event": "protected_call_started",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 2,
+          "event": "tool_entered_after_protected_before_snapshot",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 3,
+          "event": "protected_call_started",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 4,
+          "event": "tool_entered_after_protected_before_snapshot",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 5,
+          "event": "file_written",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B",
+          "path": "artifacts/b.txt",
+          "bytes": 23,
+          "sha256": "122cd149e65f79c1584fe80c6ebd843f35a77c5a7431406ca0d78821595c5702"
+        },
+        {
+          "sequence": 6,
+          "event": "tool_returned_no_declared_artifact_references",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 7,
+          "event": "protected_call_resolved",
+          "sessionId": "audit-session-B",
+          "userId": "audit-user-B"
+        },
+        {
+          "sequence": 8,
+          "event": "tool_returned_no_declared_artifact_references",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        },
+        {
+          "sequence": 9,
+          "event": "protected_call_resolved",
+          "sessionId": "audit-session-A",
+          "userId": "audit-user-A"
+        }
+      ],
+      "files": [
+        {
+          "path": "artifacts/b.txt",
+          "filename": "b.txt",
+          "bytes": 23,
+          "content": "Report B: oranges = 7.\n",
+          "sha256": "122cd149e65f79c1584fe80c6ebd843f35a77c5a7431406ca0d78821595c5702",
+          "actualProducerSessionId": "audit-session-B"
+        }
+      ],
+      "executionA": {
+        "artifacts": [
+          {
+            "createdAt": "2026-09-06T18:30:58.867Z",
+            "filename": "b.txt",
+            "id": "ECdI0xkR0euv",
+            "mimeType": "text/plain",
+            "path": "artifacts/b.txt",
+            "sessionId": "audit-session-A",
+            "sizeBytes": 23
+          }
+        ],
+        "data": {
+          "producerSessionId": "audit-session-A",
+          "producerUserId": "audit-user-A",
+          "writtenPath": null
+        },
+        "metadata": {
+          "durationMs": 1,
+          "retries": 0
+        },
+        "success": true
+      },
+      "executionB": {
+        "artifacts": [
+          {
+            "createdAt": "2026-09-06T18:30:58.867Z",
+            "filename": "b.txt",
+            "id": "UK9CEyYSzdJd",
+            "mimeType": "text/plain",
+            "path": "artifacts/b.txt",
+            "sessionId": "audit-session-B",
+            "sizeBytes": 23
+          }
+        ],
+        "data": {
+          "producerSessionId": "audit-session-B",
+          "producerUserId": "audit-user-B",
+          "writtenPath": "artifacts/b.txt"
+        },
+        "metadata": {
+          "durationMs": 0,
+          "retries": 0
+        },
+        "success": true
+      },
+      "historyA": [
+        {
+          "role": "tool",
+          "toolCallId": "audit-call-A",
+          "name": "audit_document_operation",
+          "content": "{\"producerSessionId\":\"audit-session-A\",\"producerUserId\":\"audit-user-A\",\"writtenPath\":null,\"artifacts\":[{\"createdAt\":\"2026-09-06T18:30:58.867Z\",\"filename\":\"b.txt\",\"id\":\"ECdI0xkR0euv\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/b.txt\",\"sessionId\":\"audit-session-A\",\"sizeBytes\":23}]}"
+        }
+      ],
+      "historyB": [
+        {
+          "role": "tool",
+          "toolCallId": "audit-call-B",
+          "name": "audit_document_operation",
+          "content": "{\"producerSessionId\":\"audit-session-B\",\"producerUserId\":\"audit-user-B\",\"writtenPath\":\"artifacts/b.txt\",\"artifacts\":[{\"createdAt\":\"2026-09-06T18:30:58.867Z\",\"filename\":\"b.txt\",\"id\":\"UK9CEyYSzdJd\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/b.txt\",\"sessionId\":\"audit-session-B\",\"sizeBytes\":23}]}"
+        }
+      ],
+      "sessionArtifactsA": [
+        {
+          "filename": "b.txt",
+          "mimeType": "text/plain",
+          "path": "b.txt",
+          "savedAt": "2026-09-06T18:30:58.867Z",
+          "sizeBytes": 23
+        }
+      ],
+      "sessionArtifactsB": [
+        {
+          "filename": "b.txt",
+          "mimeType": "text/plain",
+          "path": "b.txt",
+          "savedAt": "2026-09-06T18:30:58.867Z",
+          "sizeBytes": 23
+        }
+      ],
+      "crossSessionAttributionObserved": true
+    }
+  ],
+  "limitations": [
+    "Synthetic trusted contexts are distinct sessions/users of one shared profile, not full authenticated HTTP sessions.",
+    "Actual protected executor and session artifact extractor ran; reconstructed history follows the production tool-result merge. No database/worker delivery route was exercised.",
+    "The fixture serially controls two overlapping async calls in one process. Multiprocess behavior and real tool scheduling were not measured.",
+    "No production fix, performance comparison, or benchmark score change is included."
+  ]
+}

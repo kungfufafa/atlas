@@ -156,6 +156,10 @@ describe("attachment content helpers", () => {
         type: "image",
       },
       {
+        text: expect.stringContaining('"documentRef":"att_doc"'),
+        type: "text",
+      },
+      {
         data: pdfBase64,
         filename: "report.pdf",
         mediaType: "application/pdf",

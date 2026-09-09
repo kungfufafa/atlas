@@ -1,0 +1,41 @@
+{
+  "at": "2026-09-07T01:58:53.464869+00:00",
+  "batch": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350",
+  "valid": false,
+  "copies": [
+    {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/analysis-final.json",
+      "copy": "analysis-final.json",
+      "sha256": "6f87b2cbcb835117de3bafba75fd6305463fd12ed06d6658441a89c5d83272f1",
+      "bytes": 21425
+    },
+    {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/completed.json",
+      "copy": "completed.json",
+      "sha256": "44255acceded26bddcd374c75612385e34ef59bf1ce82dd751fb918a18f9f18a",
+      "bytes": 210
+    },
+    {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/attempts.jsonl",
+      "copy": "attempts.jsonl",
+      "sha256": "527c5504fc625e6103ce0b035f54c44505bb7ef431833163e7c6b84c2606ced4",
+      "bytes": 198788
+    },
+    {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/runtime-identities.json",
+      "copy": "runtime-identities.json",
+      "sha256": "35ff7b23e9b7fa80c699750f50879efdaf39a67d1848a805096fbc32dfac88c1",
+      "bytes": 7669
+    },
+    {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/source-archives.json",
+      "copy": "source-archives.json",
+      "sha256": "c1093050c8ab8763fb772994a6dacabe8ccccbe3ac2f888ff0d36af9357f3e4d",
+      "bytes": 290
+    }
+  ],
+  "reportSha256": "ab53b94fbeadee1df277d14e1692aeb4b09f2cd297c053b3a92ae476887d980b",
+  "noRescore": true,
+  "noPaidRerun": true,
+  "note": "A preliminary read-only selector searched event=attempt_end and returned no entries; corrected to actual event=end before failure reporting. Original ledger unchanged."
+}

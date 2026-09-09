@@ -4,6 +4,10 @@ export const DEFAULT_BUNDLED_SKILL_NAMES = [
   "update-profile-memory",
   "archive-profile-memory",
   "save-artifact",
+  "word-documents",
+  "pdf-documents",
+  "presentations",
+  "spreadsheets",
 ] as const;
 
 export const SUPER_AGENT_BUNDLED_SKILL_NAMES = [

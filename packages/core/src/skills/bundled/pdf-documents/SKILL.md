@@ -1,0 +1,11 @@
+---
+name: pdf-documents
+description: Create, read, merge, split, and extract PDF files, including files attached in chat.
+include-body-on-match: true
+---
+
+`pdf_document` accepts original `att_...` references and workspace paths. Use inspect for page count, extract for selected one-based pages, merge for ordered sources, and split with explicit page groups. Extract is paginated; use coveredPages, nextPage, truncated, needsOcr, and formFieldsExcluded to decide what remains unread. Stored ordinary form values are returned separately in form; continue with fieldStart using form.nextStart until form.complete. Unsupported field types and XFA require a suitable reader even when every page has text. Empty extracted text does not prove a page is blank. Extract automatically tries installed OCR for image-only pages; set ocrLanguage to an installed language such as eng or ind, and inspect method, ocrConfidence and needsOcr. ocr=off reads only the text layer. Missing engines, missing language packs and empty OCR remain incomplete coverage.
+
+For a plain report, create with textPages. For rich formatting, create DOCX or PPTX and use convert; this requires Atlas LibreOffice. The default font must cover the document language; provide an appropriate workspace TTF/OTF fontRef if needed. Large or complex-script fonts use the managed Python runtime to subset TrueType outlines and shape bidirectional text, with bounded input, output, and processing time. A font must cover every requested character; a larger file alone does not establish coverage. UTF-8 `write_file` cannot create a PDF.
+
+Inspect and extract the saved result to verify page count, ordering, and expected text. Check rendered pages when layout matters and a renderer/vision tool is available. Merge preserves outlines, internal destinations and embedded attachments using the managed PDF runtime. Forms, signatures, conflicting named destinations and unsupported catalog structures require preparation. Split still refuses sources with document-level navigation, forms or attachments rather than dropping them. Keep sources and return links to the actual new artifact paths. For split operations, deliver every artifact requested, subject to the channel's actual upload limits.

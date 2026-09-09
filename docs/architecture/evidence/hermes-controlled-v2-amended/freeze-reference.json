@@ -1,0 +1,23 @@
+{
+  "path": "/private/tmp/atlas-hermes-evaluation/controlled-v2-amended/frozen",
+  "manifestSha256": "6bc630ac6672cb43e830ed4321c77d9322024bc9a2874e1bd8a45dfb5a7a5309",
+  "version": "atlas-hermes-controlled-v2-amended",
+  "model": "deepseek-v4-flash",
+  "endpoint": "https://opencode.ai/zen/go/v1",
+  "limits": {
+    "generatedTokens": 12000,
+    "perResponseTokens": 4096,
+    "providerRequests": 24,
+    "timeoutMs": 300000
+  },
+  "controlHashesSha256": "528683e12e19ba3d0b82c4378d3d70b4c27c3bd13f4222491276d19d6a59fa1c",
+  "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "pilot": {
+    "path": "/private/tmp/atlas-hermes-evaluation/controlled-v2-amended/batches/pilot-2026-09-06T16-09-12-265Z-0b2cd068",
+    "scored": false,
+    "arms": 2,
+    "providerCalls": 6,
+    "sourceUnchanged": true,
+    "validity": true
+  }
+}

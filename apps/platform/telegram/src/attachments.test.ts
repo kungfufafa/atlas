@@ -1,14 +1,24 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { MAX_DOCUMENT_BYTES } from "@atlas/core/message-content";
+import type { SaveInboundDocument } from "@atlas/core/attachments/inbound-document";
+import {
+  MAX_DOCUMENT_BYTES,
+  MAX_DOCUMENT_INGEST_BYTES,
+} from "@atlas/core/message-content";
 import type { Context } from "grammy";
 import {
   buildTelegramDocumentInput,
   downloadTelegramFile,
   OVERSIZED_FILE_REPLY,
   OversizedTelegramFileError,
+  TELEGRAM_HOSTED_FILE_LIMIT_REPLY,
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
 } from "./attachments";
 import { downloadTelegramImage } from "./images";
+
+const saveInboundDocument: SaveInboundDocument = async (file) => ({
+  relativePath: `artifacts/${file.filename}`,
+  sizeBytes: file.bytes.length,
+});
 
 function createDocumentContext(options: {
   fileId?: string;
@@ -56,22 +66,18 @@ describe("buildTelegramDocumentInput", () => {
         caption: "Summarize this",
         fileName: "report.pdf",
         mimeType: "application/pdf",
-      })
+      }),
+      { saveInboundDocument }
     );
 
-    expect(result).toEqual({
-      input: {
-        documents: [
-          expect.objectContaining({
-            data: Buffer.from("pdf-bytes").toString("base64"),
-            filename: "report.pdf",
-            mediaType: "application/pdf",
-          }),
-        ],
-        message: "Summarize this",
-      },
-      kind: "input",
-    });
+    expect(result?.kind).toBe("input");
+    if (result?.kind === "input") {
+      expect(result.input.documents).toBeUndefined();
+      expect(result.input.message).toContain("Summarize this");
+      expect(result.input.message).toContain("artifacts/report.pdf");
+      expect(result.input.message).toContain("extract_document_text");
+      expect(result.input.message).not.toContain("pdf-bytes");
+    }
   });
 
   test("canonicalizes an image content-type alias", async () => {
@@ -107,12 +113,15 @@ describe("buildTelegramDocumentInput", () => {
       createDocumentContext({
         fileName: "notes.txt",
         mimeType: "application/octet-stream",
-      })
+      }),
+      { saveInboundDocument }
     );
 
     expect(result?.kind).toBe("input");
     if (result?.kind === "input") {
-      expect(result.input.documents?.[0]?.mediaType).toBe("text/plain");
+      expect(result.input.message).toContain("artifacts/notes.txt");
+      expect(result.input.message).toContain("read_file");
+      expect(result.input.documents).toBeUndefined();
     }
   });
 
@@ -131,22 +140,17 @@ describe("buildTelegramDocumentInput", () => {
         fileName: "sheet.xlsx",
         mimeType:
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      })
+      }),
+      { saveInboundDocument }
     );
 
-    expect(result).toEqual({
-      input: {
-        documents: [
-          expect.objectContaining({
-            filename: "sheet.xlsx",
-            mediaType:
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          }),
-        ],
-        message: "",
-      },
-      kind: "input",
-    });
+    expect(result?.kind).toBe("input");
+    if (result?.kind === "input") {
+      expect(result.input.documents).toBeUndefined();
+      expect(result.input.message).toContain("artifacts/sheet.xlsx");
+      expect(result.input.message).toContain("spreadsheet");
+      expect(result.input.message).not.toContain("xlsx-bytes");
+    }
   });
 
   test("rejects zip documents", async () => {
@@ -172,12 +176,30 @@ describe("buildTelegramDocumentInput", () => {
     const result = await buildTelegramDocumentInput(
       createDocumentContext({
         fileName: "big.pdf",
-        fileSize: MAX_DOCUMENT_BYTES + 1,
+        fileSize: MAX_DOCUMENT_INGEST_BYTES + 1,
         mimeType: "application/pdf",
       })
     );
 
     expect(result).toEqual({ kind: "reject", message: OVERSIZED_FILE_REPLY });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("explains the hosted Telegram download ceiling before fetching", async () => {
+    fetchSpy = spyOn(globalThis, "fetch").mockRejectedValue(
+      new Error("must not download")
+    );
+    const result = await buildTelegramDocumentInput(
+      createDocumentContext({
+        fileName: "report.pdf",
+        fileSize: 20 * 1024 * 1024 + 1,
+        mimeType: "application/pdf",
+      })
+    );
+    expect(result).toEqual({
+      kind: "reject",
+      message: TELEGRAM_HOSTED_FILE_LIMIT_REPLY,
+    });
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

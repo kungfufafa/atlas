@@ -1,0 +1,487 @@
+{
+  "at": "2026-09-06T22:59:24.350049+00:00",
+  "status": "complete64warm+separate32exploratorycontrols; allpublic assistantchronology included; rawreferences remain bound to retained private evidence; retractions retained",
+  "knownCredentialLiteralScan": "passed selected files only; no claim of exhaustive secret detection",
+  "files": [
+    {
+      "file": "criteria.md",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/criteria.md",
+      "sha256": "c6216f23897c1f0dca93b0a408325184981a830f9a2d805f9fc03feda2d6f095",
+      "bytes": 5002
+    },
+    {
+      "file": "finalization.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/finalization.json",
+      "sha256": "029d0988f7c22de3dee2337c79750d57b57ea8da5ba16cc45d18b348d06b2da1",
+      "bytes": 17119
+    },
+    {
+      "file": "final-warm/dispositions.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/final-warm/dispositions.json",
+      "sha256": "f4dbd3c38eac90515b3d4f1040b986f954ec214719b40c7d676caebc461dc473",
+      "bytes": 1355004
+    },
+    {
+      "file": "final-warm/report.md",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/final-warm/report.md",
+      "sha256": "cc7612da4bf09ff24d7331aa39459e14d9b880c259261de8f22dab0aa8c85669",
+      "bytes": 4660
+    },
+    {
+      "file": "final-warm/accounting-wording-addendum.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/final-warm/accounting-wording-addendum.json",
+      "sha256": "9a8cfb1db795815f701437f3edb87a779966c3dbb1b1234e9996af24925e6a96",
+      "bytes": 466
+    },
+    {
+      "file": "final-warm/manifest.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/final-warm/manifest.json",
+      "sha256": "e900f21216817f752a993e2c345f1283dc9e03fa83b9758e200f983b70fac17b",
+      "bytes": 18812
+    },
+    {
+      "file": "final-warm/retractions.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/final-warm/retractions.json",
+      "sha256": "0374761a5d757f1750995c83de0cf3764fdd10132b82637c7b122b559c3e1b7e",
+      "bytes": 2216
+    },
+    {
+      "file": "final-warm/accounting-wording-addendum.md",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/final-warm/accounting-wording-addendum.md",
+      "sha256": "436ef636e9e8eb5888d8cd5d42d60b9352205d0ecba293f2710b95f1a20835d1",
+      "bytes": 690
+    },
+    {
+      "file": "controls/criteria.md",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/criteria.md",
+      "sha256": "b735bdd1985388e97ccabff213e34bd67b04e3ba13dc4a49415110c72f1f52d5",
+      "bytes": 2947
+    },
+    {
+      "file": "controls/exploratory-report.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report.json",
+      "sha256": "1d4eabe295fd2592f178da5ef3a328d383bffef9750278a003527f7375a0e2e0",
+      "bytes": 55001
+    },
+    {
+      "file": "controls/exploratory-report.md",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report.md",
+      "sha256": "323c508c7068511aec91ecf0de46aa9eea49f2dd4f5584675b32c841d0b8dfe1",
+      "bytes": 3627
+    },
+    {
+      "file": "controls/final-manifest.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/final-manifest.json",
+      "sha256": "887bed826fd6e6b730013a94836400754eb48e1c8576354f9b7dd0fc821d1fc7",
+      "bytes": 86092
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+      "sha256": "3cb0ee57d9a0a65437e3956d1d52d230bf1c30af098c7c6e7448fb56206d0611",
+      "bytes": 19786
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+      "sha256": "da682c831ae24467d2e2f504ccde82f66a168a523d19facc1f7b2d991c791357",
+      "bytes": 19142
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+      "sha256": "e6b0d43c152a3fdcd104d71daef3734c94d9cf768a30ee10b9f32d39bdd3a123",
+      "bytes": 18761
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "sha256": "a7c88c8f43897b13bb85ff0ccf826287a0905d22d4fbef5977cefb0ced4d238a",
+      "bytes": 19386
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "sha256": "5d7201f162154f595021cfda05c7f76738621371dd39275b91234053c869c675",
+      "bytes": 19389
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+      "sha256": "eb75a65fab4a07c38c8b55616d97f380386305ce1f345d6b219b55fc298957f9",
+      "bytes": 20342
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+      "sha256": "8f58a1f59da2e48f7dcddb05ea03ed100e2c49e0e61ee6466aa797e10189fe58",
+      "bytes": 18006
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+      "sha256": "a799ed3eaea61a68259fc540d03ad13d36e87bc41ee36a6a7d33aadfc57cfafb",
+      "bytes": 17557
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+      "sha256": "8330608e998ce6ec02a05f5196c38bc35d363b1b8b58c34c5b4c71292d244dbc",
+      "bytes": 25428
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "sha256": "14a2061cf0289d1d428d3937d6f3b64d2aa9b4175dbc06e806abf1e5d7e900c3",
+      "bytes": 19684
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+      "sha256": "12ab926f831f89e346882699fbed406d1b12b6ecc92463b087eb8a7d4c53b3b4",
+      "bytes": 22702
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "sha256": "3bd6cb60e58a41d848f32482a64560b94f097e5563864eb13f619a34275ff7c8",
+      "bytes": 18163
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+      "sha256": "c07dad87bbbff28a8a99eb904ade6487505a7cd1d17cbe4ee936e56410d9c7b1",
+      "bytes": 15137
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+      "sha256": "435f662ff5331756c262180cc23810d7deef775783b7104ea17c8950adfc4afa",
+      "bytes": 19794
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+      "sha256": "2ba838d0400123f7ccd86ec49e2e63e0f537ba43dcd11ea37d780f8292113c80",
+      "bytes": 19062
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+      "sha256": "3f06c261e56112330639ddce186bd5eeb8cc9700d3b49fce5fb40b9174dec263",
+      "bytes": 21718
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+      "sha256": "b5a0017b0ead664c2a8efed6c7ef53911d355c06a77d30bdb3afb425b57b6506",
+      "bytes": 21627
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+      "sha256": "2c8770ad7abe789ac6d2a83d848279edc3286f7dcc93a050b910e4edff107f0d",
+      "bytes": 16752
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "sha256": "4ebdbd002e16a44d20ab54c5155c958067f3bff9b2c572c1b846ddf0223bb8bb",
+      "bytes": 25565
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+      "sha256": "135046a6d9b4e32464b9007e270d05cccc0500cac2b733eb99cbd69e2a0f2b69",
+      "bytes": 17662
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "sha256": "80a61cd21410a3eb6345cfea01e77de7c0d6442039baf14b73723aa30f619701",
+      "bytes": 23056
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+      "sha256": "1f89f287fc43e31ae8ebbc6cd6c04c5ca2e66b05f3a41b0e2126d76dc11afa62",
+      "bytes": 17589
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+      "sha256": "7c263f7d753822b0fa556cc98903f3c885fd54044fc33e0e28e1029756875245",
+      "bytes": 18084
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+      "sha256": "2c6cb4e3ea3d605559fb4db208498323d8c88865676b4b8bfdb75986890500f2",
+      "bytes": 20501
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+      "sha256": "32d35ee1d14138a127c2f93fffc4367b5061192837e05f91a04d84912cac337d",
+      "bytes": 17854
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+      "sha256": "66ac63345c5324f83c17fd58dc3b959a1c8e28090f1af7a9bc8cf372fa843824",
+      "bytes": 14286
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "sha256": "4f8505b4ab7d5ef51504cbd9e7c3c9e1df874bf380a362128f112ea4012172e2",
+      "bytes": 20554
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+      "sha256": "b6cf1d371f31a7a4fcc4de12166760277107bd396786ba98b6fb0d35b845db67",
+      "bytes": 17348
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+      "sha256": "3fdad775486ab7590e4ba0cd7a15750d9cd932f239c4bca3b88819ddb6df6488",
+      "bytes": 20152
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "sha256": "129cc23c9fc1ec81a5c45456ef7018ce76ca4398f5b2857be7d6a3a178faad6d",
+      "bytes": 20151
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+      "sha256": "13adb51c3e7fcb2e7ecd173b255ecde75b0e048d84d3b6a45de1b64bab03457d",
+      "bytes": 17825
+    },
+    {
+      "file": "controls/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+      "sha256": "23cccb679a5533c94b44b09fac406553ea8b391b3a5cc440ae19e7d396b7e35d",
+      "bytes": 17845
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "0588f9956fbe203aa0e746d6d0c5c4b99c61fd23f025d2ef2791d467c44d6f76",
+      "bytes": 18902
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.initial-order-wording-superseded.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.initial-order-wording-superseded.json",
+      "sha256": "cecffc0719ffb50b9afb5eefcf06f14e97db3f9e0fada5729387e280a8f56194",
+      "bytes": 18584
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.after-public-supplement-before-chronology.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.after-public-supplement-before-chronology.json",
+      "sha256": "454940cd9be749841f0cad3bcbbdd0609e021b9e1c48cd4a3aeb7c9409f23070",
+      "bytes": 17710
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "77f37864d7375a2b5f65fcf86b67eafd8ec2716b51a82631776d48a93863d8fc",
+      "bytes": 18693
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "25ccdf1f768737a3613cf891d193c906a4a1f1abda9ea10b70db0d4acb30d338",
+      "bytes": 18137
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "164ebaa4837e94e83d6618e5625bfc639f86690bcf961add27fb1a867235c1bc",
+      "bytes": 15723
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "0da243e5530a5baf4cfc98388da33e33dfbaebc07806476edab39c744230973d",
+      "bytes": 21428
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.before-public-supplement.json",
+      "sha256": "9b868446451ec63049275bfb9e45344b5d7f7378137955f3943faa17ebaf4f8e",
+      "bytes": 17466
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.initial-judgment-superseded.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.initial-judgment-superseded.json",
+      "sha256": "e8b359f27e9315871c26c2e0222704ffea6dfe0d3d653cee557d2b808b78b6ab",
+      "bytes": 20323
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "1e1fad2d3a4f51792e815b0972e817e690b32a3bf1f51d73c23352e123770537",
+      "bytes": 23354
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "8343aadb1ba6d4cf7f8f12b9248f9e3bff3d5f7c2b76f393537f134e9a2444a7",
+      "bytes": 16079
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.before-public-supplement.json",
+      "sha256": "9fa074424ada2ac2b047028969eef51cf07b5a3c72b84063a216efc230df88c1",
+      "bytes": 16152
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.initial-judgment-superseded.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.initial-judgment-superseded.json",
+      "sha256": "0f42fb4b77781c4fe10855f3e4812298742fe348d2054c68126c87705de90f06",
+      "bytes": 19218
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "50d6d2575f34d3195c18330d93f636d84609bcb143cc3c2203973d5752c9f17f",
+      "bytes": 12661
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "022032d138898fb907163aa1551323bff3fc4cdda7d74684c72bcab2d095576f",
+      "bytes": 16217
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.before-public-supplement.json",
+      "sha256": "9d6516c0760b2ecc01031132763acfb55a832ba1559e0bf180447494cec97155",
+      "bytes": 17410
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "eb3ab88acd4e89de299e6ff8a485e7d1ac7a6784cd30e073eebb9eb8011ce5d2",
+      "bytes": 18855
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "b6d7a17517d1d3035b215ea6e953d4beb25facfb955f9bdd6dfc4fe65890e431",
+      "bytes": 18524
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.before-public-supplement.json",
+      "sha256": "46e4e9678a4110ffbd8905c324567a3544ef1af6f27bfe2b2b2db2f0e0c60252",
+      "bytes": 20595
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.before-public-supplement.json",
+      "sha256": "e96997652acd4b00f99638186e83a737399dd9fc927dd234cfa6999c095cd01a",
+      "bytes": 15881
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.before-public-supplement.json",
+      "sha256": "151bcd46ce5131de2c2ade0dbee7f1cae66a30e4610b98ca9ebd78d4f87c6279",
+      "bytes": 16013
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "81730c9dd8a67d1c241a741835483ba404c5d228b3a0fde18d5e95c9c14896f6",
+      "bytes": 18520
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.before-public-supplement.json",
+      "sha256": "5c8f111910632384ee406790a8887dd1acfea1cd5d4d313436e27ae9c4998883",
+      "bytes": 15937
+    },
+    {
+      "file": "controls/manual/revisions/revision-byte-restoration.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/revision-byte-restoration.json",
+      "sha256": "3e930eca163e44b867e201967dee25bb2980026d2148530d0b4b0080b4bba9be",
+      "bytes": 1924
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "c53465e022c70da118a20787c9a8221ef86fcec031f0dba8287fa8abc7d7b653",
+      "bytes": 16208
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "7e0708c09775445a4985d168f92f1722d9b7571b3847932335355cb25241f18d",
+      "bytes": 17737
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.before-public-supplement.json",
+      "sha256": "1f65bdc0d220e2f4dcac2123495f29ea5bd7903bc9e519bb6659de78f0e517f1",
+      "bytes": 13464
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "4f863fb5a2113f78f43b75fc7ecf6ec463641850b8772c438ddb46f97616d212",
+      "bytes": 16514
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.before-public-supplement.json",
+      "sha256": "e236e2a5a464f3d2a39dce915889480becba65ad08474ed21093b941b227645e",
+      "bytes": 17085
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "19a51a03e96ca423bb3489356571131a443b823b4dc4d7f1c7fd71b0904a4fa6",
+      "bytes": 18035
+    },
+    {
+      "file": "controls/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.before-public-supplement.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.before-public-supplement.json",
+      "sha256": "267ee8621dcdc082e2978d631c8cc5993d4dae894920631196ad816daa7db945",
+      "bytes": 19501
+    },
+    {
+      "file": "warm-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-atlas-4cd896b65161.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-atlas-4cd896b65161.json",
+      "sha256": "4cd896b6516128553df15b1ee83c3aa7f705827218742fedc94c1bbeebf56234",
+      "bytes": 2185
+    },
+    {
+      "file": "warm-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas-eca7911a620b10bf89ab6067e48110ff0dde01c98aef8d0015927ce77993eb9f.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas-eca7911a620b10bf89ab6067e48110ff0dde01c98aef8d0015927ce77993eb9f.json",
+      "sha256": "eca7911a620b10bf89ab6067e48110ff0dde01c98aef8d0015927ce77993eb9f",
+      "bytes": 1684
+    },
+    {
+      "file": "warm-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-97edfe94bc17.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-97edfe94bc17.json",
+      "sha256": "97edfe94bc17c244853fa76ca339df23e76ba073dfea293b3d66f34a9c176db9",
+      "bytes": 2152
+    },
+    {
+      "file": "warm-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas-57dc042c16b9.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas-57dc042c16b9.json",
+      "sha256": "57dc042c16b955ba10045531fd4a705364315f9b67ebbc4cfa1d8c3506e22ee4",
+      "bytes": 2199
+    },
+    {
+      "file": "independent-six-check.json",
+      "original": "/private/tmp/atlas-native-memory-mimo-process-audit/independent-six-check/independent-review.json",
+      "sha256": "aa25c2f60c711c35afc477f680050680e0d1d55218e63d00c36ce69f3b5b2f96",
+      "bytes": 7370
+    }
+  ]
+}

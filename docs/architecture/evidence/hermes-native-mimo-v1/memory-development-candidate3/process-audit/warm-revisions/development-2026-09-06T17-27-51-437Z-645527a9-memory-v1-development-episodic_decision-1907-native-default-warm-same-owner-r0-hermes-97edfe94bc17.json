@@ -1,0 +1,40 @@
+{
+  "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes",
+  "reviewedAt": "2026-09-06T17:54:55.650081+00:00",
+  "reviewer": "hermes_harness_audit",
+  "criteriaSha256": "c6216f23897c1f0dca93b0a408325184981a830f9a2d805f9fc03feda2d6f095",
+  "projectionPath": "/private/tmp/atlas-native-memory-mimo-process-audit/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes.json",
+  "projectionSha256": "98558b27f74eee9284fb6f3fb3ca73e635725739f87206dcee14f72e4fa7ed78",
+  "coverage": "all public training/recall turn finals, actual native events, persistent snapshots and retained lifecycle evidence",
+  "unsupportedPersistenceClaim": "none_confirmed",
+  "independentFactLoss": "none_confirmed",
+  "staleCorrectionOrWithdrawal": "not_applicable",
+  "approvalWait": "none_observed",
+  "mechanisms": ["native_memory_file", "native_session_search"],
+  "machineClaimFlags": [],
+  "findings": [
+    {
+      "kind": "final_protocol_extra_prose",
+      "certainty": "confirmed_observation",
+      "phase": "recall",
+      "turnIndex": 0,
+      "evidence": "Correct rail/36 JSON followed by explanatory prose and session reference, contrary to only-JSON request. Frozen factual primary success true, finalContract/strictSuccess false."
+    }
+  ],
+  "notes": [
+    "The persistent-memory claim is supported by a successful add containing the full decision; exact repeated add at recall is idempotent, with one entry. The training reply acknowledges recording instead of restating the requested decision summary, an ancillary response omission rather than false persistence. Native file and search support the correct final values; no lost independent fact."
+  ],
+  "frozenEvaluation": {
+    "ambiguousFinal": false,
+    "boundaryValid": true,
+    "falseCompletion": false,
+    "finalContract": false,
+    "finalFactsCorrect": true,
+    "missingFacts": [],
+    "strictSuccess": false,
+    "success": true,
+    "wrongFacts": []
+  },
+  "frozenStatus": "completed",
+  "scoresChanged": false
+}

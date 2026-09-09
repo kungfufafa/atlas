@@ -1,0 +1,93 @@
+{
+  "at": "2026-09-07T09:29:26.391612+00:00",
+  "status": "Exact CLOSED health-only package preserved; not a phase closure or validity decision",
+  "sourceManifestSha256": "4a9a4051f14eeb923fa7d78987a836299b9b14bc79f65fa18e23bc1c2327eafe",
+  "sourceClosureSha256": "ac9f12d125d5a63c548f625e0569aff558eedaf9131cd1d5573719b754b4add2",
+  "manifestSelectedMembers": 8,
+  "copiedOriginalFiles": 10,
+  "files": {
+    "health-note.md": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/health-note.md",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/health-note.md",
+      "sha256": "c7143720416cb640fee30fcec2df710167172acf96f75e0895078e7b35972257",
+      "bytes": 5066,
+      "mode": "0o644"
+    },
+    "lifecycle-projection.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/lifecycle-projection.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/lifecycle-projection.json",
+      "sha256": "2b4418f17f9411aa2b385b84a4d5be1c8603f3ae5c1dfa6fa3af15a698bd09a0",
+      "bytes": 49171,
+      "mode": "0o644"
+    },
+    "matched-clock-intervals.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/matched-clock-intervals.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/matched-clock-intervals.json",
+      "sha256": "43ad296f4c599f6648de334273d10080b8a55fde5bb96747e81634b1e8417d09",
+      "bytes": 2603,
+      "mode": "0o644"
+    },
+    "os-sleep-wake-projection.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/os-sleep-wake-projection.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/os-sleep-wake-projection.json",
+      "sha256": "a116e1e7d48abd2b0f360d538efab0e175fba8873b83bfb56837ea02b3abfc00",
+      "bytes": 188442,
+      "mode": "0o644"
+    },
+    "project_lifecycle.py": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/project_lifecycle.py",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/project_lifecycle.py",
+      "sha256": "d1ec285dce36fd7b513274da524d001593a9ef17b9f64413b1aad59eccd8f73f",
+      "bytes": 4251,
+      "mode": "0o644"
+    },
+    "project_os_sleep_wake.py": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/project_os_sleep_wake.py",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/project_os_sleep_wake.py",
+      "sha256": "61954cc64630a7e1d6c14521250d6540059dd0afc3bdef6a40e354724e3db274",
+      "bytes": 2738,
+      "mode": "0o644"
+    },
+    "registration.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/registration.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/registration.json",
+      "sha256": "d0e5a15d581f609b9699052f6782241cf5e7dd44210ac2665426c818fb19393d",
+      "bytes": 759,
+      "mode": "0o644"
+    },
+    "seal_health.py": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/seal_health.py",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/seal_health.py",
+      "sha256": "051d1b273359e07417d776d926e6922d307a6df0d77470978ea29a7625453592",
+      "bytes": 8129,
+      "mode": "0o644"
+    },
+    "manifest.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/manifest.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/manifest.json",
+      "sha256": "4a9a4051f14eeb923fa7d78987a836299b9b14bc79f65fa18e23bc1c2327eafe",
+      "bytes": 1251,
+      "mode": "0o644"
+    },
+    "closure.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/closure.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-v3-c9-confirmation-health-window/closure.json",
+      "sha256": "ac9f12d125d5a63c548f625e0569aff558eedaf9131cd1d5573719b754b4add2",
+      "bytes": 926,
+      "mode": "0o644"
+    }
+  },
+  "sourceRetained": true,
+  "bytesHashesModesVerified": true,
+  "knownCredentialScan": {
+    "clean": true,
+    "utilitySha256": "bd0d84d300ab58396588b139cfc6854afb4ee251f0d7a03613fb3a82dd90fb60",
+    "finiteKnownValuesOnly": true
+  },
+  "scope": "Only the eight closed manifest-selected files plus original manifest/closure were copied. Referenced original metadata, ledger, OS logs and active confirmation batch were not opened, followed or reverified. Copied scripts were not executed. No rewriting, diagnostics, power/job changes, tests, provider calls, rescoring or progress append.",
+  "qualifications": [
+    "Five matched sleep/wake intervals support host suspension and clock divergence; they do not establish the cause of every transport error or study validity.",
+    "Proxy-generated 502 is not an observed upstream HTTP502.",
+    "Raw OS messages were intentionally discarded by the original projection; this copy contains only the released closed package."
+  ]
+}

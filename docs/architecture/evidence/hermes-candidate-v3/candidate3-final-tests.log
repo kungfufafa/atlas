@@ -1,0 +1,723 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/providers/subscription/errors.test.ts:
+(pass) classifySubscriptionError > maps quota and plan limits separately from rate limits
+(pass) classifySubscriptionError > maps auth, model, and missing runtime failures
+
+apps/server/src/providers/subscription/runtimes.test.ts:
+(pass) subscription native session deletion > retains failed bindings so native deletion can be retried [49.38ms]
+(pass) subscription native session deletion > discards and deletes a binding written by a cancelled in-flight turn [5.29ms]
+(pass) subscription native session deletion > treats an already-missing native thread as successfully deleted [7.86ms]
+
+apps/server/src/providers/subscription/env.test.ts:
+(pass) subscription runtime env > strips API-key env so ChatGPT subscription cannot bill OpenAI API [1019.66ms]
+(pass) subscription runtime env > strips Anthropic API env so Claude subscription cannot bill API credits
+(pass) subscription runtime env > derives default Claude auth from the active Atlas config, not host HOME [0.20ms]
+(pass) subscription runtime env > preserves an explicitly configured absolute Claude auth directory [0.05ms]
+(pass) subscription runtime env > prefers device login in SSH and headless Linux
+
+apps/server/src/providers/subscription/prompt.test.ts:
+(pass) subscription prompt mapping > keeps Atlas as the tool executor [0.72ms]
+(pass) subscription prompt mapping > keeps Atlas write tools outside both native runtime permission boundaries
+(pass) subscription prompt mapping > extracts documents into the subscription transcript
+(pass) subscription prompt mapping > resumes with only messages Atlas added after the native boundary [0.96ms]
+(pass) subscription prompt mapping > preserves images in first-turn and continuation inputs [0.15ms]
+(pass) subscription prompt mapping > preserves interleaved text and image order [0.16ms]
+(pass) subscription prompt mapping > fingerprints image bytes as part of native history
+(pass) subscription prompt mapping > parses fenced tool calls out of assistant text [0.60ms]
+
+apps/server/src/providers/subscription/binary.test.ts:
+(pass) bundled subscription runtimes > names platform packages for the current OS [0.76ms]
+(pass) bundled subscription runtimes > resolves the Codex binary bundled with Atlas [1.17ms]
+(pass) bundled subscription runtimes > resolves the Claude binary bundled with Atlas [0.29ms]
+(pass) bundled subscription runtimes > builds a runnable Claude login command with an empty PATH
+(pass) bundled subscription runtimes > builds a Docker host command without copying runtime secrets
+(pass) bundled subscription runtimes > login wrapper preserves a quoted config path and removes inherited tokens [26.73ms]
+
+apps/server/src/providers/subscription/primitive-failure-evidence.test.ts:
+(pass) known native result counters survive an onChunk string throw with original cause and diagnostics [5.71ms]
+(pass) known native result counters survive an onChunk number throw with original cause and diagnostics [1.17ms]
+(pass) known native result counters survive an onChunk null throw with original cause and diagnostics [1.00ms]
+(pass) known native result counters survive an onChunk undefined throw with original cause and diagnostics [1.06ms]
+(pass) known native result counters survive an onChunk Error throw with original cause and diagnostics [0.74ms]
+(pass) known native result counters survive an onChunk SubscriptionRuntimeError throw with original cause and diagnostics [0.93ms]
+
+apps/server/src/providers/subscription/native-failure-usage.repro.test.ts:
+(pass) chatgpt failed known native usage is retained once without retry or estimation [8.47ms]
+(pass) chatgpt interrupted known native usage is retained once without retry or estimation [2.59ms]
+(pass) chatgpt failed zero native usage is retained once without retry or estimation [1.98ms]
+(pass) chatgpt interrupted zero native usage is retained once without retry or estimation [1.93ms]
+(pass) chatgpt failed partial native usage is retained once without retry or estimation [2.46ms]
+(pass) chatgpt interrupted partial native usage is retained once without retry or estimation [3.23ms]
+(pass) chatgpt failed absent native usage is retained once without retry or estimation [4.95ms]
+(pass) chatgpt interrupted absent native usage is retained once without retry or estimation [2.97ms]
+(pass) claude failed known native usage is retained once without retry or estimation [1.48ms]
+(pass) claude interrupted known native usage is retained once without retry or estimation [0.73ms]
+(pass) claude failed zero native usage is retained once without retry or estimation [1.62ms]
+(pass) claude interrupted zero native usage is retained once without retry or estimation [1.52ms]
+(pass) claude failed partial native usage is retained once without retry or estimation [0.79ms]
+(pass) claude interrupted partial native usage is retained once without retry or estimation [0.68ms]
+(pass) claude failed absent native usage is retained once without retry or estimation [0.63ms]
+(pass) claude interrupted absent native usage is retained once without retry or estimation [0.78ms]
+
+apps/server/src/providers/subscription/jsonrpc-stdio.test.ts:
+(pass) JsonRpcStdioClient > matches JSON-RPC responses by id and forwards notifications [1.27ms]
+(pass) JsonRpcStdioClient > rejects server-initiated requests without resolving a client request [0.37ms]
+(pass) JsonRpcStdioClient > times out requests and reports closed clients [6.63ms]
+(pass) JsonRpcStdioClient > notifies close listeners once when the runtime exits [0.54ms]
+(pass) JSON-RPC server requests > responds to string and integer ids and unregisters handlers [0.68ms]
+(pass) JSON-RPC server requests > rejects invalid ids before invoking handlers
+(pass) JSON-RPC server requests > deduplicates pending requests and replays their completed result
+(pass) JSON-RPC server requests > closes on conflicting duplicate ids and aborts the pending action [0.76ms]
+(pass) JSON-RPC server requests > contains async handler failures without returning sensitive errors [0.14ms]
+(pass) JSON-RPC server requests > unregistering aborts pending handlers and suppresses late responses [0.23ms]
+
+apps/server/src/providers/subscription/prompt-integrity.test.ts:
+(pass) subscription tool protocol integrity > rejects malformed calls without converting invalid JSON to empty success or empty arguments [0.38ms]
+(pass) subscription tool protocol integrity > rejects malformed calls without converting {"name":"read_file","arguments":"path.txt"} to empty success or empty arguments
+(pass) subscription tool protocol integrity > rejects malformed calls without converting {"name":"read_file","arguments":[]} to empty success or empty arguments
+(pass) subscription tool protocol integrity > rejects malformed calls without converting {"name":"read_file","arguments":null} to empty success or empty arguments
+(pass) subscription tool protocol integrity > rejects malformed calls without converting {"arguments":{"path":"file.txt"}} to empty success or empty arguments
+(pass) subscription tool protocol integrity > rejects malformed calls without converting null to empty success or empty arguments
+(pass) subscription tool protocol integrity > rejects truncated calls and duplicate call IDs before any tools can run [0.11ms]
+(pass) subscription tool protocol integrity > preserves literal markdown fences in tool arguments with "\n" line endings [0.03ms]
+(pass) subscription tool protocol integrity > preserves literal markdown fences in tool arguments with "\r\n" line endings [0.04ms]
+(pass) subscription tool protocol integrity > correlates parallel same-name tool results with their actual arguments on continuation [0.37ms]
+
+apps/server/src/providers/subscription/fidelity-repro.test.ts:
+(pass) ChatGPT cancellation before prevents native thread and turn creation [0.98ms]
+(pass) ChatGPT cancellation auth prevents native thread and turn creation [0.89ms]
+(pass) ChatGPT cancellation models prevents native thread and turn creation [1.45ms]
+(pass) ChatGPT cancellation after thread creation prevents turn and cleans up the created thread [2.28ms]
+(pass) ChatGPT uncancelled exact selection still returns unchanged answer [1.59ms]
+(pass) Claude terminal model rejection retains reported usage without publishing unverified content (nonstream) [1.62ms]
+(pass) Claude terminal model rejection retains reported usage without publishing unverified content (stream) [1.69ms]
+(pass) Claude advertised alias resolves without changing JSON (nonstream) [1.14ms]
+(pass) Claude rejects genuine model substitution (nonstream) [2.63ms]
+(pass) Claude advertised alias resolves without changing JSON (stream) [1.39ms]
+(pass) Claude rejects genuine model substitution (stream) [0.88ms]
+(pass) Claude holds unidentified deltas until the terminal identity and rejects before publishing [1.10ms]
+(pass) Claude exact selection works when optional catalog is absent without guessing aliases [2.38ms]
+(pass) Claude does not infer similar-name alias equivalence from missing metadata [1.12ms]
+(pass) Claude advertised catalog rejects an unavailable explicit model before yielding user input [1.55ms]
+(pass) Claude terminal-only verified identity releases pending fragments exactly once [1.59ms]
+(pass) Claude rejects a later contradictory identity without appending metadata to prior valid chunks [1.03ms]
+(pass) Claude explicitly empty native catalog prevents user inference [0.74ms]
+(pass) Claude missing native identity preserves the answer without inventing model metadata [1.00ms]
+(pass) actual SDK optional alias resolution remains usable and explicitly unverifiable through wrappers [3.17ms]
+(pass) exact native evidence is verified even when optional catalog is absent [0.88ms]
+(pass) no native identity stays unverifiable rather than inventing verification [0.97ms]
+(pass) ChatGPT abort settles while account preflight is still pending and cannot start later [2.49ms]
+(pass) ChatGPT abort settles while model preflight is still pending and cannot start later [0.95ms]
+
+apps/server/src/providers/subscription/session-store.test.ts:
+(pass) subscription session store > preserves every binding during concurrent writes [28.46ms]
+(pass) subscription session store > clears both provider bindings for an Atlas conversation [4.52ms]
+(pass) subscription session store > invalidates an in-flight write and retains its native id for cleanup [2.71ms]
+(pass) subscription session store > deletes the replaced native session after a history reset [3.31ms]
+(pass) subscription session store > queues and deletes the native binding evicted by the store cap [15.39ms]
+(pass) subscription session store > drains provider leases before deleting every provider session [3.50ms]
+(pass) subscription session store > treats an already-missing native provider session as deleted [2.58ms]
+(pass) subscription session store > does not overwrite a malformed non-empty session store [0.69ms]
+(pass) subscription session store > rejects invalid entries instead of silently dropping native ids [0.47ms]
+
+apps/server/src/providers/subscription/claude/runtime-structured-tools.test.ts:
+(pass) Claude structured Atlas bridge > registers unchanged JSON schemas, executes multiple native calls, and isolates host capabilities [23.99ms]
+(pass) Claude structured Atlas bridge > reuses native sessions only when callback receipts and catalog match [20.31ms]
+(pass) Claude structured Atlas bridge > replays duplicate MCP IDs without executing twice and rejects conflicting reuse [7.06ms]
+(pass) Claude structured Atlas bridge > preserves suspension identity and never converts it to a completed native result [7.72ms]
+(pass) Claude structured Atlas bridge > returns failed Atlas results as MCP tool errors while preserving receipts [4.63ms]
+(pass) Claude structured Atlas bridge > rejects unknown tool names before dispatch [3.45ms]
+(pass) Claude structured Atlas bridge > passes raw arguments to Atlas schema validation before any effect [54.51ms]
+(pass) Claude structured Atlas bridge > does not fall back to textual tools when structured SDK registration is missing [0.96ms]
+(pass) Claude structured Atlas bridge > cancellation aborts the accepted callback and invalidates native continuation [4.15ms]
+(pass) Claude structured Atlas bridge > rejects premature native completion while preserving completed callback evidence [4.73ms]
+(pass) Claude structured Atlas bridge > never executes a textual tool fence in structured mode [3.07ms]
+(pass) Claude active inference deadline > a long pending approval does not time out and overlapping host calls keep inference paused [6.18ms]
+(pass) Claude active inference deadline > the remaining inference budget resumes after a tool result instead of resetting [6.11ms]
+(pass) Claude active inference deadline > an explicit caller deadline still cancels the host callback while inference is paused [4.43ms]
+
+apps/server/src/providers/subscription/claude/runtime-metadata.test.ts:
+(pass) Claude metadata discovery and native context > discovers models during initialization without yielding any user prompt [1.28ms]
+(pass) Claude metadata discovery and native context > propagates model discovery failures without replacing them with a fabricated catalog [0.62ms]
+(pass) Claude metadata discovery and native context > reads native context before closing the successful query [1.05ms]
+(pass) Claude metadata discovery and native context > unavailable native context remains unknown despite cumulative model usage [0.81ms]
+(pass) Claude metadata discovery and native context > validates exact runtime effort metadata before issuing the requested model turn [2.71ms]
+
+apps/server/src/providers/subscription/claude/metadata.test.ts:
+(pass) Claude runtime metadata > uses advertised model IDs and exact effort levels without inventing limits or defaults [0.09ms]
+(pass) Claude runtime metadata > lack of adaptive thinking does not invent a claim about legacy thinking [0.03ms]
+(pass) Claude runtime metadata > preserves explicit reasoning effort and leaves runtime default effort unset [0.12ms]
+(pass) Claude runtime metadata > uses native occupancy rather than raw context capacity or cumulative query usage [0.04ms]
+(pass) Claude runtime metadata > rejects invalid native context windows %s [0.01ms]
+(pass) Claude runtime metadata > rejects invalid native context windows %s
+(pass) Claude runtime metadata > rejects invalid native context windows %s
+(pass) Claude runtime metadata > rejects invalid native context windows %s
+(pass) Claude runtime metadata > counts all cache input and each query model once [0.05ms]
+
+apps/server/src/providers/subscription/claude/runtime.test.ts:
+(pass) Claude subscription runtime > strict model discovery returns only native metadata and closes the discovery process [1.09ms]
+(pass) Claude subscription runtime > strict model discovery refuses a fallback catalog when native metadata is absent [0.88ms]
+(pass) Claude subscription runtime > strict model discovery refuses an explicitly empty native catalog [0.74ms]
+(pass) Claude subscription runtime > disables native capabilities while preserving Atlas tool execution [1.41ms]
+(pass) Claude subscription runtime > surfaces SDK success envelopes marked as errors [0.87ms]
+(pass) Claude subscription runtime > does not start a query when the request is already cancelled [0.13ms]
+(pass) Claude subscription runtime > does not start a query when cancellation arrives during auth [0.69ms]
+(pass) Claude subscription runtime > drains an active one-shot before logout and blocks new work [1.30ms]
+(pass) Claude subscription runtime > does not evict an active login when the status cache is full [0.51ms]
+(pass) Claude subscription runtime > times out and interrupts a query that ignores cancellation [8.30ms]
+(pass) Claude subscription runtime > fails closed when Claude auth output is empty or explicitly false [0.35ms]
+(pass) Claude subscription runtime > fails closed when the native logout command does not succeed [0.10ms]
+(pass) Claude subscription runtime > deletes a stale native session before starting fresh [4.05ms]
+(pass) Claude subscription runtime > deletes a discovered native session when its query fails [2.21ms]
+(pass) Claude subscription runtime > fails closed when the SDK cannot delete native sessions [0.04ms]
+(pass) Claude subscription runtime > fails and retains cleanup when persistence and native deletion fail [1.87ms]
+
+apps/server/src/providers/subscription/claude/structured-harness-persistence.test.ts:
+(pass) H12 actual MCP to protected files and SQLite: complete [96.89ms]
+(pass) H12 actual MCP to protected files and SQLite: conflict [45.39ms]
+(pass) H12 actual MCP to protected files and SQLite: cancel [38.63ms]
+(pass) H12 actual MCP to protected files and SQLite: invalid_path [51.84ms]
+
+apps/server/src/providers/subscription/claude/runtime-integrity.test.ts:
+(pass) Claude runtime stream integrity > preserves repeated delta fragments and emits the terminal snapshot tail once [1.76ms]
+(pass) Claude runtime stream integrity > keeps thinking in nonstreaming results without a thinking callback [1.69ms]
+(pass) Claude runtime stream integrity > appends repeated thinking deltas without duplicating the completed thinking snapshot [2.24ms]
+(pass) Claude runtime stream integrity > rejects missing terminal result and removes the unusable native session [9.04ms]
+(pass) Claude runtime stream integrity > rejects malformed tool call and removes the unusable native session [4.49ms]
+
+apps/server/src/providers/subscription/chatgpt/runtime-structured-tools.test.ts:
+(pass) Codex structured Atlas tools > dispatches multiple native calls once and resumes after their canonical receipts [10.29ms]
+(pass) Codex structured Atlas tools > replaces native sessions when tool declarations or bridge mode change [7.68ms]
+(pass) Codex structured Atlas tools > preserves approval suspension after completed tools and clears the native continuation [3.32ms]
+(pass) Codex structured Atlas tools > rejects unknown without dispatching an extra action [4.57ms]
+(pass) Codex structured Atlas tools > rejects invalid-arguments without dispatching an extra action [1.83ms]
+(pass) Codex structured Atlas tools > rejects conflicting-id without dispatching an extra action [1.96ms]
+(pass) Codex structured Atlas tools > keeps a resumed approval suspension when native deletion needs retry [2.13ms]
+(pass) Codex structured Atlas tools > does not retry a failed structured turn through the text bridge [2.81ms]
+(pass) Codex structured Atlas tools > passes cancellation to the Atlas callback without retaining a native session [2.82ms]
+(pass) Codex structured Atlas tools > never parses text tool syntax in structured mode [2.15ms]
+
+apps/server/src/providers/subscription/chatgpt/app-server-tools.test.ts:
+(pass) Codex structured Atlas tools > negotiates experimental methods before declaring the client initialized [0.71ms]
+(pass) Codex structured Atlas tools > rejects unverified structured protocol version %s before starting work [0.36ms]
+(pass) Codex structured Atlas tools > rejects unverified structured protocol version 0.149.0 before starting work [0.07ms]
+(pass) Codex structured Atlas tools > rejects unverified structured protocol version 0.150.2 before starting work [0.07ms]
+(pass) Codex structured Atlas tools > registers experimental 0.150.1 function specs while retaining native tool isolation [0.30ms]
+(pass) Codex structured Atlas tools > continues multiple tools within one native turn and returns typed results [3.21ms]
+(pass) Codex structured Atlas tools > waits for the turn id and routes concurrent threads independently [0.81ms]
+(pass) Codex structured Atlas tools > deduplicates a call id across pending and completed RPC request ids [0.33ms]
+(pass) Codex structured Atlas tools > rejects conflicting call ids before dispatching a second action [0.31ms]
+(pass) Codex structured Atlas tools > preserves approval suspension identity and prevents queued dispatch [0.39ms]
+(pass) Codex structured Atlas tools > aborts running tool signals and blocks queued actions after cancellation [0.62ms]
+(pass) Codex structured Atlas tools > rejects completion while an Atlas tool is unfinished [0.36ms]
+(pass) Codex structured Atlas tools > does not send results or reconnect when a callback finishes after process exit [0.37ms]
+(pass) the native inference deadline pauses while an Atlas tool waits for approval [103.64ms]
+
+apps/server/src/providers/subscription/chatgpt/app-server.test.ts:
+(pass) CodexAppServer protocol > preserves model-advertised reasoning efforts in runtime order [0.81ms]
+(pass) CodexAppServer protocol > reads model-provider capabilities without inferring them [0.27ms]
+(pass) CodexAppServer protocol > starts and resumes isolated read-only threads [0.31ms]
+(pass) CodexAppServer protocol > enables only image generation on a dedicated isolated thread [0.31ms]
+(pass) CodexAppServer protocol > isolates interleaved notifications by thread and turn [0.71ms]
+(pass) CodexAppServer protocol > keeps the latest native context snapshot when completion reports turn usage [0.24ms]
+(pass) CodexAppServer protocol > validates native context metadata 0 [0.26ms]
+(pass) CodexAppServer protocol > validates native context metadata 1 [0.01ms]
+(pass) CodexAppServer protocol > validates native context metadata 2 [0.07ms]
+(pass) CodexAppServer protocol > validates native context metadata 3 [0.06ms]
+(pass) CodexAppServer protocol > validates native context metadata 4 [0.07ms]
+(pass) CodexAppServer protocol > validates native context metadata 5 [0.05ms]
+(pass) CodexAppServer protocol > validates native context metadata 6 [0.04ms]
+(pass) CodexAppServer protocol > validates native context metadata 7 [0.07ms]
+(pass) CodexAppServer protocol > passes structured image input to turn/start unchanged [0.23ms]
+(pass) CodexAppServer protocol > captures and validates a generated PNG item [1.30ms]
+(pass) CodexAppServer protocol > rejects malformed generated image data [0.63ms]
+(pass) CodexAppServer protocol > interrupts exactly once when a streaming callback throws [0.67ms]
+(pass) CodexAppServer protocol > rejects non-completed terminal statuses [0.60ms]
+(pass) CodexAppServer protocol > rejects failed turns with the runtime error [0.14ms]
+(pass) CodexAppServer protocol > rejects an active turn promptly when the runtime exits [0.22ms]
+(pass) CodexAppServer protocol > does not start a turn when cancelled during delayed connection [0.41ms]
+(pass) CodexAppServer protocol > interrupts a turn whose id arrives after cancellation [0.43ms]
+(pass) CodexAppServer protocol > detects login completion even when its notification was missed [0.37ms]
+
+apps/server/src/providers/subscription/chatgpt/success-usage.test.ts:
+(pass) successful native absent turn usage stays separate from context and cumulative counters [5.81ms]
+(pass) successful native known turn usage stays separate from context and cumulative counters [5.29ms]
+(pass) successful native zero turn usage stays separate from context and cumulative counters [2.83ms]
+(pass) successful native input-only turn usage stays separate from context and cumulative counters [5.20ms]
+(pass) successful native input-and-total turn usage stays separate from context and cumulative counters [3.73ms]
+(pass) successful native total-only turn usage stays separate from context and cumulative counters [5.78ms]
+(pass) successful native invalid turn usage stays separate from context and cumulative counters [4.45ms]
+(pass) buffered callback failure keeps absent explicit native usage and non-executable diagnostics [4.87ms]
+(pass) buffered callback failure keeps known explicit native usage and non-executable diagnostics [2.02ms]
+(pass) buffered callback failure keeps zero explicit native usage and non-executable diagnostics [2.43ms]
+(pass) buffered callback failure keeps input-and-total explicit native usage and non-executable diagnostics [1.97ms]
+(pass) buffered classified and primitive failures keep their original identity or cause [5.71ms]
+(pass) incomplete returned tool syntax preserves known counters as diagnostics and never returns executable calls [4.09ms]
+(pass) current completed turn wins over same-error evidence when next usage is known [3.88ms]
+(pass) current completed turn wins over same-error evidence when next usage is unknown [5.45ms]
+(pass) current completed turn wins over linked-cause evidence when next usage is known [11.19ms]
+(pass) current completed turn wins over linked-cause evidence when next usage is unknown [3.95ms]
+
+apps/server/src/providers/subscription/chatgpt/structured-harness.test.ts:
+(pass) Codex JSON-RPC through the Atlas harness > send executes dependent structured tools within one native turn [9.07ms]
+(pass) Codex JSON-RPC through the Atlas harness > stream executes dependent structured tools within one native turn [4.28ms]
+(pass) Codex JSON-RPC through the Atlas harness > retains one completed call and result after the runtime process disconnects [4.99ms]
+
+apps/server/src/providers/subscription/chatgpt/runtime.test.ts:
+(pass) ChatGPT subscription runtime > rejects malformed tool output without streaming protocol text or retaining the native thread [4.26ms]
+(pass) ChatGPT subscription runtime > exposes model-advertised reasoning efforts to Atlas [0.50ms]
+(pass) ChatGPT subscription runtime > does not invent capabilities when runtime model metadata is absent [0.06ms]
+(pass) ChatGPT subscription runtime > generateChat forwards native context separately from token usage [1.72ms]
+(pass) ChatGPT subscription runtime > streamChat forwards native context separately from token usage [1.26ms]
+(pass) ChatGPT subscription runtime > maps implemented reasoning, vision, and generation from runtime metadata [0.19ms]
+(pass) ChatGPT subscription runtime > normalizes a stale effort to the selected model runtime default [1.63ms]
+(pass) ChatGPT subscription runtime > does not invent an effort when runtime reasoning metadata is absent [0.39ms]
+(pass) ChatGPT subscription runtime > reuses an existing ChatGPT Codex account without forcing login [0.52ms]
+(pass) ChatGPT subscription runtime > rejects Codex API-key auth on the ChatGPT subscription path [0.19ms]
+(pass) ChatGPT subscription runtime > buffers tool syntax and resumes with only new Atlas context [3.05ms]
+(pass) ChatGPT subscription runtime > sends first-turn and resumed images as native Codex inputs [2.15ms]
+(pass) ChatGPT subscription runtime > fails closed when the selected model omits image input [0.23ms]
+(pass) ChatGPT subscription runtime > uses and deletes a persisted dedicated thread for one-shot chats [3.80ms]
+(pass) ChatGPT subscription runtime > deletes a persisted one-shot chat thread after turn failure [1.87ms]
+(pass) ChatGPT subscription runtime > drains active one-shot generateText before logout and blocks new work [2.05ms]
+(pass) ChatGPT subscription runtime > generates one image through an isolated subscription thread and cleans it up [16.82ms]
+(pass) ChatGPT subscription runtime > fully decodes native image output before returning it [3.50ms]
+(pass) ChatGPT subscription runtime > fails image generation without provider fallback and still cleans its thread [1.43ms]
+(pass) ChatGPT subscription runtime > returns a generated image when deletion fails and retries cleanup later [12.42ms]
+(pass) ChatGPT subscription runtime > keeps the generation error when deletion also fails and retries cleanup later [2.53ms]
+(pass) ChatGPT subscription runtime > drains active image generation before logout and blocks new work [10.87ms]
+(pass) ChatGPT subscription runtime > does not start image generation when the runtime probe says unsupported [0.16ms]
+(pass) ChatGPT subscription runtime > rejects missing or multiple native image results [7.18ms]
+(pass) ChatGPT subscription runtime > keeps an explicit cancellation when the login watcher finishes later [0.79ms]
+(pass) ChatGPT subscription runtime > does not cancel login when only a wait request is aborted [0.27ms]
+(pass) ChatGPT subscription runtime > rejects duplicate pending login attempts [0.18ms]
+(pass) ChatGPT subscription runtime > does not evict an active login when the status cache is full [0.22ms]
+(pass) ChatGPT subscription runtime > fails an unknown unauthenticated login instead of polling forever [0.05ms]
+(pass) ChatGPT subscription runtime > deletes a stale native thread before replacing its binding [2.41ms]
+(pass) ChatGPT subscription runtime > deletes a newly created native thread when its first turn fails [1.52ms]
+(pass) ChatGPT subscription runtime > does not double-delete a thread persisted before a consumer error [2.27ms]
+(pass) ChatGPT subscription runtime > coalesces logout and blocks turns until cleanup and logout finish [4.39ms]
+(pass) ChatGPT subscription runtime > fails and retains cleanup when persistence and native deletion fail [5.68ms]
+(pass) ChatGPT subscription runtime > continues logout when a native thread is already missing [1.74ms]
+
+apps/server/src/providers/subscription/chatgpt/structured-harness-persistence.test.ts:
+(pass) H11 actual JSON-RPC to protected files and SQLite: complete [55.14ms]
+(pass) H11 actual JSON-RPC to protected files and SQLite: conflict [35.51ms]
+(pass) H11 actual JSON-RPC to protected files and SQLite: disconnect [50.43ms]
+(pass) H11 actual JSON-RPC to protected files and SQLite: cancel [52.91ms]
+(pass) H11 actual JSON-RPC to protected files and SQLite: invalid_path [62.97ms]
+
+apps/server/src/providers/usage-provenance.test.ts:
+(pass) sqlite: reported, estimated and unknown invocations survive reload with model separation [71.29ms]
+(pass) in-memory: reported, estimated and unknown invocations survive reload with model separation [0.98ms]
+(pass) legacy SQLite migration leaves prior requests unclassified over repeated opens [40.91ms]
+(pass) managed runtime absent counters remain unknown across all three APIs [1.31ms]
+(pass) managed runtime partial counters remain unknown across all three APIs [0.55ms]
+(pass) managed runtime invalid counters remain unknown across all three APIs [0.26ms]
+(pass) reported zero, provider estimates and mixed API counters retain distinct provenance [0.77ms]
+(pass) native failure evidence records once through causes; unknown and synchronous failures remain original [0.61ms]
+(pass) global/model provenance does not populate or alter the separate scoped daily reports [32.78ms]
+
+apps/server/src/providers/usage-tracking.test.ts:
+(pass) usage tracking > binds pricing to overlapping provider turns [0.56ms]
+(pass) usage tracking > prefers provider-reported usage for chat calls [0.19ms]
+(pass) usage tracking > prefers provider-reported usage for text calls [0.12ms]
+(pass) usage tracking > stamps estimated usage onto chat results when the provider omits it [0.10ms]
+(pass) usage tracking > leaves provider usage unmarked as estimated [0.23ms]
+(pass) usage tracking > estimateChatInputBreakdown splits system, tools, and messages [0.45ms]
+
+apps/server/src/providers/output-limit-evidence.test.ts:
+(pass) OpenAI JSON truncation retains raw malformed arguments and total usage including reasoning [3.91ms]
+(pass) OpenAI stream retains terminal deltas and trailing usage without parsing incomplete arguments [2.53ms]
+(pass) OpenAI generateText retains failure usage without retrying [0.80ms]
+(pass) Compatible JSON truncation retains raw malformed arguments and total usage including reasoning [8.09ms]
+(pass) Compatible stream retains terminal deltas and trailing usage without parsing incomplete arguments [1.19ms]
+(pass) Compatible generateText retains failure usage without retrying [0.72ms]
+(pass) Cerebras JSON truncation retains raw malformed arguments and total usage including reasoning [0.35ms]
+(pass) Cerebras stream retains terminal deltas and trailing usage without parsing incomplete arguments [0.73ms]
+(pass) Cerebras generateText retains failure usage without retrying [1.36ms]
+(pass) Fireworks JSON truncation retains raw malformed arguments and total usage including reasoning [1.86ms]
+(pass) Fireworks stream retains terminal deltas and trailing usage without parsing incomplete arguments [1.67ms]
+(pass) Fireworks generateText retains failure usage without retrying [0.96ms]
+(pass) OpenRouter JSON truncation retains raw malformed arguments and total usage including reasoning [13.45ms]
+(pass) OpenRouter stream retains terminal deltas and trailing usage without parsing incomplete arguments [3.89ms]
+(pass) OpenRouter generateText retains failure usage without retrying [0.73ms]
+(pass) generateChat usage wrapper charges failed and successful requests exactly once, preserving error identity and native context flag [0.29ms]
+(pass) streamChat usage wrapper charges failed and successful requests exactly once, preserving error identity and native context flag [0.04ms]
+(pass) missing failure usage stays unknown rather than a fabricated zero or partial text estimate [1.21ms]
+(pass) SSE transport failure following length is not converted into a recoverable output limit [0.72ms]
+
+apps/server/src/providers/failure-evidence.test.ts:
+(pass) diagnostic snapshots preserve error identity, native classification and nested causes without executable calls [0.15ms]
+(pass) generateChat records nested-cause usage once and rethrows the exact error without replay [0.30ms]
+(pass) streamChat records nested-cause usage once and rethrows the exact error without replay [0.03ms]
+(pass) generateText records nested-cause usage once and rethrows the exact error without replay [0.06ms]
+(pass) partial, absent, invalid or estimated failure counters are never recorded or derived from context
+(pass) actual app-server cancellation retains partial diagnostics and context, but never records occupancy or cumulative totals as turn counters [2.90ms]
+
+apps/server/src/services/llm-usage-tracker.test.ts:
+(pass) LlmUsageTracker > loads persisted stats and increments them on record [0.31ms]
+
+apps/server/src/services/memory-service.test.ts:
+(pass) MemoryService > writes and retrieves a user memory [17.27ms]
+(pass) MemoryService > deduplicates similar memories by updating existing entry [0.37ms]
+(pass) MemoryService > rejects sensitive secrets, passwords, and API keys [0.26ms]
+(pass) MemoryService > enforces strict cross-org, cross-user, and cross-project isolation [0.51ms]
+(pass) MemoryService > listVisibleMemories excludes another user's user-scope rows [0.62ms]
+
+apps/server/src/services/memory-retrieval.test.ts:
+(pass) natural questions retrieve old facts ahead of many distractors after SQLite reopen [157.07ms]
+(pass) relevance is global across scopes and never receives an organization or personal scope boost [24.74ms]
+(pass) tenant, exact organization owner, user, profile and project ACLs apply before candidate limits [16.72ms]
+(pass) Unicode segmentation and canonical case normalization work without changing stored facts [35.60ms]
+(pass) literal DB queries treat percent, underscore, quotes and backslashes as data in both adapters [29.88ms]
+(pass) search columns stay synchronized across create, same-id upsert, update and reopen [29.39ms]
+(pass) preexisting database migration backfills Unicode searches without rewriting source metadata [48.93ms]
+(pass) zero, negative, fractional and excessive result limits stay bounded in both adapters [44.80ms]
+
+apps/server/src/services/org-memory-service.test.ts:
+(pass) OrgMemoryService > getMemory returns the canonical preamble when the file is missing [1.92ms]
+(pass) OrgMemoryService > addFact with pin creates MEMORY.md with preamble + bullet on first action [7.75ms]
+(pass) OrgMemoryService > addFact is idempotent for an already-pinned bullet [3.05ms]
+(pass) OrgMemoryService > getSummary returns the pinned bullets [6.41ms]
+(pass) OrgMemoryService > unpinFact removes a pinned bullet; 404 when not pinned [6.53ms]
+(pass) OrgMemoryService > setMemory replaces live content and rejects oversized bodies [7.00ms]
+(pass) OrgMemoryService > search finds bullets in the live file and archive files [9.58ms]
+(pass) OrgMemoryService > archiveEntries moves bullets to memory-archive [17.52ms]
+(pass) OrgMemoryService > cross-org isolation: addFact to org_a only writes org_a's dir [5.48ms]
+(pass) OrgMemoryService > propose creates pending row without writing MEMORY.md [4.13ms]
+(pass) OrgMemoryService > propose returns already_pending for duplicate bullet [1.61ms]
+(pass) OrgMemoryService > approve writes to recent-log section by default [6.64ms]
+(pass) OrgMemoryService > approve with pin writes to pinned section and is idempotent [4.79ms]
+(pass) OrgMemoryService > search tags pinned and recent-log tiers [5.87ms]
+(pass) OrgMemoryService > logs changes and supports undo [9.41ms]
+(pass) OrgMemoryService > undo skips malformed and duplicate current snapshots [9.90ms]
+(pass) OrgMemoryService > rejects memory writes for archived organizations [4.73ms]
+
+apps/server/src/tools/memory-tools.test.ts:
+(pass) memory tools fail closed > memory_search without principal throws [2.55ms]
+(pass) memory tools ownership > member cannot update another user's memory [0.88ms]
+(pass) memory tools ownership > member cannot write organization-scope memory [1.08ms]
+(pass) memory tools ownership > platform admin can write organization-scope memory [0.49ms]
+
+apps/server/src/tools/memory-tools-update.test.ts:
+(pass) sqlite partial native memory updates > importance-only preserves content and uncertain metadata [26.98ms]
+(pass) sqlite partial native memory updates > content-only preserves metadata and updates native search [21.29ms]
+(pass) sqlite partial native memory updates > explicit null clears subject without resetting other fields [21.25ms]
+(pass) sqlite partial native memory updates > omitted subject preserves an already-cleared subject [22.19ms]
+(pass) sqlite partial native memory updates > explicit zero confidence persists through a later partial update [28.19ms]
+(pass) sqlite partial native memory updates > explicit undefined optional tool fields leave their stored values intact [18.36ms]
+(pass) sqlite partial native memory updates > service callers can omit fields using undefined [21.23ms]
+(pass) sqlite partial native memory updates > adapter updates ignore inherited and undefined properties but preserve zero and null [19.40ms]
+(pass) in-memory partial native memory updates > importance-only preserves content and uncertain metadata [0.70ms]
+(pass) in-memory partial native memory updates > content-only preserves metadata and updates native search [0.80ms]
+(pass) in-memory partial native memory updates > explicit null clears subject without resetting other fields [0.42ms]
+(pass) in-memory partial native memory updates > omitted subject preserves an already-cleared subject [0.31ms]
+(pass) in-memory partial native memory updates > explicit zero confidence persists through a later partial update [0.81ms]
+(pass) in-memory partial native memory updates > explicit undefined optional tool fields leave their stored values intact [0.67ms]
+(pass) in-memory partial native memory updates > service callers can omit fields using undefined [0.40ms]
+(pass) in-memory partial native memory updates > adapter updates ignore inherited and undefined properties but preserve zero and null [0.42ms]
+
+apps/server/src/tools/memory-tools-dedup.test.ts:
+(pass) sqlite explicit-subject memory identity > native saves preserve separate entities with highly similar fact templates after reopen and recall [26.94ms]
+(pass) sqlite explicit-subject memory identity > even identical text cannot replace a genuinely different explicit subject [16.35ms]
+(pass) sqlite explicit-subject memory identity > equivalent Unicode subjects reuse an exact fact and corrections update by ID [21.50ms]
+(pass) sqlite explicit-subject memory identity > different Unicode subjects remain separate even when their content is identical [18.74ms]
+(pass) sqlite explicit-subject memory identity > explicit corrections and unlabelled exact duplicate saves retain one ID [22.89ms]
+(pass) sqlite explicit-subject memory identity > native saves preserve independent same-subject facts after reopen and recall [22.93ms]
+(pass) sqlite explicit-subject memory identity > deduplication does not cross organization, user, agent or project ownership [22.61ms]
+(pass) in-memory explicit-subject memory identity > native saves preserve separate entities with highly similar fact templates after reopen and recall [1.72ms]
+(pass) in-memory explicit-subject memory identity > even identical text cannot replace a genuinely different explicit subject [0.91ms]
+(pass) in-memory explicit-subject memory identity > equivalent Unicode subjects reuse an exact fact and corrections update by ID [0.87ms]
+(pass) in-memory explicit-subject memory identity > different Unicode subjects remain separate even when their content is identical [0.35ms]
+(pass) in-memory explicit-subject memory identity > explicit corrections and unlabelled exact duplicate saves retain one ID [1.10ms]
+(pass) in-memory explicit-subject memory identity > native saves preserve independent same-subject facts after reopen and recall [1.46ms]
+(pass) in-memory explicit-subject memory identity > deduplication does not cross organization, user, agent or project ownership [2.18ms]
+
+apps/server/src/tools/memory-withdrawal.test.ts:
+(pass) sqlite native memory lifecycle > withdrawal replaces active DB and file copies while preserving unrelated facts after reopen [48.38ms]
+(pass) sqlite native memory lifecycle > DB-only withdrawal does not replicate private memory into a shared profile or allow another user to change it [46.73ms]
+(pass) sqlite native memory lifecycle > a replacement preference updates the existing record rather than retaining two contradictory current values [40.05ms]
+(pass) sqlite native memory lifecycle > requested erasure remains pending or denied without effect and deletes the exact record after ordinary approval [53.84ms]
+(pass) in-memory native memory lifecycle > withdrawal replaces active DB and file copies while preserving unrelated facts after reopen [17.37ms]
+(pass) in-memory native memory lifecycle > DB-only withdrawal does not replicate private memory into a shared profile or allow another user to change it [17.26ms]
+(pass) in-memory native memory lifecycle > a replacement preference updates the existing record rather than retaining two contradictory current values [8.09ms]
+(pass) in-memory native memory lifecycle > requested erasure remains pending or denied without effect and deletes the exact record after ordinary approval [19.35ms]
+
+apps/server/src/tools/org-memory-tools.test.ts:
+(pass) org memory tools > org_memory_search as member returns matching bullets [0.37ms]
+(pass) org memory tools > org_memory_search as viewer throws
+(pass) org memory tools > org_memory_search with undefined orgRole throws (deny-by-default)
+(pass) org memory tools > org_memory_search with missing orgId throws
+(pass) org memory tools > org_memory_search with empty query throws [0.43ms]
+(pass) org memory tools > org_memory_list as member returns live content [0.46ms]
+(pass) org memory tools > propose_org_memory as member creates a proposal [1.16ms]
+(pass) org memory tools > propose_org_memory as viewer throws [0.22ms]
+
+packages/db/src/notification-destinations.test.ts:
+(pass) notification destinations > persists and lists org-scoped telegram destinations [0.64ms]
+(pass) notification destinations > updates and deletes destinations
+
+packages/db/src/migrate.test.ts:
+(pass) legacy profile id migration > renames legacy default and super bot profiles and preserves references [11.07ms]
+(pass) coding-delegation skill rename migration > renames coding-delegation skill records to coding-agent [6.12ms]
+(pass) coding-delegation skill rename migration > merges legacy coding-delegation records when coding-agent already exists [8.94ms]
+(pass) install-wide name uniqueness > rejects a second tool or MCP server with the same name [15.88ms]
+(pass) install-wide name uniqueness > still migrates a database that already holds duplicates [10.16ms]
+(pass) skill org id backfill > recovers the owning org from source_path and leaves global skills alone [10.21ms]
+(pass) schema path resolution > resolves schema.sql from the db package during source execution [0.10ms]
+(pass) schema path resolution > falls back to the workspace schema when running from the bundled server output
+(pass) browser session schema > creates browser session storage with the expected columns [6.46ms]
+(pass) organization schema migration > creates org tables and allows org with admin member [6.65ms]
+(pass) organization schema migration > rejects duplicate organization slug [8.17ms]
+(pass) organization schema migration > rejects org_member with unknown org_id [5.32ms]
+(pass) organization schema migration > adds is_platform_admin to legacy users table [6.46ms]
+(pass) organization schema migration > adds archived_at to a legacy organizations table [8.71ms]
+(pass) organization schema migration > defaults legacy workspace settings to coding provider passthrough [5.71ms]
+(pass) organization schema migration > adds org_id to tenant tables and composite unique indexes [8.85ms]
+(pass) organization schema migration > assigns leftover custom tools to the earliest workspace and keeps builtins global [9.81ms]
+(pass) organization schema migration > assigns leftover MCP servers to the earliest workspace [14.48ms]
+(pass) organization schema migration > creates tenant-scoped channel_org_mappings with foreign keys [5.25ms]
+(pass) organization schema migration > migrates legacy channel mappings and permits the same identity per org [9.86ms]
+(pass) organization schema migration > recovers channel mappings stranded by an interrupted legacy rebuild [5.93ms]
+(pass) organization schema migration > rolls back a failed channel mapping rebuild and succeeds on retry [14.22ms]
+(pass) llm_usage_daily dimension rebuild > preserves legacy rows with safe dimension defaults and keeps indexes [9.34ms]
+(pass) llm_usage_daily dimension rebuild > adds channel without collapsing existing capability rows [6.71ms]
+(pass) llm_usage_daily dimension rebuild > rebuilds a table with both dimensions but a stale primary key [6.24ms]
+(pass) llm_usage_daily dimension rebuild > recovers usage rows and indexes stranded by an interrupted rebuild [4.93ms]
+(pass) llm_usage_daily dimension rebuild > rolls back a failed usage rebuild and succeeds on retry [12.13ms]
+(pass) migration SQL hardening > rejects unexpected tenant table names before SQLite can run injected ATTACH statements [0.70ms]
+(pass) migration SQL hardening > rejects unexpected profile join targets before building dynamic SQL [0.49ms]
+(pass) task owner migration > adds a nullable canonical owner to legacy tasks [5.01ms]
+
+packages/db/src/skill-rank-fts5.test.ts:
+(pass) FTS5 skill ranker > keeps the same top skill as JS BM25 with outcome boost [3.35ms]
+(pass) FTS5 skill ranker > retrieve uses FTS MATCH hits instead of discarding them [0.48ms]
+(pass) FTS5 skill ranker > does not retrieve weather for a generic coding prompt
+
+packages/db/src/reopen.test.ts:
+(pass) database reopen after restore > reopen reads the replacement sqlite file at the same path [48.02ms]
+
+packages/db/src/session-model-override.test.ts:
+(pass) session model override persistence > stores, updates, and resets an override [9.36ms]
+(pass) session model override persistence > adds model_override to a legacy sessions table [5.50ms]
+
+packages/db/src/conversation-history.test.ts:
+(pass) SQLite conversation history authorization > direct history applies optional caller ownership without narrowing trusted org reads [0.42ms]
+(pass) SQLite conversation history authorization > search and direct history share user and Super Agent filters
+(pass) SQLite conversation history authorization > retrieves compacted evidence without adding archives to active model history [1.68ms]
+(pass) SQLite conversation history authorization > archive retrieval and search enforce tenant, owner, and Super Agent boundaries [0.65ms]
+(pass) SQLite conversation history authorization > archive replacement is atomic and rejects changes to an immutable snapshot [0.97ms]
+(pass) SQLite conversation history authorization > clear removes archived history as well as active messages [1.01ms]
+(pass) SQLite conversation history authorization > delete removes archived history as well as active messages [0.41ms]
+(pass) in-memory conversation history authorization > direct history applies optional caller ownership without narrowing trusted org reads [0.19ms]
+(pass) in-memory conversation history authorization > search and direct history share user and Super Agent filters [0.30ms]
+(pass) in-memory conversation history authorization > retrieves compacted evidence without adding archives to active model history [0.26ms]
+(pass) in-memory conversation history authorization > archive retrieval and search enforce tenant, owner, and Super Agent boundaries [0.05ms]
+(pass) in-memory conversation history authorization > archive replacement is atomic and rejects changes to an immutable snapshot [0.17ms]
+(pass) in-memory conversation history authorization > clear removes archived history as well as active messages [0.08ms]
+(pass) in-memory conversation history authorization > delete removes archived history as well as active messages [0.17ms]
+
+packages/db/src/task-owner.test.ts:
+(pass) task owner persistence > atomically first-claims a canonical owner in SQLite [14.72ms]
+
+packages/db/src/profile-change-history.test.ts:
+(pass) SQLite profile history > keeps an ordered, tenant-scoped append-only ledger [9.06ms]
+(pass) in-memory profile history > keeps an ordered, tenant-scoped append-only ledger [0.28ms]
+
+packages/db/src/composio-org.test.ts:
+(pass) composio org isolation > listComposioToolkitsForOrg returns only matching org rows [0.52ms]
+(pass) composio org isolation > replaceProfileComposioToolkits stores action allowlists
+
+packages/db/src/user-context.test.ts:
+(pass) user context storage > init creates context and second init is a no-op
+(pass) user context storage > stores context separately for the same user in different orgs
+
+packages/db/src/local-client.test.ts:
+(pass) ensureLocalClientAccess > creates the local client user and adds it to every org [88.60ms]
+(pass) ensureLocalClientAccess > is idempotent [82.04ms]
+(pass) ensureLocalClientAccess > does not add local-client membership to archived workspaces [77.08ms]
+(pass) ensureLocalClientAccess > creates the local client user with a non-placeholder password hash [80.40ms]
+(pass) ensureLocalClientAccess > replaces a placeholder password hash with a secure hash [81.00ms]
+
+packages/db/src/replace-messages-updated-at.test.ts:
+(pass) replaceMessagesForSession updatedAt > sqlite: advances past stale message timestamps [8.38ms]
+(pass) replaceMessagesForSession updatedAt > in-memory: advances past stale message timestamps [0.15ms]
+(pass) replaceMessagesForSession updatedAt > sqlite append and replace batches are atomic [8.47ms]
+
+packages/db/src/replace-profile-composio-atomicity.test.ts:
+(pass) replaceProfileComposioToolkits atomicity > restores prior assignments when a replacement batch fails [9.09ms]
+
+packages/db/src/skill-curator-schedule.test.ts:
+(pass) SQLite skill curator due clock > persists completion without overwriting it during normal org updates [8.56ms]
+(pass) SQLite skill curator due clock > refuses to advance the clock when consolidation is disabled [7.70ms]
+
+packages/db/src/llm-usage-stats.test.ts:
+(pass) llm usage stats persistence > sqlite adapter accumulates usage deltas [7.47ms]
+(pass) llm usage stats persistence > adapters accumulate per-model usage deltas [7.49ms]
+
+packages/db/src/seed.test.ts:
+(pass) seed cleanup > removes unsupported tool handler types [0.31ms]
+(pass) seed cleanup > removes deprecated builtin tools [0.21ms]
+(pass) seed cleanup > removes deprecated update_profile_memory tool [0.14ms]
+(pass) seed cleanup > removes deprecated create_skill tool [0.05ms]
+(pass) seed cleanup > removes deprecated save_artifact tool [0.06ms]
+(pass) seed built-in tools > registers built-in tool definitions without creating global profiles [79.74ms]
+(pass) seed built-in tools > retains generate_image through unsupported-handler cleanup
+(pass) seed built-in tools > ensureBuiltinToolDefinitions upserts built-in tools idempotently [0.52ms]
+(pass) seed built-in tools > removeDeprecatedServerTools deletes delegate coding task
+(pass) seed preinstalled MCP servers > ensurePreinstalledMcpServers upserts idempotently
+(pass) seed preinstalled MCP servers > seeds firecrawl keyless HTTP MCP unassigned [0.50ms]
+(pass) seed preinstalled MCP servers > preserves HTTP headers and enabled on re-seed [0.21ms]
+(pass) seed preinstalled MCP servers > skips insert when another server already owns the catalog name [0.16ms]
+(pass) seed preinstalled MCP servers > migrates a Firecrawl key-in-URL into an Authorization header [0.22ms]
+(pass) seed preinstalled MCP servers > seeds a separate catalog copy per workspace without copying secrets [0.22ms]
+(pass) seed preinstalled MCP servers > claims a legacy catalog server for the first workspace that seeds it [0.18ms]
+(pass) seed preinstalled MCP servers > does not provision or update catalog servers for archived workspaces
+(pass) seed preinstalled MCP servers > does not provision catalog servers for an explicit missing workspace
+
+packages/db/src/org-profiles.test.ts:
+(pass) seedOrgDefaultProfile > creates one default profile per org [0.59ms]
+(pass) seedOrgDefaultProfile > seeds empty systemPrompt so soul stack defines identity [0.09ms]
+(pass) seedOrgDefaultProfile > is idempotent for the same org
+(pass) seedOrgDefaultProfile > assigns the Default Agent toolkit without Super Agent extras [0.25ms]
+(pass) seedOrgDefaultProfile > does not rewrite tools on an existing Default Agent [0.27ms]
+(pass) seedOrgDefaultProfile > assigns default bundled skills but not super agent skills [0.15ms]
+(pass) seedOrgSuperAgentProfile > creates one super agent per org [0.52ms]
+(pass) seedOrgSuperAgentProfile > assigns builtins and bash [0.58ms]
+(pass) seedOrgSuperAgentProfile > assigns super agent bundled skills [0.14ms]
+(pass) seedOrgSuperAgentProfile > is idempotent for the same org [0.13ms]
+(pass) seedOrgSuperAgentProfile > backfills newly added bundled skills on existing super agent [0.14ms]
+(pass) seedOrgSuperAgentProfile > backfills super agent bundled skills on existing super agent [0.11ms]
+(pass) ensureBundledSkillsAssigned > keeps bundled-skill backfill for legacy profiles before organizations exist
+(pass) ensureBundledSkillsAssigned > does not assign super agent-only skills to ordinary profiles
+(pass) ensureBundledSkillsAssigned > does not change skill assignments in archived workspaces [0.52ms]
+(pass) ensureOrgSuperAgentProfiles > backfills super agent for existing orgs [0.16ms]
+(pass) ensureOrgSuperAgentProfiles > does not backfill super agents for archived workspaces [0.12ms]
+
+packages/db/src/sqlite-concurrency.test.ts:
+(pass) sqlite concurrency pragmas > on-disk databases use WAL and a busy timeout [17.39ms]
+(pass) sqlite concurrency pragmas > two connections can write the same on-disk file [20.04ms]
+
+packages/db/src/organization-archive.test.ts:
+(pass) SQLite organization archive > atomically preserves one active org and hides archived memberships [8.96ms]
+
+packages/db/src/memory-preservation.test.ts:
+(pass) in-memory preserving memory creation > reuses an exact fact without replacing its ID or metadata [0.42ms]
+(pass) in-memory preserving memory creation > preserves changed content even when the subject is the same
+(pass) in-memory preserving memory creation > keeps content case and internal whitespace significant [0.28ms]
+(pass) in-memory preserving memory creation > compares normalized subject identity but preserves the original representation [0.08ms]
+(pass) in-memory preserving memory creation > treats absent and empty subjects as the same identity
+(pass) in-memory preserving memory creation > isolates exact fact reuse by organization, owner, and scope [0.42ms]
+(pass) in-memory preserving memory creation > finds an identical retry beyond fifty more recent unrelated facts [0.65ms]
+(pass) in-memory preserving memory creation > coalesces simultaneous identical creations with distinct candidate IDs [0.50ms]
+(pass) in-memory preserving memory creation > rejects a colliding candidate ID without replacing another fact or tenant [0.10ms]
+(pass) sqlite preserving memory creation > reuses an exact fact without replacing its ID or metadata [7.39ms]
+(pass) sqlite preserving memory creation > preserves changed content even when the subject is the same [7.33ms]
+(pass) sqlite preserving memory creation > keeps content case and internal whitespace significant [8.57ms]
+(pass) sqlite preserving memory creation > compares normalized subject identity but preserves the original representation [9.66ms]
+(pass) sqlite preserving memory creation > treats absent and empty subjects as the same identity [7.37ms]
+(pass) sqlite preserving memory creation > isolates exact fact reuse by organization, owner, and scope [8.06ms]
+(pass) sqlite preserving memory creation > finds an identical retry beyond fifty more recent unrelated facts [12.39ms]
+(pass) sqlite preserving memory creation > coalesces simultaneous identical creations with distinct candidate IDs [7.23ms]
+(pass) sqlite preserving memory creation > rejects a colliding candidate ID without replacing another fact or tenant [7.78ms]
+(pass) SQLite preserves exact-reuse identity and independent facts after close and reopen [24.82ms]
+
+packages/db/src/upsert-profile-default-atomicity.test.ts:
+(pass) upsertProfile default atomicity > keeps the prior default when clear-then-upsert rolls back [25.47ms]
+(pass) upsertProfile default atomicity > concurrent writes leave exactly one default [33.60ms]
+
+packages/db/src/composio-user.test.ts:
+(pass) composio user connections > upsert and fetch user connection by toolkit [0.75ms]
+(pass) composio user connections > two users can connect the same org toolkit independently [0.14ms]
+(pass) composio user connections > listComposioUserConnectionsForUser filters by org [0.05ms]
+(pass) composio user connections > OAuth state compare-and-swap lets only one callback claim a generation [9.11ms]
+
+packages/db/src/database-permissions.test.ts:
+(pass) database permissions > a fresh database is private [14.71ms]
+(pass) database permissions > startup tightens a world-readable database [15.60ms]
+(pass) database permissions > does not change an existing custom database parent directory [13.72ms]
+
+packages/db/src/workspace-settings.test.ts:
+(pass) workspace settings > defaults provider passthrough on [0.16ms]
+(pass) workspace settings > preserves the provider mode while patching another field [0.11ms]
+(pass) workspace settings > keeps explicit nulls instead of restoring old nullable values [0.12ms]
+(pass) workspace settings > serializes concurrent patches without losing either field [0.42ms]
+
+packages/db/src/constants.test.ts:
+(pass) SUPER_AGENT_SYSTEM_PROMPT > requires draft-and-confirm before create_profile [0.08ms]
+(pass) SUPER_AGENT_SYSTEM_PROMPT > requires an exact confirmed draft before update_profile
+(pass) SUPER_AGENT_SYSTEM_PROMPT > clarifies profile vs skill and blocks list_skills hallucination
+(pass) DEFAULT_AGENT_WORK_RULES > sets a Super Agent quality bar without orchestration tools
+(pass) appendRuntimeProfileRules > appends Super Agent tool-authoring rules for super profiles
+(pass) appendRuntimeProfileRules > appends work-quality rules for non-super profiles
+
+packages/db/src/channel-org-mappings.test.ts:
+(pass) channel organization mappings > isolates identical channel identities in memory [0.14ms]
+(pass) channel organization mappings > isolates identical channel identities in sqlite [9.39ms]
+
+packages/db/src/seed-sub-agent.test.ts:
+(pass) ensureSubAgentToolDefinition > upserts sub_agent tool definition
+
+packages/db/src/llm-usage-daily.test.ts:
+(pass) llm_usage_daily rollup + aggregation (in-memory) > folds repeated turns into one row and totals by workspace [0.41ms]
+(pass) llm_usage_daily rollup + aggregation (in-memory) > ranks users by total tokens
+(pass) llm_usage_daily rollup + aggregation (in-memory) > groups a shared credential across workspaces
+(pass) llm_usage_daily rollup + aggregation (in-memory) > scopes to a single workspace (org-admin view)
+(pass) llm_usage_daily rollup + aggregation (in-memory) > groups and filters by initiating channel
+(pass) llm_usage_daily rollup + aggregation (in-memory) > keeps capabilities as separate rows and aggregates by capability
+(pass) llm_usage_daily rollup + aggregation (in-memory) > ranks zero-token billable capabilities by cost before token-only activity [0.51ms]
+(pass) llm_usage_daily rollup + aggregation (in-memory) > scopes to a single user (member view) and honors limit [0.08ms]
+(pass) llm_usage_daily rollup + aggregation (in-memory) > prune removes only rows on or before the cutoff day [0.10ms]
+(pass) llm_usage_daily rollup + aggregation (in-memory) > org usage budget get/upsert/list [0.16ms]
+(pass) llm_usage_daily channel dimensions (sqlite) > keeps otherwise identical usage separate by channel [7.16ms]
+
+packages/db/src/profile-atomic.test.ts:
+(pass) SQLite atomic profile creation > does not overwrite or cross-delete a profile owned by another org [7.90ms]
+(pass) profile import publication > keeps reservations hidden and prevents normal writers from publishing them [10.78ms]
+(pass) profile import publication > rejects malformed publication graphs without exposing partial state [9.17ms]
+
+packages/db/src/coding-agent-provider-mode.test.ts:
+(pass) SQLite coding-agent provider mode > persists independent values for each organization [9.23ms]
+
+packages/core/src/soul/memory-archive.test.ts:
+(pass) memory archive > parseMemoryContent reads dated sections and bullets [0.36ms]
+(pass) memory archive > partitionMemoryEntries moves matching bullets to archive sections [0.12ms]
+(pass) memory archive > rebuildMemoryContent drops empty date sections [0.19ms]
+(pass) memory archive > formatArchiveAppend preserves original section dates
+(pass) memory archive > archiveProfileMemoryBullets moves entries to memory-archive [6.14ms]
+(pass) memory archive > archiveProfileMemoryBullets appends to an existing archive file [3.84ms]
+(pass) memory archive > archiveProfileMemoryBullets rejects unmatched entries [2.16ms]
+(pass) memory archive > archiveProfileMemoryBullets migrates legacy data/memory-archive [5.70ms]
+
+packages/core/src/soul/org-memory-history.test.ts:
+(pass) org memory history > appends and lists history entries newest first [5.96ms]
+(pass) org memory history > prunes history beyond the configured max entries [125.23ms]
+(pass) org memory history > skips malformed metadata before sorting and limiting history [1.82ms]
+
+packages/core/src/soul/org-memory.test.ts:
+(pass) org memory parse/rebuild > parses a pinned-only MEMORY.md [0.14ms]
+(pass) org memory parse/rebuild > round-trips parse -> rebuild -> equal [0.23ms]
+(pass) org memory parse/rebuild > round-trips pinned and dated sections
+(pass) org memory parse/rebuild > rebuild adds the preamble when missing
+(pass) org memory parse/rebuild > rebuild does not duplicate the pinned header
+(pass) org memory parse/rebuild > applyApprovedOrgMemoryBullet replaces superseded pinned facts [0.22ms]
+(pass) org memory parse/rebuild > empty/missing MEMORY.md yields empty summary (no throw)
+(pass) org memory parse/rebuild > includes dated sections in summary [0.14ms]
+(pass) composeOrgMemorySummary > returns header + pinned bullets
+(pass) composeOrgMemorySummary > includes recent log bullets up to recentLogLimit [0.23ms]
+(pass) composeOrgMemorySummary > truncates at byte cap and appends overflow hint
+(pass) composeOrgMemorySummary > emits header + hint when even one bullet exceeds the cap
+(pass) appendOrgMemorySection > appends the summary for a member
+(pass) appendOrgMemorySection > appends the summary for an admin [0.41ms]
+(pass) appendOrgMemorySection > appends the summary when orgRole is undefined (system runners) [0.03ms]
+(pass) appendOrgMemorySection > does NOT append for a viewer
+(pass) appendOrgMemorySection > does not append an empty summary (no empty header)
+(pass) previewOrgMemoryAfterApprove > recent-log approve preview includes bullet in prompt injection [0.43ms]
+(pass) previewOrgMemoryAfterApprove > pinned approve preview places bullet after existing pinned facts
+
+ 577 pass
+ 0 fail
+ 2355 expect() calls
+Ran 577 tests across 70 files. [7.18s]

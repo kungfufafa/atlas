@@ -3,6 +3,7 @@ import {
   decodeBase64AttachmentData,
   PROVIDER_CAPABILITY_IDS,
   type ProviderInstance,
+  readEnvValue,
   type UserConfig,
 } from "@atlas/core";
 import { builtinProviderAdapterRegistry } from "../providers/capabilities/builtin-adapters";
@@ -13,6 +14,7 @@ import {
 } from "../providers/capabilities/executors/audio-transcription";
 import type { ProviderAdapterRegistry } from "../providers/capabilities/registry";
 import { resolveConfiguredCapability } from "../providers/capabilities/runtime";
+import { resolveCloudflareModelRunUrl } from "../providers/cloudflare";
 import { readApiKeyForInstance } from "../providers/create";
 import {
   decodeStoredModelSelection,
@@ -61,6 +63,23 @@ export function resolveTranscriptionProviderSelection(
     registry,
   });
 
+  if (selection.instance.type === "cloudflare") {
+    try {
+      resolveCloudflareModelRunUrl(
+        selection.model,
+        selection.instance,
+        readEnvValue(env, "CLOUDFLARE_ACCOUNT_ID") ?? ""
+      );
+    } catch (error) {
+      throw new AtlasApiError(
+        error instanceof Error
+          ? error.message
+          : "Cloudflare transcription endpoint is invalid",
+        400
+      );
+    }
+  }
+
   return {
     instance: selection.instance,
     model: selection.model,
@@ -78,7 +97,7 @@ export async function transcribeAudio(
   const apiKey = readApiKeyForInstance(instance, env)?.trim() ?? "";
   const output = await registry.execute(
     AUDIO_TRANSCRIPTION,
-    { apiKey, instance, model },
+    { apiKey, env, instance, model },
     audio
   );
 

@@ -1,0 +1,41 @@
+{
+  "createdAt": "2026-09-06T16:25:20.611532+00:00",
+  "scope": "Small static reproducibility references and summaries; no model transcripts, credential contents or large archives. Native freeze/live remain explicitly held.",
+  "files": {
+    "README.md": {
+      "sha256": "286d001937e0a60955472b5c48c147a7930d2a8d77a706af04a213da6651ccf5",
+      "bytes": 4820
+    },
+    "final-pilot-bindings.json": {
+      "sha256": "6372760a3a52c4eabe158a37a2cf118607edf9b92facc5d4bc8326d03da16e39",
+      "bytes": 13562
+    },
+    "gate-summary.json": {
+      "sha256": "e855128ae3ec8a3608441d75979b898cd8eb62341e3d14f26075913ff9a7c37e",
+      "bytes": 2045
+    },
+    "independent-native-v2-review.json": {
+      "sha256": "f6957dfe1193b99151e2b55ac9c101fac85f83a2c397ceead5896acb3676a886",
+      "bytes": 8529
+    },
+    "launch-status.json": {
+      "sha256": "f8a833c3c44877a81943a032c68b80f0bd7b7094b3e47b03cf051c407b6c7291",
+      "bytes": 3169
+    },
+    "original-control-bindings.json": {
+      "sha256": "cc7ee24346b96336c5da931bb429d39e6f339f4f342993d694c9935bba6ca9ef",
+      "bytes": 6531
+    },
+    "readiness.json": {
+      "sha256": "8223b611c5fb7f6c1073f2c64ad126aa383d979467e83606f79dfcd6c4984375",
+      "bytes": 13744
+    },
+    "source-copies.json": {
+      "sha256": "723274c0805cc1c575b3b7c898541dfc542129f88c4303ec88f16680d9398617",
+      "bytes": 1274
+    }
+  },
+  "totalPayloadBytes": 53674,
+  "sourceOnlyChanges": "Packaging wrote only native-v2 evidence and the two explicitly requested audit copies in sibling native-memory-v1 evidence. Production, evaluation controls, prior study files and progress.md were not modified.",
+  "updatedAt": "2026-09-06T16:31:06.420671+00:00"
+}

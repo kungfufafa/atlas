@@ -218,6 +218,9 @@ export function useChatPage() {
   useEffect(
     () => () => {
       supersedeInFlightTurn();
+      // StrictMode replays effects after cancelling the first resume request.
+      // Release its route claim so the replay can load persisted messages.
+      loadedRouteRef.current = null;
     },
     [supersedeInFlightTurn]
   );

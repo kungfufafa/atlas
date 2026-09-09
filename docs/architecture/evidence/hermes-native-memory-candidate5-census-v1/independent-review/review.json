@@ -1,0 +1,17 @@
+{
+  "status": "complete",
+  "registeredBeforeTranscriptAccess": true,
+  "warmReviewed": 16,
+  "controlsReviewedSeparately": 4,
+  "postOutcomeSelection": true,
+  "scoreChanges": false,
+  "providerCalls": 0,
+  "reviewSha256": "2cd8e018b5b09927f5ec16fabda2dabe494d6181db5f052a6c4a0ae0ef2e4f9b",
+  "reviewsSha256": "87c3d9267d1d8e88e98bc2080cbff94fcf04954c9900a1ff663355a12f1cc742",
+  "registrationSha256": "9e486cec3c9ee0df6e6f01e1a07b9aeb52e925923633505a3e1a4b5dcc0b3fa9",
+  "validationSha256": "72a4342c80dffdccbdfd65172ee7f5f5a0ae42b88770e255ff13176bb2d5558d",
+  "recomputationsSha256": "4e395dab1b328f2a0f86ff119758307547c88a69525f6cdadebaa4f792d51ddd",
+  "findingAgreement": "Existing selected manual dispositions agree within stated scope; independent source review, no rescoring.",
+  "omissionCheck": "All3 selected tool-bearing public entries reviewed. No selected C5 revision/retraction exists; C3 historical corrections remain outside scope.",
+  "sourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d"
+}

@@ -1,0 +1,15 @@
+{
+  "finding": "The reported post-recalculation header-clipping regression was a visual interpretation error. The two supplied PNG files are byte-identical; Region, Date and Units remain visible. Narrow date columns already display ### before recalculation. No recalculation layout change was made.",
+  "images": [
+    {
+      "path": "/private/tmp/atlas-deep-20260906/visual-all/X02/input-v2.xlsx/page-1.png",
+      "sha256": "4c237bb28532e8dfb14ebe797f38fd83fad4624ac003a406f1cd1929ddbe19cc",
+      "bytes": 14228
+    },
+    {
+      "path": "/private/tmp/atlas-deep-20260906/visual-all/X02/input-v2-v2.xlsx/page-1.png",
+      "sha256": "4c237bb28532e8dfb14ebe797f38fd83fad4624ac003a406f1cd1929ddbe19cc",
+      "bytes": 14228
+    }
+  ]
+}

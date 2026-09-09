@@ -1,0 +1,37 @@
+[
+  {
+    "operation": "initial rg across chat/types/tool-loop in assembly",
+    "exitCode": 2,
+    "error": "packages/agent/src/types.ts does not exist",
+    "correction": "Agent types/options are in chat.ts; continue against observed paths."
+  },
+  {
+    "operation": "source inspection path guesses",
+    "exitCode": 2,
+    "error": "http/routes/session-publications.ts missing in assembly",
+    "correction": "Use observed http/routes/artifact-publications.ts"
+  },
+  {
+    "operation": "source inspection path guesses",
+    "exitCode": 2,
+    "error": "packages/core/src/tools/executor.ts missing",
+    "correction": "Use observed packages/core/src/tools/execution.ts"
+  },
+  {
+    "operation": "source inspection path guesses",
+    "exitCode": 2,
+    "error": "apps/server/src/tools/profile-tools.ts missing",
+    "correction": "Use observed services/tool-resolver.ts"
+  },
+  {
+    "operation": "batched c5-excerpts render",
+    "error": "Tool output truncated by output budget",
+    "correction": "Full excerpt file preserved, omitted critical sections reread in bounded calls; no source change."
+  },
+  {
+    "operation": "producer retry-policy search",
+    "exitCode": 2,
+    "error": "packages/core/src/tools/write-docx.ts does not exist",
+    "correction": "No write-docx file claim inferred; execution.ts policy shows known mutations remain single-attempt. No additional producer scan required for activation plan."
+  }
+]

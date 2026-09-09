@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-06T23:00:11.405539+00:00",
+  "initialRun": "/private/tmp/atlas-restart-reproduction/run-jtpo6wnm",
+  "initialManifestSha256": "a329cdeb9a7c63395b784f2691c212591e20a5826e9aa54893265e5a737a2614",
+  "inspectionSourceSha256": "b5e0facf6e06d3daa6011c8a37271dd2cdc5532f43e72e79c651e1fcfc23d0fa",
+  "files": {
+    "after_effect_before_receipt.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "after_effect_before_receipt.stdout": "f2276f49fb7ca7dc4a795f859bd1b09f5dce440b2dfb89a07c69b8e24ebeefda",
+    "approval_wait.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "approval_wait.stdout": "879453f378454226facfba1edc237d0222c48a0ecdc74c50eb0f222416fbea16",
+    "before_effect.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "before_effect.stdout": "86c40a33f9309ae2e32ddbc2b590a8825ea389e0e67b0321823e1e9142292698",
+    "results.json": "10e6ea2a83852e28f3c06a616693e207fc507ad573e2a536956388fef2baa592"
+  }
+}

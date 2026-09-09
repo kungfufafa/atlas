@@ -1,0 +1,13 @@
+{
+  "at": "2026-09-07T09:17:54.946575+00:00",
+  "scope": "Active confirmation health-only exception: original closed end ordinals51 through60, lifecycle timing and transport counters only",
+  "osWindowUTC": ["2026-09-07T08:20:00Z", "2026-09-07T09:20:00Z"],
+  "forbidden": [
+    "No task/prompt/model output/tool/artifact/oracle/expected input or quality fields",
+    "No conclusion about phase validity from health alone",
+    "No power changes/caffeinate/restart/cancel",
+    "No provider/test/analyzer/oracle calls",
+    "No unrelated OS process/app/device/reason strings output"
+  ],
+  "plannedEvidence": "Allowlisted parent/caller lifecycle timing and transport counts; exact file hash bindings; timestamp-bounded sleep/wake categories only"
+}

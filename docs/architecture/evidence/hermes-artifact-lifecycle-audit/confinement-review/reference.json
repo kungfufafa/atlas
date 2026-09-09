@@ -1,0 +1,19 @@
+{
+  "at": "2026-09-06T23:48:38.703716+00:00",
+  "scope": "Selected source-bound evidence; full original evidence remains at source paths. Root product remains C5, implementations in scratch only.",
+  "copySetupQualification": "First copy attempt incorrectly guessed foundation manifest.json and stopped after readiness/notes. Discovery found evidence-reference.json; identical prior copies checked before completing this pack. No source evidence modified.",
+  "files": [
+    {
+      "path": "review.md",
+      "source": "/private/tmp/atlas-artifact-attribution-audit/confinement-review/review.md",
+      "sha256": "5387c0ac46623cbac792e69d7d1496c1d4126b3356646c2ed1e57d925102743b",
+      "bytes": 7643
+    },
+    {
+      "path": "source-bindings.json",
+      "source": "/private/tmp/atlas-artifact-attribution-audit/confinement-review/source-bindings.json",
+      "sha256": "2e17071d3dc90c43e446330f222f388073b2039b1c71dcb4c80a2c093421b3f0",
+      "bytes": 3466
+    }
+  ]
+}

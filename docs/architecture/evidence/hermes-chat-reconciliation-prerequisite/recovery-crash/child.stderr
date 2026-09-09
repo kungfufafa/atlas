@@ -1,0 +1,11 @@
+1 | import { writeSync } from "node:fs";
+2 | import { createSqliteDatabase } from "./source/packages/db/src/index.ts";
+3 | const file=process.argv[2]!; const mode=process.argv[3]!;
+4 | const database=await createSqliteDatabase(`file:${file}`);const db=database.adapter;const old=(await db.getExecutionRun("restart-run"))!;
+5 | if(mode==="mutate"){
+6 |   const at=new Date().toISOString();const claimed=await db.casExecutionRun({id:old.id,expectedLeaseOwner:old.leaseOwner!,requireExpiredLease:true,nowIso:at,next:{...old,status:"cancelled",leaseOwner:null,leaseExpiresAt:null,checkpoint:null,updatedAt:at}});
+                                                                                   ^
+TypeError: null is not an object (evaluating 'old.id')
+      at /private/tmp/atlas-chat-reconciliation-design-c5/recovery-crash.ts:6:80
+
+Bun v1.3.1 (macOS arm64)

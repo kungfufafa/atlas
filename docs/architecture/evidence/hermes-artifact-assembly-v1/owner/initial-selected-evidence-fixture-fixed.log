@@ -1,0 +1,38 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/selected-artifact-publication.test.ts:
+74 |         record.mimeType.length > 200 ||
+75 |         !Number.isFinite(Date.parse(record.createdAt)) ||
+76 |         record.revokedAt !== null ||
+77 |         record.sourceEvidence !== "tool_output_bytes"
+78 |       ) {
+79 |         throw new Error("Invalid publication record.");
+                       ^
+error: Invalid publication record.
+      at /private/tmp/atlas-artifact-assembly-c5/source/packages/db/src/artifact-publication-identity.ts:79:19
+      at map (unknown:1:11)
+      at publicationCommitFingerprint (/private/tmp/atlas-artifact-assembly-c5/source/packages/db/src/artifact-publication-identity.ts:58:6)
+      at commitArtifactPublications (/private/tmp/atlas-artifact-assembly-c5/source/packages/db/src/artifact-publication-memory.ts:70:18)
+      at commitArtifactPublications (/private/tmp/atlas-artifact-assembly-c5/source/packages/db/src/artifact-publication-memory.ts:69:8)
+      at /private/tmp/atlas-artifact-assembly-c5/source/apps/server/src/services/selected-artifact-publication.test.ts:62:20
+      at processTicksAndRejections (unknown:7:39)
+(fail) memory: selected evidence commits distinctly and conflicts with generated relabeling [99.99ms]
+74 |         record.mimeType.length > 200 ||
+75 |         !Number.isFinite(Date.parse(record.createdAt)) ||
+76 |         record.revokedAt !== null ||
+77 |         record.sourceEvidence !== "tool_output_bytes"
+78 |       ) {
+79 |         throw new Error("Invalid publication record.");
+                       ^
+error: Invalid publication record.
+      at <anonymous> (/private/tmp/atlas-artifact-assembly-c5/source/packages/db/src/artifact-publication-identity.ts:79:19)
+      at map (1:11)
+      at publicationCommitFingerprint (/private/tmp/atlas-artifact-assembly-c5/source/packages/db/src/artifact-publication-identity.ts:58:6)
+      at commitArtifactPublications (/private/tmp/atlas-artifact-assembly-c5/source/packages/db/src/artifact-publication-sqlite.ts:58:27)
+      at commitArtifactPublications (/private/tmp/atlas-artifact-assembly-c5/source/packages/db/src/artifact-publication-sqlite.ts:57:38)
+      at <anonymous> (/private/tmp/atlas-artifact-assembly-c5/source/apps/server/src/services/selected-artifact-publication.test.ts:63:23)
+(fail) sqlite: selected evidence commits distinctly and conflicts with generated relabeling [79.54ms]
+
+ 0 pass
+ 2 fail
+Ran 2 tests across 1 file. [898.00ms]

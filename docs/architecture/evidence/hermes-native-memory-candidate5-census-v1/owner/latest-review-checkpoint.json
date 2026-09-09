@@ -1,0 +1,19 @@
+{
+  "path": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/audit-checkpoints/20260907T002838553169Z.json",
+  "sha256": "6583c560b8f98fca74c18f0f89167024348ac780f73fa9361372cf37bdc68e13",
+  "at": "2026-09-07T00:28:38.553169+00:00",
+  "counts": {
+    "warm": {
+      "scheduled": 64,
+      "endedCached": 64,
+      "reviewed": 64,
+      "pendingReviewOfCached": []
+    },
+    "controls": {
+      "scheduled": 32,
+      "endedCached": 32,
+      "reviewed": 32,
+      "pendingReviewOfCached": []
+    }
+  }
+}

@@ -1,0 +1,825 @@
+{
+  "attempts": [
+    {
+      "evidence": "bun test v1.3.1 (89fa0f34)\n\npackages/core/src/tools/failed-artifacts.test.ts:\n28 |           await writeFile(path.join(workspaceRoot, artifact.path), \"ID\\n00123\");\n29 |           return { ...failure, artifacts: [artifact], path: path.join(workspaceRoot, artifact.path) };\n30 |         },\n31 |       }, {}, { workspaceRoot });\n32 |       expect(await readFile(path.join(workspaceRoot, artifact.path), \"utf8\")).toBe(\"ID\\n00123\");\n33 |       expect(execution.artifacts).toBeUndefined();\n                                       ^\nerror: expect(received).toBeUndefined()\n\nReceived: [\n  {\n    filename: \"partial.csv\",\n    path: \"artifacts/partial.csv\",\n    sizeBytes: 8,\n  }\n]\n\n      at <anonymous> (<repository>/packages/core/src/tools/failed-artifacts.test.ts:33:35)\n(fail) failed result {\"success\":false} cannot publish partial artifacts [6.44ms]\n28 |           await writeFile(path.join(workspaceRoot, artifact.path), \"ID\\n00123\");\n29 |           return { ...failure, artifacts: [artifact], path: path.join(workspaceRoot, artifact.path) };\n30 |         },\n31 |       }, {}, { workspaceRoot });\n32 |       expect(await readFile(path.join(workspaceRoot, artifact.path), \"utf8\")).toBe(\"ID\\n00123\");\n33 |       expect(execution.artifacts).toBeUndefined();\n                                       ^\nerror: expect(received).toBeUndefined()\n\nReceived: [\n  {\n    filename: \"partial.csv\",\n    path: \"artifacts/partial.csv\",\n    sizeBytes: 8,\n  }\n]\n\n      at <anonymous> (<repository>/packages/core/src/tools/failed-artifacts.test.ts:33:35)\n(fail) failed result {\"ok\":false} cannot publish partial artifacts [0.81ms]\n28 |           await writeFile(path.join(workspaceRoot, artifact.path), \"ID\\n00123\");\n29 |           return { ...failure, artifacts: [artifact], path: path.join(workspaceRoot, artifact.path) };\n30 |         },\n31 |       }, {}, { workspaceRoot });\n32 |       expect(await readFile(path.join(workspaceRoot, artifact.path), \"utf8\")).toBe(\"ID\\n00123\");\n33 |       expect(execution.artifacts).toBeUndefined();\n                                       ^\nerror: expect(received).toBeUndefined()\n\nReceived: [\n  {\n    filename: \"partial.csv\",\n    path: \"artifacts/partial.csv\",\n    sizeBytes: 8,\n  }\n]\n\n      at <anonymous> (<repository>/packages/core/src/tools/failed-artifacts.test.ts:33:35)\n(fail) failed result {\"isError\":true} cannot publish partial artifacts [0.60ms]\n28 |           await writeFile(path.join(workspaceRoot, artifact.path), \"ID\\n00123\");\n29 |           return { ...failure, artifacts: [artifact], path: path.join(workspaceRoot, artifact.path) };\n30 |         },\n31 |       }, {}, { workspaceRoot });\n32 |       expect(await readFile(path.join(workspaceRoot, artifact.path), \"utf8\")).toBe(\"ID\\n00123\");\n33 |       expect(execution.artifacts).toBeUndefined();\n                                       ^\nerror: expect(received).toBeUndefined()\n\nReceived: [\n  {\n    filename: \"partial.csv\",\n    path: \"artifacts/partial.csv\",\n    sizeBytes: 8,\n  }\n]\n\n      at <anonymous> (<repository>/packages/core/src/tools/failed-artifacts.test.ts:33:35)\n(fail) failed result {\"error\":\"conversion failed after writing partial output\"} cannot publish partial artifacts [0.53ms]\n49 |   const messages: ChatMessage[] = [\n50 |     { role: \"user\", content: \"Create two reports\" },\n51 |     { role: \"tool\", name: \"report\", toolCallId: \"ok\", content: JSON.stringify({ ok: true, artifacts: [{ path: \"artifacts/complete.csv\", sizeBytes: 3 }] }) },\n52 |     { role: \"tool\", name: \"report\", toolCallId: \"failed\", content: JSON.stringify({ ok: false, artifacts: [{ path: \"artifacts/partial.csv\", sizeBytes: 1 }] }) },\n53 |   ];\n54 |   expect(extractTurnDeliverableArtifacts(messages).map((artifact) => artifact.path)).toEqual([\"complete.csv\"]);\n                                                                                          ^\nerror: expect(received).toEqual(expected)\n\n  [\n    \"complete.csv\",\n+   \"partial.csv\",\n  ]\n\n- Expected  - 0\n+ Received  + 1\n\n      at <anonymous> (<repository>/packages/core/src/tools/failed-artifacts.test.ts:54:86)\n(fail) a successful independent result remains deliverable beside a failure [0.11ms]\n\n 0 pass\n 5 fail\n 9 expect() calls\nRan 5 tests across 1 file. [67.00ms]\n",
+      "file": "failed-artifacts-before.log"
+    },
+    {
+      "evidence": "error: Cannot find module '<repository>/node_modules/exceljs/excel.js' from '<audit-directory>/audit.ts'\n\nBun v1.3.1 (macOS arm64)\n",
+      "file": "attempt1.log"
+    },
+    {
+      "evidence": [
+        {
+          "id": "H01",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: {\"url\":\"/v1/sessions/LMQICKfj02tNyJMuU-f5G/messages\",\"status\":500,\"value\":{\"error\":\"Offline audit peer request failed (500): 500 <!doctype html>\\n<html>\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\" />\\n  </head>\\n  <body>\\n    <script id=\\\"__bunfallback\\\" type=\\\"binary/peechy\\\">\\n      ATcAAABQT1NUIC0gaHR0cDovLzEyNy4wLjAuMTo0MzIxL3YxL2NoYXQvY29tcGxldGlvbnMgZmFpbGVkAwgE8AIQAAAARXhjZXB0aW9uT2N1cnJlZAEAAAABCQAAAFR5cGVFcnJvcgI6AAAAdW5kZWZpbmVkIGlzIG5vdCBhbiBvYmplY3QgKGV2YWx1YXRpbmcgJ3ByaW9yWzFdLnJvd3NbMV0nKQMAAAQFBQYAAAASAAAAegAAAAogIGNvbnN0IHByaW9yID0gbWVzc2FnZXMu\"}}",
+          "stack": "AssertionError [ERR_ASSERTION]: {\"url\":\"/v1/sessions/LMQICKfj02tNyJMuU-f5G/messages\",\"status\":500,\"value\":{\"error\":\"Offline audit peer request failed (500): 500 <!doctype html>\\n<html>\\n  <head>\\n    <meta charset=\\\"utf-8\\\" />\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\" />\\n  </head>\\n  <body>\\n    <script id=\\\"__bunfallback\\\" type=\\\"binary/peechy\\\">\\n      ATcAAABQT1NUIC0gaHR0cDovLzEyNy4wLjAuMTo0MzIxL3YxL2NoYXQvY29tcGxldGlvbnMgZmFpbGVkAwgE8AIQAAAARXhjZXB0aW9uT2N1cnJlZAEAAAABCQAAAFR5cGVFcnJvcgI6AAAAdW5kZWZpbmVkIGlzIG5vdCBhbiBvYmplY3QgKGV2YWx1YXRpbmcgJ3ByaW9yWzFdLnJvd3NbMV0nKQMAAAQFBQYAAAASAAAAegAAAAogIGNvbnN0IHByaW9yID0gbWVzc2FnZXMu\"}}\n    at json (<audit-directory>/audit.ts:52:92)\n    at processTicksAndRejections (native:7:39)"
+        },
+        {
+          "id": "H02",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n2 !== 4\n",
+          "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n2 !== 4\n\n    at <anonymous> (<audit-directory>/audit.ts:70:273)\n    at processTicksAndRejections (native:7:39)"
+        },
+        {
+          "id": "H03",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'ID,Label\\n00123,\"Recovered, yes\"'\n- 'ID,Label\\n00123,\"Recovered, yes\"\\n'\n                                   ^\n",
+          "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'ID,Label\\n00123,\"Recovered, yes\"'\n- 'ID,Label\\n00123,\"Recovered, yes\"\\n'\n                                   ^\n\n    at <anonymous> (<audit-directory>/audit.ts:71:334)\n    at processTicksAndRejections (native:7:39)"
+        },
+        {
+          "id": "H04A",
+          "status": "pass",
+          "detail": {
+            "sessionId": "mOZqeOnJSXlPabKTP6UMW",
+            "approvalId": "app_dLgoUsoOs5Ys0qlJ1XU0n",
+            "decisionStatus": 200,
+            "stillExists": false,
+            "lateDecision": 409,
+            "pairs": 1,
+            "terminal": {
+              "reply": "Audit fixture H04A finished.",
+              "type": "done"
+            }
+          }
+        },
+        {
+          "id": "H04D",
+          "status": "pass",
+          "detail": {
+            "sessionId": "dZ7oo75O_lUCtGpJGf-mA",
+            "approvalId": "app_O-xqMQ3kfdINIYJ5YrD5U",
+            "decisionStatus": 200,
+            "stillExists": true,
+            "lateDecision": 409,
+            "pairs": 1,
+            "terminal": {
+              "reply": "Audit fixture H04D finished.",
+              "type": "done"
+            }
+          }
+        },
+        {
+          "id": "H07",
+          "status": "pass",
+          "detail": {
+            "sessionId": "ds2TVb6OwWGHGJdz09nky",
+            "approvalId": "app_VZJ7LLB6ggPVsZ8BCniVc",
+            "stillExists": true,
+            "lateDecision": 409,
+            "pairs": 0,
+            "terminal": {
+              "approval": {
+                "consequenceSummary": "Target: artifacts/H07-target.csv · Affected resources: 1 · This action is irreversible.",
+                "createdAt": "2026-09-06T03:09:35.702Z",
+                "details": {
+                  "path": "artifacts/H07-target.csv"
+                },
+                "id": "app_VZJ7LLB6ggPVsZ8BCniVc",
+                "status": "pending",
+                "title": "Permanently delete 1 file(s)",
+                "tool": "delete_file",
+                "toolCallId": "H07-0"
+              },
+              "type": "approval_requested"
+            }
+          }
+        },
+        {
+          "id": "H06",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'ID\\n00123'\n- 'ID\\n00123\\n'\n            ^\n",
+          "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'ID\\n00123'\n- 'ID\\n00123\\n'\n            ^\n\n    at <anonymous> (<audit-directory>/audit.ts:73:235)\n    at processTicksAndRejections (native:7:39)"
+        },
+        {
+          "id": "H14",
+          "status": "fail",
+          "error": "Error: ENOENT: no such file or directory, open '<audit-directory>/state/orgs/org_29806564dac946a8b55f75e435cf9c30/profiles/acn1-zIRPPk5ZnV3fHFvA/artifacts/H01.xlsx'"
+        }
+      ],
+      "file": "attempt2-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "id": "H01",
+          "status": "pass",
+          "detail": {
+            "sessionId": "OWnEhJaZemOVzEaiVBWpt",
+            "pairs": 4,
+            "original": "artifacts/H01.xlsx",
+            "output": "artifacts/H01-v2.xlsx"
+          }
+        },
+        {
+          "id": "H02",
+          "status": "pass",
+          "detail": {
+            "sessionId": "EUsw7eF7aytChvWNviPqI",
+            "pairs": 4,
+            "original": "artifacts/H02.xlsx",
+            "output": "artifacts/H02-v2.xlsx"
+          }
+        },
+        {
+          "id": "H03",
+          "status": "pass",
+          "detail": {
+            "sessionId": "QO7eNCHHZvVMWKkXfan3X",
+            "errors": [
+              {
+                "error": "Unknown tool: unassigned_audit_tool"
+              },
+              {
+                "error": "Invalid tool input: /data/0/0: must be string; /data/0/0: must be number; /data/0/0: must be boolean",
+                "errorCode": "INVALID_ARGUMENT"
+              }
+            ],
+            "recovered": true
+          }
+        },
+        {
+          "id": "H04A",
+          "status": "pass",
+          "detail": {
+            "sessionId": "6t1UG9WahpNZV_roYoJqE",
+            "approvalId": "app_ITT9TN1MBsYPk6_E12gCE",
+            "decisionStatus": 200,
+            "stillExists": false,
+            "lateDecision": 409,
+            "pairs": 1,
+            "terminal": {
+              "reply": "Audit fixture H04A finished.",
+              "type": "done"
+            }
+          }
+        },
+        {
+          "id": "H04D",
+          "status": "pass",
+          "detail": {
+            "sessionId": "mE2Z_PFhzvky6oV1VBP5i",
+            "approvalId": "app_0luQ3JPY1CzDFPJAZWnWW",
+            "decisionStatus": 200,
+            "stillExists": true,
+            "lateDecision": 409,
+            "pairs": 1,
+            "terminal": {
+              "reply": "Audit fixture H04D finished.",
+              "type": "done"
+            }
+          }
+        },
+        {
+          "id": "H07",
+          "status": "pass",
+          "detail": {
+            "sessionId": "dWGohZ9t3l0z5HtR7_TRx",
+            "approvalId": "app_bgvo6zRMrvYr3mfBcf2Xh",
+            "stillExists": true,
+            "lateDecision": 409,
+            "pairs": 0,
+            "terminal": {
+              "approval": {
+                "consequenceSummary": "Target: artifacts/H07-target.csv · Affected resources: 1 · This action is irreversible.",
+                "createdAt": "2026-09-06T03:15:53.530Z",
+                "details": {
+                  "path": "artifacts/H07-target.csv"
+                },
+                "id": "app_bgvo6zRMrvYr3mfBcf2Xh",
+                "status": "pending",
+                "title": "Permanently delete 1 file(s)",
+                "tool": "delete_file",
+                "toolCallId": "H07-0"
+              },
+              "type": "approval_requested"
+            }
+          }
+        },
+        {
+          "id": "H06",
+          "status": "pass",
+          "detail": {
+            "sessionId": "jufsGpBjpPlQj2o8EMLXM",
+            "status": {
+              "active": false
+            },
+            "pairs": 1
+          }
+        },
+        {
+          "id": "H14",
+          "status": "pass",
+          "detail": {
+            "sessionId": "mspr2qphDxri4t1dXI4RF",
+            "attachmentId": "att_a2cbe96b-b3dd-4b50-8bbb-73da01343cd1",
+            "sha256": "a398346e96b704c7892febf1fd5c014bddf7eb7a51ec1cb27b881bde616db3d9",
+            "rejected": 400
+          }
+        }
+      ],
+      "file": "report.json"
+    },
+    {
+      "evidence": "bun test v1.3.1 (89fa0f34)\n\npackages/core/src/tools/builtin.test.ts:\n(pass) file builtin tools > generic text tools cannot create or edit binary office/PDF containers [14.76ms]\n(pass) file builtin tools > write_file creates nested files [3.68ms]\n(pass) file builtin tools > write_file resolves relative paths from profile workspace [0.79ms]\n(pass) file builtin tools > write_file waits for the shared profile soul mutation lock [0.73ms]\n(pass) file builtin tools > write_file adds a date suffix when an artifact filename already exists [2.45ms]\n(pass) file builtin tools > write_file remaps artifact metadata sidecar after suffixing content [1.91ms]\n(pass) file builtin tools > write_file sidecar stamp keeps the content file size, not the sidecar payload length [1.38ms]\n(pass) file builtin tools > write_file allows custom tool modules outside profile workspace [1.69ms]\n(pass) file builtin tools > delete_file removes a file [0.96ms]\n(pass) file builtin tools > edit_file replaces a unique text match [1.07ms]\n(pass) file builtin tools > edit_file holds the soul lock from read through write [0.78ms]\n(pass) file builtin tools > edit_file resolves relative paths from profile workspace [0.85ms]\n(pass) file builtin tools > edit_file applies multiple edits against the original file [0.64ms]\n(pass) file builtin tools > edit_file rejects ambiguous matches [0.61ms]\n(pass) file builtin tools > edit_file rejects overlapping edits [0.51ms]\n(pass) file builtin tools > edit_file fuzzy matches line endings and smart punctuation [1.15ms]\n(pass) file builtin tools > edit_file preserves CRLF style in replacement text [0.57ms]\n(pass) file builtin tools > edit_file fuzzy matching ignores trailing whitespace [1.85ms]\n(pass) file builtin tools > edit_file preserves a UTF-8 BOM [0.82ms]\n(pass) file builtin tools > edit_file rejects missing oldText [0.51ms]\n(pass) file builtin tools > read_file reads an existing file [0.48ms]\n(pass) file builtin tools > write_file refuses Word extensions instead of faking a document [0.26ms]\n(pass) file builtin tools > file tools refuse skills/* paths when forbidProfileSkillMarkdownWrites [52.72ms]\n(pass) file builtin tools > write_file, edit_file, and delete_file refuse skills/*/tool.js and tool.ts [1.57ms]\n(pass) file builtin tools > write_docx produces a real Word archive that reads back as markdown [42.58ms]\n(pass) file builtin tools > write_docx does not overwrite an existing artifact [14.84ms]\n(pass) file builtin tools > write_docx rejects a non-.docx path [0.74ms]\n(pass) file builtin tools > read_file converts a .docx to markdown instead of decoding it as utf-8 [1.65ms]\n(pass) file builtin tools > read_file reads HTML that was saved under a .doc name [7.46ms]\n(pass) file builtin tools > read_file rejects a genuine legacy OLE .doc with an actionable message [0.57ms]\n(pass) file builtin tools > read_file resolves relative paths from profile workspace [0.49ms]\n(pass) file builtin tools > read_file allows custom tool modules outside profile workspace [0.80ms]\n(pass) file builtin tools > read_file supports offset and limit [0.58ms]\n(pass) file builtin tools > requires profileId [0.11ms]\n(pass) file builtin tools > rejects path traversal via ../ escape [0.41ms]\n(pass) file builtin tools > rejects absolute path outside allowed dirs [0.31ms]\n(pass) file builtin tools > rejects home directory expansion outside allowed dirs [0.61ms]\n(pass) file builtin tools > cwd injection falls back to profile workspace [0.72ms]\n(pass) file builtin tools > rejects null byte in path [0.33ms]\n(pass) file builtin tools > rejects content exceeding max file size [0.30ms]\n(pass) file builtin tools > delete_file rejects path outside allowed dirs [1.46ms]\n(pass) file builtin tools > edit_file rejects path outside allowed dirs [0.56ms]\n(pass) file builtin tools > edit_file rejects oversized replacement result [0.61ms]\n(pass) file builtin tools > allows nested subdirectory writes [0.83ms]\n(pass) file builtin tools > rejects special filesystem paths [0.27ms]\n(pass) file builtin tools > read_file rejects path traversal via ../ escape [0.29ms]\n(pass) file builtin tools > read_file rejects path outside allowed dirs with workspace hint [0.45ms]\n(pass) file builtin tools > read_file rejects null byte in path [0.24ms]\n(pass) file builtin tools > read_file rejects missing file [0.34ms]\n(pass) file builtin tools > read_file rejects directory path [0.27ms]\n(pass) file builtin tools > read_file rejects config.ini [0.41ms]\n(pass) file builtin tools > read_file rejects oversized file [0.47ms]\n\npackages/core/src/tools/email.test.ts:\n(pass) email tool > exposes an OpenAI-compatible object parameters schema [0.76ms]\n(pass) email tool > builtin tool schemas all declare type object for LLM providers\n(pass) email tool > strips cross-action fields advertised by the flat LLM schema [0.98ms]\n(pass) email tool > returns configuration error when mailbox is incomplete\n(pass) email tool > lists messages with fake reader [0.38ms]\n(pass) email tool > reads a message by uid [1.06ms]\n(pass) email tool > returns scoped references for message attachments [0.55ms]\n(pass) email tool > searches messages [0.27ms]\n(pass) email tool > sends email with fake sender [0.13ms]\n(pass) email tool > rejects invalid recipient\n(pass) email tool > requires text body for send [0.54ms]\n(pass) email tool > sanitizes sender errors [0.23ms]\n\npackages/core/src/tools/schema-execution.test.ts:\n(pass) tool argument validation boundary > blocks invalid nested, required, enum, and array inputs before any handler side effect [25.12ms]\n(pass) tool argument validation boundary > accepts schema unions without coercing values or inserting defaults into execution input [3.75ms]\n(pass) tool argument validation boundary > enforces conditional requirements from the declared JSON Schema dialect [0.76ms]\n(pass) tool argument validation boundary > rejects missing required arguments even when defaults or no property schema are advertised [1.11ms]\n(pass) tool argument validation boundary > fails closed for invalid, unknown, external, and asynchronous schemas before side effects [1.05ms]\n(pass) tool argument validation boundary > uses exact draft semantics and keeps local reference IDs scoped to each tool [19.71ms]\n\npackages/core/src/tools/schema-defaults.test.ts:\n14 |   try {\n15 |     const created = await executeProtectedTool(spreadsheetTool, { action: \"create\", path: \"artifacts/defaults.xlsx\", data: [[\"00123\", 7]] }, context);\n16 |     expect(created.success).toBe(true);\n17 |     const source = created.data as { path: string };\n18 |     const read = await executeProtectedTool(spreadsheetTool, { action: \"read_range\", path: source.path, range: \"A1:B1\" }, context);\n19 |     expect(read.success).toBe(true);\n                              ^\nerror: expect(received).toBe(expected)\n\nExpected: true\nReceived: false\n\n      at <anonymous> (<repository>/packages/core/src/tools/schema-defaults.test.ts:19:26)\n(fail) protected real spreadsheet accepts documented defaults before its Zod handler [31.56ms]\n(pass) write_file preserves exact text bytes including empty content: \"  ID,Value\\r\\n00123,7\\r\\n\" [2.89ms]\n(pass) write_file preserves exact text bytes including empty content: \"\" [0.97ms]\n(pass) write_file preserves exact text bytes including empty content: \"\\n\\t \" [0.89ms]\n(pass) preprocessed file inputs remain typed while omitted defaults stay optional [1.30ms]\n(pass) builtin parameter schemas all compile; effects describe the accepted input [20.69ms]\n\n1 tests failed:\n(fail) protected real spreadsheet accepts documented defaults before its Zod handler [31.56ms]\n\n 75 pass\n 1 fail\n 337 expect() calls\nRan 76 tests across 4 files. [1119.00ms]\n",
+      "file": "schema-fix.log"
+    },
+    {
+      "evidence": "bun test v1.3.1 (89fa0f34)\n\npackages/core/src/tools/builtin.test.ts:\n(pass) file builtin tools > generic text tools cannot create or edit binary office/PDF containers [13.89ms]\n(pass) file builtin tools > write_file creates nested files [1.10ms]\n(pass) file builtin tools > write_file resolves relative paths from profile workspace [0.76ms]\n(pass) file builtin tools > write_file waits for the shared profile soul mutation lock [0.93ms]\n(pass) file builtin tools > write_file adds a date suffix when an artifact filename already exists [2.25ms]\n(pass) file builtin tools > write_file remaps artifact metadata sidecar after suffixing content [2.40ms]\n(pass) file builtin tools > write_file sidecar stamp keeps the content file size, not the sidecar payload length [2.14ms]\n(pass) file builtin tools > write_file allows custom tool modules outside profile workspace [8.40ms]\n(pass) file builtin tools > delete_file removes a file [1.67ms]\n(pass) file builtin tools > edit_file replaces a unique text match [1.41ms]\n(pass) file builtin tools > edit_file holds the soul lock from read through write [1.18ms]\n(pass) file builtin tools > edit_file resolves relative paths from profile workspace [1.07ms]\n(pass) file builtin tools > edit_file applies multiple edits against the original file [0.85ms]\n(pass) file builtin tools > edit_file rejects ambiguous matches [0.54ms]\n(pass) file builtin tools > edit_file rejects overlapping edits [0.46ms]\n(pass) file builtin tools > edit_file fuzzy matches line endings and smart punctuation [1.07ms]\n(pass) file builtin tools > edit_file preserves CRLF style in replacement text [0.87ms]\n(pass) file builtin tools > edit_file fuzzy matching ignores trailing whitespace [0.73ms]\n(pass) file builtin tools > edit_file preserves a UTF-8 BOM [0.85ms]\n(pass) file builtin tools > edit_file rejects missing oldText [0.50ms]\n(pass) file builtin tools > read_file reads an existing file [0.52ms]\n(pass) file builtin tools > write_file refuses Word extensions instead of faking a document [0.26ms]\n(pass) file builtin tools > file tools refuse skills/* paths when forbidProfileSkillMarkdownWrites [51.47ms]\n(pass) file builtin tools > write_file, edit_file, and delete_file refuse skills/*/tool.js and tool.ts [1.34ms]\n(pass) file builtin tools > write_docx produces a real Word archive that reads back as markdown [28.37ms]\n(pass) file builtin tools > write_docx does not overwrite an existing artifact [12.52ms]\n(pass) file builtin tools > write_docx rejects a non-.docx path [0.38ms]\n(pass) file builtin tools > read_file converts a .docx to markdown instead of decoding it as utf-8 [1.49ms]\n(pass) file builtin tools > read_file reads HTML that was saved under a .doc name [8.39ms]\n(pass) file builtin tools > read_file rejects a genuine legacy OLE .doc with an actionable message [0.93ms]\n(pass) file builtin tools > read_file resolves relative paths from profile workspace [0.54ms]\n(pass) file builtin tools > read_file allows custom tool modules outside profile workspace [1.16ms]\n(pass) file builtin tools > read_file supports offset and limit [0.80ms]\n(pass) file builtin tools > requires profileId\n(pass) file builtin tools > rejects path traversal via ../ escape [0.58ms]\n(pass) file builtin tools > rejects absolute path outside allowed dirs [0.41ms]\n(pass) file builtin tools > rejects home directory expansion outside allowed dirs [0.72ms]\n(pass) file builtin tools > cwd injection falls back to profile workspace [0.58ms]\n(pass) file builtin tools > rejects null byte in path [0.26ms]\n(pass) file builtin tools > rejects content exceeding max file size [0.38ms]\n(pass) file builtin tools > delete_file rejects path outside allowed dirs [0.44ms]\n(pass) file builtin tools > edit_file rejects path outside allowed dirs [0.37ms]\n(pass) file builtin tools > edit_file rejects oversized replacement result [0.95ms]\n(pass) file builtin tools > allows nested subdirectory writes [0.75ms]\n(pass) file builtin tools > rejects special filesystem paths [0.30ms]\n(pass) file builtin tools > read_file rejects path traversal via ../ escape [0.33ms]\n(pass) file builtin tools > read_file rejects path outside allowed dirs with workspace hint [0.33ms]\n(pass) file builtin tools > read_file rejects null byte in path [0.28ms]\n(pass) file builtin tools > read_file rejects missing file [0.63ms]\n(pass) file builtin tools > read_file rejects directory path [0.29ms]\n(pass) file builtin tools > read_file rejects config.ini [0.42ms]\n(pass) file builtin tools > read_file rejects oversized file [0.40ms]\n\npackages/core/src/tools/email.test.ts:\n(pass) email tool > exposes an OpenAI-compatible object parameters schema [0.37ms]\n(pass) email tool > builtin tool schemas all declare type object for LLM providers\n(pass) email tool > strips cross-action fields advertised by the flat LLM schema [1.04ms]\n(pass) email tool > returns configuration error when mailbox is incomplete [0.13ms]\n(pass) email tool > lists messages with fake reader [0.37ms]\n(pass) email tool > reads a message by uid [0.25ms]\n(pass) email tool > returns scoped references for message attachments [0.97ms]\n(pass) email tool > searches messages [0.36ms]\n(pass) email tool > sends email with fake sender [0.05ms]\n(pass) email tool > rejects invalid recipient [0.08ms]\n(pass) email tool > requires text body for send [0.27ms]\n(pass) email tool > sanitizes sender errors\n\npackages/core/src/tools/schema-execution.test.ts:\n(pass) tool argument validation boundary > blocks invalid nested, required, enum, and array inputs before any handler side effect [26.62ms]\n(pass) tool argument validation boundary > accepts schema unions without coercing values or inserting defaults into execution input [3.68ms]\n(pass) tool argument validation boundary > enforces conditional requirements from the declared JSON Schema dialect [0.78ms]\n(pass) tool argument validation boundary > rejects missing required arguments even when defaults or no property schema are advertised [1.05ms]\n(pass) tool argument validation boundary > fails closed for invalid, unknown, external, and asynchronous schemas before side effects [1.24ms]\n(pass) tool argument validation boundary > uses exact draft semantics and keeps local reference IDs scoped to each tool [21.61ms]\n\npackages/core/src/tools/schema-defaults.test.ts:\n(pass) protected real spreadsheet accepts documented defaults before its Zod handler [58.64ms]\n(pass) write_file preserves exact text bytes including empty content: \"  ID,Value\\r\\n00123,7\\r\\n\" [2.46ms]\n(pass) write_file preserves exact text bytes including empty content: \"\" [0.84ms]\n(pass) write_file preserves exact text bytes including empty content: \"\\n\\t \" [1.01ms]\n(pass) preprocessed file inputs remain typed while omitted defaults stay optional [1.09ms]\n(pass) builtin parameter schemas all compile; effects describe the accepted input [18.96ms]\n\n 76 pass\n 0 fail\n 340 expect() calls\nRan 76 tests across 4 files. [876.00ms]\n",
+      "file": "schema-fixed2.log"
+    },
+    {
+      "evidence": [
+        {
+          "channel": "Telegram",
+          "status": "pass",
+          "class": "Mock external send; real client HTTP/server SQLite/canonical tool history/original XLSX and worker registry",
+          "calls": [
+            {
+              "filename": "H01.xlsx",
+              "sha256": "a398346e96b704c7892febf1fd5c014bddf7eb7a51ec1cb27b881bde616db3d9",
+              "acknowledged": true
+            },
+            {
+              "filename": "H01-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": false
+            },
+            {
+              "filename": "H01-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": true
+            }
+          ],
+          "texts": [
+            "Audit transport rejected second upload Saved file: artifacts/H01-v2.xlsx",
+            "H01.xlsx: /s/<redacted-local-share-token>\nH01-v2.xlsx: /s/<redacted-local-share-token>\nSet Web Public URL in Atlas settings for absolute share links."
+          ],
+          "limitBytes": 26214400,
+          "atLimitAccepted": true,
+          "overLimitBlockedBeforeSend": true
+        },
+        {
+          "channel": "WhatsApp",
+          "status": "pass",
+          "class": "Mock external send; real client HTTP/server SQLite/canonical tool history/original XLSX and worker registry",
+          "calls": [
+            {
+              "filename": "H01.xlsx",
+              "sha256": "a398346e96b704c7892febf1fd5c014bddf7eb7a51ec1cb27b881bde616db3d9",
+              "acknowledged": true
+            },
+            {
+              "filename": "H01-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": false
+            },
+            {
+              "filename": "H01-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": true
+            }
+          ],
+          "texts": [
+            "Audit transport rejected second upload Saved file: artifacts/H01-v2.xlsx"
+          ],
+          "limitBytes": 26214400,
+          "atLimitAccepted": true,
+          "overLimitBlockedBeforeSend": true
+        },
+        {
+          "channel": "Discord",
+          "status": "pass",
+          "class": "Mock external send; real client HTTP/server SQLite/canonical tool history/original XLSX and worker registry",
+          "calls": [
+            {
+              "filename": "H01.xlsx",
+              "sha256": "a398346e96b704c7892febf1fd5c014bddf7eb7a51ec1cb27b881bde616db3d9",
+              "acknowledged": true
+            },
+            {
+              "filename": "H01-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": false
+            },
+            {
+              "filename": "H01-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": true
+            }
+          ],
+          "texts": [
+            "Failed to send H01-v2.xlsx. Saved file: artifacts/H01-v2.xlsx"
+          ],
+          "limitBytes": 8388608,
+          "atLimitAccepted": true,
+          "overLimitBlockedBeforeSend": true,
+          "notes": "Failed attachment uses share-link footer; no explicit upload-failed user message when a share exists."
+        }
+      ],
+      "file": "channels-attempt1-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "channel": "Telegram",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: At least failed upload has a real published share",
+          "stack": "AssertionError [ERR_ASSERTION]: At least failed upload has a real published share\n    at <audit-directory>/channels.ts:38:158\n    at asyncModuleEvaluation (native:2)\n    at processTicksAndRejections (native:7:39)"
+        },
+        {
+          "channel": "WhatsApp",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: At least failed upload has a real published share",
+          "stack": "AssertionError [ERR_ASSERTION]: At least failed upload has a real published share\n    at <audit-directory>/channels.ts:38:158\n    at asyncModuleEvaluation (native:2)\n    at processTicksAndRejections (native:7:39)"
+        },
+        {
+          "channel": "Discord",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: At least failed upload has a real published share",
+          "stack": "AssertionError [ERR_ASSERTION]: At least failed upload has a real published share\n    at <audit-directory>/channels.ts:38:158\n    at asyncModuleEvaluation (native:2)\n    at processTicksAndRejections (native:7:39)"
+        }
+      ],
+      "file": "channel-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "channel": "Telegram",
+          "status": "pass",
+          "class": "Mock external send; real client HTTP/server SQLite/canonical tool history/original XLSX and worker registry",
+          "calls": [
+            {
+              "filename": "H02.xlsx",
+              "sha256": "a398346e96b704c7892febf1fd5c014bddf7eb7a51ec1cb27b881bde616db3d9",
+              "acknowledged": true
+            },
+            {
+              "filename": "H02-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": false
+            },
+            {
+              "filename": "H02-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": true
+            }
+          ],
+          "texts": [
+            "Audit transport rejected second upload Saved file: artifacts/H02-v2.xlsx",
+            "H02.xlsx: /s/<redacted-local-share-token>\nH02-v2.xlsx: /s/<redacted-local-share-token>\nSet Web Public URL in Atlas settings for absolute share links.",
+            "H02.xlsx: /s/<redacted-local-share-token>\nH02-v2.xlsx: /s/<redacted-local-share-token>\nSet Web Public URL in Atlas settings for absolute share links."
+          ],
+          "limitBytes": 26214400,
+          "atLimitAccepted": true,
+          "overLimitBlockedBeforeSend": true
+        }
+      ],
+      "file": "cache-refresh-attempt1-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "channel": "Telegram",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: At least failed upload has a real published share",
+          "stack": "AssertionError [ERR_ASSERTION]: At least failed upload has a real published share\n    at <audit-directory>/cache-refresh.ts:38:158\n    at asyncModuleEvaluation (native:2)\n    at processTicksAndRejections (native:7:39)"
+        }
+      ],
+      "file": "cache-refresh-attempt2-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "channel": "Telegram",
+          "status": "pass",
+          "class": "Mock external send; real client HTTP/server SQLite/canonical tool history/original XLSX and worker registry",
+          "calls": [
+            {
+              "filename": "H02.xlsx",
+              "sha256": "a398346e96b704c7892febf1fd5c014bddf7eb7a51ec1cb27b881bde616db3d9",
+              "acknowledged": true
+            },
+            {
+              "filename": "H02-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": false
+            },
+            {
+              "filename": "H02.xlsx",
+              "sha256": "a398346e96b704c7892febf1fd5c014bddf7eb7a51ec1cb27b881bde616db3d9",
+              "acknowledged": true
+            },
+            {
+              "filename": "H02-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": true
+            },
+            {
+              "filename": "H02-v2.xlsx",
+              "sha256": "8349e8ff7e6d3df9e75809909073fd3d9792f4ea6e958f42e9930fd47298890d",
+              "acknowledged": true
+            }
+          ],
+          "texts": [
+            "Audit transport rejected second upload Saved file: artifacts/H02-v2.xlsx",
+            "H02.xlsx: /s/<redacted-local-share-token>\nH02-v2.xlsx: /s/<redacted-local-share-token>\nSet Web Public URL in Atlas settings for absolute share links.",
+            "H02.xlsx: /s/<redacted-local-share-token>\nH02-v2.xlsx: /s/<redacted-local-share-token>\nSet Web Public URL in Atlas settings for absolute share links."
+          ],
+          "limitBytes": 26214400,
+          "atLimitAccepted": true,
+          "overLimitBlockedBeforeSend": true
+        }
+      ],
+      "file": "cache-refresh-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "id": "H05",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: undefined == true"
+        },
+        {
+          "id": "H10",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: undefined == true",
+          "stack": "AssertionError [ERR_ASSERTION]: undefined == true\n    at pending (<audit-directory>/restart.ts:16:869)\n    at processTicksAndRejections (native:7:39)"
+        },
+        {
+          "id": "H09",
+          "status": "pass",
+          "canonicalMessagesUnchanged": true,
+          "attachmentSha256Unchanged": true,
+          "outputBytes": 6493
+        }
+      ],
+      "file": "restart-attempt1-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "id": "H05",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: undefined == true"
+        },
+        {
+          "id": "H10",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: undefined == true",
+          "stack": "AssertionError [ERR_ASSERTION]: undefined == true\n    at pending (<audit-directory>/restart.ts:16:953)\n    at processTicksAndRejections (native:7:39)"
+        },
+        {
+          "id": "H09",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: H09 requires an actual process restart; prerequisite H10 did not reach SIGKILL"
+        }
+      ],
+      "file": "restart-attempt2-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "id": "H05",
+          "status": "fail",
+          "error": "AssertionError [ERR_ASSERTION]: {\"error\":\"Session not found\"}\n\n404 !== 403\n"
+        },
+        {
+          "id": "H10",
+          "status": "pass",
+          "class": "Real HTTP/SQLite process SIGKILL and restart",
+          "lateDecisionStatus": 409,
+          "response": {
+            "error": "The turn is no longer waiting for this approval. Continue the conversation to request a new action."
+          },
+          "turnStatus": {
+            "active": false
+          },
+          "storedAfter": {
+            "id": "app_DvLbbeoFxFfK0oIUBMMj9",
+            "session_id": "EyTptNIkmghk7zzQzZfX6",
+            "status": "pending",
+            "run_id": "a-38EupfF1QllFlhALTLF",
+            "tool_name": "delete_file"
+          },
+          "note": "Execution resumption after crash unsupported; stored approval may remain pending but cannot execute.",
+          "detail": {
+            "sessionId": "EyTptNIkmghk7zzQzZfX6",
+            "approvalId": "app_DvLbbeoFxFfK0oIUBMMj9"
+          }
+        },
+        {
+          "id": "H09",
+          "status": "pass",
+          "canonicalMessagesUnchanged": true,
+          "attachmentSha256Unchanged": true,
+          "outputBytes": 6493
+        }
+      ],
+      "file": "restart-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "id": "H05",
+          "status": "pass",
+          "wrongUserStatus": 404,
+          "wrongOrgStatus": 404,
+          "deniedStatus": 200,
+          "detail": {
+            "sessionId": "NonrUSFpKnoa8PYxXfxTc",
+            "approvalId": "app_Hza94G_vR85arQFDLK98I"
+          }
+        }
+      ],
+      "file": "approval-auth-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "channel": "Telegram",
+          "status": "pass",
+          "class": "Production inbound builders and workspace save + actual HTTP session/SQLite; pairing selector is explicit fixture input, external download mocked",
+          "details": [
+            {
+              "kind": "small",
+              "sizeBytes": 6470,
+              "sessionId": "JbCPriw_dqAGbgZ_qf-jM",
+              "sourceOnly": true
+            },
+            {
+              "kind": "medium",
+              "sizeBytes": 7583899,
+              "sessionId": "rs86eBlNebH6W9OdIOE7_",
+              "sourceOnly": true
+            }
+          ],
+          "guest": {
+            "workspaceWrites": 0,
+            "missingCoverageExplicit": true
+          },
+          "saved": ["artifacts/Telegram-medium.csv"]
+        },
+        {
+          "channel": "WhatsApp",
+          "status": "pass",
+          "class": "Production inbound builders and workspace save + actual HTTP session/SQLite; pairing selector is explicit fixture input, external download mocked",
+          "details": [
+            {
+              "kind": "small",
+              "sizeBytes": 6470,
+              "sessionId": "PljtfY9pPa5LgI3izvFME",
+              "sourceOnly": true
+            },
+            {
+              "kind": "medium",
+              "sizeBytes": 7583899,
+              "sessionId": "jt0CBQvpZ_KvczOcCmZPL",
+              "sourceOnly": true
+            }
+          ],
+          "guest": {
+            "workspaceWrites": 0,
+            "missingCoverageExplicit": true
+          },
+          "saved": ["artifacts/WhatsApp-medium.csv"]
+        },
+        {
+          "channel": "Discord",
+          "status": "pass",
+          "class": "Production inbound builders and workspace save + actual HTTP session/SQLite; pairing selector is explicit fixture input, external download mocked",
+          "details": [
+            {
+              "kind": "small",
+              "sizeBytes": 6470,
+              "sessionId": "gc5YjfDH7IPd3zbGthx8D",
+              "sourceOnly": true
+            },
+            {
+              "kind": "medium",
+              "sizeBytes": 7583899,
+              "sessionId": "5NU1JzUQuD6axeg9jdGCG",
+              "sourceOnly": true
+            }
+          ],
+          "guest": {
+            "workspaceWrites": 0,
+            "missingCoverageExplicit": true
+          },
+          "saved": ["artifacts/Discord-medium.csv"]
+        }
+      ],
+      "file": "inbound-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "id": "H14_oversized",
+          "status": "pass",
+          "rejected": 400,
+          "message": {
+            "error": "document data must be valid base64."
+          },
+          "historyUnchanged": true
+        },
+        {
+          "id": "H14_count",
+          "status": "pass",
+          "rejected": 400,
+          "message": {
+            "error": "Invalid message request."
+          },
+          "historyUnchanged": true
+        },
+        {
+          "id": "H14_bad_base64",
+          "status": "pass",
+          "rejected": 400,
+          "message": {
+            "error": "document data must be valid base64."
+          },
+          "historyUnchanged": true
+        }
+      ],
+      "file": "boundaries-report.json"
+    },
+    {
+      "evidence": "bun test v1.3.1 (89fa0f34)\n\npackages/core/src/channel-artifacts.test.ts:\n(pass) extractPairedTurnArtifacts > pairs content and sidecar writes into one artifact ref [1.84ms]\n(pass) extractPairedTurnArtifacts > returns empty when content write has no sidecar [0.02ms]\n(pass) extractPairedTurnArtifacts > ignores failed writes\n(pass) extractPairedTurnArtifacts > ignores writes outside artifacts/ [0.04ms]\n(pass) extractPairedTurnArtifacts > supports multiple pairs in one turn [0.19ms]\n(pass) extractPairedTurnArtifacts > extracts successful generate_image tool results without write_file pairs [0.11ms]\n(pass) extractPairedTurnArtifacts > ignores failed generate_image tool results\n(pass) extractPairedTurnArtifacts > rejects generate_image results missing mimeType\n(pass) extractPairedTurnArtifacts > rejects generate_image paths outside artifacts/\n(pass) extractPairedTurnArtifacts > keeps oversized generate_image refs with their sizeBytes for channel policy\n(pass) extractPairedTurnArtifacts > extracts write_file pairs and generate_image together in one turn [0.23ms]\n(pass) extractTurnDeliverableArtifacts > uses streamed artifacts when persisted tool history is unavailable [0.34ms]\n(pass) extractTurnDeliverableArtifacts > keeps persisted artifact metadata when the stream reports the same path [0.35ms]\n(pass) extractTurnDeliverableArtifacts > includes browser screenshot artifacts from the tool payload [0.30ms]\n(pass) extractTurnDeliverableArtifacts > includes unpaired write_file artifacts without a sidecar [0.09ms]\n(pass) extractTurnDeliverableArtifacts > includes spreadsheet create output [0.05ms]\n(pass) extractTurnDeliverableArtifacts > includes write_pptx output [0.08ms]\n(pass) extractTurnDeliverableArtifacts > skips writes outside artifacts/ [0.05ms]\n(pass) extractTurnDeliverableArtifacts > includes spreadsheet export_csv output from targetCsvPath [0.08ms]\n(pass) extractTurnDeliverableArtifacts > skips spreadsheet inspect [0.02ms]\n(pass) extractTurnDeliverableArtifacts > keeps paired sidecar mime type instead of inferring [0.08ms]\n(pass) extractLatestTurnMessages > slices from the last user message\n(pass) extractSessionArtifacts > collects proven artifact paths across every turn [0.12ms]\n\npackages/core/src/channel-artifact-delivery.test.ts:\n(pass) isAttachIntent > matches common attach phrases [0.58ms]\n(pass) isAttachIntent > does not match unrelated text [0.13ms]\n(pass) isAttachOnlyCommand > matches /attach shortcuts [0.06ms]\n(pass) resolveArtifactForAttach > prefers registry over listed artifacts [0.13ms]\n(pass) resolveArtifactForAttach > falls back to newest listed artifact when registry is empty [0.05ms]\n(pass) resolveShareUrlForPublish > stores first publish URL in cache [0.18ms]\n(pass) resolveShareUrlForPublish > reuses cached URL on refresh [0.05ms]\n(pass) formatArtifactShareFooter > formats absolute links [0.06ms]\n(pass) formatArtifactShareFooter > adds hint when public URL is not configured [0.05ms]\n(pass) mintDeliverableArtifacts > retains a relative share token across refresh and publish failure [0.38ms]\n(pass) mintDeliverableArtifacts > keeps artifacts without a share URL when publish fails [0.14ms]\n(pass) mintDeliverableArtifacts > reuses a cached share URL when publish fails [0.05ms]\n(pass) pushDeliverableArtifact > keeps most recent entries bounded [0.08ms]\n\npackages/agent/src/chat-tool-loop.test.ts:\n(pass) agent chat tool loop > handles a single tool call then a final reply [46.76ms]\n(pass) agent chat tool loop > fires tool stream handlers [0.90ms]\n(pass) agent chat tool loop > emits artifacts only for successful tool results (failed=%s) [0.98ms]\n(pass) agent chat tool loop > emits artifacts only for successful tool results (failed=%s) [0.88ms]\n(pass) agent chat tool loop > fires parallel tool stream handlers [10.71ms]\n(pass) agent chat tool loop > runs parallelSafe tool calls concurrently and preserves history order [26.85ms]\n(pass) agent chat tool loop > falls back to sequential execution when any tool is not parallelSafe [24.62ms]\n(pass) agent chat tool loop > retains completed tool evidence when the follow-up provider call fails [3.49ms]\n(pass) agent chat tool loop > persists approval metadata without executing the guarded tool [1.97ms]\n(pass) agent chat tool loop > appends resolvePromptContext to the system prompt each turn [0.28ms]\n\npackages/core/src/tools/failed-artifacts.test.ts:\n(pass) failed result {\"success\":false} cannot publish partial artifacts [2.14ms]\n(pass) failed result {\"ok\":false} cannot publish partial artifacts [0.53ms]\n(pass) failed result {\"isError\":true} cannot publish partial artifacts [0.53ms]\n(pass) failed result {\"error\":\"conversion failed after writing partial output\"} cannot publish partial artifacts [0.66ms]\n(pass) a successful independent result remains deliverable beside a failure [0.11ms]\n(pass) filesystem detection cannot redeliver a failed tool's undeclared partial output [2.39ms]\n\npackages/core/src/tools/schema-execution.test.ts:\n(pass) tool argument validation boundary > blocks invalid nested, required, enum, and array inputs before any handler side effect [1.57ms]\n(pass) tool argument validation boundary > accepts schema unions without coercing values or inserting defaults into execution input [1.04ms]\n(pass) tool argument validation boundary > enforces conditional requirements from the declared JSON Schema dialect [0.56ms]\n(pass) tool argument validation boundary > rejects missing required arguments even when defaults or no property schema are advertised [0.85ms]\n(pass) tool argument validation boundary > fails closed for invalid, unknown, external, and asynchronous schemas before side effects [1.03ms]\n(pass) tool argument validation boundary > uses exact draft semantics and keeps local reference IDs scoped to each tool [21.47ms]\n\npackages/core/src/tools/schema-defaults.test.ts:\n(pass) protected real spreadsheet accepts documented defaults before its Zod handler [63.28ms]\n(pass) write_file preserves exact text bytes including empty content: \"  ID,Value\\r\\n00123,7\\r\\n\" [4.32ms]\n(pass) write_file preserves exact text bytes including empty content: \"\" [4.11ms]\n(pass) write_file preserves exact text bytes including empty content: \"\\n\\t \" [1.43ms]\n(pass) preprocessed file inputs remain typed while omitted defaults stay optional [1.23ms]\n(pass) builtin parameter schemas all compile; effects describe the accepted input [17.95ms]\n\n 64 pass\n 0 fail\n 230 expect() calls\nRan 64 tests across 6 files. [779.00ms]\n",
+      "file": "focused-regression.log"
+    },
+    {
+      "evidence": "bun test v1.3.1 (89fa0f34)\n\nscripts/channel-loop-harness/channel-loop-harness.test.ts:\n============================================================\nCHANNEL LOOP HARNESS\n============================================================\n[env] <temporary-path>\n[mock-llm] http://127.0.0.1:64988/v1\n[atlas] http://127.0.0.1:64989\n[discord] handle dm {\n  botOwnsThread: false,\n  isThread: false,\n}\n[discord] chat start messageId=unknown textBytes=0\n[discord] chat done\n[PASS] wa_captionless_csv_to_xlsx (332ms)\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n       sent canonical channel-loop-result.xlsx (6487 exact bytes); verified document content; listed: channel-loop-result.xlsx\n[PASS] wa_xlsx_to_xlsx (113ms)\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n       sent canonical channel-loop-result-v2.xlsx (6487 exact bytes); verified document content; listed: channel-loop-result-v2.xlsx, channel-loop-result.xlsx\n[PASS] wa_captionless_txt_to_md (76ms)\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n       sent canonical channel-loop-summary.md (49 exact bytes); verified document content; listed: channel-loop-summary.md, channel-loop-result-v2.xlsx, channel-loop-result.xlsx\n[PASS] wa_zip_rejected (2ms)\n       zip rejected before agent turn\n[PASS] tg_captionless_csv_to_xlsx (147ms)\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n       sent canonical channel-loop-result-v3.xlsx (6487 exact bytes); verified document content; listed: channel-loop-result-v3.xlsx, channel-loop-summary.md, channel-loop-result-v2.xlsx, channel-loop-result.xlsx\n[PASS] discord_xlsx_to_xlsx (203ms)\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n       sent canonical channel-loop-result-v4.xlsx (6487 exact bytes); verified document content; listed: channel-loop-result-v4.xlsx, channel-loop-result-v3.xlsx, channel-loop-summary.md, channel-loop-result-v2.xlsx, channel-loop-result.xlsx\n[PASS] wa_lid_allowlist_drop (4ms)\n       unmapped LID dropped with no agent turn\n[PASS] wa_lid_allowlist_senderpn (134ms)\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n       sent canonical channel-loop-result-v5.xlsx (6487 exact bytes); verified document content; listed: channel-loop-result-v5.xlsx, channel-loop-result-v4.xlsx, channel-loop-result-v3.xlsx, channel-loop-summary.md, channel-loop-result-v2.xlsx, channel-loop-result.xlsx\n[PASS] wa_text_no_file_out (30ms)\n       text reply without file: Hello! I am your Atlas agent. How can I help you today?\n------------------------------------------------------------\n9 passed, 0 failed\n[report] <temporary-path>\n(pass) channel loop harness > file in is processed and a real file comes back on WhatsApp, Telegram, and Discord [4237.75ms]\n\n 1 pass\n 0 fail\n 3 expect() calls\nRan 1 test across 1 file. [6.06s]\n",
+      "file": "channel-full-handler-regression.log"
+    },
+    {
+      "evidence": "bun test v1.3.1 (89fa0f34)\n\nscripts/e2e-critical-paths.test.ts:\n(pass) critical paths > identity resolution [152.89ms]\n(pass) critical paths > tool resolver memory_search + search_chats [71.64ms]\n(pass) critical paths > approval resume [71.52ms]\n(pass) critical paths > learning closed-loop [71.59ms]\n(pass) critical paths > durable run [70.15ms]\n(pass) critical paths > outbound envelope with principal [0.15ms]\n\nscripts/pm2-deploy.test.ts:\n(pass) pm2 deploy config > starts one atlas process on 0.0.0.0:4310 [0.66ms]\n(pass) pm2 deploy config > installs LibreOffice so Office artifact previews work [0.53ms]\n\nscripts/channel-loop-harness/channel-loop-harness.test.ts:\n============================================================\nCHANNEL LOOP HARNESS\n============================================================\n[env] <temporary-path>\n[mock-llm] http://127.0.0.1:64873/v1\n[atlas] http://127.0.0.1:64874\n[discord] handle dm {\n  botOwnsThread: false,\n  isThread: false,\n}\n[discord] chat start messageId=unknown textBytes=0\n[discord] chat done\n[PASS] wa_captionless_csv_to_xlsx (132ms)\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n       sent channel-loop-result.xlsx (6487 bytes); listed: channel-loop-result.xlsx\n[FAIL] wa_xlsx_to_xlsx (54ms)\n       Channel did not send channel-loop-result.xlsx. Sent: channel-loop-result-v2.xlsx\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n[PASS] wa_captionless_txt_to_md (32ms)\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n       sent channel-loop-summary.md (49 bytes); listed: channel-loop-summary.md, channel-loop-result-v2.xlsx, channel-loop-result.xlsx\n[PASS] wa_zip_rejected (1ms)\n       zip rejected before agent turn\n[FAIL] tg_captionless_csv_to_xlsx (202ms)\n       Channel did not send channel-loop-result.xlsx. Sent: channel-loop-result-v3.xlsx\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n[FAIL] discord_xlsx_to_xlsx (57ms)\n       Channel did not send channel-loop-result.xlsx. Sent: channel-loop-result-v4.xlsx\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n[PASS] wa_lid_allowlist_drop (1ms)\n       unmapped LID dropped with no agent turn\n[FAIL] wa_lid_allowlist_senderpn (41ms)\n       Channel did not send channel-loop-result.xlsx. Sent: channel-loop-result-v5.xlsx\n       llm requests after inbound: 3\n       llm saw [File:] marker from document parser\n[PASS] wa_text_no_file_out (21ms)\n       text reply without file: Hello! I am your Atlas agent. How can I help you today?\n------------------------------------------------------------\n5 passed, 4 failed\n[report] <temporary-path>\n 7 |     const result = await withExclusiveAtlasConfigDir(() =>\n 8 |       runChannelLoopHarness()\n 9 |     );\n10 |     const failed = result.results.filter((item) => item.status === \"fail\");\n11 | \n12 |     expect(failed.map((item) => `${item.id}: ${item.message}`)).toEqual([]);\n                                                                     ^\nerror: expect(received).toEqual(expected)\n\n- []\n+ [\n+   \"wa_xlsx_to_xlsx: Channel did not send channel-loop-result.xlsx. Sent: channel-loop-result-v2.xlsx\",\n+   \"tg_captionless_csv_to_xlsx: Channel did not send channel-loop-result.xlsx. Sent: channel-loop-result-v3.xlsx\",\n+   \"discord_xlsx_to_xlsx: Channel did not send channel-loop-result.xlsx. Sent: channel-loop-result-v4.xlsx\",\n+   \"wa_lid_allowlist_senderpn: Channel did not send channel-loop-result.xlsx. Sent: channel-loop-result-v5.xlsx\",\n+ ]\n\n- Expected  - 1\n+ Received  + 6\n\n      at <anonymous> (<repository>/scripts/channel-loop-harness/channel-loop-harness.test.ts:12:65)\n(fail) channel loop harness > file in is processed and a real file comes back on WhatsApp, Telegram, and Discord [3352.14ms]\n\nscripts/release-gate/decision-engine.test.ts:\n(pass) ReleaseDecisionEngine > blocks empty evidence and optional-only evidence [0.34ms]\n(pass) ReleaseDecisionEngine > blocks a required warning without converting it into a pass [0.05ms]\n(pass) ReleaseDecisionEngine > decides RELEASE when all required checks pass [0.05ms]\n(pass) ReleaseDecisionEngine > decides BLOCKED when a required check fails (e.g. secret leak or tenant isolation) [0.04ms]\n(pass) ReleaseDecisionEngine > decides BLOCKED when a required check is skipped [0.02ms]\n\nscripts/release-gate/mock-llm-server-harness.test.ts:\n(pass) release-gate mock response routing > routes empty chat-search results by tool identity, not generic JSON keys [0.32ms]\n(pass) release-gate mock response routing > keeps Bun web-search synthesis after narrowing history routing [0.11ms]\n(pass) release-gate mock response routing > uses a schema-valid destructive tool call for the approval journey [2.03ms]\n(pass) release-gate chat stream parsing > parses typed SSE events and ignores keepalives [0.14ms]\n(pass) release-gate chat stream parsing > rejects malformed data events instead of silently weakening the gate [0.08ms]\n(pass) release-gate chat stream parsing > requires the exact destructive approval and rejects early execution [0.16ms]\n\nscripts/release-gate/tokenrouter-smoke-evidence.test.ts:\n(pass) provider inference without an explicitly configured credential is blocked [0.37ms]\n\nscripts/production-readiness/report-writer.test.ts:\n(pass) successful synthetic checks cannot establish production readiness [0.16ms]\n(pass) failed admission, cancellation, fairness, containment or audit evidence blocks the report [0.12ms]\n(pass) a passed fast soak cannot count as the ten-minute soak [0.03ms]\n(pass) the unimplemented rollback simulation reports not run without claiming transitions [0.09ms]\n(pass) a healthy staging endpoint cannot prove deployment or rollback [0.59ms]\n\nscripts/live-human-e2e/evidence.test.ts:\n(pass) a claimed message send with a blocked tool result is reported as failure [0.56ms]\n(pass) honestly reported approval suspension is not a confirmed send [0.06ms]\n(pass) an approval event blocks a send claim even when there is no completed tool result [0.04ms]\n\napps/server/scripts/build.test.ts:\n(pass) server production build > emits and executes the adjacent custom-tool runtime assets [1012.25ms]\n\n1 tests failed:\n(fail) channel loop harness > file in is processed and a real file comes back on WhatsApp, Telegram, and Discord [3352.14ms]\n\n 29 pass\n 1 fail\n 91 expect() calls\nRan 30 tests across 9 files. [6.43s]\n",
+      "file": "channel-full-handler-before.log"
+    },
+    {
+      "evidence": "bun test v1.3.1 (89fa0f34)\n\napps/server/src/providers/subscription/claude/structured-harness-persistence.test.ts:\n(pass) H12 actual MCP to protected files and SQLite: complete [1012.03ms]\n(pass) H12 actual MCP to protected files and SQLite: conflict [29.03ms]\n(pass) H12 actual MCP to protected files and SQLite: cancel [38.85ms]\n(pass) H12 actual MCP to protected files and SQLite: invalid_path [28.92ms]\n\napps/server/src/providers/subscription/chatgpt/structured-harness-persistence.test.ts:\n(pass) H11 actual JSON-RPC to protected files and SQLite: complete [41.67ms]\n(pass) H11 actual JSON-RPC to protected files and SQLite: conflict [28.91ms]\n(pass) H11 actual JSON-RPC to protected files and SQLite: disconnect [25.44ms]\n(pass) H11 actual JSON-RPC to protected files and SQLite: cancel [27.87ms]\n(pass) H11 actual JSON-RPC to protected files and SQLite: invalid_path [46.67ms]\n\n 9 pass\n 0 fail\n 134 expect() calls\nRan 9 tests across 2 files. [3.02s]\n",
+      "file": "protocol-persistence.log"
+    },
+    {
+      "evidence": "Audit evidence retained at <temporary-path>\n",
+      "file": "portable-runner-attempt1.log"
+    },
+    {
+      "evidence": {
+        "checks": [
+          {
+            "exitCode": 0,
+            "id": "http"
+          },
+          {
+            "exitCode": 0,
+            "id": "protocol-and-channels"
+          }
+        ],
+        "evidenceClass": "Local real HTTP/SQLite/protected tools; controlled provider and channel transports. No live model or channel claim.",
+        "limitations": [
+          "This repeatable runner does not repeat the historical OS-crash experiment or live browser QA.",
+          "Live Claude is not attempted; installed SDK MCP is a controlled protocol fixture."
+        ]
+      },
+      "file": "portable-runner-report.json"
+    },
+    {
+      "evidence": [
+        {
+          "detail": {
+            "original": "artifacts/H01.xlsx",
+            "output": "artifacts/H01-v2.xlsx",
+            "pairs": 4,
+            "sessionId": "vSNAKxG-tXoMlrdhbEiSo"
+          },
+          "id": "H01",
+          "status": "pass"
+        },
+        {
+          "detail": {
+            "original": "artifacts/H02.xlsx",
+            "output": "artifacts/H02-v2.xlsx",
+            "pairs": 4,
+            "sessionId": "Uf-BvrScn_v-kPU53Nuif"
+          },
+          "id": "H02",
+          "status": "pass"
+        },
+        {
+          "detail": {
+            "errors": [
+              {
+                "error": "Unknown tool: unassigned_audit_tool"
+              },
+              {
+                "error": "Invalid tool input: /data/0/0: must be string; /data/0/0: must be number; /data/0/0: must be boolean",
+                "errorCode": "INVALID_ARGUMENT"
+              }
+            ],
+            "recovered": true,
+            "sessionId": "dU7l-5mV7PVrEe8f4ZYpK"
+          },
+          "id": "H03",
+          "status": "pass"
+        },
+        {
+          "detail": {
+            "approvalId": "app_WyEfNHYjOY1I6abr83kvb",
+            "decisionStatus": 200,
+            "lateDecision": 409,
+            "pairs": 1,
+            "sessionId": "8hoEe-P3h4mARwOOTsPPz",
+            "stillExists": false,
+            "terminal": {
+              "reply": "Audit fixture H04A finished.",
+              "type": "done"
+            }
+          },
+          "id": "H04A",
+          "status": "pass"
+        },
+        {
+          "detail": {
+            "approvalId": "app_zI40F2bwXiuGvDyxD6hrG",
+            "decisionStatus": 200,
+            "lateDecision": 409,
+            "pairs": 1,
+            "sessionId": "cu5lpsaG18BnQu2UQX4wt",
+            "stillExists": true,
+            "terminal": {
+              "reply": "Audit fixture H04D finished.",
+              "type": "done"
+            }
+          },
+          "id": "H04D",
+          "status": "pass"
+        },
+        {
+          "detail": {
+            "approvalId": "app_TE4vZ6kwNczAPUKlwCvgq",
+            "lateDecision": 409,
+            "pairs": 0,
+            "sessionId": "fLlU4GEAV7ydsQkaQ0-WN",
+            "stillExists": true,
+            "terminal": {
+              "approval": {
+                "consequenceSummary": "Target: artifacts/H07-target.csv · Affected resources: 1 · This action is irreversible.",
+                "createdAt": "2026-09-06T03:47:50.305Z",
+                "details": {
+                  "path": "artifacts/H07-target.csv"
+                },
+                "id": "app_TE4vZ6kwNczAPUKlwCvgq",
+                "status": "pending",
+                "title": "Permanently delete 1 file(s)",
+                "tool": "delete_file",
+                "toolCallId": "H07-0"
+              },
+              "type": "approval_requested"
+            }
+          },
+          "id": "H07",
+          "status": "pass"
+        },
+        {
+          "detail": {
+            "pairs": 1,
+            "sessionId": "5dHyfHL2wOLeorc1AOOB-",
+            "status": {
+              "active": false
+            }
+          },
+          "id": "H06",
+          "status": "pass"
+        },
+        {
+          "detail": {
+            "attachmentId": "att_86532ac1-eb0e-457c-9675-b6522d626275",
+            "rejected": 400,
+            "sessionId": "_0EGL5XyHFaI5b16yQj2O",
+            "sha256": "9c8dc41551a74387fe759bebfff96d8bf3290a5bdba43a2f5b217f7fc9eed920"
+          },
+          "id": "H14",
+          "status": "pass"
+        }
+      ],
+      "file": "portable-http-report.json"
+    },
+    {
+      "evidence": "\nscripts/channel-loop-harness/channel-loop-harness.test.ts:\n(pass) channel loop harness > file in is processed and a real file comes back on WhatsApp, Telegram, and Discord [4055.52ms]\n\npackages/core/src/channel-artifact-delivery.test.ts:\n(pass) isAttachIntent > matches common attach phrases [0.05ms]\n(pass) isAttachIntent > does not match unrelated text [0.02ms]\n(pass) isAttachOnlyCommand > matches /attach shortcuts\n(pass) resolveArtifactForAttach > prefers registry over listed artifacts\n(pass) resolveArtifactForAttach > falls back to newest listed artifact when registry is empty [0.17ms]\n(pass) resolveShareUrlForPublish > stores first publish URL in cache\n(pass) resolveShareUrlForPublish > reuses cached URL on refresh\n(pass) formatArtifactShareFooter > formats absolute links [0.07ms]\n(pass) formatArtifactShareFooter > adds hint when public URL is not configured [0.27ms]\n(pass) mintDeliverableArtifacts > retains a relative share token across refresh and publish failure [0.40ms]\n(pass) mintDeliverableArtifacts > keeps artifacts without a share URL when publish fails [0.19ms]\n(pass) mintDeliverableArtifacts > reuses a cached share URL when publish fails\n(pass) pushDeliverableArtifact > keeps most recent entries bounded [0.07ms]\n\npackages/core/src/tools/failed-artifacts.test.ts:\n(pass) failed result {\"success\":false} cannot publish partial artifacts [4.88ms]\n(pass) failed result {\"ok\":false} cannot publish partial artifacts [0.75ms]\n(pass) failed result {\"isError\":true} cannot publish partial artifacts [0.72ms]\n(pass) failed result {\"error\":\"conversion failed after writing partial output\"} cannot publish partial artifacts [0.54ms]\n(pass) a successful independent result remains deliverable beside a failure [0.13ms]\n(pass) filesystem detection cannot redeliver a failed tool's undeclared partial output [1.34ms]\n\npackages/core/src/tools/schema-defaults.test.ts:\n(pass) protected real spreadsheet accepts documented defaults before its Zod handler [111.08ms]\n(pass) write_file preserves exact text bytes including empty content: \"  ID,Value\\r\\n00123,7\\r\\n\" [4.92ms]\n(pass) write_file preserves exact text bytes including empty content: \"\" [1.67ms]\n(pass) write_file preserves exact text bytes including empty content: \"\\n\\t \" [1.71ms]\n(pass) preprocessed file inputs remain typed while omitted defaults stay optional [1.39ms]\n(pass) builtin parameter schemas all compile; effects describe the accepted input [23.34ms]\n\napps/server/src/providers/subscription/claude/structured-harness-persistence.test.ts:\n(pass) H12 actual MCP to protected files and SQLite: complete [2240.72ms]\n(pass) H12 actual MCP to protected files and SQLite: conflict [74.74ms]\n(pass) H12 actual MCP to protected files and SQLite: cancel [39.37ms]\n(pass) H12 actual MCP to protected files and SQLite: invalid_path [50.92ms]\n\napps/server/src/providers/subscription/chatgpt/structured-harness-persistence.test.ts:\n(pass) H11 actual JSON-RPC to protected files and SQLite: complete [56.99ms]\n(pass) H11 actual JSON-RPC to protected files and SQLite: conflict [375.29ms]\n(pass) H11 actual JSON-RPC to protected files and SQLite: disconnect [48.60ms]\n(pass) H11 actual JSON-RPC to protected files and SQLite: cancel [566.87ms]\n(pass) H11 actual JSON-RPC to protected files and SQLite: invalid_path [55.34ms]\n\n 35 pass\n 0 fail\n 241 expect() calls\nRan 35 tests across 6 files. [9.15s]\n",
+      "file": "portable-protocol-check.log"
+    }
+  ],
+  "generatedAt": "2026-09-06T04:02:46.215Z",
+  "interpretation": {
+    "channelShareRetry": "channels-attempt1 proves upload bytes/retry/limits. Later all-channel share assertion failed because empty worker caches cannot recover an existing plaintext token. Same-worker relative-cache defect fixed; cache-refresh-report.json separately verifies real publication/reload/refresh with all five sends retained.",
+    "historicalExitCodes": "Some initial catch-and-continue fixtures exited zero with failed cases; use each assertion report. Current runner exits nonzero after saving failures.",
+    "liveClaude": "Blocked: Atlas-isolated runtime not authenticated. Installed SDK MCP protocol tests are separate evidence.",
+    "withdrawn": "restart-attempt1-report.json H09 said pass without an actual restart. Withdrawn; restart-attempt2 required a SIGKILL prerequisite and failed; restart-report.json later proves actual restart."
+  },
+  "redactions": [
+    "Local share tokens and secret-bearing field names",
+    "Repository and temporary filesystem prefixes"
+  ],
+  "scope": "Local production HTTP/SQLite/protected-file and controlled SDK/channel transport audit. No live provider or channel claim."
+}

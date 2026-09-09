@@ -599,7 +599,8 @@ const FIRST_TOKEN_TIMEOUT_MS = resolveChatFirstTokenTimeoutMs();
 
 function createStreamSenders(
   sessionId: string,
-  enqueue: (chunk: Uint8Array) => void
+  enqueue: (chunk: Uint8Array) => void,
+  owner: AbortController
 ): {
   send: (event: StreamEvent) => void;
   getTerminal: () => StreamEvent | null;
@@ -607,7 +608,7 @@ function createStreamSenders(
   let terminal: StreamEvent | null = null;
 
   const send = (event: StreamEvent) => {
-    sessionTurnRegistry.publish(sessionId, event);
+    sessionTurnRegistry.publish(sessionId, event, owner);
 
     if (event.type === "done" || event.type === "error") {
       terminal = event;
@@ -638,6 +639,9 @@ function buildAgentStreamHandlers(send: (event: StreamEvent) => void) {
       send({ approval, type: "approval_requested" }),
     onArtifactCreated: (artifact: import("@atlas/core").Artifact) =>
       send({ artifact, type: "artifact_created" }),
+    onChannelActionRequested: (
+      request: import("@atlas/core/channel-native-actions").ChannelNativeActionRequest
+    ) => send({ request, type: "channel_action_requested" }),
     onChunk: (delta: string) => send({ delta, type: "chunk" }),
     onCitationCreated: (
       citation: import("@atlas/core").Citation,
@@ -803,8 +807,16 @@ export function streamMessage(
   // Only tests pass these. The resolved values clamp to 60s and 5s minimums,
   // which are far too long to wait for in a suite.
   timeoutMs: number = STREAM_TIMEOUT_MS,
-  firstTokenTimeoutMs: number = FIRST_TOKEN_TIMEOUT_MS
+  firstTokenTimeoutMs: number = FIRST_TOKEN_TIMEOUT_MS,
+  // Authenticated server options only; request JSON never supplies these hooks.
+  options?: Parameters<AgentChatSession["sendStream"]>[2]
 ): Response {
+  const { onToolCheckpoint, ...turnOptions } = options ?? {};
+  // Preserve the original checkpoint receiver, including inherited callbacks,
+  // while fixing the hook before a persisted wrapper can defer execution.
+  const checkpoint = onToolCheckpoint
+    ? () => onToolCheckpoint.call(options)
+    : undefined;
   const encoder = new TextEncoder();
   const keepaliveIntervalMs = 4000;
   // The turn is cancelled either by the client going away (requestSignal, which is
@@ -827,10 +839,12 @@ export function streamMessage(
         sessionId,
         (chunk) => {
           controller.enqueue(chunk);
-        }
+        },
+        turnAbort
       );
 
       let sawProviderOutput = false;
+      let setApprovalWaiting = (_waiting: boolean): void => undefined;
       let armFirstTokenDeadline = () => undefined;
       const send = (event: StreamEvent) => {
         if (event.type === "policy_resolved") {
@@ -841,9 +855,15 @@ export function streamMessage(
           event.type === "chunk" ||
           event.type === "thinking" ||
           event.type === "tool_input_delta" ||
-          event.type === "tool_start"
+          event.type === "tool_start" ||
+          event.type === "approval_requested"
         ) {
           sawProviderOutput = true;
+        }
+        if (event.type === "approval_requested") {
+          setApprovalWaiting(true);
+        } else if (event.type === "tool_start" || event.type === "tool_end") {
+          setApprovalWaiting(false);
         }
         publish(event);
       };
@@ -862,23 +882,43 @@ export function streamMessage(
       // cancelled." for a provider that simply went quiet.
       let timedOut = false;
 
-      const failAfter = (ms: number, message: string, when?: () => boolean) =>
-        new Promise<never>((_, reject) => {
-          deadlines.push(
-            setTimeout(() => {
-              if (when && !when()) {
-                return;
-              }
-
-              timedOut = true;
-              reject(new Error(message));
-              // After rejecting, so the race reports the timeout and not the
-              // abort. The provider request is still open at this point and
-              // nothing else ever stops it.
-              turnAbort.abort();
-            }, ms)
-          );
-        });
+      // User approval has its own expiry. Do not spend the inference deadline
+      // while the model is waiting for a human decision.
+      const overallDeadline = new Promise<never>((_resolve, reject) => {
+        let remaining = timeoutMs;
+        let startedAt = Date.now();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let waiting = false;
+        const arm = () => {
+          startedAt = Date.now();
+          timer = setTimeout(() => {
+            timedOut = true;
+            reject(
+              new Error(
+                `Chat timed out after ${Math.round(timeoutMs / 1000)}s waiting for the provider. Try another model or check provider settings.`
+              )
+            );
+            turnAbort.abort();
+          }, remaining);
+          deadlines.push(timer);
+        };
+        setApprovalWaiting = (next) => {
+          if (next === waiting) {
+            return;
+          }
+          waiting = next;
+          if (waiting) {
+            if (timer !== undefined) {
+              clearTimeout(timer);
+              timer = undefined;
+              remaining = Math.max(0, remaining - (Date.now() - startedAt));
+            }
+          } else {
+            arm();
+          }
+        };
+        arm();
+      });
 
       const firstTokenDeadline =
         firstTokenTimeoutMs > 0
@@ -917,12 +957,11 @@ export function streamMessage(
       try {
         const raced: Promise<string>[] = [
           session.sendStream(input, buildAgentStreamHandlers(send), {
+            ...turnOptions,
+            onToolCheckpoint: checkpoint,
             signal: turnSignal,
           }),
-          failAfter(
-            timeoutMs,
-            `Chat timed out after ${Math.round(timeoutMs / 1000)}s waiting for the provider. Try another model or check provider settings.`
-          ),
+          overallDeadline,
         ];
 
         if (firstTokenDeadline) {
@@ -967,7 +1006,7 @@ export function streamMessage(
             type: "error",
           } satisfies StreamEvent);
 
-        sessionTurnRegistry.endTurn(sessionId, terminal);
+        sessionTurnRegistry.endTurn(sessionId, terminal, turnAbort);
         try {
           controller.close();
         } catch {

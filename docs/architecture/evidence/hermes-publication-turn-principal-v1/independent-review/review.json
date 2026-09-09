@@ -1,0 +1,51 @@
+{
+  "sealedAt": "2026-09-07T02:41:02.072625+00:00",
+  "reviewer": "/root/file_v2_finalize",
+  "decision": "no blocking source defect identified within unwired per-turn principal and pre-effect guard scope; historical fixture archive qualification retained",
+  "sourceHash": "11d216be15e24573602ddd0f198115e2da42b4bd00a59d4ffa355742a0490245",
+  "candidateFilesVerified": 2101,
+  "baseFilesVerified": 2098,
+  "rootC5FilesVerifiedUnchanged": 2078,
+  "ownerManifestEntriesVerified": 2147,
+  "ownerReadinessSha256": "b2b0275d85714d9ad0aa8003c1241f5a81ae64b182462179f2c2f42d4c3335b0",
+  "ownerManifestSha256": "489f3f31b7174ab9ef8e8d87e7aad60736a378b11e4785ecb261e9e7d9ab39a8",
+  "componentPatchSha256": "441d1dba8ccc0d6e3423070b2cde236b3cdfcbe250277956c1aef8ab71750443",
+  "ownerGatesInspected": {
+    "tests": 65,
+    "assertions": 322,
+    "files": 5,
+    "newTests": 28,
+    "testLog": "union-v4.log",
+    "typecheckLogs": ["production-typecheck-v4.log", "scoped-typecheck-v4.log"],
+    "lint": "lint-v4.log"
+  },
+  "independentTestRuns": 0,
+  "independentReadonlyPatchCheckExitCodes": [0, 0],
+  "platformDependencyLinksVerified": 14,
+  "historicalInitialTestSnapshotsMissing": [
+    "1a3cf6faa52ec202a9d640da6d4fb5d5f0afb9f536a56fcf7c21f1fd8739d605",
+    "806c424f3ce4b2a512d004f5574cda8378f497f9dd2e190710d6371a9b7735ee"
+  ],
+  "correctedGuardOrderOriginalTestVerified": true,
+  "files": {
+    "component.patch.check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "inspection-errors.json": "c77cf4bd3aca13f9b58db5e35910d607d78a2ee47e220eb76042d62ad1e7f4ba",
+    "owner-acknowledgment.json": "90d30c737f681ef11a6d1bd7ca407a8166be7e9c5b38ccceda80f408be289d3d",
+    "production.patch.check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "registration.json": "5bd6e7a27960665cff7524d3b9ceb8113e30bd84b07190174dc38ffab79ee457",
+    "review.md": "fde5b1ef7de35ab0b7935181453c3581d1b60fbbdad4e9d799c2a50f0732923c",
+    "verification.json": "be626fdfb32a3d833c8e34345a0c17ce3ce6e6e2cfda49e7dd5c2060374c3922",
+    "verify.py": "30dd5378c48cee62a238ba140f3f016ea79f5f22e5ed4565b0cec479eb81657a"
+  },
+  "sourceEdits": 0,
+  "providerCalls": 0,
+  "productionActivationApproved": false,
+  "credentialLiteralScan": "passed; key/value excluded",
+  "limits": [
+    "Guard sees original base session scope, not current dispatch run/signal/grants.",
+    "Current authorization is not atomic with subsequent effects/publication.",
+    "No loader/spawn/root confinement, route/wrapper/store activation or UI/channel cutover.",
+    "Initial two historical test byte snapshots were not archived; logs/hashes remain available.",
+    "Owner test counts not independent reruns or comparative benchmark evidence."
+  ]
+}

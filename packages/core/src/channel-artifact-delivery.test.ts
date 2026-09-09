@@ -157,6 +157,48 @@ describe("formatArtifactShareFooter", () => {
 });
 
 describe("mintDeliverableArtifacts", () => {
+  test("retains a relative share token across refresh and publish failure", async () => {
+    const cache: Record<string, string> = {};
+    const first = resolveShareUrlForPublish(
+      {
+        refreshed: false,
+        sharePath: "/s/fixture_token",
+        shareUrl: null,
+        webPublicUrlConfigured: false,
+      },
+      cache,
+      "report.csv"
+    );
+    expect(first.shareUrl).toBeNull();
+    expect(first.sharePath).toBe("/s/fixture_token");
+    const refreshed = resolveShareUrlForPublish(
+      {
+        refreshed: true,
+        sharePath: "",
+        shareUrl: null,
+        webPublicUrlConfigured: false,
+      },
+      cache,
+      "report.csv"
+    );
+    expect(refreshed.sharePath).toBe(first.sharePath);
+    expect(refreshed.shareUrl).toBeNull();
+    const delivered = await mintDeliverableArtifacts({
+      artifacts: [
+        {
+          filename: "report.csv",
+          mimeType: "text/csv",
+          path: "report.csv",
+          savedAt: "",
+          sizeBytes: 3,
+        },
+      ],
+      publish: () => Promise.reject(new Error("server unavailable")),
+      shareUrlCache: cache,
+    });
+    expect(delivered[0]?.sharePath).toBe(first.sharePath);
+    expect(delivered[0]?.shareUrl).toBeNull();
+  });
   test("keeps artifacts without a share URL when publish fails", async () => {
     const delivered = await mintDeliverableArtifacts({
       artifacts: [

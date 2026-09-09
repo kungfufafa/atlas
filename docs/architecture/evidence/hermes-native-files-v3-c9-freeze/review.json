@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-09-07T05:57:21.034489+00:00",
+  "status": "CLOSED: no remaining blocker found in the declared C9 changed-seam offline instrumentation scope",
+  "ownerRoot": "/private/tmp/atlas-native-file-v3-c9-integration",
+  "ownerSourceHash": "2071565060f37f0062bcc713b3c3287591e0ec3d7465c2a6b1daa44d666819df",
+  "softwareSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "controlSourceHash": "b3673405fab43fdd268aa286d4f6f0164ea00c2332ba43d00e28abd3d538fde5",
+  "ownerReadinessSha256": "df46b02e40877a1d424300c89deaf4dd94a1367febacd14bb136f65508a30e3d",
+  "ownerManifestSha256": "ce308e49824ed1605ab13490b6deb0de12dfa9c67f633d0f4075609dd0c9bac9",
+  "ownerSealSha256": "e376f07174e91fd1979ff2894974e55efc0ebd7e616bb1acb4ac5a4f723169fc",
+  "frozenStudyManifest": {
+    "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/frozen/manifest.json",
+    "bytes": 1177733,
+    "sha256": "b50f7517975762665cd627e4c0493f5cbe6228d22c9581781b9100946d07b30f"
+  },
+  "registrationSha256": "204f619eac41c65e4a29d41af9a911bb9bc00b71c7fce3c63a893a7bb61abe08",
+  "sameCandidateSupplementSha256": "290c95cacd34cb6c74296c17477bdfc1ef96c8bb0e58e7bb555314c439203b5b",
+  "independence": {
+    "reviewerExecution": "Source/diff review, independent exact byte/link/reference verification and selected metadata inspection; no new tests, native runs, provider calls or rescoring by reviewer. Gates and native executions below are owner evidence.",
+    "foundationQualification": "Reviewer authored the earlier ordinary HTTP authenticated-turn guard component. Its new invocation and forwarding through the FILE native adapter are independently inspected here; the underlying authored foundation is not a second independent security endorsement.",
+    "priorKnowledge": "Prior C8 blocker and C3/C5 development results were known. This is neither blinded model grading nor a parity assessment.",
+    "scope": "Nine changed control paths against C8, exact existing C9 software, offline native pilots, prospective freeze and current gates. No reopening of broad architecture or old benchmark scores."
+  },
+  "seams": [
+    {
+      "id": "C9-AUTH",
+      "disposition": "no blocker found",
+      "evidence": "Real prepareAuthenticatedSessionTurnOptions is called before first resolveSession and freshly before later user turns; callable guard required and forwarded to send alongside original checkpoint closure and signal. Real service/SQLite owner tests record distinct guards and prevent native edit after ownership changes during provider callback. Existing title/review/history hooks remain.",
+      "limits": "Direct native adapter coverage, not a new HTTP/UI/worker-channel end-to-end execution. No publication lifecycle or global process admission injected."
+    },
+    {
+      "id": "C9-USAGE",
+      "disposition": "C8 blocker resolved in new C9 only",
+      "evidence": "Absent final ledger accepted only with verified parent evidence, explicit uncertain snapshot and null mandatory totals, valid ordered request shapes and matching observed subtotals/journal. Existing null/conflicting/malformed or nonregular/dangling-symlink final files remain structural. Lost journal writes require explicit observation error; available conflicts remain structural.",
+      "limits": "Snapshot stays unknown and failed primary. Known partial counters do not certify complete billing/cost; parent/source/identity checks are not waived."
+    },
+    {
+      "id": "C9-LATE-WIRE",
+      "disposition": "independent finding fixed with original failing evidence retained",
+      "initialSourceSha256": "420fb6bdf588f6ffb0dda4435e1872b59a7412dbee9267e072348f7ec7c91bdb",
+      "beforeEvidence": "Deleting response002 after a pending snapshot request became success in the journal incorrectly left validity true; owner retained 0pass/1fail counterexample with6 assertions.",
+      "correction": "Final analyzer2330368001b9d0c94bff8bb53399189cce09bc15ecd52fdf5c4e7fad56dca287 creates a separate reconciled request array for existing successful-wire/header/model validation. It replaces array entries only; original end.usageEvidence and score/resource inputs are unchanged. Available late success receives the existing checks without promoting snapshot totals or primary."
+    },
+    {
+      "id": "C9-FREEZE",
+      "disposition": "root findings corrected and independently checked",
+      "evidence": "Caller requires exact frozen atlasHashes and candidateSourceHash before runtime/admission/key access. Disk analyzer requires the same Atlas map/hash for FILE. Live pilot now loads an explicit frozen schedule and verifies canonical hash plus exact definitions; disk analysis verifies pilot schedule/hash as for scored phases. Original different-source and different-pilot before-fix failures retained.",
+      "scope": "Frozen schedules contain2 pilot,18 development and54 confirmation pairs. Confirmation schedule metadata only was hash/count verified; no task input or expected answer generation/inspection. Valid development proceeds to confirmation with same bytes regardless of quality scores, per prospective decision5706e9947b0044b8f2bddd4e7c5a83751ab01060aace8a117d28dd83ac03587c. This decision/review is not API admission."
+    },
+    {
+      "id": "C9-NATIVE-POSITIVE",
+      "disposition": "closed instrumentation proof",
+      "analysisSha256": "a8f43875c304fb5b254a59cabb33a888e51dd8162685e7936d52983eb875030b",
+      "evidence": "Four actual native Atlas/Hermes arms used assigned Python/terminal and synthetic upstream to create two XLSX and two CSV deliveries. All original process, identity, source-copy, binding and artifact-oracle checks pass; analysis valid with0 issues and4 primary passes. Reviewer rehashed actual selected bytes and six original/workspace input rows. Both Python payloads exactly match the previously retained offline driver.",
+      "limits": "12 synthetic requests; this proves tool/delivery/oracle plumbing, not live model task competence, visual quality or comparative gain."
+    },
+    {
+      "id": "C9-NATIVE-FINALIZER",
+      "disposition": "closed actual regression",
+      "analysisSha256": "c17c632c3175fc269ec75865ff01b5d5048bddea7201208666a2d58053f6a779",
+      "evidence": "The same actual Bun listener.stop rejection wrapper ran against new C9 controls with8 synthetic requests. Four native completed/bound/closed receipts remain valid attributed failures, final files absent, mandatory totals null, observed subtotals40 prompt/20 generated per arm. All4 primary outcomes remain0; full analysis valid with0 issues. Owner reports all8 actual servers manually closed.",
+      "limits": "Original C8 invalid analysis remains byte-identical; no old run analyzed under new code."
+    }
+  ],
+  "verification": {
+    "exactSoftwareFiles": 2121,
+    "allSourceFiles": 2174,
+    "controlFiles": 53,
+    "changedControls": 9,
+    "atlasAliasesVerifiedLocal": 21,
+    "ownerManifestMembers": 2588,
+    "ownerManifestBytes": 106576337,
+    "newFilePatchReconstructions": 49,
+    "oldC8SourceFilesRehashedUnchanged": 2170,
+    "oldC8OriginalAnalysesRehashedUnchanged": 2,
+    "nativeBatches": 2,
+    "nativeArms": 8,
+    "nativeProcessCallerReferences": 72,
+    "wireTraceSets": 20,
+    "wireTraceFiles": 60,
+    "actualSelectedArtifactBytesVerifiedAndCopied": 4,
+    "originalWorkspaceInputRows": 6,
+    "archiveBytesRehashed": {
+      "nativeBatchArchives": 6,
+      "frozenStudyArchives": 3
+    },
+    "ownerCombinedGates": {
+      "tests": 73,
+      "assertions": 595,
+      "files": 5,
+      "failures": 0,
+      "logSha256": "73cc85b49916c25883445a85efd30c2ff5ebdfeb5811023520a18b68b2689033"
+    },
+    "ownerScopedTypecheckAndLint": "Both caller/hook and analyzer scoped gates pass; owner logs bound, not rerun.",
+    "reviewerNewTests": 0,
+    "reviewerProviderCalls": 0
+  },
+  "preservation": {
+    "C8": "Closed C8 source, original successful-instrumentation and invalid-finalization analyses, and independent blocked review remain unchanged.",
+    "earlyC9Evidence": "First stable analyzer/test copies, initial finding, exact before-fix late-wire and pilot-schedule failures preserved. Owner manifest retains initial accounting/freeze failures and exact test versions.",
+    "testFailures": "Original five-second archival-fixture timeout retained:42pass/1timeout with251 assertions, no assertion mismatch shown. Final43/251 union uses explicit15s for seven new archival fixtures only; production logic unchanged. Hook final test diff adds only three explicit this:AgentService annotations after retained scoped TypeScript failure.",
+    "limits": "No hidden reasoning or confirmation task/answer inspection. Raw model bodies and archives were hashed opaquely; no archived code execution, no holdout generation, no root/frozen edits, no paid calls or runtime activation. External native runtime roots remain external; selected four files are exactly copied. Refer to bound owner manifest for dependency/cache exclusions."
+  },
+  "paidExecutionAuthorizedByThisReview": false,
+  "liveQualityGainEstablished": false,
+  "parityClaimEstablished": false,
+  "conclusion": "No remaining blocker found within this bounded review. Parent must separately decide and explicitly admit any live study against the exact frozen source/control/model/schedule. Offline results do not establish Atlas-Hermes equality or superiority."
+}

@@ -13,6 +13,8 @@
     "./api-error": "./src/api-error.ts",
     "./bridge-api": "./src/bridge-api.ts",
     "./channel-org": "./src/channel-org.ts",
+    "./channel-native-actions": "./src/channel-native-actions.ts",
+    "./channel-integration-policy": "./src/channel-integration-policy.ts",
     "./contract": "./src/contract.ts",
     "./chat-stream-timeout": "./src/chat-stream-timeout.ts",
     "./cloudflare-provider-config": "./src/cloudflare-provider-config.ts",
@@ -25,6 +27,7 @@
     "./message-content-limits": "./src/message-content-limits.ts",
     "./attachments/store": "./src/attachments/store.ts",
     "./attachments/content": "./src/attachments/content.ts",
+    "./attachments/inbound-document": "./src/attachments/inbound-document.ts",
     "./inbound-document": "./src/inbound-document.ts",
     "./image-content": "./src/image-content.ts",
     "./normalize-task-prompt": "./src/normalize-task-prompt.ts",
@@ -57,6 +60,7 @@
     "./skills/write": "./src/skills/write.ts",
     "./soul/org-memory": "./src/soul/org-memory.ts",
     "./tools/protected": "./src/tools/protected.ts",
+    "./tools/result-status": "./src/tools/result-status.ts",
     "./tools/email": "./src/tools/email.ts",
     "./mcp/preinstalled": "./src/mcp/preinstalled.ts",
     "./compatible-model-capabilities": "./src/compatible-model-capabilities.ts",
@@ -64,7 +68,8 @@
     "./setup-validation": "./src/setup-validation.ts",
     "./artifact-lineage": "./src/artifact-lineage.ts",
     "./testing/atlas-home": "./src/testing/atlas-home.ts",
-    "./testing/synthetic-secret-fixtures": "./src/testing/synthetic-secret-fixtures.ts"
+    "./testing/synthetic-secret-fixtures": "./src/testing/synthetic-secret-fixtures.ts",
+    "./artifact-publication": "./src/artifact-publication.ts"
   },
   "scripts": {
     "build": "bun build ./src/index.ts --outdir dist --target bun",
@@ -72,7 +77,9 @@
   },
   "dependencies": {
     "@firecrawl/anydoc": "0.2.4",
+    "@pdf-lib/fontkit": "1.1.1",
     "@vscode/ripgrep": "^1.18.0",
+    "@xmldom/xmldom": "0.9.12",
     "ajv": "^8",
     "ajv-formats": "^3",
     "croner": "^10.0.1",
@@ -84,6 +91,8 @@
     "marked": "^18.0.6",
     "nanoid": "^5.1.11",
     "nodemailer": "^9.0.6",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "4.10.38",
     "pptxgenjs": "^4.0.1",
     "rehype-parse": "^9.0.1",
     "rehype-remark": "^10.0.1",

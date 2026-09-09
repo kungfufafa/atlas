@@ -21,7 +21,8 @@ import {
   validateDocumentAttachments,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
-import type { SessionActor } from "../../services/agent-service";
+import { authorizeChannelAction } from "../../services/channel-action-authorization";
+import { assertChannelPairingAllowed } from "../../services/channel-pairing-authorization";
 import { resolveRequestClientOrigin } from "../../services/composio-callback-url";
 import { validateDecodedImageAttachments } from "../../services/image-decoder-validation";
 import { sessionTurnRegistry } from "../../services/session-turn-registry";
@@ -30,12 +31,12 @@ import {
   requireActiveOrgIdFromContext,
   requireNotViewerFromContext,
 } from "../org-guards";
+import { sessionActorFromAuth } from "../session-actor";
 import {
   errorResponse,
   getRequestAuth,
   json,
   parseChannel,
-  type RequestAuthContext,
   readJson,
   readJsonWithLimit,
   readOptionalJson,
@@ -77,17 +78,6 @@ function safeAttachmentMediaType(mediaType: string): string {
 
 const EXTERNAL_SESSION_CHANNELS = new Set(["telegram", "whatsapp", "discord"]);
 
-function sessionActorFromAuth(auth: RequestAuthContext): SessionActor {
-  return {
-    isPlatformAdmin: auth.isPlatformAdmin,
-    orgRole: auth.orgRole,
-    userId: auth.user.id,
-    ...(auth.workspaceWorker
-      ? { workspaceWorkerChannel: auth.workspaceWorker.channel }
-      : {}),
-  };
-}
-
 export function registerSessionRoutes(
   app: HonoApp,
   options: ServerOptions
@@ -118,6 +108,10 @@ export function registerSessionRoutes(
             .max(8)
             .optional(),
           channelUserId: z.string().min(1),
+          channelChatId: z.string().trim().min(1).max(200).optional(),
+          channelIsGroup: z.boolean().optional(),
+          channelAddressed: z.boolean().optional(),
+          channelThreadId: z.string().trim().min(1).max(200).optional(),
         })
         .optional(),
       model: z.string().trim().min(1).optional(),
@@ -179,6 +173,7 @@ export function registerSessionRoutes(
   const agentQuestionItemSchema = z
     .object({
       allowCustomAnswer: z.boolean(),
+      selectionMode: z.enum(["single", "multiple"]).optional(),
       choices: z.array(agentQuestionChoiceSchema),
       id: z.string(),
       placeholder: z.string().optional(),
@@ -227,6 +222,7 @@ export function registerSessionRoutes(
     .strict();
   const sendMessageRequestSchema = z
     .object({
+      expectedQuestionnaire: agentQuestionnaireSchema.optional(),
       clientOrigin: z.string().optional(),
       documents: z
         .array(documentAttachmentSchema)
@@ -525,6 +521,40 @@ export function registerSessionRoutes(
       return errorResponse("Workspace worker channel mismatch", 403);
     }
     try {
+      if (auth.workspaceWorker) {
+        const channelUserId = body.externalPrincipal?.channelUserId?.trim();
+        if (!channelUserId) {
+          throw new PrincipalRequiredError(
+            "Channel sessions require an external principal."
+          );
+        }
+        if (
+          channel !== "telegram" &&
+          channel !== "whatsapp" &&
+          channel !== "discord"
+        ) {
+          throw new AtlasApiError("Invalid workspace worker channel", 403);
+        }
+        if (!options.databaseAdapter) {
+          throw new AtlasApiError("Database unavailable", 500);
+        }
+        await authorizeChannelAction(
+          options.databaseAdapter,
+          agent.identityService,
+          {
+            channel,
+            channelUserAliases: body.externalPrincipal?.channelUserAliases,
+            channelUserId,
+            channelChatId: body.externalPrincipal?.channelChatId,
+            channelIsGroup: body.externalPrincipal?.channelIsGroup,
+            channelAddressed: body.externalPrincipal?.channelAddressed,
+            channelThreadId: body.externalPrincipal?.channelThreadId,
+            intent: "invoke",
+            orgId,
+            profileId: body.profileId,
+          }
+        );
+      }
       const sessionId = await agent.createSession(
         orgId,
         channel,
@@ -574,6 +604,11 @@ export function registerSessionRoutes(
       return errorResponse("Workspace worker channel mismatch", 403);
     }
     try {
+      await assertChannelPairingAllowed({
+        channel: body.channel,
+        channelUserId: body.channelUserId,
+        orgId,
+      });
       const principal = await agent.identityService.bindExternalPrincipal({
         actor: {
           mode: auth.mode,
@@ -600,6 +635,9 @@ export function registerSessionRoutes(
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
     const approvalId = decodeURIComponent(c.req.param("approvalId"));
     const body = await readJson<{ decision: "approved" | "denied" }>(c.req.raw);
+    if (body.decision !== "approved" && body.decision !== "denied") {
+      return errorResponse("Invalid approval decision.", 400);
+    }
     try {
       if (
         !(await agent.canAccessSession(
@@ -611,7 +649,7 @@ export function registerSessionRoutes(
       ) {
         return errorResponse("Session not found", 404);
       }
-      const result = await agent.executionPlane.decide({
+      const result = await agent.decideChatToolApproval({
         approvalId,
         decision: body.decision,
         principal: {
@@ -622,11 +660,7 @@ export function registerSessionRoutes(
         },
         sessionId,
       });
-      return json({
-        grantId: result.grantId,
-        resumed: body.decision === "approved",
-        status: result.record.status,
-      });
+      return json(result);
     } catch (error) {
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
@@ -912,7 +946,22 @@ export function registerSessionRoutes(
     }
 
     let session: Awaited<ReturnType<typeof agent.resolveSession>>;
+    let turnOptions: Awaited<
+      ReturnType<typeof agent.prepareAuthenticatedSessionTurnOptions>
+    >;
     try {
+      turnOptions = await agent.prepareAuthenticatedSessionTurnOptions(
+        orgId,
+        sessionId,
+        actor
+      );
+      if (body.expectedQuestionnaire) {
+        await agent.consumeSessionQuestionnaire(
+          orgId,
+          sessionId,
+          body.expectedQuestionnaire
+        );
+      }
       session = await agent.resolveSession(orgId, sessionId, actor);
       if (!session) {
         sessionTurnRegistry.cancelTurn(sessionId);
@@ -953,7 +1002,10 @@ export function registerSessionRoutes(
             agent.schedulePostTurnSkillReview(sessionId);
           }
         },
-        c.req.raw.signal
+        c.req.raw.signal,
+        undefined,
+        undefined,
+        turnOptions
       );
     }
 
@@ -962,7 +1014,10 @@ export function registerSessionRoutes(
     const turnSignal = AbortSignal.any([turnAbort.signal, c.req.raw.signal]);
 
     try {
-      const reply = await session.send(input, { signal: turnSignal });
+      const reply = await session.send(input, {
+        ...turnOptions,
+        signal: turnSignal,
+      });
       const contextUsage = session.getContextUsage() ?? undefined;
       sessionTurnRegistry.endTurn(sessionId, {
         reply,

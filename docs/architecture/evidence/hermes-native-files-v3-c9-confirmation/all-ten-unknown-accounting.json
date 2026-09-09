@@ -1,0 +1,696 @@
+[
+  {
+    "ordinal": 2,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": true,
+    "providerStatusCounts": {
+      "200": 5,
+      "502": 2
+    },
+    "recordedUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 2420,
+      "observedPromptTokens": 36475,
+      "promptTokens": null,
+      "providerRequests": 7
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 2420,
+      "observedPromptTokens": 36475,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 6243,
+          "generatedTokens": 93,
+          "cachedTokens": 0
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 424,
+          "generatedTokens": 13,
+          "cachedTokens": 0
+        },
+        {
+          "index": 3,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 4,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 5,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 8352,
+          "generatedTokens": 2141,
+          "cachedTokens": 8320
+        },
+        {
+          "index": 6,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 10667,
+          "generatedTokens": 91,
+          "cachedTokens": 8320
+        },
+        {
+          "index": 7,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 10789,
+          "generatedTokens": 82,
+          "cachedTokens": 10624
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 284579.136083,
+      "processObservationElapsedMs": 284576.24416700006,
+      "totalAttemptElapsedMs": 286048.42075,
+      "totalAttemptElapsedWallMs": 286051
+    },
+    "nativeIdentity": "bound"
+  },
+  {
+    "ordinal": 3,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "providerStatusCounts": {
+      "200": 1,
+      "502": 1
+    },
+    "recordedUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 293,
+      "observedPromptTokens": 5614,
+      "promptTokens": null,
+      "providerRequests": 2
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 293,
+      "observedPromptTokens": 5614,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 5614,
+          "generatedTokens": 293,
+          "cachedTokens": 2048
+        },
+        {
+          "index": 2,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 100429.99129199993,
+      "processObservationElapsedMs": 100428.31812500005,
+      "totalAttemptElapsedMs": 100439.05666699994,
+      "totalAttemptElapsedWallMs": 100441
+    },
+    "nativeIdentity": "bound"
+  },
+  {
+    "ordinal": 52,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": true,
+    "providerStatusCounts": {
+      "200": 5,
+      "502": 1
+    },
+    "recordedUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 1707,
+      "observedPromptTokens": 32630,
+      "promptTokens": null,
+      "providerRequests": 6
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 1707,
+      "observedPromptTokens": 32630,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 5557,
+          "generatedTokens": 178,
+          "cachedTokens": 2048
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 5844,
+          "generatedTokens": 664,
+          "cachedTokens": 5504
+        },
+        {
+          "index": 3,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 6593,
+          "generatedTokens": 369,
+          "cachedTokens": 2048
+        },
+        {
+          "index": 4,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 7169,
+          "generatedTokens": 238,
+          "cachedTokens": 6592
+        },
+        {
+          "index": 5,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 7467,
+          "generatedTokens": 258,
+          "cachedTokens": 7168
+        },
+        {
+          "index": 6,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 59978.037332999986,
+      "processObservationElapsedMs": 59974.663875000086,
+      "totalAttemptElapsedMs": 60614.947540999856,
+      "totalAttemptElapsedWallMs": 139393
+    },
+    "nativeIdentity": "bound"
+  },
+  {
+    "ordinal": 53,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "providerStatusCounts": {
+      "502": 1
+    },
+    "recordedUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 1
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 1845.773917000275,
+      "processObservationElapsedMs": 1844.3223339999095,
+      "totalAttemptElapsedMs": 1854.6704580001533,
+      "totalAttemptElapsedWallMs": 1854
+    },
+    "nativeIdentity": "bound"
+  },
+  {
+    "ordinal": 54,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "providerStatusCounts": {
+      "502": 5
+    },
+    "recordedUsage": {
+      "budgetExceeded": true,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 5
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 2,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 3,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 4,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 5,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 8135.770415999927,
+      "processObservationElapsedMs": 8127.6680419999175,
+      "totalAttemptElapsedMs": 8141.087667000014,
+      "totalAttemptElapsedWallMs": 950750
+    },
+    "nativeIdentity": "unavailable"
+  },
+  {
+    "ordinal": 55,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "providerStatusCounts": {
+      "502": 2
+    },
+    "recordedUsage": {
+      "budgetExceeded": true,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 2
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 2,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 2841.1397919999436,
+      "processObservationElapsedMs": 2839.3604580000974,
+      "totalAttemptElapsedMs": 2844.9825419997796,
+      "totalAttemptElapsedWallMs": 912545
+    },
+    "nativeIdentity": "unavailable"
+  },
+  {
+    "ordinal": 56,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "providerStatusCounts": {
+      "502": 1
+    },
+    "recordedUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 1
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 1375.383542000316,
+      "processObservationElapsedMs": 1373.0862079998478,
+      "totalAttemptElapsedMs": 1380.1743339998648,
+      "totalAttemptElapsedWallMs": 1380
+    },
+    "nativeIdentity": "bound"
+  },
+  {
+    "ordinal": 57,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "providerStatusCounts": {
+      "502": 1
+    },
+    "recordedUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 1
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 909.3559159999713,
+      "processObservationElapsedMs": 908.1106659998186,
+      "totalAttemptElapsedMs": 913.0535840000957,
+      "totalAttemptElapsedWallMs": 913
+    },
+    "nativeIdentity": "bound"
+  },
+  {
+    "ordinal": 59,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "providerStatusCounts": {
+      "502": 5
+    },
+    "recordedUsage": {
+      "budgetExceeded": true,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 5
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 2,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 3,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 4,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        },
+        {
+          "index": 5,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 9951.436792000197,
+      "processObservationElapsedMs": 9935.53037500009,
+      "totalAttemptElapsedMs": 9966.789249999914,
+      "totalAttemptElapsedWallMs": 359581
+    },
+    "nativeIdentity": "unavailable"
+  },
+  {
+    "ordinal": 73,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas",
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": true,
+    "providerStatusCounts": {
+      "200": 4,
+      "502": 1
+    },
+    "recordedUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 1667,
+      "observedPromptTokens": 25525,
+      "promptTokens": null,
+      "providerRequests": 5
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 1667,
+      "observedPromptTokens": 25525,
+      "promptTokens": null,
+      "requestRecords": [
+        {
+          "index": 1,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 5567,
+          "generatedTokens": 152,
+          "cachedTokens": 2048
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 5866,
+          "generatedTokens": 174,
+          "cachedTokens": 5504
+        },
+        {
+          "index": 3,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 6378,
+          "generatedTokens": 991,
+          "cachedTokens": 5824
+        },
+        {
+          "index": 4,
+          "kind": "success",
+          "status": 200,
+          "promptTokens": 7714,
+          "generatedTokens": 350,
+          "cachedTokens": 2048
+        },
+        {
+          "index": 5,
+          "kind": "transport-error",
+          "status": null,
+          "promptTokens": null,
+          "generatedTokens": null,
+          "cachedTokens": null
+        }
+      ]
+    },
+    "durationsMs": {
+      "elapsedMs": 130785.4535000003,
+      "processObservationElapsedMs": 130783.61595800007,
+      "totalAttemptElapsedMs": 131332.393042,
+      "totalAttemptElapsedWallMs": 131331
+    },
+    "nativeIdentity": "bound"
+  }
+]

@@ -1,0 +1,972 @@
+{
+  "at": "2026-09-06T22:58:57.094061+00:00",
+  "checks": [
+    {
+      "name": "prior-readiness-unchanged",
+      "pass": true
+    },
+    {
+      "name": "all-source-identities-match-candidate5",
+      "pass": true
+    },
+    {
+      "name": "full-2078-source-map-before-after-current-pilot",
+      "pass": true
+    },
+    {
+      "name": "all-35-current-local-controls-match-prior-and-gates",
+      "pass": true
+    },
+    {
+      "name": "local-control-aggregate",
+      "pass": true,
+      "detail": "44f5b9eab70ca2dc65b6775575f535c36f02f73d36a4a6d5001b9b3b87ab8c2c"
+    },
+    {
+      "name": "full-39-control-map-including-prereg-and-shared-dependencies",
+      "pass": true
+    },
+    {
+      "name": "preregistration-unchanged",
+      "pass": true
+    },
+    {
+      "name": "all-7481-Hermes-source-files-match-pilot",
+      "pass": true
+    },
+    {
+      "name": "recorded-three-archive-bindings-agree",
+      "pass": true
+    },
+    {
+      "name": "archive-atlas-source.tar.gz",
+      "pass": true
+    },
+    {
+      "name": "archive-file-protocol-source.tar.gz",
+      "pass": true
+    },
+    {
+      "name": "archive-hermes-source.tar.gz",
+      "pass": true
+    },
+    {
+      "name": "old-frozen-controls-memory-mimo-study-v1",
+      "pass": true
+    },
+    {
+      "name": "old-frozen-controls-native-files-mimo-study-v1",
+      "pass": true
+    },
+    {
+      "name": "original-independent-review-binding",
+      "pass": true
+    },
+    {
+      "name": "final-independent-addendum-binding",
+      "pass": true
+    },
+    {
+      "name": "independent-addendum-covers-exact-final-35-source-map",
+      "pass": true
+    },
+    {
+      "name": "independent-original-no-source-blockers",
+      "pass": true
+    },
+    {
+      "name": "gate-exit-control-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-raw-count-control-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-exit-oracle-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-raw-count-oracle-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-exit-code-grader-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-raw-count-code-grader-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-exit-typecheck",
+      "pass": true
+    },
+    {
+      "name": "typecheck-no-diagnostics",
+      "pass": true
+    },
+    {
+      "name": "gate-exit-lint",
+      "pass": true
+    },
+    {
+      "name": "lint-all-16-no-fixes",
+      "pass": true
+    },
+    {
+      "name": "gate-exit-atlas-native-adapter-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-raw-count-atlas-native-adapter-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-exit-hermes-native-adapter-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-raw-count-hermes-native-adapter-tests",
+      "pass": true
+    },
+    {
+      "name": "gate-exit-full-native-scripted-pilot",
+      "pass": true
+    },
+    {
+      "name": "pilot-unscored-offline-only",
+      "pass": true
+    },
+    {
+      "name": "four-scheduled-arms-with-exact-start-end-order",
+      "pass": true
+    },
+    {
+      "name": "pilot-completion",
+      "pass": true
+    },
+    {
+      "name": "analysis-valid-and-complete",
+      "pass": true
+    },
+    {
+      "name": "exact-12-fake-requests",
+      "pass": true
+    },
+    {
+      "name": "all-fake-effective-models",
+      "pass": true
+    },
+    {
+      "name": "arm-terminal-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "arm-identity-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "arm-empty-single-completed-session-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "arm-selection-binding-oracle-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "arm-selected-bytes-still-match-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "three-preserved-wire-requests-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "arm-terminal-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-identity-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-empty-single-completed-session-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-selection-binding-oracle-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-selected-bytes-still-match-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "Hermes-cleanup-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "three-preserved-wire-requests-pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-terminal-pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-identity-pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-empty-single-completed-session-pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-selection-binding-oracle-pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-selected-bytes-still-match-pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "csv-inline-fence-link-repeat-both-harnesses-pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "Hermes-cleanup-pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "three-preserved-wire-requests-pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+      "pass": true
+    },
+    {
+      "name": "arm-terminal-pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "arm-identity-pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "arm-empty-single-completed-session-pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "arm-selection-binding-oracle-pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "arm-selected-bytes-still-match-pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "csv-inline-fence-link-repeat-both-harnesses-pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "three-preserved-wire-requests-pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+      "pass": true
+    },
+    {
+      "name": "new-study-remains-unfrozen",
+      "pass": true
+    },
+    {
+      "name": "private-script-binding-v2-file-full-pilot.ts",
+      "pass": true
+    },
+    {
+      "name": "private-script-binding-v2-file-full-pilot-candidate5.ts",
+      "pass": true
+    },
+    {
+      "name": "private-script-binding-v2-pilot-audit.ts",
+      "pass": true
+    }
+  ],
+  "passed": 71,
+  "failed": 0,
+  "archives": [
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/atlas-source.tar.gz",
+      "sha256": "9affeb4d249dd60bca072caa88d163a18a43c4b04cf0bd15942d30a3969f7658",
+      "bytes": 11099746,
+      "members": 2078,
+      "mismatches": [],
+      "duplicates": [],
+      "nonfiles": [],
+      "pass": true
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/file-protocol-source.tar.gz",
+      "sha256": "6b1e30a8a4c1769d83b59d654caf699afc08ffe53e0ce600e23ffcefde5bad08",
+      "bytes": 137746,
+      "members": 39,
+      "mismatches": [],
+      "duplicates": [],
+      "nonfiles": [],
+      "pass": true
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/hermes-source.tar.gz",
+      "sha256": "96974b71a4e6747ac59e83d32896de54fcb3e14b1b8b1da84df7d0303f83ddd7",
+      "bytes": 26490578,
+      "members": 7481,
+      "mismatches": [],
+      "duplicates": [],
+      "nonfiles": [],
+      "pass": true
+    }
+  ],
+  "oldFrozenControls": [
+    {
+      "study": "memory-mimo-study-v1",
+      "manifest": {
+        "path": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/frozen/manifest.json",
+        "sha256": "76ea6c44820011fc8d70205c139322a5c8faf8975565206893f0abd3fe1a298c",
+        "bytes": 1169217
+      },
+      "allManifestControlsChecked": 28,
+      "mismatches": [],
+      "pass": true
+    },
+    {
+      "study": "native-files-mimo-study-v1",
+      "manifest": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v1/frozen/manifest.json",
+        "sha256": "d7007a47777bc2a3495be3ce4682640b507112e77c6c17ac6cfd82d64b27b871",
+        "bytes": 1168115
+      },
+      "allManifestControlsChecked": 31,
+      "mismatches": [],
+      "pass": true
+    }
+  ],
+  "allEvidence": [
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/atlas-native-adapter-tests.log",
+      "sha256": "e07e3e9b39dde111e08f8e161765b3b9a647c8f3b222707d969f1e841468dc82",
+      "bytes": 580
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/code-grader-tests.log",
+      "sha256": "263333ad48368093cd87dfa59e99b4f3530cc2387891d74f19f887f543b3e77c",
+      "bytes": 1883
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/control-gates.json",
+      "sha256": "2506084a76d8593c2923633a4c14d1afb9ba6bcc56270cc94076cd613c7e45ac",
+      "bytes": 3364
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/control-tests.log",
+      "sha256": "640cb2a4540afa5ad789af9a77d94ecdd396e3671f8bd7979c02c20930b59b18",
+      "bytes": 5549
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/full-native-scripted-pilot.log",
+      "sha256": "3a0e5c3342dea3a0aa438175f9727adfa20032b65f2e89d257cd2099d59fde56",
+      "bytes": 11537
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/hermes-native-adapter-tests.log",
+      "sha256": "2d2e7c964a5086f99962efa11030f2bd742b512efe087a3734a085c169212c90",
+      "bytes": 1101
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/lint.log",
+      "sha256": "ab95c9c67485312989b0d7f5587e8298c8d99df526a4676a8307e296dd46c802",
+      "bytes": 45
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/native-gates.json",
+      "sha256": "3610e0e033adde86bd1ed28b4719716a7b0075e2e8dcbd1c554886c0b8d97d8e",
+      "bytes": 1188
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/oracle-tests.log",
+      "sha256": "3c48fce29203f4c853418fc493ebc40d41c82c1c22388ba9c34efde442d8549f",
+      "bytes": 3191
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/pilot-details.json",
+      "sha256": "18586e35d7a35e543a5c833868acaee14e0c91c364ecc7982bb45aa54554f710",
+      "bytes": 44324
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/pilot-reference.json",
+      "sha256": "9fd6479421d972ca792897ff0cf5bf416644e0d44a135cce7d1c5d19da143a0f",
+      "bytes": 237
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/postpilot-inspection-initial-error.json",
+      "sha256": "f39e3660ddc1c0864d31bd1a4d1acc348e696444963c4c9595e823f9470c58bd",
+      "bytes": 206
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/private-pilot-bindings.json",
+      "sha256": "cab47abc83f57dad93755af91764d3a80715e0d048a2a5b3298e7722a4096254",
+      "bytes": 295
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/private-pilot.patch",
+      "sha256": "c2a4cf92c4120298e0b88f8b92d0937d94f706da4f698d890e6935ddcbf1c054",
+      "bytes": 1267
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/source-after.json",
+      "sha256": "ca018aa018819975855540f3b9f1d12e3e7e92deb914b2f01f611c5373e2b6f6",
+      "bytes": 257459
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/source-before.json",
+      "sha256": "45933652d70209e2c57a272b64c6e254a0958f4a638eb1aaf01f8b7d2dee229d",
+      "bytes": 257059
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-readiness.json",
+      "sha256": "d86f5398f46a64771f7a0ce65e7a37dec9f92b923d952120e0f8ca4f42dd42b6",
+      "bytes": 9383
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v2-independent-review/review.json",
+      "sha256": "9e9e141180c1c31266b666d8bb5e392134ee7cd4c002498e7f20e483c67c6a0a",
+      "bytes": 18595
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v2-independent-review/review-addendum-archive-tests.json",
+      "sha256": "defc0848c45badd9284a2cea79d0ec6008fdcf33d5f9df2b66fd9febee0ea2a5",
+      "bytes": 1785
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/source-current.json",
+      "sha256": "641ad7deb15c0205ea52ae3fb6aa99608607816a16142906276e6f796036aab5",
+      "bytes": 1167848
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/snapshot-current.ts",
+      "sha256": "55c3942f0a7857cd9285d359710a6bff190f0dddbbb33e7d2d36f7b6b0e8b0e0",
+      "bytes": 1184
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/snapshot-current.log",
+      "sha256": "601a51971466de02488754bf73e69e79f9be1c3597005c978eb93d7d87cd12f0",
+      "bytes": 224
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/inspection-notes.json",
+      "sha256": "0ab2a07a9a0a55bdb9903c78b821ccd0dd7bc9b6dc4876f6cb2d9463a79729cb",
+      "bytes": 644
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/inspection-observation-shape-error.json",
+      "sha256": "af1edafa81e6fb43440b1adc85ede06aa59e5fc2217490139a4671c17c8c755d",
+      "bytes": 293
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-file-full-pilot.ts",
+      "sha256": "c44e442f040a1361e11ec8bdbedcbe1653f7c2f7bb2868e1465080553742147c",
+      "bytes": 4773
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-file-full-pilot-candidate5.ts",
+      "sha256": "34b0c40a84ccef4b35b3ad708038683b2977258a1e03d64800314d643ab0dacc",
+      "bytes": 4963
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-delivery-audit/v2-pilot-audit.ts",
+      "sha256": "ac482e331dbe28a9529c61bb5bfafd16faa77e2a064b87919cefc34b930b3aaa",
+      "bytes": 3000
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/batch.json",
+      "sha256": "e4810f12754daf407e70c8055d800e353576beeea1b13ad6caeefb8f36b4a359",
+      "bytes": 1170249
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/completed.json",
+      "sha256": "ae1b23af143dc3bb75e86947ce61f39d7d28fc7a40c53a1b61accb08849dd839",
+      "bytes": 208
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/source-archives.json",
+      "sha256": "9c345df48c43b22d38e91016175cef21cbfa08a47a4d4d7a290d45841fecb1e8",
+      "bytes": 290
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/attempts.jsonl",
+      "sha256": "3ffcc1dfc832372c71daa875714237775767c4743f0143ae97faf8a9e43622e8",
+      "bytes": 13066
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/identity-pilot-audit.json",
+      "sha256": "5550df9d074518b3b31cc66fbff567d6ef27d27bba413a50504827925ab5c373",
+      "bytes": 19287
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/runtime-identities.json",
+      "sha256": "ff219d67116160e89163383c0bf1447b03ea064750b3f5aac395929af50d75df",
+      "bytes": 799
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/offline-requests.json",
+      "sha256": "ef933cc2e0b3176193ec80bfd9344f734cf461cff0997b53dc274a9d52489a19",
+      "bytes": 246560
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/pilot-result.json",
+      "sha256": "c38ea009569c8c8ac53fc9b3eca2a7250e80437b215f750c5211551d0142954e",
+      "bytes": 173
+    }
+  ],
+  "trialEvidence": [
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/artifact-oracle.json",
+      "sha256": "c2811a7db975cf089a176bae8d2b35377deca2c551f43184ee2276fc139c1e4c",
+      "bytes": 1199
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/delivery-binding.json",
+      "sha256": "9ff51050172d3900dab1297d06b1150e90e93790bab9df22ea01a9ea15bddcdd",
+      "bytes": 180
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/delivery-selection.json",
+      "sha256": "af59782cb06720a0bafa5cd08422477fdc050387fa80f3adb0a1bbcc95880de3",
+      "bytes": 159
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/observation.json",
+      "sha256": "a73f85844cff4a8405126167ebd64b4a99d3c95fa362ffaa95276e5e87fbcf7f",
+      "bytes": 17760
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/result.json",
+      "sha256": "c13e8b2b7d987ab8817bf1611001d5094a8935623f78cdb3902d50e2f94948c6",
+      "bytes": 4138
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/runner-input.json",
+      "sha256": "e5202c82cd567abc060cdb22a8536625ed6249d95cfc1ec83eca6f95da877367",
+      "bytes": 2826
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/runner-stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/runner-stdout.json",
+      "sha256": "3b4785a7b67dc1871aed155f91f137e88c917b23cb4bbdbdf59445dbf098e30a",
+      "bytes": 15145
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/runtime-identity.json",
+      "sha256": "b9c021abb9a6dce177c7dee5f49cf34a8868236a12e968e9e874da4c3b8c409f",
+      "bytes": 433
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/001-request.json",
+      "sha256": "22abd07f7591a47b01d5f2bd793564d1e2b02d5bc5f6bc5bbb2f826171599b33",
+      "bytes": 55564
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/001-response.json",
+      "sha256": "be99f168cccfe51d25464c241611833bd96d9f47cf99e8e60695b90d4673a3a9",
+      "bytes": 1845
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/001-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/002-request.json",
+      "sha256": "ddb0567fb3e4388ab66a61b614d766a71b5ae0cd0ebe9d5a40cab8cedc435e5c",
+      "bytes": 59616
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/002-response.json",
+      "sha256": "e0cbffbedcd5e726ec2a2294210f7cb0d017c08f67486264f3e30e5f50d9d589",
+      "bytes": 665
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/002-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/003-request.json",
+      "sha256": "289677dc24ec65c90cf7ddad3c14dfa671a4afe678ad0d98e373077825be9b49",
+      "bytes": 2580
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/003-response.json",
+      "sha256": "ca8d4ea2fcd80dc58fc21d4692312d5426bea7516fb45b333c7d637ae5e683f1",
+      "bytes": 653
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/003-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/native-request-queue.jsonl",
+      "sha256": "a49a8b5e4b3e97613d84c9684bade6638e9c25bc7bc1e899733a1b9f9cb36c78",
+      "bytes": 162
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/native-transport-binding.json",
+      "sha256": "fe24814b604f930ddccd14ac22a4d57e3f92a0b938d07a9bf34c8d842b9d49fe",
+      "bytes": 306
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/native-usage-final.json",
+      "sha256": "3e7d16643b3bc334013b376dce2ecb8f251d235e0f08a08c304d935cdb15dc1a",
+      "bytes": 727
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas/wire/native-usage-observations.jsonl",
+      "sha256": "3ba94b5990786b5b9f84afd7e1ef921c075cbdf87adb1e5ced56b35259b91c88",
+      "bytes": 294
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/artifact-oracle.json",
+      "sha256": "c2811a7db975cf089a176bae8d2b35377deca2c551f43184ee2276fc139c1e4c",
+      "bytes": 1199
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/delivery-binding.json",
+      "sha256": "bafc12fd5b4c1aceff7d90b907d5fa6104d0774baa3163dd725e2156638fbe92",
+      "bytes": 180
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/delivery-selection.json",
+      "sha256": "af59782cb06720a0bafa5cd08422477fdc050387fa80f3adb0a1bbcc95880de3",
+      "bytes": 159
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/observation.json",
+      "sha256": "aba5d4573fd05d1e36c54028bca8da5de7e0563154f9b5637bafe2e7438970d0",
+      "bytes": 62248
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/result.json",
+      "sha256": "930a2dd07582d2ffd7f307700fd96056f6f3a3f6295f3a8881cb34628f728ce0",
+      "bytes": 4140
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/runner-input.json",
+      "sha256": "c54cf4f9d8f5e04d124268f58b2312db7bfe44b3537625d4cdf51331296d83e5",
+      "bytes": 2826
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/runner-stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/runner-stdout.json",
+      "sha256": "1a84638d2bd50d77f87615ad11c3788cb377f54656947c7ae126535a7b031b5d",
+      "bytes": 47716
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/runtime-identity.json",
+      "sha256": "b06a28a439fe0fe659cb50dc71b664547eda9304a2ad58d3c40b8530c026a09b",
+      "bytes": 435
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/001-request.json",
+      "sha256": "531b3ebbb0e52d650d90576f8db6b2515e117f0cbd5c472678ebc5860640193f",
+      "bytes": 5400
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/001-response.json",
+      "sha256": "fa2b193ad60f5e0b187adc6b3bc7866ba166586efbf984a98091d65e4f7ce849",
+      "bytes": 653
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/001-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/002-request.json",
+      "sha256": "f4edf92878316e96888bf11a8cc72c89059ddbe2cc693358bd91ae04a7727b42",
+      "bytes": 60852
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/002-response.json",
+      "sha256": "9b61150e535f4472099d2b8824da880798bb0397952bbdfd6b1a7fef760a0ef2",
+      "bytes": 2129
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/002-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/003-request.json",
+      "sha256": "b9108da2dcd390ef19ed85ccd9191cacf543b8cb4dc3cee59336162cd7505f8f",
+      "bytes": 64446
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/003-response.json",
+      "sha256": "e02fdbc3eb46685a849cce555a03e48d4e48e47dfc0cb5f56b374661195c836b",
+      "bytes": 665
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/003-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/native-request-queue.jsonl",
+      "sha256": "acb64f58961a2d6302a849ace906d31098ef2793c5973a1b9171176ac6752310",
+      "bytes": 162
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/native-transport-binding.json",
+      "sha256": "1e95178ea13b2bca2476a7a7fef7776a8810aed58da29a4108115b9a3143ec46",
+      "bytes": 306
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/native-usage-final.json",
+      "sha256": "3e7d16643b3bc334013b376dce2ecb8f251d235e0f08a08c304d935cdb15dc1a",
+      "bytes": 727
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes/wire/native-usage-observations.jsonl",
+      "sha256": "3ba94b5990786b5b9f84afd7e1ef921c075cbdf87adb1e5ced56b35259b91c88",
+      "bytes": 294
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/artifact-oracle.json",
+      "sha256": "2f2f988fe3be41fb90a85d8625e123e1fe21096f926ffb8980ccac8876b4980a",
+      "bytes": 775
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/delivery-binding.json",
+      "sha256": "debdfe44fed321f76a2ca1343d0fb36685b6aea0247042e78922257d2b0af984",
+      "bytes": 179
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/delivery-selection.json",
+      "sha256": "de35530914107bfe5b783d61dfa6ba7dee29251e4f954260dc2daa38ac1baf13",
+      "bytes": 141
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/observation.json",
+      "sha256": "2e6a3a08b42da496a7a05b10ba96226c39ee1291b0ca6843774db1c8eb507db6",
+      "bytes": 61705
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/result.json",
+      "sha256": "ebbe034fa7fe3ed33c4a8b730ead4624399b6d7ec8eb2c44b3dff9bcce9afbaa",
+      "bytes": 3574
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/runner-input.json",
+      "sha256": "d71b55185dbec2d6e6c8b5a0f62de831fc2eb0207d30d728f41b47f163acd1d9",
+      "bytes": 2596
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/runner-stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/runner-stdout.json",
+      "sha256": "6c5865a203e9fa4664e4fa811d75ee17480749745e0c9cfceedd2a44481d1b0e",
+      "bytes": 47111
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/runtime-identity.json",
+      "sha256": "e62d8dc3ad98c56d8a726f5acf6f9145fe767ba7205e0d11707d237fa136635e",
+      "bytes": 422
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/001-request.json",
+      "sha256": "d307d7cfde972819e2cd039502bace181f441e714b8805e464d34afa75f49eee",
+      "bytes": 5396
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/001-response.json",
+      "sha256": "3d96cf11898eb915d79666f1808d0c4252bd65a45bbbc826f7f44e7e7a249e21",
+      "bytes": 653
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/001-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/002-request.json",
+      "sha256": "a35f8f109cc49a309a4aa798fe262d71851c42a26bfafa2cfc0173ed7d2ec97f",
+      "bytes": 60394
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/002-response.json",
+      "sha256": "a55f68698fab82e8d3d1bfb5fef2133e9376b4bbf296fd02590ac757628fb72b",
+      "bytes": 1970
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/002-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/003-request.json",
+      "sha256": "495555c9c922e39347bf84d9acc48b7a351cb02cb297e279b22cb7f7b29266d2",
+      "bytes": 63652
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/003-response.json",
+      "sha256": "a693fdd111893b5e2e2bb136906e45bfb00c02a13ed1f32a680f2a9fb65a9ed0",
+      "bytes": 796
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/003-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/native-request-queue.jsonl",
+      "sha256": "24818979817dc841aa35200654e29b16dea2d1891235e7e978f7dc4c34f0a416",
+      "bytes": 162
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/native-transport-binding.json",
+      "sha256": "0b3930a6c8ee8354ec5a5a29407079cbd5e5c81eb45facf4203db5e2ebd03565",
+      "bytes": 306
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/native-usage-final.json",
+      "sha256": "3e7d16643b3bc334013b376dce2ecb8f251d235e0f08a08c304d935cdb15dc1a",
+      "bytes": 727
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes/wire/native-usage-observations.jsonl",
+      "sha256": "3ba94b5990786b5b9f84afd7e1ef921c075cbdf87adb1e5ced56b35259b91c88",
+      "bytes": 294
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/artifact-oracle.json",
+      "sha256": "2f2f988fe3be41fb90a85d8625e123e1fe21096f926ffb8980ccac8876b4980a",
+      "bytes": 775
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/delivery-binding.json",
+      "sha256": "debdfe44fed321f76a2ca1343d0fb36685b6aea0247042e78922257d2b0af984",
+      "bytes": 179
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/delivery-selection.json",
+      "sha256": "de35530914107bfe5b783d61dfa6ba7dee29251e4f954260dc2daa38ac1baf13",
+      "bytes": 141
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/observation.json",
+      "sha256": "429d52a81fa2f8473854c8ed8b6b389668de005bc83cebdc66e443577613ad11",
+      "bytes": 16588
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/result.json",
+      "sha256": "f7b08893d354ef82236cb63a40744773898545040ce543c9a53579b5ec4a49f8",
+      "bytes": 3572
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/runner-input.json",
+      "sha256": "1590082e0d58056937cccb78c98f2c176dcea43059fe89049f683d78f9e72432",
+      "bytes": 2596
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/runner-stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/runner-stdout.json",
+      "sha256": "a6c759590309f5419ca57ee84b26e314940fff480924babc1c7446b2c6d78be2",
+      "bytes": 13905
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/runtime-identity.json",
+      "sha256": "eb9873955d08d9b82461bcce08ca8bade46452d5ee15fdeefb636bab8d43d4f5",
+      "bytes": 420
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/001-request.json",
+      "sha256": "dcd901ad4a168e6666327aa67005f30edb47181eed2b463c361648536356439f",
+      "bytes": 55106
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/001-response.json",
+      "sha256": "bf71f139a621db692a13730f7acf07c7ef64bd948b35bd82775a5a05a7e5b4ea",
+      "bytes": 1616
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/001-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/002-request.json",
+      "sha256": "5f5756f4f01cbc2f1f888752f8b66b26657bc36a45e3c36672367c7682658e6d",
+      "bytes": 58376
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/002-response.json",
+      "sha256": "6c95396a081cbe684fe6788f10c089395cc3adb47ff0d2a5deaaa2541df47e1c",
+      "bytes": 797
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/002-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/003-request.json",
+      "sha256": "029ce629824ea122bfb53e04a65a8fbbb6a128db75d187db93ecb6b10a975264",
+      "bytes": 2838
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/003-response.json",
+      "sha256": "e799340abea9816f94b9e119583c3eea1aec44bf94bbc74730cd2167ab94fc01",
+      "bytes": 654
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/003-upstream-profile.json",
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/native-request-queue.jsonl",
+      "sha256": "4e35bb9d2a0be2d8cc708ac1d1a8e63f1bea5fda837d207c223e399e8a30740b",
+      "bytes": 162
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/native-transport-binding.json",
+      "sha256": "ac21d71a8f95a0c8aa5feb556792e0c5c4743ba49de645defc7eaa78bfc7111a",
+      "bytes": 306
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/native-usage-final.json",
+      "sha256": "3e7d16643b3bc334013b376dce2ecb8f251d235e0f08a08c304d935cdb15dc1a",
+      "bytes": 727
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/trials/pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas/wire/native-usage-observations.jsonl",
+      "sha256": "3ba94b5990786b5b9f84afd7e1ef921c075cbdf87adb1e5ced56b35259b91c88",
+      "bytes": 294
+    }
+  ]
+}

@@ -7,8 +7,20 @@ import {
   PRIVATE_FILE_MODE,
 } from "@atlas/core";
 import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+import { sqliteArtifactPublications } from "../artifact-publication-sqlite";
 import { LLM_USAGE_STATS_ID, WORKSPACE_SETTINGS_ID } from "../constants";
+import {
+  ConversationKeywordSearch,
+  readConversationMessagePayload,
+} from "../conversation-keyword-search";
 import { ensureDatabaseDirectory, resolveDatabasePath } from "../database-url";
+import { isExactMemoryFact } from "../memory-identity";
+import {
+  boundedMemoryTerms,
+  memoryResultLimit,
+  memoryTermWeight,
+  normalizeMemoryText,
+} from "../memory-search";
 import { migrateDatabase } from "../migrate";
 import type {
   DatabaseAdapter,
@@ -61,6 +73,11 @@ import type {
   StoredUserRecord,
   StoredWorkspaceSettingsRecord,
 } from "../types";
+
+// json_each decodes scalar elements. Re-encode them so a single JSON parse
+// preserves string/object identity in both deduplication and transcript reads.
+const ARCHIVED_CONVERSATION_PAYLOAD_SQL =
+  "CASE WHEN j.type IN ('object', 'array') THEN j.value WHEN j.type IN ('true', 'false') THEN j.type ELSE json_quote(j.value) END";
 
 export interface SqliteDatabase {
   adapter: DatabaseAdapter;
@@ -194,21 +211,27 @@ interface SessionSummaryRow {
 
 interface LlmUsageStatsRow {
   estimated_cost_usd: number;
+  estimated_invocations: number;
   id: string;
   input_tokens: number;
   output_tokens: number;
+  reported_invocations: number;
   request_count: number;
   tracked_since: string;
+  unknown_invocations: number;
   updated_at: string;
 }
 
 interface LlmUsageModelStatsRow {
   estimated_cost_usd: number;
+  estimated_invocations: number;
   input_tokens: number;
   model_id: string;
   output_tokens: number;
+  reported_invocations: number;
   request_count: number;
   tracked_since: string;
+  unknown_invocations: number;
   updated_at: string;
 }
 
@@ -1209,14 +1232,20 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     INSERT INTO llm_usage_stats (
       id,
       request_count,
+      reported_invocations,
+      estimated_invocations,
+      unknown_invocations,
       input_tokens,
       output_tokens,
       estimated_cost_usd,
       tracked_since,
       updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
+      reported_invocations = llm_usage_stats.reported_invocations + excluded.reported_invocations,
+      estimated_invocations = llm_usage_stats.estimated_invocations + excluded.estimated_invocations,
+      unknown_invocations = llm_usage_stats.unknown_invocations + excluded.unknown_invocations,
       request_count = llm_usage_stats.request_count + excluded.request_count,
       input_tokens = llm_usage_stats.input_tokens + excluded.input_tokens,
       output_tokens = llm_usage_stats.output_tokens + excluded.output_tokens,
@@ -1227,14 +1256,20 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     INSERT INTO llm_usage_model_stats (
       model_id,
       request_count,
+      reported_invocations,
+      estimated_invocations,
+      unknown_invocations,
       input_tokens,
       output_tokens,
       estimated_cost_usd,
       tracked_since,
       updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(model_id) DO UPDATE SET
+      reported_invocations = llm_usage_model_stats.reported_invocations + excluded.reported_invocations,
+      estimated_invocations = llm_usage_model_stats.estimated_invocations + excluded.estimated_invocations,
+      unknown_invocations = llm_usage_model_stats.unknown_invocations + excluded.unknown_invocations,
       request_count = llm_usage_model_stats.request_count + excluded.request_count,
       input_tokens = llm_usage_model_stats.input_tokens + excluded.input_tokens,
       output_tokens = llm_usage_model_stats.output_tokens + excluded.output_tokens,
@@ -2014,11 +2049,13 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
   const createMemoryStmt = db.prepare(`
     INSERT INTO memories (
-      id, org_id, scope, owner_id, subject, content, confidence, importance, source, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, org_id, scope, owner_id, subject, content, confidence, importance, source, created_at, updated_at, search_content, search_subject
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       subject = excluded.subject,
       content = excluded.content,
+      search_content = excluded.search_content,
+      search_subject = excluded.search_subject,
       confidence = excluded.confidence,
       importance = excluded.importance,
       source = excluded.source,
@@ -2030,6 +2067,58 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     WHERE org_id = ? AND id = ?
     LIMIT 1
   `);
+
+  const exactMemoryBucketStmt = db.prepare(`
+    SELECT * FROM memories
+    WHERE org_id = ? AND scope = ? AND owner_id = ?
+    ORDER BY created_at ASC, id ASC
+  `);
+  const insertMemoryOnlyStmt = db.prepare(`
+    INSERT INTO memories (
+      id, org_id, scope, owner_id, subject, content, confidence, importance, source, created_at, updated_at, search_content, search_subject
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const createOrGetMemoryTransaction = db.transaction(
+    (record: StoredMemoryRecord): StoredMemoryRecord => {
+      // JavaScript trim/Unicode subject equality also covers existing imported
+      // rows. Scan the full authorized bucket, not the recent-50 shortlist.
+      const rows = exactMemoryBucketStmt.all(
+        record.orgId,
+        record.scope,
+        record.ownerId
+      ) as MemoryRow[];
+      for (const row of rows) {
+        const existing = toMemoryRecord(row);
+        if (isExactMemoryFact(existing, record)) {
+          return existing;
+        }
+      }
+      const created = {
+        ...record,
+        content: record.content.trim(),
+        source: record.source ?? null,
+        subject: record.subject?.trim() ?? null,
+      };
+      // Plain INSERT ensures even an unexpected ID collision cannot overwrite
+      // an unrelated record. The immediate transaction locks before lookup.
+      insertMemoryOnlyStmt.run(
+        created.id,
+        created.orgId,
+        created.scope,
+        created.ownerId,
+        created.subject,
+        created.content,
+        created.confidence,
+        created.importance,
+        created.source,
+        created.createdAt,
+        created.updatedAt,
+        normalizeMemoryText(created.content),
+        normalizeMemoryText(created.subject ?? "")
+      );
+      return created;
+    }
+  );
 
   const deleteMemoryStmt = db.prepare(`
     DELETE FROM memories
@@ -2548,6 +2637,8 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return row.count;
     },
 
+    ...sqliteArtifactPublications(db),
+
     async createArtifactShare(record) {
       createArtifactShareStmt.run(
         record.id,
@@ -2637,8 +2728,14 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.importance ?? 1,
         record.source ?? null,
         record.createdAt,
-        record.updatedAt
+        record.updatedAt,
+        normalizeMemoryText(record.content),
+        normalizeMemoryText(record.subject ?? "")
       );
+    },
+
+    async createOrGetMemory(record) {
+      return createOrGetMemoryTransaction.immediate(record);
     },
 
     async createOrgInvite(record) {
@@ -3015,7 +3112,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         archive
           ? db
               .prepare(
-                "SELECT a.id || ':' || j.key AS id, CAST(j.key AS INTEGER) AS seq, j.value AS payload, a.created_at FROM session_history_archives a, json_each(a.messages) j WHERE a.id = ? AND a.session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?"
+                `SELECT a.id || ':' || j.key AS id, CAST(j.key AS INTEGER) AS seq, ${ARCHIVED_CONVERSATION_PAYLOAD_SQL} AS payload, a.created_at FROM session_history_archives a, json_each(a.messages) j WHERE a.id = ? AND a.session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?`
               )
               .all(options.archiveId!, sessionId, limit, offset)
           : db
@@ -3031,18 +3128,13 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       }>;
 
       const messages: StoredConversationMessageItem[] = messageRows.map((m) => {
-        let text = "";
-        let role = "user";
+        let payload: unknown;
         try {
-          const parsed = JSON.parse(m.payload);
-          role = parsed.role || "user";
-          text =
-            typeof parsed.content === "string"
-              ? parsed.content
-              : JSON.stringify(parsed.content || "");
+          payload = JSON.parse(m.payload);
         } catch {
-          text = m.payload;
+          payload = m.payload;
         }
+        const { text, role } = readConversationMessagePayload(payload);
         return {
           createdAt: m.created_at,
           id: m.id,
@@ -3408,6 +3500,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       incrementLlmUsageStatsStmt.run(
         LLM_USAGE_STATS_ID,
         delta.requestCount,
+        delta.reportedInvocations ?? 0,
+        delta.estimatedInvocations ?? 0,
+        delta.unknownInvocations ?? 0,
         delta.inputTokens,
         delta.outputTokens,
         delta.estimatedCostUsd,
@@ -3421,6 +3516,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       incrementLlmUsageStatsByModelStmt.run(
         modelId,
         delta.requestCount,
+        delta.reportedInvocations ?? 0,
+        delta.estimatedInvocations ?? 0,
+        delta.unknownInvocations ?? 0,
         delta.inputTokens,
         delta.outputTokens,
         delta.estimatedCostUsd,
@@ -3691,6 +3789,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async listMemories(orgId, scope, ownerId, limit = 50) {
+      const boundedLimit = memoryResultLimit(limit, 50);
+      if (boundedLimit === 0) {
+        return [];
+      }
       let query = "SELECT * FROM memories WHERE org_id = ?";
       const params: (string | number)[] = [orgId];
       if (scope) {
@@ -3702,7 +3804,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         params.push(ownerId);
       }
       query += " ORDER BY updated_at DESC LIMIT ?";
-      params.push(limit);
+      params.push(boundedLimit);
       const rows = db.prepare(query).all(...params) as MemoryRow[];
       return rows.map(toMemoryRecord);
     },
@@ -4301,6 +4403,17 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         return [];
       }
 
+      const keywords =
+        options.matchMode === "keywords"
+          ? new ConversationKeywordSearch(clean, options.limit)
+          : undefined;
+      if (keywords?.empty) {
+        return [];
+      }
+
+      const archivedPayload = keywords
+        ? ARCHIVED_CONVERSATION_PAYLOAD_SQL
+        : "j.value";
       let sql = `
         WITH all_messages AS (
           SELECT m.id AS message_id, m.session_id, m.payload, m.created_at, NULL AS archive_id
@@ -4308,7 +4421,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
           INNER JOIN sessions owner ON owner.id = m.session_id
           WHERE owner.org_id = ?
           UNION ALL
-          SELECT a.id || ':' || j.key AS message_id, a.session_id, j.value AS payload,
+          SELECT a.id || ':' || j.key AS message_id, a.session_id, ${archivedPayload} AS payload,
             a.created_at, a.id AS archive_id
           FROM session_history_archives a
           INNER JOIN sessions owner ON owner.id = a.session_id
@@ -4355,6 +4468,45 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       if (options.before) {
         sql += " AND m.created_at <= ?";
         params.push(options.before);
+      }
+
+      if (keywords) {
+        // Keep all existing tenant/owner/profile/date/archive guards. Stream
+        // eligible rows into a bounded collector; recent weak matches must not
+        // hide older relevant messages through a premature SQL result limit.
+        const rows = db.prepare(sql).iterate(...params) as Iterable<{
+          archive_id: string | null;
+          created_at: string;
+          message_id: string;
+          payload: string;
+          profile_id: string;
+          session_id: string;
+          session_title: string | null;
+        }>;
+        for (const row of rows) {
+          let payload: unknown;
+          try {
+            payload = JSON.parse(row.payload);
+          } catch {
+            payload = row.payload;
+          }
+          const parsed = readConversationMessagePayload(payload);
+          keywords.add(
+            {
+              ...(row.archive_id
+                ? { archivedAt: row.created_at, archiveId: row.archive_id }
+                : {}),
+              createdAt: row.created_at,
+              messageId: row.message_id,
+              profileId: row.profile_id,
+              role: parsed.role,
+              sessionId: row.session_id,
+              sessionTitle: row.session_title,
+            },
+            parsed.text
+          );
+        }
+        return keywords.results();
       }
 
       sql += " AND m.payload LIKE ?";
@@ -4411,8 +4563,23 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async searchMemories(orgId, queryText, scope, ownerId, limit = 20) {
-      let query = "SELECT * FROM memories WHERE org_id = ?";
-      const params: (string | number)[] = [orgId];
+      const terms = boundedMemoryTerms(queryText);
+      const boundedLimit = memoryResultLimit(limit, 20);
+      if (terms.length === 0 || boundedLimit === 0) {
+        return [];
+      }
+      const params: (string | number)[] = [];
+      const score = terms
+        .map((term) => {
+          const weight = memoryTermWeight(term);
+          params.push(term, term);
+          return `(CASE WHEN instr(search_content, ?) > 0 THEN ${weight} ELSE 0 END + CASE WHEN instr(search_subject, ?) > 0 THEN ${weight * 2} ELSE 0 END)`;
+        })
+        .join(" + ");
+      // Filter tenant/scope/owner before ranking and limiting candidates. instr()
+      // treats %, _, quotes and backslashes literally without SQL LIKE expansion.
+      let query = `SELECT * FROM (SELECT *, ${score} AS memory_score FROM memories WHERE org_id = ?`;
+      params.push(orgId);
       if (scope) {
         query += " AND scope = ?";
         params.push(scope);
@@ -4421,10 +4588,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         query += " AND owner_id = ?";
         params.push(ownerId);
       }
-      query += " AND (content LIKE ? OR subject LIKE ?)";
-      params.push(`%${queryText}%`, `%${queryText}%`);
-      query += " ORDER BY importance DESC, updated_at DESC LIMIT ?";
-      params.push(limit);
+      query +=
+        ") WHERE memory_score > 0 ORDER BY memory_score DESC, importance DESC, updated_at DESC, id ASC LIMIT ?";
+      params.push(boundedLimit);
       const rows = db.prepare(query).all(...params) as MemoryRow[];
       return rows.map(toMemoryRecord);
     },
@@ -4493,10 +4659,14 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       if (!existing) {
         return;
       }
+      // Omitted and explicitly undefined fields preserve the stored value.
+      const definedPatch: Partial<StoredMemoryRecord> = Object.fromEntries(
+        Object.entries(patch).filter(([, value]) => value !== undefined)
+      );
       const updated: StoredMemoryRecord = {
         ...existing,
-        ...patch,
-        updatedAt: patch.updatedAt ?? new Date().toISOString(),
+        ...definedPatch,
+        updatedAt: definedPatch.updatedAt ?? new Date().toISOString(),
       };
       await this.createMemory(updated);
     },
@@ -5500,11 +5670,14 @@ function toLlmUsageStatsRecord(
 ): StoredLlmUsageStatsRecord {
   return {
     estimatedCostUsd: row.estimated_cost_usd,
+    estimatedInvocations: row.estimated_invocations,
     id: row.id,
     inputTokens: row.input_tokens,
     outputTokens: row.output_tokens,
+    reportedInvocations: row.reported_invocations,
     requestCount: row.request_count,
     trackedSince: row.tracked_since,
+    unknownInvocations: row.unknown_invocations,
     updatedAt: row.updated_at,
   };
 }
@@ -5514,11 +5687,14 @@ function toLlmUsageModelStatsRecord(
 ): StoredLlmUsageModelStatsRecord {
   return {
     estimatedCostUsd: row.estimated_cost_usd,
+    estimatedInvocations: row.estimated_invocations,
     inputTokens: row.input_tokens,
     modelId: row.model_id,
     outputTokens: row.output_tokens,
+    reportedInvocations: row.reported_invocations,
     requestCount: row.request_count,
     trackedSince: row.tracked_since,
+    unknownInvocations: row.unknown_invocations,
     updatedAt: row.updated_at,
   };
 }

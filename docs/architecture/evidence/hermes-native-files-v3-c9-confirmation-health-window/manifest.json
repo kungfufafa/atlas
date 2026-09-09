@@ -1,0 +1,37 @@
+{
+  "scope": "Closed bounded health-only exception while full confirmation remains active",
+  "files": {
+    "health-note.md": {
+      "bytes": 5066,
+      "sha256": "c7143720416cb640fee30fcec2df710167172acf96f75e0895078e7b35972257"
+    },
+    "lifecycle-projection.json": {
+      "bytes": 49171,
+      "sha256": "2b4418f17f9411aa2b385b84a4d5be1c8603f3ae5c1dfa6fa3af15a698bd09a0"
+    },
+    "matched-clock-intervals.json": {
+      "bytes": 2603,
+      "sha256": "43ad296f4c599f6648de334273d10080b8a55fde5bb96747e81634b1e8417d09"
+    },
+    "os-sleep-wake-projection.json": {
+      "bytes": 188442,
+      "sha256": "a116e1e7d48abd2b0f360d538efab0e175fba8873b83bfb56837ea02b3abfc00"
+    },
+    "project_lifecycle.py": {
+      "bytes": 4251,
+      "sha256": "d1ec285dce36fd7b513274da524d001593a9ef17b9f64413b1aad59eccd8f73f"
+    },
+    "project_os_sleep_wake.py": {
+      "bytes": 2738,
+      "sha256": "61954cc64630a7e1d6c14521250d6540059dd0afc3bdef6a40e354724e3db274"
+    },
+    "registration.json": {
+      "bytes": 759,
+      "sha256": "d0e5a15d581f609b9699052f6782241cf5e7dd44210ac2665426c818fb19393d"
+    },
+    "seal_health.py": {
+      "bytes": 8129,
+      "sha256": "051d1b273359e07417d776d926e6922d307a6df0d77470978ea29a7625453592"
+    }
+  }
+}

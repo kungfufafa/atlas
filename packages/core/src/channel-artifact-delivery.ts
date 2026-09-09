@@ -102,14 +102,16 @@ export function resolveShareUrlForPublish(
   sharePath: string | null;
   webPublicUrlConfigured: boolean;
 } {
-  if (response.shareUrl) {
-    cache[relativePath] = response.shareUrl;
+  if (response.shareUrl || response.sharePath) {
+    cache[relativePath] = response.shareUrl || response.sharePath!;
   }
 
-  const shareUrl = response.shareUrl ?? cache[relativePath] ?? null;
+  const cached = cache[relativePath];
+  const shareUrl =
+    response.shareUrl ?? (cached && !cached.startsWith("/") ? cached : null);
   const sharePath =
     response.sharePath ||
-    (shareUrl ? new URL(shareUrl, "http://localhost").pathname : null);
+    (cached ? new URL(cached, "http://localhost").pathname : null);
 
   return {
     sharePath,
@@ -187,10 +189,11 @@ export async function mintDeliverableArtifacts(input: {
       });
     } catch {
       // Share minting is additive. The file must still go out on the channel.
+      const cached = input.shareUrlCache[artifact.path];
       delivered.push({
         ...artifact,
-        sharePath: null,
-        shareUrl: input.shareUrlCache[artifact.path] ?? null,
+        sharePath: cached ? new URL(cached, "http://localhost").pathname : null,
+        shareUrl: cached && !cached.startsWith("/") ? cached : null,
       });
     }
   }

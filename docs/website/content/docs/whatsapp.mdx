@@ -29,6 +29,28 @@ With WhatsApp enabled, users can:
 - stop an in-progress reply
 - receive replies with simple WhatsApp-friendly formatting
 
+## Channel controls
+
+Workspace administrators can open **Integrations → WhatsApp → Channel controls** to manage **Channel enabled**, **Approval buttons**, and **Native actions**. Enable the actions your team needs, then choose **Save controls**. The replying profile also needs the `channel_action` tool.
+
+WhatsApp supports reactions, polls, editing or deleting its own session messages, and saved media delivery in the current authorized chat. Polls do not offer anonymous voting or an automatic closing time through this bridge. Topic, thread, and pin actions are unavailable.
+
+Use **Direct messages**, **Groups**, **Room rules**, and **Sender rules** to restrict senders, workspace roles, tools, and actions. Room rules use a chat ID or `*`; sender rules use the sender's phone identity. Rules apply together with **Access mode** and workspace permissions. A denial takes precedence. **Inherit** uses broader or default settings; an empty specified allowed list permits no entries.
+
+Groups normally require a mention or reply. To permit unaddressed group messages that pass the other rules, set **Groups → Require mention or reply → Disabled**.
+
+### Answer questions and approvals
+
+For a choice question, react to its message with the displayed number. The reaction flow selects one answer per question and submits after every question has an answer. Type a reply for a custom answer or a question requiring several selections. For a pending approval, react **✅** to approve or **❌** to deny.
+
+These controls belong to the original authorized sender and conversation. Changing workspace access, replacing a question, or reusing a completed control cannot authorize another action.
+
+### Video and voice notes
+
+WebP stickers and MP4 video can be inspected through a sampled first frame. Animation and the rest of the video are not represented by that image. When video audio can be extracted and transcription is configured, Atlas also includes the transcript; it reports when audio is unavailable.
+
+The agent can return saved audio as a voice note or audio file, and saved MP4 as video. WhatsApp voice remains a voice-note exchange; this bridge does not join calls.
+
 ## Reply formatting
 
 Agents can still write normal Markdown-style replies, but Atlas simplifies them for WhatsApp.
@@ -117,8 +139,8 @@ Atlas authorizes that chat, clears the code, and blocks chats that do not have a
 WhatsApp works in **private chats** and **groups**.
 
 - private chats send each supported message to Atlas
-- in a group, Atlas responds only when someone mentions the connected account, replies to an Atlas message, or sends a supported `/command`
-- each private chat and each group keeps its own Atlas session
+- by default, in a group Atlas responds when someone mentions the connected account, replies to an Atlas message, or sends a supported `/command`
+- each private chat and each sender within a group keeps a separate Atlas session
 - `/org` in a group changes only that group's workspace selection
 - `/profile` changes only that private chat or group's reply profile
 - replying to another group message while mentioning Atlas includes that quoted text in the agent turn
@@ -126,6 +148,8 @@ WhatsApp works in **private chats** and **groups**.
 - allowlists and denylists match the sender **phone number**. If WhatsApp identifies the chat as a LID (`…@lid`) instead of `…@s.whatsapp.net`, Atlas resolves the phone from the message (or a saved mapping) before checking the list. The linked owner account is still recognized by its paired LID.
 
 These rules let Atlas participate without interrupting ordinary group conversation. A group sender must still be allowed by the workspace's **Access mode**.
+
+Pairing does not replace workspace permissions. Removing a member or changing their role stops their active turns and pending approvals in that workspace. In denylist mode, a blocked phone cannot use a chat access code or bypass the block through its paired account or LID.
 
 **Integrations → WhatsApp → Reply as** sets the default profile. Use `/profile` inside a private chat or group to override that default for that conversation. Starting a new conversation with `/new` preserves the conversation's selected profile while giving it a fresh session.
 
@@ -146,9 +170,15 @@ Supported inputs include:
 - voice notes (transcribed, then handled like text)
 - supported documents such as `pdf`, `docx`, `xls`, `xlsx`, `csv`, `txt`, and `md`
 
-Photos up to **5 MB** and documents up to **25 MB** are processed. Small documents go into the same Atlas chat flow as the web app. Larger documents are read as text (up to a safe extract size) so a 20 MB PDF can still be summarized without loading the whole file into the model. A caption on the photo or file becomes the message text. Files over 25 MB, or scanned PDFs with no extractable text, get a clear rejection instead of failing silently.
+Attach the original file with **Document**, or use **Photo** for an image. Add the job in the caption, for example “Check these sales figures and return a corrected workbook.” Supported work files include `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.csv`, `.pdf`, `.docx`, `.txt`, `.md`, and `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif` images. Pasting a preview is not an attachment.
 
-When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas sends the file in the WhatsApp chat when it is within 5 MB. The chat reply is a short summary — Atlas does not repeat the filename or a download link in text, because WhatsApp already shows the attachment. Ask “send the file” to get the latest saved file again. If the file is larger than 5 MB, Atlas sends a share link instead. Replies quote the message you sent.
+Atlas saves the original to the replying profile's **Artifacts**, reads it with the matching tool, and creates the requested result there. This works for authorized senders in every access mode; a separate account pairing is not required to save a file. Blocked senders and read-only viewers cannot submit file jobs. Administrators can still restrict tools through **Channel controls**.
+
+Documents can be up to **25 MB** and images up to **5 MB**. Voice notes and audio files up to **25 MB** are saved before their existing transcription flow. An unsupported type, failed download, or failed save gets a rejection instead of an answer guessing at missing content. A scanned PDF may require OCR that the document reader cannot provide; Atlas must report that limitation. Legacy Excel workbooks are read or converted to a new `.xlsx` for editing; macros are not executed or carried into the result. Self-hosted XLS/XLSB conversion requires LibreOffice, which is included in the Atlas container.
+
+In groups, include a mention or reply to Atlas when the mention rule is enabled. If an otherwise authorized attachment is ignored for this reason, Atlas explains how to resend it. Administrators can permit unaddressed messages in **Channel controls → Groups → Require mention or reply → Disabled**. Continue the file job in the same conversation.
+
+Finished spreadsheets, Word documents, slide decks, summaries, and images return in the chat. Atlas attaches results up to **25 MB**; larger results need an available share link. The text reply stays brief and uses WhatsApp formatting. Send `/attach` or ask “send the file” to retrieve the latest result again.
 
 ## Send to a number from this workspace
 

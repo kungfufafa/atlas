@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-07T05:09:52.246842+00:00",
+  "scope": "Independent source-only integration review of exact C9 eight-path assembly and four production deltas; inspect owner gate logs, selected source and prior input bindings. No tests, source edits, provider calls or full C8 recursive re-audit.",
+  "sourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "inputs": {
+    "readiness.json": "87e9e2e673321f9c319545583bb34727750a139e2a2f76f793aa558b267b3f45",
+    "source-inventory.json": "51c56e6b17b85ca8bc8d77606398b8b29329f10330f4e7c1be559131718d721c",
+    "production-c8.patch": "615ec4887ab6b9a98261643f5ffe5fba67b942d0aac13ca8eac95b5bb7e0f73d",
+    "combined-c8.patch": "1b78b285ecb7c9ac4964395372534182c83486166eb8c7bbd435544c3f03737f",
+    "manifest.json": "73d54b65a1cb6b2af904b27279569caced25eda3d52dc84048e9b8a4d6beaf9e",
+    "validation-summary.json": "609031804201a946698b9ab25ef809fe617608eade2a1b00735dd96df58effb4",
+    "grouped-test-results.json": "b9f882b25bf4f8312751f3114e51a0564fe7ab2ac61aa647450dc4e292ebab27",
+    "implementation-notes.md": "71b898ac4bc3aa0b0e18f9f29fe8b25a60dc9ce6c22c2ed8c4db12b9adae48ca",
+    "composition-qualification-before-assembly.md": "9e40b195644e1d4e460dde55f15277df3b7ec1e6bc1ba7408d02a3f6463b24fa"
+  },
+  "initialInspectionError": "A guessed readiness-before-review.json path did not exist; actual readiness.json located and used. No evidence inferred from missing path."
+}

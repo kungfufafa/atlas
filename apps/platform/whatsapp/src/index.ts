@@ -26,6 +26,8 @@ import {
 import { WhatsAppAuthStore } from "./auth-store";
 import { createChatHandler } from "./chat-handler";
 import { loadConfig } from "./config";
+import { resolveWhatsAppChannelOrgKey } from "./group-message";
+import { allowUnaddressedWhatsAppGroup } from "./group-policy";
 import { startWhatsAppOutboundServer } from "./outbound-server";
 import { SessionStore } from "./session-store";
 import { createWhatsAppSocket } from "./socket";
@@ -128,6 +130,12 @@ try {
   });
 
   const socket = await createWhatsAppSocket({
+    allowUnaddressedGroup: (inbound) =>
+      allowUnaddressedWhatsAppGroup(
+        workspaceId ??
+          orgStore.get(resolveWhatsAppChannelOrgKey(inbound.jid, true))?.orgId,
+        inbound
+      ),
     onConnected: (me) => {
       bridgeConnected = true;
       persistWorkerHeartbeat();
@@ -157,6 +165,7 @@ try {
     onQr: (qr) => {
       void writeWhatsAppQrCode(qr);
     },
+    onReaction: handleMessage.onReaction,
     phoneNumber: config.phoneNumber,
   });
 

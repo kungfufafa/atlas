@@ -10,8 +10,7 @@ export function createAskUserQuestionTools(
 ): ToolDefinition[] {
   return [
     {
-      description:
-        "Ask a short multiple-choice questionnaire when you need missing info before continuing.",
+      description: "Ask multiple-choice questions for missing information.",
       name: "ask_user_question",
       parameters: {
         additionalProperties: false,
@@ -22,6 +21,7 @@ export function createAskUserQuestionTools(
               properties: {
                 allowCustomAnswer: { type: "boolean" },
                 choices: { items: { type: "string" }, type: "array" },
+                multi: { type: "boolean" },
                 prompt: { type: "string" },
               },
               required: ["prompt", "choices"],
@@ -121,6 +121,28 @@ function readQuestionnaire(input: unknown): AgentQuestionnaire | null {
     }
 
     const question = item as Record<string, unknown>;
+    if (question.multi !== undefined && typeof question.multi !== "boolean") {
+      return null;
+    }
+    if (
+      question.selectionMode !== undefined &&
+      question.selectionMode !== "single" &&
+      question.selectionMode !== "multiple"
+    ) {
+      return null;
+    }
+    const selectionMode =
+      typeof question.multi === "boolean"
+        ? question.multi
+          ? "multiple"
+          : "single"
+        : question.selectionMode;
+    if (
+      question.selectionMode !== undefined &&
+      question.selectionMode !== selectionMode
+    ) {
+      return null;
+    }
     const prompt =
       typeof question.prompt === "string" ? question.prompt.trim() : "";
     const rawChoices = readChoices(question.choices);
@@ -148,6 +170,9 @@ function readQuestionnaire(input: unknown): AgentQuestionnaire | null {
 
     return {
       allowCustomAnswer,
+      ...(selectionMode
+        ? { selectionMode: selectionMode as "single" | "multiple" }
+        : {}),
       choices,
       id: questionId,
       placeholder,

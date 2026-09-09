@@ -1,0 +1,219 @@
+{
+  "scope": "Final scripted native instrumentation pilots only; no live model performance claim. Large archives and raw model traces remain at referenced local paths and are not copied here. Archive hashes copied from each finalized source-archives.json; packaging did not rerun tests or re-read archives.",
+  "pilots": {
+    "memory": {
+      "batch": "/private/tmp/atlas-memory-orchestrator-test/pilot-EX4Y0V/study/batches/pilot-2026-09-06T16-14-10-886Z-a7e08fb0",
+      "transportMode": "offline-scripted",
+      "scored": false,
+      "paidInference": false,
+      "sourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+      "sourceUnchanged": true,
+      "analyzerValid": true,
+      "analyzerIssues": [],
+      "completeArms": 4,
+      "fakeProviderCalls": 16,
+      "runtimeIdentitiesSha256": "751282dbf3d97742060cf07118a33a2a81469e606e85b651142eb6324328a4ed",
+      "smallEvidenceHashes": {
+        "candidate-source.json": "abfea5eff1d408aa82b80bf204ba58fecbe569aad3c314657dba7b2902fde254",
+        "source-archives.json": "3a1fb95e967d78f76b012c927e3cb1d38b406a4d564b3560d02dc8193b560a5b",
+        "completed.json": "105d9258650261699cab5e7b9d957436f17719398df25ffa84b9bb62eab1af7d",
+        "runtime-identities.json": "751282dbf3d97742060cf07118a33a2a81469e606e85b651142eb6324328a4ed",
+        "identity-pilot-audit.json": "a02c12de359fda4b9e46b3e7b108d825d29213d64fb040a12d4044272bb9facc",
+        "attempts.jsonl": "0a12d8b8232ebd5139f04a900e1a359063768badb0fab060a96a8233cd4a8208",
+        "schedule.json": "2a1ddabd852400a13bfcb513ec54c51da038142e44ba6f750b264b6ea676d80c"
+      },
+      "archiveHashesFromFinalizedIndex": {
+        "atlas-source.tar.gz": "11824ed81ae13a10915da5dd25599d9a0857da36ff69c337a9652b6d37fae6ec",
+        "hermes-source.tar.gz": "77a0a85d1676cefc299918fc60e6280a1e586e44dbe7b0847a22cefd226eb5b2",
+        "memory-protocol-source.tar.gz": "5f93e88dc31f111c8ab4bde9cba2cb19db7cad0c2d8643f033461aa711056461"
+      },
+      "arms": [
+        {
+          "attemptId": "pilot-2026-09-06T16-14-10-886Z-a7e08fb0-memory-transport-pilot-native-default-warm-same-owner-r0-atlas",
+          "identitySha256": "e7737f5ca2ad64b78f157c430628b80f2d1f5a5a08e68dd25a7b195ccfbb4f0e",
+          "transportId": "transport-55e957cd-3f1c-4b02-9b46-c0aa4f7cbdf6",
+          "actualSessions": 2,
+          "providerRequests": 4,
+          "status": "completed",
+          "harness": "atlas",
+          "artifactOrRecallOracleSuccess": true,
+          "mandatoryUsageKnown": true,
+          "evidenceHashes": {
+            "runtime-identity.json": "e7737f5ca2ad64b78f157c430628b80f2d1f5a5a08e68dd25a7b195ccfbb4f0e",
+            "runner-input.json": "e810c4be47a6d0c0076ed19bbc8a7a36f42f8b5852e04b9d7934f0d96b783b34",
+            "observation.json": "b6af1f3600bad0d0cc20c1df9af0172e42cd4c2e93f92a89696f0934bba350fe",
+            "result.json": "d33f2835047cb70828ea4b6294b735475d1db34bbca4dbc63ba4d021abb20cc8",
+            "wire/native-transport-binding.json": "1df47736fb285932c693407dcb38bb50e6fee96ed359ded812bd01f67642efb8",
+            "wire/native-usage-final.json": "3a60fd5eff350921d1c20cc77b5d0e2d0a83e7de6d91155cc13842eb322b9c57"
+          }
+        },
+        {
+          "attemptId": "pilot-2026-09-06T16-14-10-886Z-a7e08fb0-memory-transport-pilot-native-default-warm-same-owner-r0-hermes",
+          "identitySha256": "b64a9a56be2a18c4c4eb7976e574d11ea854820ca026f8dcbfa349c56126cdfe",
+          "transportId": "transport-75ebbe28-16f6-4f09-8fa6-bd2fa9ce7af4",
+          "actualSessions": 2,
+          "providerRequests": 4,
+          "status": "completed",
+          "harness": "hermes",
+          "artifactOrRecallOracleSuccess": true,
+          "mandatoryUsageKnown": true,
+          "evidenceHashes": {
+            "runtime-identity.json": "b64a9a56be2a18c4c4eb7976e574d11ea854820ca026f8dcbfa349c56126cdfe",
+            "runner-input.json": "cb073034090d9ce452309d5f0586770804b1d7703a3477c5f65360184d482b6c",
+            "observation.json": "152e85a10c1a8bf1a66fd24dbf78abd69a94d2f1260b8970c9e38cc35eb33a4d",
+            "result.json": "3c17600f57edae1bee337868d887366599d53901507ca5ad44ea7538ba4136c2",
+            "wire/native-transport-binding.json": "575d1da03aeb92040193e662c009609903831aa55dc09f3bedbf8f0e2d9ca2cf",
+            "wire/native-usage-final.json": "3a60fd5eff350921d1c20cc77b5d0e2d0a83e7de6d91155cc13842eb322b9c57"
+          }
+        },
+        {
+          "attemptId": "pilot-2026-09-06T16-14-10-886Z-a7e08fb0-memory-transport-pilot-explicit-memory-warm-same-owner-r0-hermes",
+          "identitySha256": "764ece058e01c7eb43847f742d92a9b503f0f374d0bd97df9dd5ff9d22b31c4c",
+          "transportId": "transport-5d5eb440-ace6-4ffa-89d4-5d6faca63820",
+          "actualSessions": 2,
+          "providerRequests": 4,
+          "status": "completed",
+          "harness": "hermes",
+          "artifactOrRecallOracleSuccess": true,
+          "mandatoryUsageKnown": true,
+          "evidenceHashes": {
+            "runtime-identity.json": "764ece058e01c7eb43847f742d92a9b503f0f374d0bd97df9dd5ff9d22b31c4c",
+            "runner-input.json": "1361155622b68aa5b833dca505f13a5a0ad34643a8fda4f21b91e708085930cf",
+            "observation.json": "be6672bf63da0bc15cfece9b8fd450a68e13632b92c656e1a24a51e66c91b87e",
+            "result.json": "1249063dd2ebae8d66e4f2a008560896d2ba331ddb80179c91fbe7da063ba3bc",
+            "wire/native-transport-binding.json": "27fa4c71e4d78ba27d73a388d8fc468e0e303d6c27285a7fed457f8234218590",
+            "wire/native-usage-final.json": "3a60fd5eff350921d1c20cc77b5d0e2d0a83e7de6d91155cc13842eb322b9c57"
+          }
+        },
+        {
+          "attemptId": "pilot-2026-09-06T16-14-10-886Z-a7e08fb0-memory-transport-pilot-explicit-memory-warm-same-owner-r0-atlas",
+          "identitySha256": "25cf75837da391e66e4cb4fba5eb088ad2249361f48f6d99efc0d5ffc2252191",
+          "transportId": "transport-d559d451-446e-41ab-9915-d6954abc204a",
+          "actualSessions": 2,
+          "providerRequests": 4,
+          "status": "completed",
+          "harness": "atlas",
+          "artifactOrRecallOracleSuccess": true,
+          "mandatoryUsageKnown": true,
+          "evidenceHashes": {
+            "runtime-identity.json": "25cf75837da391e66e4cb4fba5eb088ad2249361f48f6d99efc0d5ffc2252191",
+            "runner-input.json": "e0bd09109b2a5a76537a1dbac1c2b0b4240ec808bc40f4bbed7c421b567ea6b5",
+            "observation.json": "472499aa73b647c85671cbffd1ef627716460e82e018eacc3bc74137377d48cd",
+            "result.json": "172626735b5c796aeba3c77622f8c6decc4e740f24b40bd06645d4f3fea607ca",
+            "wire/native-transport-binding.json": "4d347d3271578a71628f5cb3cd1ab9fd437198a45b882214c23e563b18cc48f4",
+            "wire/native-usage-final.json": "3a60fd5eff350921d1c20cc77b5d0e2d0a83e7de6d91155cc13842eb322b9c57"
+          }
+        }
+      ]
+    },
+    "files": {
+      "batch": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-rKrVxO/batches/pilot-1788711261621-f5cd8b90",
+      "transportMode": "offline-scripted",
+      "scored": false,
+      "paidInference": false,
+      "sourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+      "sourceUnchanged": true,
+      "analyzerValid": true,
+      "analyzerIssues": [],
+      "completeArms": 4,
+      "fakeProviderCalls": 12,
+      "runtimeIdentitiesSha256": "737a4f350cc0b8b0abebd5c4c5f898ccd24ca74d2ae3046b16a9a3521752dd30",
+      "smallEvidenceHashes": {
+        "batch.json": "16fc3434e1eff1dc8601414976cda61e549b4ed7a16e1a8ec3a9383821aab19b",
+        "source-archives.json": "7afc2000cfb5d27acf225742eac7d1e9c862bc9aa6e94f9363f06da0bb367d41",
+        "completed.json": "f2596fbeb3e39e0c367079c4957bda5a4a31c58294cbb62c0fefe7c424922cb6",
+        "runtime-identities.json": "737a4f350cc0b8b0abebd5c4c5f898ccd24ca74d2ae3046b16a9a3521752dd30",
+        "identity-pilot-audit.json": "92ba4fb8fabb78ca76ab986b8c89bf88c307bfd5f5b8edfba6fdb904731dc522",
+        "attempts.jsonl": "28890287e6393abd1eb26c55636ad14195b741b48c8b7013858b9847c51f953c"
+      },
+      "archiveHashesFromFinalizedIndex": {
+        "atlas-source.tar.gz": "667362a69f810028d5a9f1e93c782b409f789b01e7dc8dbfc334a4ab465b9946",
+        "file-protocol-source.tar.gz": "8510a4a0d104b616d28e989b0d22502390e0c829278fe649b69b6564f43c3d53",
+        "hermes-source.tar.gz": "5184ed80255c152fc8bfb37e50be72fe374b69ddfe54d43df79f567c4f4e7c63"
+      },
+      "arms": [
+        {
+          "attemptId": "pilot-1788711261621-f5cd8b90-native-file-pilot-xlsx-v999-atlas",
+          "identitySha256": "0c6a2e51dc416a311093e081106a369434bbb4f8bd07e817c4968efaae52f979",
+          "transportId": "transport-06f09a05-be8a-48ca-85ae-7a4b9792f000",
+          "actualSessions": 1,
+          "providerRequests": 3,
+          "status": "completed",
+          "harness": "atlas",
+          "artifactOrRecallOracleSuccess": true,
+          "mandatoryUsageKnown": true,
+          "evidenceHashes": {
+            "runtime-identity.json": "0c6a2e51dc416a311093e081106a369434bbb4f8bd07e817c4968efaae52f979",
+            "runner-input.json": "1062982cb64d11e817f1961be7f18d71d3a66f80f394f358f4096506510a36be",
+            "observation.json": "b40b4cbc265ebe5f84fddff326b55decc2489e2447fb8e85b11745e725039e9b",
+            "result.json": "2686fce742e7bada1540d8c7873b71d20d8ac048b0b3581180df20f749b2fceb",
+            "wire/native-transport-binding.json": "77cb7fa7d098714d40c9115d673a6c0eb79078b836023e758ab9b654db20bbc1",
+            "wire/native-usage-final.json": "3e7d16643b3bc334013b376dce2ecb8f251d235e0f08a08c304d935cdb15dc1a"
+          }
+        },
+        {
+          "attemptId": "pilot-1788711261621-f5cd8b90-native-file-pilot-xlsx-v999-hermes",
+          "identitySha256": "2682f833cb651621cd22305401d069ce6f3afc03d7a800af6e9a8cec6775bc7b",
+          "transportId": "transport-c596b33a-fc83-42ec-8a99-0947a6370feb",
+          "actualSessions": 1,
+          "providerRequests": 3,
+          "status": "completed",
+          "harness": "hermes",
+          "artifactOrRecallOracleSuccess": true,
+          "mandatoryUsageKnown": true,
+          "evidenceHashes": {
+            "runtime-identity.json": "2682f833cb651621cd22305401d069ce6f3afc03d7a800af6e9a8cec6775bc7b",
+            "runner-input.json": "6cfc68f90815f52f0d282a5fd2e5348674964bde3f7381d655c238bf6d737608",
+            "observation.json": "f4e5db74fb152b06a57cf1558c19138744b42aab0c4a3e979626a1da15698dca",
+            "result.json": "88064dfd1cdad9a3ad2aa110d1d9b3913e58338f12ae76f9507afa95b1fde5f9",
+            "wire/native-transport-binding.json": "5db40a1b6ac25f1e1db965d0949f3d69f445a2ca853b155730c2cbda92a3ba0f",
+            "wire/native-usage-final.json": "3e7d16643b3bc334013b376dce2ecb8f251d235e0f08a08c304d935cdb15dc1a"
+          }
+        },
+        {
+          "attemptId": "pilot-1788711261621-f5cd8b90-native-file-pilot-csv-v999-hermes",
+          "identitySha256": "70acaaa1a6f6cea5ffc3a288694764ccadd40a2f50ce4a9e7af8c4a66db48f90",
+          "transportId": "transport-dc174fc8-2061-4ae2-bc2f-46211e6f399e",
+          "actualSessions": 1,
+          "providerRequests": 3,
+          "status": "completed",
+          "harness": "hermes",
+          "artifactOrRecallOracleSuccess": true,
+          "mandatoryUsageKnown": true,
+          "evidenceHashes": {
+            "runtime-identity.json": "70acaaa1a6f6cea5ffc3a288694764ccadd40a2f50ce4a9e7af8c4a66db48f90",
+            "runner-input.json": "c8db78286dda6328d674d0d307ce190732720c5ccadeb41d598514079870d9d6",
+            "observation.json": "628a1a29d0283e03b1b3a90d65d5e4d5de770f8c606f8eb1a50c5a26ffb18425",
+            "result.json": "462580626bcfaf4441e8be0dbef3d7264de53ba28f84f67b6040d6f23bf90dcc",
+            "wire/native-transport-binding.json": "0937ddc6773358ce85a1c12fddec2781803dee5066bf7b6041c82911979337ce",
+            "wire/native-usage-final.json": "3e7d16643b3bc334013b376dce2ecb8f251d235e0f08a08c304d935cdb15dc1a"
+          }
+        },
+        {
+          "attemptId": "pilot-1788711261621-f5cd8b90-native-file-pilot-csv-v999-atlas",
+          "identitySha256": "c55d7a79fbb3503c89b8af6821921a55602b3f587447a2a330ba67049a6b8f68",
+          "transportId": "transport-3c44c229-9088-40a6-b8fd-53d52d1c26f1",
+          "actualSessions": 1,
+          "providerRequests": 3,
+          "status": "completed",
+          "harness": "atlas",
+          "artifactOrRecallOracleSuccess": true,
+          "mandatoryUsageKnown": true,
+          "evidenceHashes": {
+            "runtime-identity.json": "c55d7a79fbb3503c89b8af6821921a55602b3f587447a2a330ba67049a6b8f68",
+            "runner-input.json": "a5f0c82c18ac1456ef4c1af2ca1dd13e18e1522cacb54b199886d5178f33a092",
+            "observation.json": "9774228dbda26b35cd2fe4368021ffc957d0ca228e531377bc7f1d8a38535815",
+            "result.json": "cef4b8a68e505a22ae3ef00616c7934fc9c1921e64261e6dfe59703bccfde0db",
+            "wire/native-transport-binding.json": "790269c5c0f4c4ce060ff8fb053e4a7fe6a5bc652a9cce8e78e1492e324dcc43",
+            "wire/native-usage-final.json": "3e7d16643b3bc334013b376dce2ecb8f251d235e0f08a08c304d935cdb15dc1a"
+          }
+        }
+      ]
+    }
+  },
+  "earlierPilots": {
+    "memory": "/private/tmp/atlas-memory-orchestrator-test/pilot-rmHUjn/study/batches/pilot-2026-09-06T16-06-43-898Z-8927c070",
+    "files": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-E4ennF/batches/pilot-1788710819642-feb8ab3a",
+    "qualification": "Earlier scripted pilots predated the corrected new-directory control inventory; final launch evidence is the fresh pilots above, no past ledger changed."
+  }
+}

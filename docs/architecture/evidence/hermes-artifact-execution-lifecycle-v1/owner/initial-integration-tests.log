@@ -1,0 +1,25 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/agent/src/tool-execution-lifecycle.test.ts:
+(pass) API send completes actual invocations before checkpoints [47.76ms]
+(pass) API stream completes actual invocations before checkpoints [2.22ms]
+(pass) native send completes actual invocations before checkpoints [1.95ms]
+(pass) native stream completes actual invocations before checkpoints [2.02ms]
+(pass) parallel invocations receive separate publishers and no inherited capability [2.08ms]
+(pass) publication completion sees protected rejection and failed data without bypassing guards [1.25ms]
+(pass) begin and diagnostic failures preserve the actual effect exactly once [1.89ms]
+(pass) complete and diagnostic failures preserve the actual effect exactly once [0.40ms]
+
+apps/server/src/services/artifact-publication-lifecycle.test.ts:
+(pass) overlapping sessions bind original bytes and distinct executions despite a repeated provider call ID [39.67ms]
+(pass) lazy initialization captures bytes and identity before caller mutation [20.86ms]
+(pass) forged artifact metadata and a no-write tool cannot create publication authority [22.82ms]
+(pass) returned-failure retains the actual file and receipt without partial publication or producer replay [25.72ms]
+(pass) initialization retains the actual file and receipt without partial publication or producer replay [18.39ms]
+(pass) later-stage retains the actual file and receipt without partial publication or producer replay [18.62ms]
+(pass) staging that starts after protected completion cannot reopen the publication set [17.83ms]
+
+ 15 pass
+ 0 fail
+ 99 expect() calls
+Ran 15 tests across 2 files. [865.00ms]

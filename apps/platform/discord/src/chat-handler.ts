@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
   type ChannelArtifactRef,
@@ -17,8 +18,11 @@ import type {
   AgentQuestionnaire,
   SendMessageInput,
 } from "@atlas/core/contract";
-import { addDiscordAllowedUserId } from "@atlas/core/discord-config";
-import { waitForAbortable } from "@atlas/core/download-deadline";
+import {
+  throwIfSignalAborted,
+  waitForAbortable,
+} from "@atlas/core/download-deadline";
+import { saveInboundWorkspaceDocument } from "@atlas/core/inbound-document";
 import {
   filterProfilesForChatAccess,
   formatProfileSelectionPrompt,
@@ -35,6 +39,7 @@ import type {
   TextBasedChannel,
   ThreadChannel,
 } from "discord.js";
+import { ChannelType } from "discord.js";
 import {
   clearActiveStream,
   isAbortError,
@@ -61,6 +66,7 @@ import {
   type DiscordBotInfo,
   explainGuildMessageHandling,
   isDiscordGuildMessage,
+  isDiscordGuildMessageAddressed,
   isDiscordThreadMessage,
   looksLikeHandshakeAttempt,
   parseTextCommand,
@@ -78,12 +84,29 @@ import {
   type DiscordMessenger,
   getMessageChannel,
   replyAsChat,
+  trackDiscordMessages,
 } from "./messenger";
+import {
+  DiscordMessageOwners,
+  dispatchDiscordNativeAction,
+} from "./native-actions";
+import { sendDiscordNativeApproval } from "./native-approval-message";
+import {
+  type DiscordCallbackBinding,
+  DiscordCallbackRegistry,
+} from "./native-callbacks";
+import { handleDiscordNativeInteraction } from "./native-interaction-handler";
+import {
+  type DiscordNativeCallback,
+  type DiscordNativeInteraction,
+  DiscordNativeQuestionnaireMessage,
+} from "./native-questionnaire";
 import { DiscordQuestionnaireMessage } from "./questionnaire-message";
 import type { SessionStore } from "./session-store";
 import type { ThreadStore } from "./thread-store";
 import { DiscordTodoStatusMessage } from "./todo-status-message";
 import { createTypingLoop } from "./typing-indicator";
+import { DiscordVoiceSessions } from "./voice-session";
 
 const chatLocks = new Map<string, Promise<void>>();
 const rateLimiter = new ChannelRateLimiter();
@@ -101,7 +124,7 @@ export const chatLockOptions = {
 };
 
 const GROUP_MESSAGE_PREFIX =
-  "[Discord channel — your reply is visible to everyone in this channel.]\n";
+  "[Discord group chat — your reply is visible to everyone with access to this channel or thread.]\n";
 
 /** Posted when tools start before the model wrote any status text. */
 const DISCORD_EARLY_ACK_FALLBACK = "On it.";
@@ -132,6 +155,7 @@ export interface ChatHandlerDeps {
   config: DiscordBridgeConfig;
   fixedWorkspaceId?: string;
   getBotInfo?: () => DiscordBotInfo | undefined;
+  getDiscordClient?: () => import("discord.js").Client<true> | undefined;
   orgStore: ChannelOrgStore;
   sessionStore: SessionStore;
   threadStore: ThreadStore;
@@ -147,17 +171,231 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     orgStore,
     fixedWorkspaceId,
     getBotInfo = () => undefined,
+    getDiscordClient = () => undefined,
   } = deps;
   const helpText = formatHelpText({
     workspaceLocked: Boolean(fixedWorkspaceId),
   });
+  const nativeCallbacks = new DiscordCallbackRegistry<DiscordNativeCallback>();
+  const nativeMessageOwners = new DiscordMessageOwners();
+  let voiceSessions: DiscordVoiceSessions | undefined;
+  const nativeRooms = new Map<
+    string,
+    {
+      channelChatId: string;
+      channelThreadId?: string;
+      channelIsGroup: boolean;
+      channelAddressed: boolean;
+    }
+  >();
 
   return {
+    closeVoice: () => voiceSessions?.close(),
     handleMessage: (message: Message) =>
       client.isolateOrgId(() => handleMessageWithTerminalError(message)),
+    handleNativeInteraction: (interaction: DiscordNativeInteraction) =>
+      client.isolateOrgId(() =>
+        handleDiscordNativeInteraction({
+          authorize: (binding, callback) =>
+            authorizeNativeCallback(binding, callback.questionnaireSnapshot),
+          interaction,
+          registry: nativeCallbacks,
+        })
+      ),
     handleSlashCommand: (interaction: ChatInputCommandInteraction) =>
       client.isolateOrgId(() => handleSlashCommand(interaction)),
+    recheckVoice: async (guildId: string) =>
+      await voiceSessions?.recheck(guildId),
   };
+
+  function getVoiceSessions(): DiscordVoiceSessions {
+    if (voiceSessions) {
+      return voiceSessions;
+    }
+    const discord = getDiscordClient();
+    if (!discord) {
+      throw new Error("Discord voice transport is unavailable");
+    }
+    voiceSessions = new DiscordVoiceSessions({
+      authorize: (binding) =>
+        client.isolateOrgId(() => authorizeNativeCallback(binding)),
+      client,
+      discord,
+      runTurn: (binding, text, signal) =>
+        client.isolateOrgId(async () => {
+          client.setOrgId(binding.orgId);
+          return await withChatLock(binding.conversationKey, async () => {
+            await authorizeNativeCallback(binding);
+            const channel = await discord.channels.fetch(binding.channelId, {
+              force: true,
+            });
+            if (!channel?.isTextBased()) {
+              throw new Error("Discord voice conversation is unavailable");
+            }
+            let reply = "";
+            await handleChatMessage(
+              channel,
+              binding.conversationKey,
+              createDiscordMessenger(channel),
+              text,
+              true,
+              false,
+              binding.channelAddressed,
+              undefined,
+              binding.channelUserId,
+              binding.channelOrgKey,
+              signal,
+              (text) => {
+                reply = text;
+              }
+            );
+            return reply;
+          });
+        }),
+      status: async (binding, text) => {
+        const channel = await discord.channels.fetch(binding.channelId, {
+          force: true,
+        });
+        if (channel?.isSendable()) {
+          await channel.send({ allowedMentions: { parse: [] }, content: text });
+        }
+      },
+    });
+    return voiceSessions;
+  }
+
+  async function handleVoiceCommand(
+    interaction: ChatInputCommandInteraction,
+    channelOrgKey: string,
+    sessionKey: string,
+    messenger: DiscordMessenger
+  ): Promise<void> {
+    const orgId =
+      fixedWorkspaceId ?? getOrgSelection(orgStore, channelOrgKey)?.orgId;
+    const discord = getDiscordClient();
+    if (!(interaction.guildId && orgId && discord)) {
+      throw new Error(
+        "Discord voice requires a workspace-linked server conversation"
+      );
+    }
+    if (interaction.commandName === "voice_leave") {
+      const left = voiceSessions?.leave(
+        interaction.guildId,
+        interaction.user.id,
+        orgId
+      );
+      await messenger.send(
+        left
+          ? "Left your voice session."
+          : "You do not own an active voice session in this server."
+      );
+      return;
+    }
+    const voice = getVoiceSessions();
+    voice.assertCanJoin(interaction.guildId);
+    const guild = await discord.guilds.fetch(interaction.guildId);
+    const voiceState = await guild.voiceStates.fetch(interaction.user.id, {
+      force: true,
+    });
+    const channel = voiceState.channelId
+      ? await discord.channels.fetch(voiceState.channelId, { force: true })
+      : null;
+    if (channel?.type !== ChannelType.GuildVoice) {
+      throw new Error("Join a regular voice channel before using this command");
+    }
+    const voiceKey = resolveDiscordSessionKey(
+      `voice:${guild.id}:${channel.id}`,
+      interaction.user.id,
+      true
+    );
+    const voiceOrgKey = resolveChannelOrgKey(
+      channel.id,
+      interaction.user.id,
+      true
+    );
+    orgStore.set(voiceOrgKey, orgId);
+    await orgStore.save();
+    nativeRooms.set(voiceKey, {
+      channelAddressed: true,
+      channelChatId: channel.id,
+      channelIsGroup: true,
+    });
+    const profileId = await resolveSessionProfileId(
+      sessionKey,
+      interaction.user.id
+    );
+    const session = await createAndBindSession(
+      voiceKey,
+      profileId,
+      interaction.user.id
+    );
+    const binding: DiscordCallbackBinding = {
+      channelAddressed: true,
+      channelChatId: channel.id,
+      channelId: channel.id,
+      channelOrgKey: voiceOrgKey,
+      channelUserId: interaction.user.id,
+      conversationKey: voiceKey,
+      guildId: guild.id,
+      orgId,
+      profileId,
+      sessionId: session.id,
+    };
+    await client.bindChannelActionContext({
+      channel: "discord",
+      channelAddressed: true,
+      channelChatId: channel.id,
+      channelIsGroup: true,
+      channelUserId: interaction.user.id,
+      sessionId: session.id,
+    });
+    await voice.join(binding, channel);
+    await messenger.send(
+      "Voice connected. I will listen only to you. Use /voice_leave to disconnect."
+    );
+  }
+
+  async function authorizeNativeCallback(
+    binding: DiscordCallbackBinding,
+    questionnaire?: AgentQuestionnaire
+  ): Promise<void> {
+    await authStore.reload();
+    const selectedOrg =
+      fixedWorkspaceId ??
+      getOrgSelection(orgStore, binding.channelOrgKey)?.orgId;
+    const record = sessionStore.get(binding.conversationKey);
+    if (
+      !authStore.isAuthorized(binding.channelUserId) ||
+      selectedOrg !== binding.orgId ||
+      record?.sessionId !== binding.sessionId ||
+      record.profileId !== binding.profileId ||
+      record.channelUserId !== binding.channelUserId ||
+      (binding.channelThreadId &&
+        !threadStore.hasThreadId(binding.channelThreadId))
+    ) {
+      throw new Error(
+        "Discord callback no longer belongs to the active conversation"
+      );
+    }
+    client.setOrgId(binding.orgId);
+    await client.authorizeChannelPrincipal({
+      channel: "discord",
+      channelAddressed: binding.channelAddressed,
+      channelChatId: binding.channelChatId,
+      channelIsGroup: binding.guildId !== null,
+      channelThreadId: binding.channelThreadId,
+      channelUserId: binding.channelUserId,
+      intent: "invoke",
+      profileId: binding.profileId,
+      sessionId: binding.sessionId,
+    });
+    if (questionnaire) {
+      const current = await client.getSessionMessages(binding.sessionId);
+      if (!isDeepStrictEqual(current.questionnaire, questionnaire)) {
+        throw new Error("Discord questionnaire has been replaced or completed");
+      }
+    }
+  }
 
   async function handleMessageWithTerminalError(
     message: Message
@@ -189,6 +427,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const botInfo = resolveBotInfo(message, getBotInfo());
     // Ownership is by thread id alone — partial parentId cannot flip this to foreign.
     const botOwnsThread = isThread ? threadStore.hasThreadId(channelId) : false;
+    const channelAddressed =
+      !isGuild ||
+      isDiscordGuildMessageAddressed(message, botInfo, { botOwnsThread });
     const groupDecision = isGuild
       ? explainGuildMessageHandling(message, botInfo, { botOwnsThread })
       : null;
@@ -251,6 +492,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       userId,
       isGuild
     );
+    nativeRooms.set(sessionKey, {
+      channelAddressed,
+      channelChatId: parentChannelId,
+      channelIsGroup: isGuild,
+      channelThreadId: isThread ? channelId : undefined,
+    });
 
     let isAuthorized = false;
     let fileConfig = authStore.getConfig();
@@ -258,19 +505,6 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       await authStore.reload();
       isAuthorized = authStore.isAuthorized(userId);
       fileConfig = authStore.getConfig();
-
-      if (
-        isAuthorized &&
-        isThread &&
-        groupDecision?.reason === "claim-thread"
-      ) {
-        await trackOwnedThread(channelId);
-        console.log(
-          isChannelDebugEnabled()
-            ? `[discord] claimed thread ${channelId}`
-            : "[discord] claimed thread"
-        );
-      }
     });
 
     const isExplicitPairingAttempt = Boolean(
@@ -417,7 +651,33 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       isGuild &&
       !isThread &&
       (groupDecision?.reason === "bot-mention" ||
-        groupDecision?.reason === "reply-to-bot");
+        groupDecision?.reason === "reply-to-bot" ||
+        groupDecision?.reason === "attachment");
+
+    const shouldClaimThread =
+      isThread && groupDecision?.reason === "claim-thread";
+    if (shouldRouteToThread || shouldClaimThread) {
+      try {
+        await client.authorizeChannelPrincipal({
+          ...nativeRooms.get(sessionKey),
+          channel: "discord",
+          channelUserId: userId,
+          intent: "invoke",
+          profileId: await resolveSessionProfileId(sessionKey, userId),
+        });
+      } catch (error) {
+        if (!channelAddressed && hasAttachments) {
+          await messenger.send(
+            "The file was ignored by this channel's access policy. Mention the bot or ask an admin to check channel access."
+          );
+          return;
+        }
+        throw error;
+      }
+      if (shouldClaimThread) {
+        await trackOwnedThread(channelId);
+      }
+    }
 
     if (shouldRouteToThread) {
       const thread = await createGuildThread(message, messageText);
@@ -467,8 +727,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         messageText,
         isGuild,
         input.replyIsThread,
+        channelAddressed,
         input.attachmentMessage,
         userId,
+        channelOrgKey,
         input.signal
       );
 
@@ -561,6 +823,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
+    const storedSession = sessionStore.get(conversationKey);
+    await client.authorizeChannelPrincipal({
+      ...nativeRooms.get(conversationKey),
+      channel: "discord",
+      channelUserId: interaction.user.id,
+      intent: "invoke",
+      profileId: storedSession?.profileId,
+      sessionId: storedSession?.sessionId,
+    });
     stopActiveStream(conversationKey);
     pendingQuestionnaires.delete(conversationKey);
 
@@ -601,7 +872,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    const result = await addDiscordAllowedUserId(targetUser.id);
+    const result = await client.addDiscordAllowedUser({
+      requesterChannelUserId: requesterId,
+      targetChannelUserId: targetUser.id,
+    });
     await authStore.reload();
 
     if (!result.ok) {
@@ -634,20 +908,16 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     let artifactSessionKey = sessionKey;
     let storedSession = sessionStore.get(sessionKey);
+    if (storedSession?.channelUserId?.trim() !== userId) {
+      storedSession = undefined;
+    }
 
     if (!storedSession && conversationKey !== sessionKey) {
       const legacySession = sessionStore.get(conversationKey);
       const legacyOwner = legacySession?.channelUserId?.trim();
-      if (legacySession && (!legacyOwner || legacyOwner === userId)) {
+      if (legacySession && legacyOwner === userId) {
         artifactSessionKey = conversationKey;
         storedSession = legacySession;
-        if (!legacyOwner) {
-          sessionStore.set(conversationKey, {
-            ...legacySession,
-            channelUserId: userId,
-          });
-          await sessionStore.save();
-        }
       }
     }
 
@@ -665,6 +935,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const sent = await maybeSendRequestedDiscordArtifactAttachment({
       attachUserText: "/attach",
       channel,
+      channelUserId: userId,
       client,
       conversationKey: artifactSessionKey,
       messenger,
@@ -717,14 +988,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       (content) => interaction.editReply({ content: content.slice(0, 2000) }),
       true
     );
+    nativeRooms.set(sessionKey, {
+      channelAddressed: true,
+      channelChatId: orgChannelId,
+      channelIsGroup: isGuild,
+      channelThreadId: isThread ? channelId : undefined,
+    });
 
     try {
       await authStore.reload();
-
-      if (interaction.commandName === "allow") {
-        await handleAllowCommand(interaction, messenger, userId);
-        return;
-      }
 
       if (!authStore.isAuthorized(userId)) {
         if (!interaction.channel?.isDMBased()) {
@@ -761,11 +1033,6 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
-      if (interaction.commandName === "close") {
-        await handleCloseThread(interaction, sessionKey, messenger);
-        return;
-      }
-
       const orgReady = await ensureOrgReady(
         messenger,
         channelOrgKey,
@@ -776,6 +1043,21 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       switch (interaction.commandName) {
+        case "voice_join":
+        case "voice_leave":
+          await handleVoiceCommand(
+            interaction,
+            channelOrgKey,
+            sessionKey,
+            messenger
+          );
+          return;
+        case "close":
+          await handleCloseThread(interaction, sessionKey, messenger);
+          return;
+        case "allow":
+          await handleAllowCommand(interaction, messenger, userId);
+          return;
         case "attach": {
           await handleAttachCommand(
             interaction,
@@ -971,15 +1253,64 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     messenger: DiscordMessenger,
     caption: string,
     signal: AbortSignal,
-    sessionId: string
+    sessionId: string,
+    workspace: {
+      orgId?: string;
+      profileId?: string;
+      channelUserId: string;
+      origin: {
+        channelChatId: string;
+        channelThreadId?: string;
+        channelIsGroup: boolean;
+        channelAddressed: boolean;
+      };
+    }
   ): Promise<SendMessageInput | "reject" | null> {
     if (!hasDiscordAttachments(message)) {
       return null;
     }
 
     try {
+      await waitForAbortable(
+        client.authorizeChannelPrincipal({
+          ...workspace.origin,
+          channel: "discord",
+          channelUserId: workspace.channelUserId,
+          intent: "files",
+          profileId: workspace.profileId,
+          sessionId,
+        }),
+        signal
+      );
       const result = await buildDiscordAttachmentInput(message, {
         caption,
+        saveInboundDocument: async (file) => {
+          throwIfSignalAborted(signal);
+          const { orgId, profileId } = workspace;
+          if (!(orgId && profileId)) {
+            throw new Error(
+              "Select a workspace and profile before saving a file."
+            );
+          }
+          await waitForAbortable(
+            client.authorizeChannelPrincipal({
+              ...workspace.origin,
+              channel: "discord",
+              channelUserId: workspace.channelUserId,
+              intent: "files",
+              profileId,
+              sessionId,
+            }),
+            signal
+          );
+          throwIfSignalAborted(signal);
+          return saveInboundWorkspaceDocument({
+            bytes: file.bytes,
+            filename: file.filename,
+            orgId,
+            profileId,
+          });
+        },
         signal,
         transcribeAudio: (input) =>
           client.transcribeAudio({ ...input, sessionId }),
@@ -1007,19 +1338,33 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   async function handleChatMessage(
     channel: TextBasedChannel,
     conversationKey: string,
-    messenger: DiscordMessenger,
+    transport: DiscordMessenger,
     attachUserText: string,
     isGuild: boolean,
     isThread: boolean,
+    channelAddressed: boolean,
     attachmentMessage: Message | undefined,
     authorUserId: string,
-    signal?: AbortSignal
+    channelOrgKey: string,
+    signal?: AbortSignal,
+    onReply?: (reply: string) => void,
+    expectedQuestionnaire?: AgentQuestionnaire
   ): Promise<void> {
+    let nativeBinding: DiscordCallbackBinding | undefined;
+    const messenger = trackDiscordMessages(transport, (messageId) => {
+      if (nativeBinding) {
+        nativeMessageOwners.record(messageId, nativeBinding);
+      }
+    });
     const activeSignal = signal ?? registerActiveStream(conversationKey);
     const ownsSignal = signal === undefined;
     const typingLoop = createTypingLoop(messenger);
     const todoStatus = new DiscordTodoStatusMessage(messenger);
-    const questionnaireStatus = new DiscordQuestionnaireMessage(messenger);
+    let questionnaireStatus:
+      | DiscordQuestionnaireMessage
+      | DiscordNativeQuestionnaireMessage = new DiscordQuestionnaireMessage(
+      messenger
+    );
     const liveReply = createDiscordLiveReply(messenger);
     let reply = "";
     let earlyAck = false;
@@ -1029,6 +1374,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const streamedArtifacts = new Map<string, ChannelArtifactRef>();
     let profileId: string | undefined;
     let session: RemoteChatSession | undefined;
+    const nativeParentId = channel.isThread()
+      ? (channel.parentId ?? (await hydrateThreadParentId(channel)))
+      : undefined;
+    nativeRooms.set(conversationKey, {
+      channelAddressed,
+      channelChatId: nativeParentId ?? channel.id,
+      channelIsGroup: isGuild,
+      channelThreadId: isThread ? channel.id : undefined,
+    });
 
     try {
       const activeSession = await waitForAbortable(
@@ -1037,6 +1391,70 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       );
       session = activeSession;
       profileId = sessionStore.get(conversationKey)?.profileId;
+      const orgId =
+        fixedWorkspaceId ?? getOrgSelection(orgStore, channelOrgKey)?.orgId;
+      const parentId = nativeParentId;
+      if (!(orgId && profileId) || (channel.isThread() && !parentId)) {
+        throw new Error("Discord native conversation context is unavailable");
+      }
+      nativeBinding = {
+        channelAddressed,
+        channelChatId: parentId ?? channel.id,
+        channelId: channel.id,
+        channelOrgKey,
+        channelThreadId: channel.isThread() ? channel.id : undefined,
+        channelUserId: authorUserId,
+        conversationKey,
+        guildId: "guildId" in channel ? channel.guildId : null,
+        orgId,
+        profileId,
+        sessionId: activeSession.id,
+      };
+      const turnBinding = nativeBinding;
+      nativeCallbacks.revokeSession(activeSession.id);
+      await client.bindChannelActionContext({
+        channel: "discord",
+        channelAddressed,
+        channelChatId: nativeBinding.channelChatId,
+        channelIsGroup: isGuild,
+        channelThreadId: nativeBinding.channelThreadId,
+        channelUserId: authorUserId,
+        sessionId: activeSession.id,
+      });
+      if (messenger.sendComponents && messenger.editComponents) {
+        questionnaireStatus = new DiscordNativeQuestionnaireMessage({
+          binding: turnBinding,
+          isCurrent: (id) =>
+            pendingQuestionnaires.get(conversationKey)?.id === id,
+          messenger,
+          onAnswer: async (message, questionnaire) =>
+            await withChatLock(conversationKey, async () => {
+              await authorizeNativeCallback(turnBinding, questionnaire);
+              let completed = false;
+              await handleChatMessage(
+                channel,
+                conversationKey,
+                messenger,
+                message,
+                isGuild,
+                isThread,
+                turnBinding.channelAddressed,
+                undefined,
+                authorUserId,
+                channelOrgKey,
+                undefined,
+                () => {
+                  completed = true;
+                },
+                questionnaire
+              );
+              if (!completed) {
+                throw new Error("Questionnaire answer was not accepted");
+              }
+            }),
+          registry: nativeCallbacks,
+        });
+      }
 
       // `/attach` remains a non-LLM shortcut. Natural-language sends use the
       // send_discord_artifact tool from the agent turn.
@@ -1045,6 +1463,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           maybeSendRequestedDiscordArtifactAttachment({
             attachUserText,
             channel,
+            channelAddressed,
+            channelUserId: authorUserId,
             client,
             conversationKey,
             messenger,
@@ -1062,7 +1482,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
             messenger,
             attachUserText,
             activeSignal,
-            activeSession.id
+            activeSession.id,
+            {
+              channelUserId: authorUserId,
+              orgId:
+                fixedWorkspaceId ??
+                getOrgSelection(orgStore, channelOrgKey)?.orgId,
+              origin: nativeRooms.get(conversationKey)!,
+              profileId,
+            }
           )
         : null;
       if (attachmentInput === "reject") {
@@ -1073,11 +1501,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       const streamInput = withGroupContext(
         {
           documents: attachmentInput?.documents,
+          expectedQuestionnaire,
           images: attachmentInput?.images,
           message: attachmentInput?.message ?? attachUserText,
         },
-        isGuild,
-        isThread
+        isGuild
       );
 
       typingLoop.start();
@@ -1085,11 +1513,86 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       reply = await activeSession.sendStream(
         streamInput,
         {
+          onApprovalRequested: (approval) => {
+            pendingArtifactUploads.push(
+              sendDiscordNativeApproval({
+                approval,
+                binding: turnBinding,
+                decide: (decision) =>
+                  client.decideChannelApproval({
+                    approvalId: approval.id,
+                    channel: "discord",
+                    channelAddressed: turnBinding.channelAddressed,
+                    channelChatId: turnBinding.channelChatId,
+                    channelIsGroup: isGuild,
+                    channelThreadId: turnBinding.channelThreadId,
+                    channelUserId: authorUserId,
+                    decision,
+                    profileId,
+                    sessionId: activeSession.id,
+                  }),
+                messenger,
+                registry: nativeCallbacks,
+              }).catch(() => {
+                stopActiveStream(conversationKey);
+              })
+            );
+          },
           onArtifactCreated: (artifact) => {
             const ref = channelArtifactRefFromArtifact(artifact);
             if (ref) {
               streamedArtifacts.set(ref.path, ref);
             }
+          },
+          onChannelActionRequested: (request) => {
+            const discord = getDiscordClient();
+            const action = discord
+              ? dispatchDiscordNativeAction(
+                  {
+                    binding: turnBinding,
+                    client,
+                    discord,
+                    inboundMessageId: attachmentMessage?.id,
+                    owners: nativeMessageOwners,
+                    reauthorize: async (action) => {
+                      await authorizeNativeCallback(turnBinding);
+                      await client.authorizeChannelPrincipal({
+                        channel: "discord",
+                        channelAddressed: turnBinding.channelAddressed,
+                        channelChatId: turnBinding.channelChatId,
+                        channelIsGroup: isGuild,
+                        channelThreadId: turnBinding.channelThreadId,
+                        channelUserId: authorUserId,
+                        intent: "invoke",
+                        nativeAction: action.kind,
+                        profileId: turnBinding.profileId,
+                        sessionId: activeSession.id,
+                      });
+                    },
+                    signal: activeSignal,
+                    threadStore,
+                  },
+                  request
+                )
+              : Promise.reject(new Error("Discord transport is unavailable"));
+            pendingArtifactUploads.push(
+              action
+                .then((receipt) => {
+                  if (
+                    request.action.kind === "send_media" &&
+                    (receipt.status === "accepted" ||
+                      receipt.status === "unknown")
+                  ) {
+                    uploadedArtifactPaths.add(request.action.path);
+                    uploadedArtifactPaths.add(
+                      request.action.path.replace(/^artifacts\//, "")
+                    );
+                  }
+                })
+                .catch(() => {
+                  stopActiveStream(conversationKey);
+                })
+            );
           },
           onChunk: (delta) => {
             reply += delta;
@@ -1100,7 +1603,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
             if (hasActiveAgentQuestionnaire(questionnaire)) {
               postedQuestionnaire = true;
               pendingQuestionnaires.set(conversationKey, questionnaire!);
-              void questionnaireStatus.update(questionnaire);
+              pendingArtifactUploads.push(
+                questionnaireStatus.update(questionnaire).catch(() => {
+                  stopActiveStream(conversationKey);
+                })
+              );
             } else {
               pendingQuestionnaires.delete(conversationKey);
               questionnaireStatus.clear();
@@ -1124,6 +1631,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
               (async () => {
                 const path = await uploadDiscordArtifactFromToolResult({
                   channel,
+                  channelAddressed,
+                  channelUserId: authorUserId,
                   client,
                   messenger,
                   profileId,
@@ -1203,6 +1712,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       typingLoop.stop();
     }
 
+    onReply?.(reply);
     if (reply.trim()) {
       if (!(await liveReply.replaceWithFinal(reply))) {
         await replyAsChat(messenger, reply);
@@ -1221,6 +1731,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     if (profileId && session) {
       await deliverDiscordTurnArtifactShares({
         channel,
+        channelAddressed,
+        channelUserId: authorUserId,
         client,
         conversationKey,
         messenger,
@@ -1510,7 +2022,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         ? resolveProfileInput(currentOrgProfiles, arg)
         : undefined;
     const currentOrgProfilePick =
-      currentOrgId && isThread
+      currentOrgId && (isThread || workspaceLocked)
         ? resolveProfileInput(currentOrgProfiles, arg)
         : undefined;
     const resolved =
@@ -1669,6 +2181,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       profileId ?? (await resolveSessionProfileId(chatId, principalUserId));
     const session = await client.createSession("discord", {
       externalPrincipal: {
+        ...nativeRooms.get(chatId),
         channelUserId: principalUserId,
       },
       profileId: resolvedProfileId,
@@ -1753,11 +2266,9 @@ export function resolveDiscordSessionKey(
 
 function withGroupContext(
   input: SendMessageInput,
-  isGuild: boolean,
-  isThread: boolean
+  isGuild: boolean
 ): SendMessageInput {
-  // Threads are a private-ish conversation surface — skip the public-channel warning.
-  if (!isGuild || isThread) {
+  if (!isGuild) {
     return input;
   }
 

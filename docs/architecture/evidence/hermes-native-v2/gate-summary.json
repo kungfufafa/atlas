@@ -1,0 +1,47 @@
+{
+  "testsNotRerunForPackaging": true,
+  "notIndependentTaskSamples": true,
+  "suites": [
+    {
+      "log": "/private/tmp/atlas-native-controls-v2/final-unit-gates.log",
+      "sha256": "5729d59dd456edee864786eff04b765c6dcfa31946222de748a9c79304ab2dba",
+      "pass": 35,
+      "assertions": 487,
+      "scope": "Final root candidate3; unit/oracle/identity/provenance gates"
+    },
+    {
+      "log": "/private/tmp/atlas-native-controls-v2/native-offline-adapter-gates.log",
+      "sha256": "a4725341b52188bf4bbe7111e94165eb173936ac11456b0c9961884a8b188efd",
+      "pass": 20,
+      "assertions": 197,
+      "scope": "Earlier isolated scratch native Atlas and queue gates; final candidate3 end-to-end evidence is bound separately"
+    },
+    {
+      "log": "/private/tmp/atlas-native-controls-v2/independent-identity-analysis-final.log",
+      "sha256": "85723d5aa3255809a2d7b6c84dd3132e83d9dea0f9b5cbe2fc329124490e1cff",
+      "pass": 18,
+      "assertions": 160,
+      "scope": "Final independent identity and historical analyzer review"
+    },
+    {
+      "log": "/private/tmp/atlas-native-controls-v2/independent-queue-tests.log",
+      "sha256": "abec0d5c929f20fd4b5e36bd3e20766de022779e4dd2e0a3467b5531ae656032",
+      "pass": 10,
+      "assertions": 93,
+      "scope": "Independent real localhost fake queue lifecycle tests"
+    }
+  ],
+  "scopedTypecheck": {
+    "status": "pass",
+    "log": "/private/tmp/atlas-native-controls-v2/final-controls-typecheck.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "lint": {
+    "status": "pass",
+    "files": 19,
+    "changes": false,
+    "log": "/private/tmp/atlas-native-controls-v2/final-controls-lint.log",
+    "sha256": "1d22b3fdb7ddc2e318c75f98c671c46cc95fdd4710668da445e4e52170558173"
+  },
+  "priorAttempts": "Earlier failures, inventory amendment and pre-final scripted pilots remain retained in source evidence; final independent report describes the resolved findings. Test counts overlap and must not be summed into performance samples."
+}

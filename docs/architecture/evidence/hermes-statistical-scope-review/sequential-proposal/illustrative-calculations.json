@@ -1,0 +1,82 @@
+{
+  "createdAt": "2026-09-06T18:29:24.621081+00:00",
+  "inputKind": "hypothetical deterministic sequences only; no live outcome file opened",
+  "lambdas": [0.0078125, 0.015625, 0.03125, 0.0625, 0.125, 0.25, 0.5, 1],
+  "margin": 0.05,
+  "results": [
+    {
+      "periodicPattern": [0],
+      "alpha": 0.025,
+      "firstCrossingBy10000": 117,
+      "notRandomPowerCalculation": true
+    },
+    {
+      "periodicPattern": [0],
+      "alpha": 0.0125,
+      "firstCrossingBy10000": 132,
+      "notRandomPowerCalculation": true
+    },
+    {
+      "periodicPattern": [1, 0, 0, 0, -1, 0, 0, 0, 0, 0],
+      "alpha": 0.025,
+      "firstCrossingBy10000": 861,
+      "notRandomPowerCalculation": true
+    },
+    {
+      "periodicPattern": [1, 0, 0, 0, -1, 0, 0, 0, 0, 0],
+      "alpha": 0.0125,
+      "firstCrossingBy10000": 981,
+      "notRandomPowerCalculation": true
+    },
+    {
+      "periodicPattern": [
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "alpha": 0.025,
+      "firstCrossingBy10000": 289,
+      "notRandomPowerCalculation": true
+    },
+    {
+      "periodicPattern": [
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "alpha": 0.0125,
+      "firstCrossingBy10000": 330,
+      "notRandomPowerCalculation": true
+    },
+    {
+      "periodicPattern": [
+        -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "alpha": 0.025,
+      "firstCrossingBy10000": null,
+      "notRandomPowerCalculation": true
+    },
+    {
+      "periodicPattern": [
+        -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "alpha": 0.0125,
+      "firstCrossingBy10000": null,
+      "notRandomPowerCalculation": true
+    },
+    {
+      "periodicPattern": [
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "alpha": 0.025,
+      "firstCrossingBy10000": 62,
+      "notRandomPowerCalculation": true
+    },
+    {
+      "periodicPattern": [
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "alpha": 0.0125,
+      "firstCrossingBy10000": 77,
+      "notRandomPowerCalculation": true
+    }
+  ]
+}

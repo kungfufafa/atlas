@@ -1,0 +1,72 @@
+bun test v1.3.1 (89fa0f34)
+
+scripts/harness-native-files-mimo-v2/file-delivery-markdown.test.ts:
+(pass) Markdown delivery: repeat-around-backtick-fence [2.20ms]
+(pass) Markdown delivery: repeat-around-tilde-fence
+(pass) Markdown delivery: longer-fence-with-inner-short-fence
+(pass) Markdown delivery: literal-backtick-in-filename
+(pass) Markdown delivery: genuinely-distinct-filenames [0.52ms]
+(pass) Markdown delivery: invalid-escape-still-vetoes [0.13ms]
+(pass) Markdown delivery: link-title-is-not-path [0.06ms]
+(pass) Markdown delivery: angle-link-with-space [0.07ms]
+(pass) Markdown delivery: balanced-parentheses-link [0.01ms]
+(pass) Markdown delivery: link-label-not-second-delivery
+(pass) Markdown delivery: standalone-fenced-path [0.12ms]
+(pass) Markdown delivery: second-standalone-fenced-path-remains-ambiguous [0.01ms]
+(pass) Markdown delivery: bare-unmatched-backtick-not-silently-trimmed [0.06ms]
+(pass) Markdown delivery: percent-encoding-and-equivalent-path-deduplicate
+(pass) strong, list and reference-link syntax preserve one visible path [0.85ms]
+(pass) pinned existing parser bytes are checked before source capture [2.26ms]
+(pass) visible bare-path text joins formatting and escaped punctuation without inventing candidates [0.29ms]
+
+scripts/harness-native-files-mimo-v2/product-proxy.test.ts:
+(pass) native listener shares session budgets while denying tools and other runs [35.34ms]
+(pass) explicit zero cached tokens remain known without inventing absent cache usage [6.29ms]
+(pass) failed HTTP usage remains evidence and prevents certification after a successful native retry [6.05ms]
+(pass) transport failure cannot silently become zero usage after retry success [6.03ms]
+(pass) successful response without required usage is explicitly uncertifiable [4.24ms]
+(pass) finalization cancels abandoned generation and closes its ledger before returning [5.54ms]
+
+scripts/harness-native-files-mimo-v2/product-proxy-queue.test.ts:
+(pass) client disconnect does not release admitted work before upstream and ledger settle [87.98ms]
+(pass) an aborted queued request never consumes an upstream call and the next request proceeds [171.99ms]
+(pass) disconnect followed by finalization cancels upstream, refuses queued work, and preserves unknown usage [89.90ms]
+(pass) client disconnect cannot release a slot while the upstream response body is incomplete [90.19ms]
+
+scripts/harness-native-files-mimo-v2/file-run.test.ts:
+(pass) complete schedules give equal family weights and reverse each confirmatory pair order [0.85ms]
+(pass) delivery normalization accepts one equivalent path without consulting file contents [0.46ms]
+(pass) missing, contradictory and escaping final delivery cannot choose a passing artifact [0.33ms]
+(pass) artifact binding rejects stale hashes, read-only evidence, duplicate snapshots and symlinks [1.89ms]
+(pass) actual binary preparation keeps exact seeds, immutable source bytes and private expectations outside model inputs [561.07ms]
+(pass) live pilot fails admission before key access when no frozen manifest exists [1.27ms]
+(pass) code fixtures disclose the exact independent grader contract without hidden expected cases [225.62ms]
+
+scripts/harness-native-files-mimo-v2/product-analysis.test.ts:
+(pass) wire audit rejects wrong models, altered settings and usage without disclosing bodies [0.29ms]
+(pass) all-passing complete file ties remain inconclusive and unknown cache does not fail [49.63ms]
+(pass) missing and duplicate arms stay in intention-to-run, invalidate claims and never pick the passing attempt [89.13ms]
+(pass) start-only, duplicate end and orphan end retain lifecycle counts and uncertain observations [53.39ms]
+(pass) entirely missing observations do not receive an observed tie label [43.23ms]
+(pass) usage errors invalidate certification even if final output is right, while cache-only omissions do not [53.27ms]
+(pass) memory conditions and diagnostic controls never pool or conceal condition losses [87.13ms]
+(pass) a benign extra field lowers strict memory score without changing factual primary score [85.00ms]
+(pass) family and integrity floors veto an attractive aggregate; exploratory runs never claim [209.57ms]
+(pass) bootstrap is deterministic and clusters families while averaging correlated repetitions [139.95ms]
+(pass) unknown comparator usage or elapsed time cannot manufacture a superiority or noninferiority claim [167.53ms]
+(pass) offline archival verification ignores changed checkout stand-in and rejects missing admission or altered archive [1999.69ms]
+(pass) unfrozen scripted pilots use one shared captured input endpoint and reject missing, malformed or differing endpoints [1980.01ms]
+(pass) historical identity audit rejects changed mappings, captured adapter identities and private model labels [3298.98ms]
+(pass) MiMo profile rejects missing, wrong model and changed User-Agent evidence
+(pass) historical evidence rejects substituted compatibility receipts and missing header traces [1382.09ms]
+(pass) parser archive membership and bytes remain mandatory after outer archive hashes are recomputed [3349.46ms]
+(pass) parser implementation and dependency declarations cannot be coherently omitted from historical inventories [2099.93ms]
+
+scripts/harness-native-files-mimo-v2/product-model.test.ts:
+(pass) MiMo stratum preserves corpus, native adapters, schedules and budgets [2.20ms]
+(pass) model metadata binds completed fixed-order probe and leaves capacities unknown [0.42ms]
+
+ 54 pass
+ 0 fail
+ 423 expect() calls
+Ran 54 tests across 6 files. [16.61s]

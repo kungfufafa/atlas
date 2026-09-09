@@ -1,0 +1,8 @@
+{
+  "at": "2026-09-06T23:57:53.788625+00:00",
+  "reason": "Make report completion wording reflect actual all96 review counts; no criteria, judgments, projections, or frozen scores changed. Final sealing remains separate.",
+  "original": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/scripts-versions/render_report.v1.py",
+  "originalSha256": "c5ea495a1af35a3e9254a5434ff85e3f2a91c404461c197bd9b8150ccac4f404",
+  "updated": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/scripts/render_report.py",
+  "updatedSha256": "0babe6298bfd1b91cfb3317c55eb150f45fe91d9ae2b4e7a4a6188cc14bed52c"
+}

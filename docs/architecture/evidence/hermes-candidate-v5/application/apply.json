@@ -1,0 +1,9 @@
+{
+  "at": "2026-09-06T19:26:15.575447+00:00",
+  "command": [
+    "git",
+    "apply",
+    "/private/tmp/atlas-candidate5-integration/combined.patch"
+  ],
+  "exitCode": 0
+}

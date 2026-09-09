@@ -1,0 +1,24 @@
+{
+  "evidenceClass": "actual local PDF/OCR processes and independent pypdf oracle",
+  "fontBytes": 23278008,
+  "ocr": [
+    {
+      "page": 1,
+      "text": "SCAN REVIEW 8642",
+      "truncated": false,
+      "needsOcr": false,
+      "method": "ocr",
+      "ocrLanguage": "eng",
+      "ocrConfidence": 96.312813,
+      "ocrReviewRequired": false
+    }
+  ],
+  "preservation": {
+    "navigationTargets": [1, 3],
+    "outlines": 4,
+    "attachments": 2,
+    "text": "Révision approuvée — تمت المراجعة — 東京"
+  },
+  "sourceUnchanged": true,
+  "status": "passed"
+}

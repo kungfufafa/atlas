@@ -1,0 +1,1533 @@
+diff --git a/apps/server/src/tools/memory-tools.ts b/apps/server/src/tools/memory-tools.ts
+--- a/apps/server/src/tools/memory-tools.ts
++++ b/apps/server/src/tools/memory-tools.ts
+@@ -5,10 +5,16 @@
+ import { z } from "zod";
+ import type { MemoryService } from "../services/memory-service";
+ 
+-const memoryScopeSchema = z
++const memoryWriteScopeSchema = z
++  .enum(["user", "organization", "agent"])
++  .describe(
++    "Audience across sessions within this organization: 'user' for the current user's memory; 'agent' for memory shared with users of the current profile; 'organization' for workspace-shared memory whose changes require an administrator. Choose the intended audience, not the topic."
++  );
++
++const memoryReadScopeSchema = z
+   .enum(["user", "project", "organization", "agent"])
+   .describe(
+-    "Memory scope: 'user' for user preferences, 'project' for workspace/project facts, 'organization' for company facts, 'agent' for profile persona."
++    "Filter by current user, current profile ('agent'), or organization. 'project' is a legacy filter for records owned by the current session only; it does not provide shared project memory. Omitting scope searches the user, agent and organization audiences."
+   );
+ 
+ export const memorySearchInputSchema = z.object({
+@@ -16,7 +22,7 @@
+   query: z
+     .string()
+     .describe("Search keywords or natural language query for memories"),
+-  scope: memoryScopeSchema.optional().describe("Optional scope filter"),
++  scope: memoryReadScopeSchema.optional(),
+ });
+ 
+ export const memoryWriteInputSchema = z.object({
+@@ -33,11 +39,7 @@
+     .optional()
+     .default(1)
+     .describe("Importance from 1 (low) to 5 (critical)"),
+-  projectId: z
+-    .string()
+-    .optional()
+-    .describe("Project ID when scope is 'project'"),
+-  scope: memoryScopeSchema.optional().default("user"),
++  scope: memoryWriteScopeSchema.optional().default("user"),
+   subject: z
+     .string()
+     .optional()
+@@ -60,8 +62,19 @@
+ 
+ export const memoryListInputSchema = z.object({
+   limit: z.number().int().min(1).max(100).optional().default(20),
+-  scope: memoryScopeSchema.optional(),
+-});
++  scope: memoryReadScopeSchema.optional(),
++});
++
++function rejectUnboundProjectWrite(input: unknown): void {
++  if (typeof input !== "object" || input === null) {
++    return;
++  }
++  if (("scope" in input && input.scope === "project") || "projectId" in input) {
++    throw new Error(
++      "Project memory cannot be written without a trusted shared project context. No memory was saved. Choose 'user' for the current user's memory, 'agent' for memory shared with the current profile, or 'organization' for workspace-shared memory with administrator authority. Do not change the intended audience without authorization."
++    );
++  }
++}
+ 
+ function canWriteOrganizationMemory(context: ToolContext): boolean {
+   return context.orgRole === "admin" || context.isPlatformAdmin === true;
+@@ -75,11 +88,7 @@
+   return orgId;
+ }
+ 
+-function resolveOwnerId(
+-  scope: MemoryScope,
+-  context: ToolContext,
+-  projectId?: string
+-): string {
++function resolveOwnerId(scope: MemoryScope, context: ToolContext): string {
+   const principal = principalFromToolContext(context);
+   if (scope === "user") {
+     return principal.userId;
+@@ -92,9 +101,11 @@
+     return profileId;
+   }
+   if (scope === "project") {
+-    const owner = projectId?.trim() || context.sessionId?.trim();
++    const owner = context.sessionId?.trim();
+     if (!owner) {
+-      throw new Error("projectId or sessionId is required for project memory.");
++      throw new Error(
++        "sessionId is required to access legacy session-owned project memory."
++      );
+     }
+     return owner;
+   }
+@@ -132,7 +143,7 @@
+ ): ToolDefinition[] {
+   const memorySearchTool: ToolDefinition = {
+     description:
+-      "Search durable memories across user preferences, project knowledge, organization rules, or agent profile facts.",
++      "Search durable memories for the current user, profile, or organization. An explicit 'project' filter accesses only legacy records owned by the current session, not shared project knowledge.",
+     name: "memory_search",
+     parallelSafe: true,
+     parameters: jsonSchemaFromZod(memorySearchInputSchema),
+@@ -169,11 +180,14 @@
+ 
+   const memoryWriteTool: ToolDefinition = {
+     description:
+-      "Save an independent durable fact, preference, or operating guideline for the user, project, organization, or agent. Existing facts are preserved, even with the same subject; an exact repeated fact reuses its record. For a correction or withdrawal of an existing fact, use memory_update on its ID rather than adding another current version.",
++      "Save an independent durable fact, preference, or operating guideline for the current user, profile, or organization across sessions. Scope selects who can access it; shared project context is not supported. Existing facts are preserved, even with the same subject; an exact repeated fact reuses its record. For a correction or withdrawal of an existing fact, use memory_update on its ID rather than adding another current version.",
+     name: "memory_write",
+     parallelSafe: false,
+     parameters: jsonSchemaFromZod(memoryWriteInputSchema),
+     async run(input, context) {
++      // Reject legacy arguments before Zod can strip an unknown projectId and
++      // accidentally save the fact for a different audience.
++      rejectUnboundProjectWrite(input);
+       const parsed = memoryWriteInputSchema.parse(input);
+       const orgId = requireOrgId(context);
+       parsed.content = applyRedactionBoundary(parsed.content, "memory");
+@@ -185,7 +199,7 @@
+           "Workspace Admin access required to write organization memories."
+         );
+       }
+-      const ownerId = resolveOwnerId(parsed.scope, context, parsed.projectId);
++      const ownerId = resolveOwnerId(parsed.scope, context);
+ 
+       const saved = await memoryService.writeMemory(
+         orgId,
+@@ -264,7 +278,7 @@
+ 
+   const memoryListTool: ToolDefinition = {
+     description:
+-      "List durable memories for the current user, agent, or organization.",
++      "List durable memories for the current user, profile, or organization. An explicit 'project' filter lists only legacy records owned by the current session, not shared project knowledge.",
+     name: "memory_list",
+     parallelSafe: true,
+     parameters: jsonSchemaFromZod(memoryListInputSchema),
+diff --git a/apps/server/src/tools/memory-tools-dedup.test.ts b/apps/server/src/tools/memory-tools-dedup.test.ts
+--- a/apps/server/src/tools/memory-tools-dedup.test.ts
++++ b/apps/server/src/tools/memory-tools-dedup.test.ts
+@@ -251,7 +251,7 @@
+       }
+     });
+ 
+-    test("deduplication does not cross organization, user, agent or project ownership", async () => {
++    test("deduplication does not cross organization, user or agent ownership", async () => {
+       const f = await fixture(adapter);
+       try {
+         const fact = {
+@@ -268,13 +268,11 @@
+             { ...fact, scope: "agent" },
+             { ...principal, profileId: "other-agent" },
+           ],
+-          [{ ...fact, projectId: "project-a", scope: "project" }, principal],
+-          [{ ...fact, projectId: "project-b", scope: "project" }, principal],
+           [{ ...fact, scope: "organization" }, principal],
+         ] as const) {
+           ids.add((await f.run("memory_write", input, context)).id);
+         }
+-        expect(ids.size).toBe(8);
++        expect(ids.size).toBe(6);
+         const privateRows = await f.run("memory_search", {
+           query: "service_contact",
+           scope: "user",
+diff --git a/apps/server/src/tools/memory-scope-contract.test.ts b/apps/server/src/tools/memory-scope-contract.test.ts
+new file mode 100644
+--- /dev/null
++++ b/apps/server/src/tools/memory-scope-contract.test.ts
+@@ -0,0 +1,410 @@
++import { describe, expect, test } from "bun:test";
++import { mkdtempSync, rmSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import type { ToolContext } from "@atlas/core";
++import {
++  createInMemoryDatabaseAdapter,
++  createSqliteDatabase,
++  type DatabaseAdapter,
++} from "@atlas/db";
++import { MemoryService } from "../services/memory-service";
++import { createMemoryTools } from "./memory-tools";
++
++const context: ToolContext = {
++  orgId: "scope-workspace",
++  orgRole: "admin",
++  profileId: "scope-assistant",
++  sessionId: "conversation-one",
++  userId: "scope-user",
++};
++const nextSession = { ...context, sessionId: "conversation-two" };
++const otherUser = { ...nextSession, userId: "another-user" };
++const otherProfile = { ...nextSession, profileId: "another-assistant" };
++const otherOrg = { ...nextSession, orgId: "another-workspace" };
++
++async function fixture(kind: "in-memory" | "sqlite") {
++  const directory = mkdtempSync(join(tmpdir(), "memory-scope-contract-"));
++  const file = join(directory, "memory.sqlite");
++  let sqlite = kind === "sqlite" ? await createSqliteDatabase(file) : null;
++  let db: DatabaseAdapter = sqlite?.adapter ?? createInMemoryDatabaseAdapter();
++  const now = new Date().toISOString();
++  for (const id of [context.orgId!, otherOrg.orgId]) {
++    await db.upsertOrganization({
++      createdAt: now,
++      id,
++      name: id,
++      slug: id,
++      updatedAt: now,
++    });
++  }
++  return {
++    close() {
++      sqlite?.close();
++      rmSync(directory, { force: true, recursive: true });
++    },
++    async reopen() {
++      if (sqlite) {
++        sqlite.close();
++        sqlite = await createSqliteDatabase(file);
++        db = sqlite.adapter;
++      }
++    },
++    async run(
++      name: string,
++      input: Record<string, unknown>,
++      selectedContext: ToolContext = context
++    ): Promise<Record<string, unknown>> {
++      const tool = createMemoryTools(new MemoryService(db)).find(
++        (entry) => entry.name === name
++      );
++      if (!tool) {
++        throw new Error(`Missing native tool ${name}`);
++      }
++      return (await tool.run(input, selectedContext)) as Record<
++        string,
++        unknown
++      >;
++    },
++    service() {
++      return new MemoryService(db);
++    },
++  };
++}
++
++function savedMemory(result: Record<string, unknown>): { id: string } {
++  if (typeof result.id !== "string" || !result.id) {
++    throw new Error("Native memory write did not return an ID.");
++  }
++  return { id: result.id };
++}
++
++function ids(result: Record<string, unknown>): string[] {
++  return (result.memories as { id: string }[]).map((row) => row.id).sort();
++}
++
++for (const adapter of ["in-memory", "sqlite"] as const) {
++  describe(`${adapter} native memory scope contract`, () => {
++    test("supported audiences persist across sessions without widening user, profile or organization access", async () => {
++      const f = await fixture(adapter);
++      try {
++        const privateFact = savedMemory(
++          await f.run("memory_write", {
++            content: "Prefer a window seat on the train.",
++            subject: "train_seating",
++          })
++        );
++        const profileFact = savedMemory(
++          await f.run("memory_write", {
++            content: "The assistant formats handover notes as a checklist.",
++            scope: "agent",
++            subject: "handover_format",
++          })
++        );
++        const orgFact = savedMemory(
++          await f.run("memory_write", {
++            content: "The shared supply cupboard is beside reception.",
++            scope: "organization",
++            subject: "supply_location",
++          })
++        );
++        await f.reopen();
++        const expected = [privateFact.id, profileFact.id, orgFact.id].sort();
++        expect(ids(await f.run("memory_list", {}, nextSession))).toEqual(
++          expected
++        );
++        for (const [query, scope, id] of [
++          ["train_seating", "user", privateFact.id],
++          ["handover_format", "agent", profileFact.id],
++          ["supply_location", "organization", orgFact.id],
++        ] as const) {
++          expect(
++            ids(await f.run("memory_search", { query, scope }, nextSession))
++          ).toEqual([id]);
++          expect(
++            ids(await f.run("memory_search", { query }, nextSession))
++          ).toEqual([id]);
++        }
++        expect(ids(await f.run("memory_list", {}, otherUser))).toEqual(
++          [profileFact.id, orgFact.id].sort()
++        );
++        expect(ids(await f.run("memory_list", {}, otherProfile))).toEqual(
++          [privateFact.id, orgFact.id].sort()
++        );
++        expect(ids(await f.run("memory_list", {}, otherOrg))).toEqual([]);
++        expect(
++          ids(
++            await f.run("memory_search", { query: "train_seating" }, otherUser)
++          )
++        ).toEqual([]);
++        expect(
++          ids(
++            await f.run(
++              "memory_search",
++              { query: "handover_format" },
++              otherProfile
++            )
++          )
++        ).toEqual([]);
++        for (const foreignContext of [otherUser, otherOrg]) {
++          await expect(
++            f.run(
++              "memory_update",
++              { content: "changed", id: privateFact.id },
++              foreignContext
++            )
++          ).rejects.toThrow();
++          await expect(
++            f.run("memory_delete", { id: privateFact.id }, foreignContext)
++          ).rejects.toThrow();
++        }
++        await expect(
++          f.run(
++            "memory_update",
++            { content: "changed", id: profileFact.id },
++            otherProfile
++          )
++        ).rejects.toThrow();
++        await expect(
++          f.run("memory_delete", { id: profileFact.id }, otherProfile)
++        ).rejects.toThrow();
++        await f.run(
++          "memory_update",
++          { content: "Prefer an aisle seat on the train.", id: privateFact.id },
++          nextSession
++        );
++        await f.reopen();
++        expect(
++          (await f.service().getMemory(context.orgId!, privateFact.id))?.content
++        ).toBe("Prefer an aisle seat on the train.");
++        expect(
++          (await f.service().getMemory(context.orgId!, profileFact.id))?.content
++        ).toBe("The assistant formats handover notes as a checklist.");
++      } finally {
++        f.close();
++      }
++    });
++
++    test("unbound project writes and any supplied projectId fail without inserting or changing records", async () => {
++      const f = await fixture(adapter);
++      try {
++        await f.run("memory_write", {
++          content: "Keep the existing private note.",
++        });
++        const before = await f.service().listMemories(context.orgId!);
++        for (const input of [
++          { scope: "project" },
++          { projectId: "renovation-notes", scope: "project" },
++          { projectId: "renovation-notes" },
++          { projectId: "renovation-notes", scope: "user" },
++          { projectId: "renovation-notes", scope: "agent" },
++          { projectId: "renovation-notes", scope: "organization" },
++          { projectId: "" },
++          { projectId: null },
++          { projectId: undefined },
++        ]) {
++          await expect(
++            f.run("memory_write", {
++              content: "Remember the meeting room layout.",
++              ...input,
++            })
++          ).rejects.toThrow();
++          expect(await f.service().listMemories(context.orgId!)).toEqual(
++            before
++          );
++        }
++        await f.reopen();
++        expect(await f.service().listMemories(context.orgId!)).toEqual(before);
++      } finally {
++        f.close();
++      }
++    });
++
++    test("organization writes, corrections and erasure preserve administrator authority", async () => {
++      const f = await fixture(adapter);
++      try {
++        const saved = savedMemory(
++          await f.run("memory_write", {
++            content: "Office deliveries arrive at the west entrance.",
++            scope: "organization",
++          })
++        );
++        await f.reopen();
++        const member = { ...nextSession, orgRole: "member" as const };
++        const before = await f.service().listMemories(context.orgId!);
++        await expect(
++          f.run(
++            "memory_write",
++            { content: "Unauthorized shared note.", scope: "organization" },
++            member
++          )
++        ).rejects.toThrow();
++        await expect(
++          f.run(
++            "memory_update",
++            { content: "Unauthorized change.", id: saved.id },
++            member
++          )
++        ).rejects.toThrow();
++        await expect(
++          f.run("memory_delete", { id: saved.id }, member)
++        ).rejects.toThrow();
++        expect(await f.service().listMemories(context.orgId!)).toEqual(before);
++        const platformAdmin = { ...member, isPlatformAdmin: true };
++        await f.run(
++          "memory_update",
++          {
++            content: "Office deliveries arrive at the east entrance.",
++            id: saved.id,
++          },
++          platformAdmin
++        );
++        const another = savedMemory(
++          await f.run(
++            "memory_write",
++            {
++              content: "Reception accepts parcels until noon.",
++              scope: "organization",
++            },
++            platformAdmin
++          )
++        );
++        await f.reopen();
++        expect(
++          ids(await f.run("memory_list", { scope: "organization" }, member))
++        ).toEqual([saved.id, another.id].sort());
++        await f.run("memory_delete", { id: saved.id }, nextSession);
++        expect(
++          await f.service().getMemory(context.orgId!, saved.id)
++        ).toBeNull();
++      } finally {
++        f.close();
++      }
++    });
++
++    test("legacy session-owned project rows remain explicitly accessible only in their original session", async () => {
++      const f = await fixture(adapter);
++      try {
++        // Direct seeding exercises old stored-data compatibility, not learning.
++        const legacy = await f.service().writeMemory(
++          context.orgId!,
++          {
++            confidence: 0.4,
++            content: "The archive labels use blue ink.",
++            importance: 3,
++            ownerId: context.sessionId!,
++            scope: "project",
++            subject: "archive_labels",
++          },
++          { strategy: "preserve" }
++        );
++        const arbitraryOwner = await f.service().writeMemory(
++          context.orgId!,
++          {
++            content: "The map cabinet contains the floor plans.",
++            ownerId: "building-records",
++            scope: "project",
++            subject: "floor_plans",
++          },
++          { strategy: "preserve" }
++        );
++        await f.reopen();
++        expect(await f.service().getMemory(context.orgId!, legacy.id)).toEqual(
++          legacy
++        );
++        expect(ids(await f.run("memory_list", {}))).toEqual([]);
++        expect(
++          ids(await f.run("memory_search", { query: "archive_labels" }))
++        ).toEqual([]);
++        expect(ids(await f.run("memory_list", { scope: "project" }))).toEqual([
++          legacy.id,
++        ]);
++        expect(
++          ids(
++            await f.run("memory_search", {
++              query: "archive_labels",
++              scope: "project",
++            })
++          )
++        ).toEqual([legacy.id]);
++        for (const foreignContext of [
++          nextSession,
++          { ...context, orgId: otherOrg.orgId },
++        ]) {
++          expect(
++            ids(
++              await f.run("memory_list", { scope: "project" }, foreignContext)
++            )
++          ).toEqual([]);
++          expect(
++            ids(
++              await f.run(
++                "memory_search",
++                { query: "archive_labels", scope: "project" },
++                foreignContext
++              )
++            )
++          ).toEqual([]);
++          await expect(
++            f.run(
++              "memory_update",
++              { content: "changed", id: legacy.id },
++              foreignContext
++            )
++          ).rejects.toThrow();
++          await expect(
++            f.run("memory_delete", { id: legacy.id }, foreignContext)
++          ).rejects.toThrow();
++        }
++        for (const name of ["memory_search", "memory_list"]) {
++          await expect(
++            f.run(
++              name,
++              { query: "archive_labels", scope: "project" },
++              { ...context, sessionId: undefined }
++            )
++          ).rejects.toThrow();
++          await expect(
++            f.run(
++              name,
++              { query: "archive_labels", scope: "project" },
++              { ...context, userId: undefined }
++            )
++          ).rejects.toThrow();
++        }
++        await expect(
++          f.run("memory_update", { content: "changed", id: arbitraryOwner.id })
++        ).rejects.toThrow();
++        await expect(
++          f.run("memory_delete", { id: arbitraryOwner.id })
++        ).rejects.toThrow();
++        await f.run("memory_update", {
++          content: "The archive labels use black ink.",
++          id: legacy.id,
++        });
++        await f.reopen();
++        expect(await f.service().getMemory(context.orgId!, legacy.id)).toEqual(
++          expect.objectContaining({
++            confidence: legacy.confidence,
++            content: "The archive labels use black ink.",
++            createdAt: legacy.createdAt,
++            importance: legacy.importance,
++            ownerId: legacy.ownerId,
++            scope: legacy.scope,
++            subject: legacy.subject,
++          })
++        );
++        await f.run("memory_delete", { id: legacy.id });
++        await f.reopen();
++        expect(
++          await f.service().getMemory(context.orgId!, legacy.id)
++        ).toBeNull();
++        expect(
++          await f.service().getMemory(context.orgId!, arbitraryOwner.id)
++        ).toEqual(arbitraryOwner);
++      } finally {
++        f.close();
++      }
++    });
++  });
++}
+--- a/apps/server/src/tools/conversation-tools.test.ts
++++ b/apps/server/src/tools/conversation-tools.test.ts
+@@ -106,7 +106,6 @@
+       id,
+       name: id,
+       passwordHash: "hash",
+-      role: "admin",
+       updatedAt: now,
+     });
+   }
+@@ -249,7 +248,6 @@
+       { query: "archived-build-output" },
+       toolContext("member")
+     )) as { results: Array<{ archiveId: string; sessionId: string }> };
+-    expect(found.results).toHaveLength(1);
+     expect(found.results[0]?.archiveId).toBe(archives[0]?.id);
+     const recovered = (await getConversationTool.run(
+       { archiveId: found.results[0]?.archiveId, sessionId },
+@@ -302,8 +300,15 @@
+     const searchResult = (await searchChatsTool.run(
+       { query: "private decision" },
+       toolContext("member")
++    )) as { results: Array<{ sessionId: string }> };
++    expect(searchResult.results.map(({ sessionId }) => sessionId)).toEqual([
++      OWN_SESSION,
++    ]);
++    const privateOnly = (await searchChatsTool.run(
++      { query: "private" },
++      toolContext("member")
+     )) as { count: number };
+-    expect(searchResult.count).toBe(0);
++    expect(privateOnly.count).toBe(0);
+   });
+ 
+   test("org admin remains user-scoped at the tool boundary", async () => {
+@@ -348,8 +353,15 @@
+     const searchResult = (await searchChatsTool.run(
+       { query: "launch decision" },
+       toolContext("member", { orgId: ORG_BETA, userId: USER_TWO })
++    )) as { results: Array<{ sessionId: string }> };
++    expect(searchResult.results.map(({ sessionId }) => sessionId)).toEqual([
++      OTHER_ORG_SESSION,
++    ]);
++    const launchOnly = (await searchChatsTool.run(
++      { query: "launch" },
++      toolContext("member", { orgId: ORG_BETA, userId: USER_TWO })
+     )) as { count: number };
+-    expect(searchResult.count).toBe(0);
++    expect(launchOnly.count).toBe(0);
+ 
+     await expect(
+       getConversationTool.run(
+--- a/apps/server/src/tools/conversation-tools.ts
++++ b/apps/server/src/tools/conversation-tools.ts
+@@ -19,7 +19,9 @@
+   query: z
+     .string()
+     .min(1)
+-    .describe("Search query to find in past conversations and sessions"),
++    .describe(
++      "Keywords or a natural-language query for past conversations. Distinctive names and terms improve lexical matching."
++    ),
+ });
+ 
+ export const getConversationInputSchema = z.object({
+@@ -69,6 +71,7 @@
+         before: parsed.before,
+         excludeSuperAgent,
+         limit: parsed.limit,
++        matchMode: "keywords",
+         profileId: parsed.profileId,
+         userId: principal.userId,
+       });
+--- a/packages/db/src/adapters/in-memory.ts
++++ b/packages/db/src/adapters/in-memory.ts
+@@ -5,6 +5,10 @@
+ } from "@atlas/core";
+ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+ import { LLM_USAGE_STATS_ID } from "../constants";
++import {
++  ConversationKeywordSearch,
++  readConversationMessagePayload,
++} from "../conversation-keyword-search";
+ import { isExactMemoryFact } from "../memory-identity";
+ import {
+   boundedMemoryTerms,
+@@ -143,27 +147,6 @@
+     currentConfig !== null &&
+     currentConfig === canonicalJson(expected.handlerConfig)
+   );
+-}
+-
+-function readConversationMessagePayload(payload: unknown): {
+-  role: string;
+-  text: string;
+-} {
+-  if (typeof payload === "string") {
+-    return { role: "user", text: payload };
+-  }
+-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+-    return { role: "user", text: JSON.stringify(payload ?? "") };
+-  }
+-
+-  const record = payload as Record<string, unknown>;
+-  return {
+-    role: typeof record.role === "string" ? record.role : "user",
+-    text:
+-      typeof record.content === "string"
+-        ? record.content
+-        : JSON.stringify(record.content ?? ""),
+-  };
+ }
+ 
+ const IN_MEMORY_ACTIVE_EXECUTION_STATUSES = new Set([
+@@ -2319,6 +2302,14 @@
+         return [];
+       }
+ 
++      const keywords =
++        options.matchMode === "keywords"
++          ? new ConversationKeywordSearch(clean, options.limit)
++          : undefined;
++      if (keywords?.empty) {
++        return [];
++      }
++
+       const needle = clean.toLowerCase();
+       const results = [];
+       for (const session of sessions.values()) {
+@@ -2353,6 +2344,15 @@
+           );
+         }
+         const seen = new Set<string>();
++        if (keywords) {
++          candidates.sort(
++            (left, right) =>
++              Number(Boolean(left.archiveId)) -
++                Number(Boolean(right.archiveId)) ||
++              right.createdAt.localeCompare(left.createdAt) ||
++              Buffer.compare(Buffer.from(right.id), Buffer.from(left.id))
++          );
++        }
+         for (const message of candidates) {
+           const serialized = JSON.stringify(message.payload);
+           if (seen.has(serialized)) {
+@@ -2366,6 +2366,26 @@
+             continue;
+           }
+           const parsed = readConversationMessagePayload(message.payload);
++          if (keywords) {
++            keywords.add(
++              {
++                ...(message.archiveId
++                  ? {
++                      archivedAt: message.createdAt,
++                      archiveId: message.archiveId,
++                    }
++                  : {}),
++                createdAt: message.createdAt,
++                messageId: message.id,
++                profileId: session.profileId,
++                role: parsed.role,
++                sessionId: session.id,
++                sessionTitle: session.title ?? null,
++              },
++              parsed.text
++            );
++            continue;
++          }
+           const matchIndex = parsed.text.toLowerCase().indexOf(needle);
+           if (matchIndex < 0) {
+             continue;
+@@ -2390,6 +2410,9 @@
+         }
+       }
+ 
++      if (keywords) {
++        return keywords.results();
++      }
+       results.sort((left, right) =>
+         right.createdAt.localeCompare(left.createdAt)
+       );
+--- a/packages/db/src/adapters/sqlite.ts
++++ b/packages/db/src/adapters/sqlite.ts
+@@ -8,6 +8,10 @@
+ } from "@atlas/core";
+ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+ import { LLM_USAGE_STATS_ID, WORKSPACE_SETTINGS_ID } from "../constants";
++import {
++  ConversationKeywordSearch,
++  readConversationMessagePayload,
++} from "../conversation-keyword-search";
+ import { ensureDatabaseDirectory, resolveDatabasePath } from "../database-url";
+ import { isExactMemoryFact } from "../memory-identity";
+ import {
+@@ -68,6 +72,11 @@
+   StoredUserRecord,
+   StoredWorkspaceSettingsRecord,
+ } from "../types";
++
++// json_each decodes scalar elements. Re-encode them so a single JSON parse
++// preserves string/object identity in both deduplication and transcript reads.
++const ARCHIVED_CONVERSATION_PAYLOAD_SQL =
++  "CASE WHEN j.type IN ('object', 'array') THEN j.value WHEN j.type IN ('true', 'false') THEN j.type ELSE json_quote(j.value) END";
+ 
+ export interface SqliteDatabase {
+   adapter: DatabaseAdapter;
+@@ -3100,7 +3109,7 @@
+         archive
+           ? db
+               .prepare(
+-                "SELECT a.id || ':' || j.key AS id, CAST(j.key AS INTEGER) AS seq, j.value AS payload, a.created_at FROM session_history_archives a, json_each(a.messages) j WHERE a.id = ? AND a.session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?"
++                `SELECT a.id || ':' || j.key AS id, CAST(j.key AS INTEGER) AS seq, ${ARCHIVED_CONVERSATION_PAYLOAD_SQL} AS payload, a.created_at FROM session_history_archives a, json_each(a.messages) j WHERE a.id = ? AND a.session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?`
+               )
+               .all(options.archiveId!, sessionId, limit, offset)
+           : db
+@@ -3116,18 +3125,13 @@
+       }>;
+ 
+       const messages: StoredConversationMessageItem[] = messageRows.map((m) => {
+-        let text = "";
+-        let role = "user";
++        let payload: unknown;
+         try {
+-          const parsed = JSON.parse(m.payload);
+-          role = parsed.role || "user";
+-          text =
+-            typeof parsed.content === "string"
+-              ? parsed.content
+-              : JSON.stringify(parsed.content || "");
++          payload = JSON.parse(m.payload);
+         } catch {
+-          text = m.payload;
++          payload = m.payload;
+         }
++        const { text, role } = readConversationMessagePayload(payload);
+         return {
+           createdAt: m.created_at,
+           id: m.id,
+@@ -4396,6 +4400,17 @@
+         return [];
+       }
+ 
++      const keywords =
++        options.matchMode === "keywords"
++          ? new ConversationKeywordSearch(clean, options.limit)
++          : undefined;
++      if (keywords?.empty) {
++        return [];
++      }
++
++      const archivedPayload = keywords
++        ? ARCHIVED_CONVERSATION_PAYLOAD_SQL
++        : "j.value";
+       let sql = `
+         WITH all_messages AS (
+           SELECT m.id AS message_id, m.session_id, m.payload, m.created_at, NULL AS archive_id
+@@ -4403,7 +4418,7 @@
+           INNER JOIN sessions owner ON owner.id = m.session_id
+           WHERE owner.org_id = ?
+           UNION ALL
+-          SELECT a.id || ':' || j.key AS message_id, a.session_id, j.value AS payload,
++          SELECT a.id || ':' || j.key AS message_id, a.session_id, ${archivedPayload} AS payload,
+             a.created_at, a.id AS archive_id
+           FROM session_history_archives a
+           INNER JOIN sessions owner ON owner.id = a.session_id
+@@ -4450,6 +4465,45 @@
+       if (options.before) {
+         sql += " AND m.created_at <= ?";
+         params.push(options.before);
++      }
++
++      if (keywords) {
++        // Keep all existing tenant/owner/profile/date/archive guards. Stream
++        // eligible rows into a bounded collector; recent weak matches must not
++        // hide older relevant messages through a premature SQL result limit.
++        const rows = db.prepare(sql).iterate(...params) as Iterable<{
++          archive_id: string | null;
++          created_at: string;
++          message_id: string;
++          payload: string;
++          profile_id: string;
++          session_id: string;
++          session_title: string | null;
++        }>;
++        for (const row of rows) {
++          let payload: unknown;
++          try {
++            payload = JSON.parse(row.payload);
++          } catch {
++            payload = row.payload;
++          }
++          const parsed = readConversationMessagePayload(payload);
++          keywords.add(
++            {
++              ...(row.archive_id
++                ? { archivedAt: row.created_at, archiveId: row.archive_id }
++                : {}),
++              createdAt: row.created_at,
++              messageId: row.message_id,
++              profileId: row.profile_id,
++              role: parsed.role,
++              sessionId: row.session_id,
++              sessionTitle: row.session_title,
++            },
++            parsed.text
++          );
++        }
++        return keywords.results();
+       }
+ 
+       sql += " AND m.payload LIKE ?";
+--- /dev/null
++++ b/packages/db/src/conversation-keyword-search.test.ts
+@@ -0,0 +1,475 @@
++import { afterEach, describe, expect, test } from "bun:test";
++import { mkdtemp } from "node:fs/promises";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import type { ChatMessage, ToolContext } from "@atlas/core";
++import { createConversationTools } from "../../../apps/server/src/tools/conversation-tools";
++import { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
++import { createSqliteDatabase, type SqliteDatabase } from "./adapters/sqlite";
++import type { DatabaseAdapter, StoredConversationSearchResult } from "./types";
++
++const now = "2026-02-01T12:00:00.000Z";
++const context: ToolContext = {
++  orgId: "workshop",
++  orgRole: "member",
++  profileId: "crafts",
++  sessionId: "next-session",
++  userId: "reader",
++};
++
++async function seed(db: DatabaseAdapter): Promise<void> {
++  for (const id of ["workshop", "other-workshop"]) {
++    await db.upsertOrganization({
++      createdAt: now,
++      id,
++      name: id,
++      slug: id,
++      updatedAt: now,
++    });
++  }
++  for (const id of ["reader", "other-reader"]) {
++    await db.createUser({
++      createdAt: now,
++      email: `${id}@example.test`,
++      id,
++      name: id,
++      passwordHash: "test-only",
++      updatedAt: now,
++    });
++  }
++  for (const profile of [
++    { id: "crafts", isSuper: false, orgId: "workshop" },
++    { id: "super", isSuper: true, orgId: "workshop" },
++    { id: "other-crafts", isSuper: false, orgId: "other-workshop" },
++  ]) {
++    const record = {
++      ...profile,
++      createdAt: now,
++      model: null,
++      name: profile.id,
++      systemPrompt: "",
++      updatedAt: now,
++    };
++    await db.upsertProfile(record);
++  }
++  for (const session of [
++    { id: "own", orgId: "workshop", profileId: "crafts", userId: "reader" },
++    {
++      id: "foreign-user",
++      orgId: "workshop",
++      profileId: "crafts",
++      userId: "other-reader",
++    },
++    {
++      id: "foreign-org",
++      orgId: "other-workshop",
++      profileId: "other-crafts",
++      userId: "reader",
++    },
++    {
++      id: "super-session",
++      orgId: "workshop",
++      profileId: "super",
++      userId: "reader",
++    },
++  ]) {
++    await db.upsertSession({
++      ...session,
++      agentQuestionnaire: null,
++      agentTodos: [],
++      channel: "web",
++      createdAt: now,
++      modelOverride: null,
++      title: null,
++    });
++  }
++}
++
++async function add(
++  db: DatabaseAdapter,
++  id: string,
++  payload: unknown,
++  options: { sessionId?: string; createdAt?: string; seq?: number } = {}
++): Promise<void> {
++  const sessionId = options.sessionId ?? "own";
++  await db.appendMessagesForSession(sessionId, [
++    {
++      createdAt: options.createdAt ?? now,
++      id,
++      payload,
++      seq: options.seq ?? 0,
++      sessionId,
++    },
++  ]);
++}
++
++for (const adapterName of ["in-memory", "sqlite"] as const) {
++  describe(`conversation keywords: ${adapterName}`, () => {
++    let database: SqliteDatabase | undefined;
++    afterEach(() => database?.close());
++    async function fresh(): Promise<DatabaseAdapter> {
++      let db: DatabaseAdapter;
++      if (adapterName === "sqlite") {
++        database = await createSqliteDatabase(
++          join(
++            await mkdtemp(join(tmpdir(), "atlas-conversation-keywords-")),
++            "history.db"
++          )
++        );
++        db = database.adapter;
++      } else {
++        db = createInMemoryDatabaseAdapter();
++      }
++      await seed(db);
++      return db;
++    }
++
++    test("preserves legacy scalar message text and type across search and transcript retrieval", async () => {
++      const db = await fresh();
++      const object = {
++        content: "Visible pottery",
++        marker: "needle",
++        role: "assistant",
++      };
++      const raw = JSON.stringify(object);
++      await add(db, "object", object);
++      await add(db, "number-string", "42", { seq: 1 });
++      await add(db, "null-string", "null", { seq: 2 });
++      // Simulate legacy persisted data; new writers use ChatMessage objects.
++      const legacy = [raw, "42", "null", 42, true, "true", null, 0, false];
++      await db.replaceMessagesForSession(
++        "own",
++        await db.listMessagesForSession("own"),
++        [
++          {
++            createdAt: "2026-01-01T00:00:00.000Z",
++            id: "legacy",
++            messages: JSON.parse(JSON.stringify(legacy)),
++            sessionId: "own",
++          },
++        ]
++      );
++      if (database) {
++        database.close();
++        await database.reopen();
++      }
++      const options = { matchMode: "keywords" as const, userId: "reader" };
++      const needle = await db.searchConversationMessages(
++        "workshop",
++        "needle",
++        options
++      );
++      expect(needle).toHaveLength(1);
++      expect(needle[0]).toMatchObject({
++        archiveId: "legacy",
++        matchedSnippet: raw,
++        role: "user",
++      });
++      expect(
++        (await db.searchConversationMessages("workshop", "pottery", options))
++          .map(({ role }) => role)
++          .sort()
++      ).toEqual(["assistant", "user"]);
++      expect(
++        (await db.searchConversationMessages("workshop", "42", options)).map(
++          ({ messageId }) => messageId
++        )
++      ).toEqual(["number-string", "legacy:3"]);
++      expect(
++        (await db.searchConversationMessages("workshop", "null", options)).map(
++          ({ messageId }) => messageId
++        )
++      ).toEqual(["null-string"]);
++      expect(
++        await db.searchConversationMessages("workshop", "true", options)
++      ).toHaveLength(2);
++      const archive = await db.getConversationHistory("workshop", "own", {
++        archiveId: "legacy",
++        userId: "reader",
++      });
++      expect(archive?.messages.map(({ text }) => text)).toEqual([
++        raw,
++        "42",
++        "null",
++        "42",
++        "true",
++        "true",
++        '""',
++        "0",
++        "false",
++      ]);
++      expect(archive?.messages[0]?.role).toBe("user");
++      const active = await db.getConversationHistory("workshop", "own", {
++        userId: "reader",
++      });
++      expect(active?.messages.map(({ text }) => text)).toEqual([
++        "Visible pottery",
++        "42",
++        "null",
++      ]);
++    });
++
++    test("uses identical binary ID ordering for equal-date duplicate messages", async () => {
++      const db = await fresh();
++      const payload: ChatMessage = {
++        content: "Clay workshop schedule",
++        role: "user",
++      };
++      await add(db, "a", payload);
++      await add(db, "Z", payload, { seq: 1 });
++      const results = await db.searchConversationMessages(
++        "workshop",
++        "clay schedule",
++        { matchMode: "keywords", userId: "reader" }
++      );
++      expect(results.map(({ messageId }) => messageId)).toEqual(["a"]);
++    });
++
++    test("native topic lookup finds separated terms and ranks before limiting older history", async () => {
++      const db = await fresh();
++      await add(db, "decision", {
++        content:
++          "The lacquer cures overnight. Our polishing schedule is Thursday.",
++        role: "user",
++      });
++      for (let index = 0; index < 120; index += 1) {
++        await add(
++          db,
++          `recent-${index}`,
++          { content: `Lacquer color swatch ${index}.`, role: "user" },
++          { createdAt: "2026-02-02T12:00:00.000Z", seq: index + 1 }
++        );
++      }
++      const tool = createConversationTools(db).find(
++        ({ name }) => name === "search_chats"
++      )!;
++      const result = (await tool.run(
++        { limit: 1, query: "What is the polishing schedule for lacquer?" },
++        context
++      )) as { results: StoredConversationSearchResult[] };
++      expect(result.results.map(({ messageId }) => messageId)).toEqual([
++        "decision",
++      ]);
++      expect(result.results[0]?.matchedSnippet).toContain(
++        "polishing schedule is Thursday"
++      );
++      expect(
++        await db.searchConversationMessages("workshop", "polishing lacquer", {
++          userId: "reader",
++        })
++      ).toEqual([]);
++      expect(
++        (
++          await db.searchConversationMessages("workshop", "cures overnight", {
++            userId: "reader",
++          })
++        )[0]?.messageId
++      ).toBe("decision");
++    });
++
++    test("keeps tenant, caller, profile and Super Agent filters before ranking", async () => {
++      const db = await fresh();
++      for (const sessionId of [
++        "own",
++        "foreign-user",
++        "foreign-org",
++        "super-session",
++      ]) {
++        await add(
++          db,
++          `${sessionId}-match`,
++          { content: "Binding glue drying schedule", role: "user" },
++          { sessionId }
++        );
++      }
++      const options = {
++        excludeSuperAgent: true,
++        matchMode: "keywords" as const,
++        userId: "reader",
++      };
++      expect(
++        (
++          await db.searchConversationMessages(
++            "workshop",
++            "glue schedule",
++            options
++          )
++        ).map(({ sessionId }) => sessionId)
++      ).toEqual(["own"]);
++      expect(
++        await db.searchConversationMessages("workshop", "glue schedule", {
++          ...options,
++          profileId: "other-crafts",
++        })
++      ).toEqual([]);
++      expect(
++        (
++          await db.searchConversationMessages(
++            "other-workshop",
++            "glue schedule",
++            options
++          )
++        ).map(({ sessionId }) => sessionId)
++      ).toEqual(["foreign-org"]);
++    });
++
++    test("archives remain searchable after reopen with stable active duplicate preference and date bounds", async () => {
++      const db = await fresh();
++      const duplicate: ChatMessage = {
++        content: "Glaze testing temperatures",
++        name: "read_file",
++        role: "tool",
++        toolCallId: "read-old",
++      };
++      await add(db, "live-copy", duplicate);
++      await db.replaceMessagesForSession(
++        "own",
++        await db.listMessagesForSession("own"),
++        [
++          {
++            createdAt: "2026-01-01T00:00:00.000Z",
++            id: "archive-craft",
++            messages: [
++              duplicate,
++              { content: "Ceramic bisque firing: 980 degrees.", role: "user" },
++            ],
++            sessionId: "own",
++          },
++        ]
++      );
++      if (database) {
++        database.close();
++        await database.reopen();
++      }
++      const options = { matchMode: "keywords" as const, userId: "reader" };
++      const archived = await db.searchConversationMessages(
++        "workshop",
++        "bisque degrees",
++        options
++      );
++      expect(archived).toHaveLength(1);
++      expect(archived[0]?.archiveId).toBe("archive-craft");
++      const transcript = await db.getConversationHistory("workshop", "own", {
++        archiveId: archived[0]?.archiveId,
++        userId: "reader",
++      });
++      expect(
++        transcript?.messages.some(({ text }) => text.includes("980"))
++      ).toBe(true);
++      const live = await db.searchConversationMessages(
++        "workshop",
++        "glaze temperatures",
++        options
++      );
++      expect(live.map(({ messageId }) => messageId)).toEqual(["live-copy"]);
++      expect(live[0]?.archiveId).toBeUndefined();
++      expect(
++        await db.searchConversationMessages("workshop", "bisque degrees", {
++          ...options,
++          after: now,
++        })
++      ).toEqual([]);
++      expect(
++        await db.searchConversationMessages("workshop", "glaze temperatures", {
++          ...options,
++          before: "2026-01-15T00:00:00.000Z",
++        })
++      ).toEqual([]);
++    });
++
++    test("normalizes lexical spelling, keeps punctuation literal and excludes metadata-only matches", async () => {
++      const db = await fresh();
++      await add(db, "wide", {
++        content: "ＣＡＦＥ reservation confirmed; occupancy is 50%.",
++        role: "user",
++      });
++      await add(
++        db,
++        "plain",
++        {
++          content: "No reservation here.",
++          role: "assistant",
++          thinking: "opaque-private-marker",
++        },
++        { seq: 1 }
++      );
++      const options = { matchMode: "keywords" as const, userId: "reader" };
++      expect(
++        (
++          await db.searchConversationMessages("workshop", "cafe reservation", {
++            ...options,
++            limit: 1,
++          })
++        )[0]?.messageId
++      ).toBe("wide");
++      expect(
++        (await db.searchConversationMessages("workshop", "%", options)).map(
++          ({ messageId }) => messageId
++        )
++      ).toEqual(["wide"]);
++      expect(
++        await db.searchConversationMessages(
++          "workshop",
++          "opaque-private-marker",
++          options
++        )
++      ).toEqual([]);
++      expect(
++        await db.searchConversationMessages("workshop", "assistant", options)
++      ).toEqual([]);
++      expect(
++        await db.searchConversationMessages(
++          "workshop",
++          "and the dengan yang",
++          options
++        )
++      ).toEqual([]);
++      expect(
++        await db.searchConversationMessages("workshop", "reservation", {
++          ...options,
++          limit: 0,
++        })
++      ).toEqual([]);
++      await add(db, "invoice-target", {
++        content: "Invoice 2048 delivery pending",
++        role: "user",
++      });
++      await add(
++        db,
++        "invoice-other",
++        { content: "Invoice 1976 delivery pending", role: "user" },
++        { createdAt: "2026-02-02T12:00:00.000Z" }
++      );
++      expect(
++        (
++          await db.searchConversationMessages("workshop", "invoice 2048", {
++            ...options,
++            limit: 1,
++          })
++        )[0]?.messageId
++      ).toBe("invoice-target");
++    });
++
++    test("chooses the newest identical current message before applying date filters", async () => {
++      const db = await fresh();
++      const payload: ChatMessage = {
++        content: "Kiln maintenance schedule",
++        role: "user",
++      };
++      await add(db, "older", payload, {
++        createdAt: "2026-01-01T00:00:00.000Z",
++      });
++      await add(db, "newer", payload, { seq: 1 });
++      const result = await db.searchConversationMessages(
++        "workshop",
++        "kiln schedule",
++        {
++          after: "2026-01-15T00:00:00.000Z",
++          matchMode: "keywords",
++          userId: "reader",
++        }
++      );
++      expect(result.map(({ messageId }) => messageId)).toEqual(["newer"]);
++    });
++  });
++}
+--- /dev/null
++++ b/packages/db/src/conversation-keyword-search.ts
+@@ -0,0 +1,114 @@
++import {
++  memoryResultLimit,
++  memoryTermWeight,
++  normalizeMemoryText,
++  tokenizeMemoryQuery,
++} from "./memory-search";
++import type { StoredConversationSearchResult } from "./types";
++
++type SearchIdentity = Omit<StoredConversationSearchResult, "matchedSnippet">;
++type RankedMatch = { result: StoredConversationSearchResult; score: number };
++
++export function readConversationMessagePayload(payload: unknown): {
++  role: string;
++  text: string;
++} {
++  if (typeof payload === "string") {
++    return { role: "user", text: payload };
++  }
++  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
++    return { role: "user", text: JSON.stringify(payload ?? "") };
++  }
++  const record = payload as Record<string, unknown>;
++  return {
++    role: typeof record.role === "string" ? record.role : "user",
++    text:
++      typeof record.content === "string"
++        ? record.content
++        : JSON.stringify(record.content ?? ""),
++  };
++}
++
++function compareMatches(left: RankedMatch, right: RankedMatch): number {
++  return (
++    right.score - left.score ||
++    right.result.createdAt.localeCompare(left.result.createdAt) ||
++    left.result.sessionId.localeCompare(right.result.sessionId) ||
++    left.result.messageId.localeCompare(right.result.messageId)
++  );
++}
++
++function snippet(text: string, terms: readonly string[]): string {
++  const lower = text.toLowerCase();
++  let index = -1;
++  for (const term of terms) {
++    const found = lower.indexOf(term);
++    if (found >= 0 && (index < 0 || found < index)) {
++      index = found;
++    }
++  }
++  // NFKC can change character offsets. Preserve the original text rather than
++  // invent a source offset when only its normalized spelling matched.
++  const start = index < 0 ? 0 : Math.max(0, index - 80);
++  const end = Math.min(text.length, start + 240);
++  return `${start ? "..." : ""}${text.slice(start, end)}${end < text.length ? "..." : ""}`;
++}
++
++/** Bounded query/results; callers supply only authorized, deduplicated rows.
++ * Ranking scans the eligible history before the result limit. It is lexical
++ * retrieval, not semantic search; full history scanning remains linear.
++ */
++export class ConversationKeywordSearch {
++  private readonly terms: string[];
++  private readonly limit: number;
++  private readonly matches: RankedMatch[] = [];
++
++  constructor(query: string, limit?: number) {
++    this.terms = tokenizeMemoryQuery(query);
++    this.limit = memoryResultLimit(limit, 20);
++  }
++
++  get empty(): boolean {
++    return this.terms.length === 0 || this.limit === 0;
++  }
++
++  add(identity: SearchIdentity, text: string): void {
++    if (this.empty) {
++      return;
++    }
++    const normalized = normalizeMemoryText(text);
++    let score = 0;
++    for (const term of this.terms) {
++      if (normalized.includes(term)) {
++        score += memoryTermWeight(term);
++      }
++    }
++    if (score === 0) {
++      return;
++    }
++    const match: RankedMatch = {
++      result: { ...identity, matchedSnippet: snippet(text, this.terms) },
++      score,
++    };
++    let low = 0;
++    let high = this.matches.length;
++    while (low < high) {
++      const middle = Math.floor((low + high) / 2);
++      if (compareMatches(match, this.matches[middle]!) < 0) {
++        high = middle;
++      } else {
++        low = middle + 1;
++      }
++    }
++    if (low < this.limit) {
++      this.matches.splice(low, 0, match);
++      if (this.matches.length > this.limit) {
++        this.matches.pop();
++      }
++    }
++  }
++
++  results(): StoredConversationSearchResult[] {
++    return this.matches.map(({ result }) => result);
++  }
++}
+--- /dev/null
++++ b/packages/db/src/memory-search.test.ts
+@@ -0,0 +1,24 @@
++import { expect, test } from "bun:test";
++import { tokenizeMemoryQuery } from "./memory-search";
++
++test("numeric identifiers remain searchable alongside natural words", () => {
++  expect(tokenizeMemoryQuery("42")).toEqual(["42"]);
++  expect(tokenizeMemoryQuery("Find invoice 2048 for me")).toEqual([
++    "find",
++    "invoice",
++    "2048",
++  ]);
++  expect(tokenizeMemoryQuery("４２")).toEqual(["42"]);
++});
++
++test("numeric support retains stop-word, literal punctuation and query bounds", () => {
++  expect(tokenizeMemoryQuery("and the dengan yang")).toEqual([]);
++  expect(tokenizeMemoryQuery("%_")).toEqual(["%_"]);
++  expect(
++    tokenizeMemoryQuery(
++      Array.from({ length: 30 }, (_, i) => String(i)).join(" ")
++    )
++  ).toHaveLength(16);
++  expect(tokenizeMemoryQuery(`${" ".repeat(4096)}2048`)).toEqual([]);
++  expect(tokenizeMemoryQuery("9".repeat(129))).toEqual([]);
++});
+--- a/packages/db/src/memory-search.ts
++++ b/packages/db/src/memory-search.ts
+@@ -39,7 +39,6 @@
+   for (const part of WORDS.segment(normalized)) {
+     const term = part.segment;
+     if (
+-      part.isWordLike &&
+       HAS_WORD.test(term) &&
+       term.length <= MAX_TERM_CHARS &&
+       !STOP_WORDS.has(term)
+--- a/packages/db/src/types.ts
++++ b/packages/db/src/types.ts
+@@ -1374,6 +1374,8 @@
+       before?: string;
+       excludeSuperAgent?: boolean;
+       limit?: number;
++      /** Native topic lookup opts into bounded lexical ranking; default stays literal. */
++      matchMode?: "literal" | "keywords";
+       profileId?: string;
+       userId?: string;
+     }

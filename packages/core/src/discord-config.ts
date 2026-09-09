@@ -543,6 +543,16 @@ export async function verifyAndPairDiscordUser(
       };
     }
 
+    if (
+      config.accessMode === "denylist" &&
+      config.blockedUserIds.includes(userId)
+    ) {
+      return {
+        message: "This account is blocked from this assistant.",
+        ok: false,
+      };
+    }
+
     const expected = config.handshakeCode;
     const matchesCurrentCode = Boolean(
       expected &&

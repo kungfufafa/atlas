@@ -28,6 +28,7 @@ export async function createBot(
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.DirectMessages,
       GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildVoiceStates,
     ],
     partials: [Partials.Channel, Partials.Message],
   }) as Client<true>;
@@ -39,6 +40,7 @@ export async function createBot(
       client.user
         ? { id: client.user.id, username: client.user.username ?? undefined }
         : undefined,
+    getDiscordClient: () => client,
   });
 
   client.once(Events.ClientReady, async (readyClient) => {
@@ -59,6 +61,20 @@ export async function createBot(
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {
+    if (
+      interaction.isButton() ||
+      interaction.isStringSelectMenu() ||
+      interaction.isModalSubmit()
+    ) {
+      try {
+        await handler.handleNativeInteraction(interaction);
+      } catch (error) {
+        if (!isIgnorableInteractionError(error)) {
+          console.error("Native interaction handler error:", error);
+        }
+      }
+      return;
+    }
     if (!interaction.isChatInputCommand()) {
       return;
     }
@@ -91,6 +107,15 @@ export async function createBot(
         .catch(() => {});
     }
   });
+
+  client.on(Events.VoiceStateUpdate, (_previous, current) => {
+    handler.recheckVoice(current.guild.id).catch(() => {});
+  });
+  const destroy = client.destroy.bind(client);
+  client.destroy = async () => {
+    handler.closeVoice();
+    await destroy();
+  };
 
   await client.login(config.botToken);
 

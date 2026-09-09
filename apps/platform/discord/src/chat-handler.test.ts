@@ -1,8 +1,16 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { ChatMessage } from "@atlas/core/contract";
+import { assertChannelIntegrationPolicy } from "@atlas/core/channel-integration-policy";
+import type { ChatMessage, SendMessageInput } from "@atlas/core/contract";
 import { loadDiscordConfigFile } from "@atlas/core/discord-config";
-import { ATTACH_COMMAND_WITH_FILE_REPLY } from "./attachments";
+import {
+  ATTACH_COMMAND_WITH_FILE_REPLY,
+  DOWNLOAD_FAILED_REPLY,
+  OVERSIZED_FILE_REPLY,
+  OVERSIZED_IMAGE_REPLY,
+  UNSUPPORTED_DOCUMENT_TYPES_REPLY,
+} from "./attachments";
 import { DiscordAuthStore } from "./auth-store";
 import {
   chatLockOptions,
@@ -189,31 +197,23 @@ async function waitForCondition(
   throw new Error(message);
 }
 
+type MockClientOptions = NonNullable<Parameters<typeof createMockClient>[0]>;
+
 async function createPairedHandler(
   homeDir: string,
   options: {
     messages?: ChatMessage[];
-    onSendStream?: Parameters<typeof createMockClient>[0]["onSendStream"];
-    questionnaire?: Parameters<typeof createMockClient>[0]["questionnaire"];
-    orgs?: Parameters<typeof createMockClient>[0]["orgs"];
-    profiles?: Parameters<typeof createMockClient>[0]["profiles"];
-    profilesByOrgId?: Parameters<typeof createMockClient>[0]["profilesByOrgId"];
-    listedArtifacts?: Parameters<typeof createMockClient>[0]["listedArtifacts"];
-    artifactContentBytes?: Parameters<
-      typeof createMockClient
-    >[0]["artifactContentBytes"];
-    failCreateSession?: Parameters<
-      typeof createMockClient
-    >[0]["failCreateSession"];
-    failPublishShare?: Parameters<
-      typeof createMockClient
-    >[0]["failPublishShare"];
-    failReadArtifact?: Parameters<
-      typeof createMockClient
-    >[0]["failReadArtifact"];
-    failBindPrincipal?: Parameters<
-      typeof createMockClient
-    >[0]["failBindPrincipal"];
+    onSendStream?: MockClientOptions["onSendStream"];
+    questionnaire?: MockClientOptions["questionnaire"];
+    orgs?: MockClientOptions["orgs"];
+    profiles?: MockClientOptions["profiles"];
+    profilesByOrgId?: MockClientOptions["profilesByOrgId"];
+    listedArtifacts?: MockClientOptions["listedArtifacts"];
+    artifactContentBytes?: MockClientOptions["artifactContentBytes"];
+    failCreateSession?: MockClientOptions["failCreateSession"];
+    failPublishShare?: MockClientOptions["failPublishShare"];
+    failReadArtifact?: MockClientOptions["failReadArtifact"];
+    failBindPrincipal?: MockClientOptions["failBindPrincipal"];
     configProfileId?: string;
     accessMode?: "open" | "allowlist" | "denylist" | "pairing";
     handshakeAssertion?: string;
@@ -362,11 +362,13 @@ describe("createChatHandler artifact delivery", () => {
     });
   });
 
-  test("sends an artifact emitted by the live agent stream", async () => {
+  test("auto-sends a live artifact for an authorized unpaired sender", async () => {
     await withTempHome(async (homeDir) => {
       const { handleMessage, calls, sessionStore } = await createPairedHandler(
         homeDir,
         {
+          accessMode: "allowlist",
+          allowedUserIds: ["424242424242424242"],
           artifactContentBytes: new TextEncoder().encode("%PDF-1.4"),
           messages: [],
           onSendStream: async (_input, handlers) => {
@@ -381,6 +383,7 @@ describe("createChatHandler artifact delivery", () => {
             });
             return "Report ready";
           },
+          pairedUserIds: [],
         }
       );
       sessionStore.set("dm_channel_1", {
@@ -485,8 +488,10 @@ describe("createChatHandler artifact delivery", () => {
       expect(calls.readProfileArtifactContent).toBe(0);
       expect(dm.fileSendCalls).toBe(0);
       expect(
-        dm.sentMessages.some((reply) =>
-          reply.includes("File is too large for Discord")
+        dm.sentMessages.some(
+          (reply) =>
+            reply.includes("File is too large for Discord") &&
+            reply.includes("artifacts/huge.md")
         )
       ).toBe(true);
     });
@@ -1115,6 +1120,7 @@ describe("createChatHandler artifact delivery", () => {
         });
       const conversationKey = "g:guild_channel_1:t:thread_attach";
       sessionStore.set(conversationKey, {
+        channelUserId: "424242424242424242",
         profileId: "support",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -1302,9 +1308,7 @@ describe("createChatHandler pairing principal security", () => {
 describe("createChatHandler early ack", () => {
   async function setupAckHandler(
     homeDir: string,
-    onSendStream: NonNullable<
-      Parameters<typeof createMockClient>[0]
-    >["onSendStream"]
+    onSendStream: NonNullable<MockClientOptions>["onSendStream"]
   ) {
     await writeDiscordConfigIni(homeDir, {
       botToken: "discord-bot-token",
@@ -1333,6 +1337,7 @@ describe("createChatHandler early ack", () => {
       config: { botToken: "discord-bot-token", profileId: "default" },
       orgStore,
       sessionStore,
+      threadStore: new ThreadStore(path.join(homeDir, "threads.json")),
     });
   }
 
@@ -1462,7 +1467,7 @@ describe("createChatHandler questionnaire delivery", () => {
           return "";
         },
       });
-      const { message, sentMessages } = createDmMessage({
+      const { message, sentMessages, componentMessages } = createDmMessage({
         content: "help me ship this",
         userId: "424242424242424242",
       });
@@ -1471,9 +1476,12 @@ describe("createChatHandler questionnaire delivery", () => {
       expect(sentMessages.some((reply) => reply.includes("Need input"))).toBe(
         true
       );
-      expect(
-        sentMessages.some((reply) => reply.includes("a) Build Playwright e2e"))
-      ).toBe(true);
+      const native = JSON.parse(JSON.stringify(componentMessages));
+      expect(native[0].components[0].components[0]).toMatchObject({
+        custom_id: expect.stringMatching(/^atlas:/),
+        label: "Build Playwright e2e",
+        type: 2,
+      });
       expect(
         sentMessages.some((reply) => reply.includes("(empty reply)"))
       ).toBe(false);
@@ -1541,7 +1549,14 @@ describe("createChatHandler guild thread routing", () => {
       expect(guild.threadSentMessages).toContain("Thread reply");
       expect(guild.channelSentMessages).not.toContain("Thread reply");
       expect(threadStore.hasThreadId(guild.createdThreadId!)).toBe(true);
-      expect(streamedInputs[0]).toEqual({ message: "summarize this" });
+      expect(streamedInputs[0]).toEqual(
+        expect.objectContaining({
+          message: expect.stringContaining("summarize this"),
+        })
+      );
+      expect((streamedInputs[0] as SendMessageInput).message).toContain(
+        "group chat"
+      );
     });
   });
 
@@ -1628,9 +1643,11 @@ describe("createChatHandler guild thread routing", () => {
       expect(guild.lastThreadName).toBe("pull the latest main branch");
       expect(guild.threadSentMessages).toContain("Role mention reply");
       expect(threadStore.hasThreadId(guild.createdThreadId!)).toBe(true);
-      expect(streamedInputs[0]).toEqual({
-        message: "pull the latest main branch",
-      });
+      expect(streamedInputs[0]).toEqual(
+        expect.objectContaining({
+          message: expect.stringContaining("pull the latest main branch"),
+        })
+      );
     });
   });
 
@@ -1716,7 +1733,9 @@ describe("createChatHandler guild thread routing", () => {
           )
         )
       ).toBeTruthy();
-      expect(streamedByThread).toContain("continue topic one");
+      expect(streamedByThread).toEqual(
+        expect.arrayContaining([expect.stringContaining("continue topic one")])
+      );
     });
   });
 
@@ -1797,7 +1816,14 @@ describe("createChatHandler guild thread routing", () => {
 
       expect(guild.startThreadCalls).toBe(0);
       expect(guild.threadSentMessages).toContain("In-thread answer");
-      expect(streamedInputs[0]).toEqual({ message: "keep going" });
+      expect(streamedInputs[0]).toEqual(
+        expect.objectContaining({
+          message: expect.stringContaining("keep going"),
+        })
+      );
+      expect((streamedInputs[0] as SendMessageInput).message).toContain(
+        "group chat"
+      );
     });
   });
 
@@ -2111,11 +2137,12 @@ describe("createChatHandler guild thread routing", () => {
     await withTempHome(async (homeDir) => {
       const { handleMessage } = await createPairedHandler(homeDir, {
         onSendStream: async (input) => {
-          // Fallback path still uses the public-channel prefix.
-          expect(input).toEqual({
-            message:
-              "[Discord channel — your reply is visible to everyone in this channel.]\nhello",
-          });
+          expect(input).toEqual(
+            expect.objectContaining({
+              message: expect.stringContaining("hello"),
+            })
+          );
+          expect((input as SendMessageInput).message).toContain("group chat");
           return "Channel fallback";
         },
       });
@@ -2256,9 +2283,7 @@ describe("createChatHandler guild thread routing", () => {
       });
       await handleSlashCommand(allowCmd.interaction);
 
-      expect(
-        allowCmd.replies.some((reply) => /not authorized/i.test(reply))
-      ).toBe(true);
+      expect(allowCmd.replies).toEqual(["__deleted__"]);
       expect((await loadDiscordConfigFile())?.allowedUserIds ?? []).toEqual([]);
     });
   });
@@ -2422,7 +2447,10 @@ describe("createChatHandler guild thread routing", () => {
       await handleMessage(followUp.message);
 
       expect(followUp.threadSentMessages).toContain("Partial ok");
-      expect(streamedByKey).toEqual(["hello from partial"]);
+      expect(streamedByKey).toEqual([
+        expect.stringContaining("hello from partial"),
+      ]);
+      expect(streamedByKey[0]).toContain("group chat");
       expect(orgStore.get("g:thread_partial")).toBeUndefined();
       expect(
         sessionStore.get(
@@ -2587,177 +2615,528 @@ describe("createChatHandler inbound files", () => {
     fetchSpy?.mockRestore();
   });
 
-  test("forwards a pdf attachment to sendStream", async () => {
-    await withTempHome(async (homeDir) => {
-      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response("pdf-content", {
-          headers: { "content-type": "application/pdf" },
-        })
-      );
-
-      let lastInput: unknown;
-      const { handleMessage, calls } = await createPairedHandler(homeDir, {
-        onSendStream: async (input) => {
-          lastInput = input;
-          return "Agent reply";
-        },
-      });
-
-      const dm = createDmMessage({
-        attachments: [
-          {
-            contentType: "application/pdf",
-            name: "report.pdf",
-          },
-        ],
-        content: "Summarize",
-        userId: "424242424242424242",
-      });
-      await handleMessage(dm.message);
-
-      expect(calls.sendStream).toBe(1);
-      expect(lastInput).toEqual({
-        documents: [
-          expect.objectContaining({
-            filename: "report.pdf",
-            mediaType: "application/pdf",
-          }),
-        ],
-        images: undefined,
-        message: "Summarize",
-      });
-    });
-  });
-
-  test("forwards a captionless pdf attachment to sendStream", async () => {
-    await withTempHome(async (homeDir) => {
-      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response("pdf-content", {
-          headers: { "content-type": "application/pdf" },
-        })
-      );
-
-      let lastInput: unknown;
-      const { handleMessage, calls } = await createPairedHandler(homeDir, {
-        onSendStream: async (input) => {
-          lastInput = input;
-          return "Agent reply";
-        },
-      });
-
-      const dm = createDmMessage({
-        attachments: [
-          {
-            contentType: "application/pdf",
-            name: "report.pdf",
-          },
-        ],
-        userId: "424242424242424242",
-      });
-      await handleMessage(dm.message);
-
-      expect(calls.sendStream).toBe(1);
-      expect(lastInput).toEqual({
-        documents: [
-          expect.objectContaining({
-            filename: "report.pdf",
-            mediaType: "application/pdf",
-          }),
-        ],
-        images: undefined,
-        message: "",
-      });
-    });
-  });
-
-  test("forwards an xlsx attachment to sendStream", async () => {
-    await withTempHome(async (homeDir) => {
-      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response("xlsx-content", {
-          headers: {
-            "content-type":
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          },
-        })
-      );
-
-      let lastInput: unknown;
-      const { handleMessage, calls } = await createPairedHandler(homeDir, {
-        onSendStream: async (input) => {
-          lastInput = input;
-          return "Agent reply";
-        },
-      });
-
-      const dm = createDmMessage({
-        attachments: [
-          {
-            contentType:
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            name: "sales.xlsx",
-          },
-        ],
-        content: "Analyze",
-        userId: "424242424242424242",
-      });
-      await handleMessage(dm.message);
-
-      expect(calls.sendStream).toBe(1);
-      expect(lastInput).toEqual({
-        documents: [
-          expect.objectContaining({
-            filename: "sales.xlsx",
-            mediaType:
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          }),
-        ],
-        images: undefined,
-        message: "Analyze",
-      });
-    });
-  });
-
-  test("transcribes a voice attachment and forwards text to the agent", async () => {
-    await withTempHome(async (homeDir) => {
-      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response("ogg-bytes", {
-          headers: { "content-type": "audio/ogg" },
-        })
-      );
-
-      let lastInput: unknown;
-      const { handleMessage, calls, getLastTranscribeAudioInput } =
-        await createPairedHandler(homeDir, {
+  test("saves medium sources for paired and authorized unpaired users", async () => {
+    for (const paired of [true, false]) {
+      await withTempHome(async (homeDir) => {
+        const bytes = Buffer.alloc(6 * 1024 * 1024, 32);
+        bytes.write("source notes");
+        fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+          new Response(bytes)
+        );
+        let lastInput: SendMessageInput | undefined;
+        const { handleMessage } = await createPairedHandler(homeDir, {
+          accessMode: "allowlist",
+          allowedUserIds: ["424242424242424242"],
           onSendStream: async (input) => {
-            lastInput = input;
+            lastInput = input as SendMessageInput;
             return "Agent reply";
           },
+          pairedUserIds: paired ? ["424242424242424242"] : [],
         });
+        const dm = createDmMessage({
+          attachments: [
+            {
+              contentType: "text/plain",
+              name: "notes.txt",
+              size: bytes.length,
+            },
+          ],
+          content: "Analyze the complete source",
+          userId: "424242424242424242",
+        });
+        await handleMessage(dm.message);
+        expect(lastInput?.documents).toBeUndefined();
+        expect(lastInput?.message).toContain("Analyze the complete source");
+        const originalPath = path.join(
+          homeDir,
+          ".atlas/orgs/org_test/profiles/default/artifacts/notes.txt"
+        );
+        expect(lastInput?.message).toContain("artifacts/notes.txt");
+        expect(lastInput?.message).toContain("read_file");
+        expect(lastInput?.message).not.toContain("source notes");
+        expect(await readFile(originalPath)).toEqual(bytes);
+        fetchSpy.mockRestore();
+      });
+    }
+  });
 
+  const pngBytes = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6ZwwAAAAASUVORK5CYII=",
+    "base64"
+  );
+  const dailyFiles = [
+    {
+      filename: "sales.xlsx",
+      mediaType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      tool: "spreadsheet",
+    },
+    { filename: "sales.csv", mediaType: "text/csv", tool: "spreadsheet" },
+    {
+      filename: "report.pdf",
+      mediaType: "application/pdf",
+      tool: "extract_document_text",
+    },
+    {
+      filename: "report.docx",
+      mediaType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      tool: "extract_document_text",
+    },
+    { filename: "notes.txt", mediaType: "text/plain", tool: "read_file" },
+    { filename: "photo.png", mediaType: "image/png", tool: null },
+  ];
+
+  for (const paired of [true, false]) {
+    for (const file of dailyFiles) {
+      test(`saves ${file.filename} and supplies the tool or image for an authorized ${paired ? "paired" : "unpaired"} sender`, async () => {
+        await withTempHome(async (homeDir) => {
+          const bytes = file.tool
+            ? Buffer.from("original source bytes")
+            : pngBytes;
+          fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(bytes)
+          );
+          let lastInput: SendMessageInput | undefined;
+          const { handleMessage, calls } = await createPairedHandler(homeDir, {
+            accessMode: "allowlist",
+            allowedUserIds: ["424242424242424242"],
+            onSendStream: async (input) => {
+              lastInput = input as SendMessageInput;
+              return "Agent reply";
+            },
+            pairedUserIds: paired ? ["424242424242424242"] : [],
+          });
+          const dm = createDmMessage({
+            attachments: [
+              {
+                contentType: file.mediaType,
+                name: file.filename,
+                size: bytes.length,
+              },
+            ],
+            content: "Finish the report",
+            userId: "424242424242424242",
+          });
+          await handleMessage(dm.message);
+          expect(calls.sendStream).toBe(1);
+          expect(lastInput?.documents).toBeUndefined();
+          expect(lastInput?.message).toContain("Finish the report");
+          expect(lastInput?.message).toContain(`artifacts/${file.filename}`);
+          expect(lastInput?.message).not.toContain("[File:");
+          expect(lastInput?.message).not.toContain("original source bytes");
+          expect(
+            await readFile(
+              path.join(
+                homeDir,
+                ".atlas/orgs/org_test/profiles/default/artifacts",
+                file.filename
+              )
+            )
+          ).toEqual(bytes);
+          if (file.tool) {
+            expect(lastInput?.message).toContain(file.tool);
+            expect(lastInput?.images).toBeUndefined();
+          } else {
+            expect(lastInput?.images).toEqual([
+              { data: pngBytes.toString("base64"), mediaType: "image/png" },
+            ]);
+          }
+        });
+      });
+    }
+  }
+
+  test("saves a captionless pdf and supplies its tool reference", async () => {
+    await withTempHome(async (homeDir) => {
+      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("pdf-content")
+      );
+      let lastInput: SendMessageInput | undefined;
+      const { handleMessage, calls } = await createPairedHandler(homeDir, {
+        onSendStream: async (input) => {
+          lastInput = input as SendMessageInput;
+          return "Agent reply";
+        },
+      });
       const dm = createDmMessage({
-        attachments: [
-          {
-            contentType: "audio/ogg",
-            name: "voice-message.ogg",
-          },
-        ],
-        content: "Please summarize",
+        attachments: [{ contentType: "application/pdf", name: "report.pdf" }],
         userId: "424242424242424242",
       });
       await handleMessage(dm.message);
-
-      expect(calls.transcribeAudio).toBe(1);
-      expect(getLastTranscribeAudioInput()).toEqual(
-        expect.objectContaining({ sessionId: "session_test" })
-      );
       expect(calls.sendStream).toBe(1);
-      expect(lastInput).toEqual({
-        documents: undefined,
-        images: undefined,
-        message: "Transcribed voice message\n\nPlease summarize",
-      });
+      expect(lastInput?.documents).toBeUndefined();
+      expect(lastInput?.message).toContain("artifacts/report.pdf");
+      expect(lastInput?.message).toContain("extract_document_text");
     });
   });
+
+  for (const inThread of [false, true]) {
+    test(`processes an authorized guild document without a mention ${inThread ? "inside a foreign thread" : "in the channel"}`, async () => {
+      await withTempHome(async (homeDir) => {
+        fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+          new Response("source bytes")
+        );
+        let lastInput: SendMessageInput | undefined;
+        const { handleMessage, calls, threadStore, client } =
+          await createPairedHandler(homeDir, {
+            accessMode: "allowlist",
+            allowedUserIds: ["424242424242424242"],
+            onSendStream: async (input) => {
+              lastInput = input as SendMessageInput;
+              return "Finished report";
+            },
+            pairedUserIds: [],
+          });
+        const guild = createGuildChatMessage({
+          attachments: [{ contentType: "text/csv", name: "sales.csv" }],
+          content: "Finish the report",
+          inThread,
+          threadId: inThread ? "file_thread" : undefined,
+        });
+        const authorize = spyOn(client, "authorizeChannelPrincipal");
+        const bind = spyOn(client, "bindChannelActionContext");
+        await handleMessage(guild.message);
+        expect(authorize.mock.calls.length).toBeGreaterThanOrEqual(3);
+        expect(
+          authorize.mock.calls.every(
+            ([input]) => input.channelAddressed === false
+          )
+        ).toBe(true);
+        expect(bind).toHaveBeenCalledWith(
+          expect.objectContaining({ channelAddressed: false })
+        );
+        authorize.mockRestore();
+        bind.mockRestore();
+        expect(calls.sendStream).toBe(1);
+        expect(lastInput?.message).toContain("group chat");
+        expect(lastInput?.message).toContain("artifacts/sales.csv");
+        expect(lastInput?.message).toContain("spreadsheet");
+        expect(
+          await readFile(
+            path.join(
+              homeDir,
+              ".atlas/orgs/org_test/profiles/default/artifacts/sales.csv"
+            ),
+            "utf8"
+          )
+        ).toBe("source bytes");
+        expect(guild.threadSentMessages).toContain("Finished report");
+        expect(
+          threadStore.hasThreadId(
+            inThread ? "file_thread" : guild.createdThreadId!
+          )
+        ).toBe(true);
+      });
+    });
+  }
+
+  for (const inThread of [false, true]) {
+    for (const addressed of [false, true]) {
+      test(`mention policy ${addressed ? "allows" : "blocks"} a guild file before ${inThread ? "claiming" : "creating"} a thread`, async () => {
+        await withTempHome(async (homeDir) => {
+          fetchSpy = spyOn(globalThis, "fetch").mockImplementation(
+            Object.assign(async () => new Response("source bytes"), {
+              preconnect: fetch.preconnect,
+            })
+          );
+          const { handleMessage, client, calls, threadStore } =
+            await createPairedHandler(homeDir);
+          const originalAuthorize =
+            client.authorizeChannelPrincipal.bind(client);
+          const authorize = spyOn(
+            client,
+            "authorizeChannelPrincipal"
+          ).mockImplementation(async (input) => {
+            assertChannelIntegrationPolicy(
+              { groups: { requireMention: true }, version: 1 },
+              "discord",
+              input,
+              {
+                isPlatformAdmin: false,
+                orgId: "org_test",
+                orgRole: "member",
+                userId: "user_test",
+              }
+            );
+            return originalAuthorize(input);
+          });
+          try {
+            const guild = createGuildChatMessage({
+              attachments: [{ contentType: "text/csv", name: "sales.csv" }],
+              content: addressed ? "<@bot_id> Analyze this" : "Analyze this",
+              inThread,
+              mentionsBot: addressed,
+              threadId: inThread ? "policy_thread" : undefined,
+            });
+            await handleMessage(guild.message);
+            expect(authorize.mock.calls[0]?.[0].channelAddressed).toBe(
+              addressed
+            );
+            if (addressed) {
+              expect(calls.sendStream).toBe(1);
+              expect(fetchSpy).toHaveBeenCalledTimes(1);
+            } else {
+              expect(calls.sendStream).toBe(0);
+              expect(calls.createSession).toBe(0);
+              expect(fetchSpy).not.toHaveBeenCalled();
+              expect(guild.startThreadCalls).toBe(0);
+              expect(threadStore.hasThreadId("policy_thread")).toBe(false);
+              expect(
+                [
+                  ...guild.channelSentMessages,
+                  ...guild.threadSentMessages,
+                ].join("\n")
+              ).toContain("ignored");
+            }
+          } finally {
+            authorize.mockRestore();
+          }
+        });
+      });
+    }
+  }
+
+  test("owned thread file followups retain addressed conversation state", async () => {
+    await withTempHome(async (homeDir) => {
+      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("source bytes")
+      );
+      const { handleMessage, calls, client, threadStore } =
+        await createPairedHandler(homeDir);
+      threadStore.add("owned_file_thread");
+      const authorize = spyOn(client, "authorizeChannelPrincipal");
+      const guild = createGuildChatMessage({
+        attachments: [{ contentType: "text/csv", name: "sales.csv" }],
+        content: "Keep working",
+        inThread: true,
+        threadId: "owned_file_thread",
+      });
+      await handleMessage(guild.message);
+      expect(calls.sendStream).toBe(1);
+      expect(
+        authorize.mock.calls.every(([input]) => input.channelAddressed === true)
+      ).toBe(true);
+      authorize.mockRestore();
+    });
+  });
+
+  for (const isGuild of [false, true]) {
+    test(`does not download an unauthorized ${isGuild ? "guild" : "DM"} attachment`, async () => {
+      await withTempHome(async (homeDir) => {
+        fetchSpy = spyOn(globalThis, "fetch");
+        const { handleMessage, calls } = await createPairedHandler(homeDir, {
+          pairedUserIds: [],
+        });
+        const options = {
+          attachments: [{ contentType: "application/pdf", name: "report.pdf" }],
+          userId: "424242424242424242",
+        };
+        const message = isGuild
+          ? createGuildChatMessage(options)
+          : createDmMessage(options);
+        await handleMessage(message.message);
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(calls.sendStream).toBe(0);
+        await expect(
+          readFile(
+            path.join(
+              homeDir,
+              ".atlas/orgs/org_test/profiles/default/artifacts/report.pdf"
+            )
+          )
+        ).rejects.toThrow();
+      });
+    });
+  }
+
+  test("denied current file authority prevents download even for a locally allowed sender", async () => {
+    await withTempHome(async (homeDir) => {
+      fetchSpy = spyOn(globalThis, "fetch");
+      const { handleMessage, calls, client } = await createPairedHandler(
+        homeDir,
+        {
+          accessMode: "allowlist",
+          allowedUserIds: ["424242424242424242"],
+          pairedUserIds: [],
+        }
+      );
+      const authorize = spyOn(
+        client,
+        "authorizeChannelPrincipal"
+      ).mockRejectedValue(new Error("File authority denied"));
+      try {
+        const dm = createDmMessage({
+          attachments: [{ contentType: "application/pdf", name: "report.pdf" }],
+          userId: "424242424242424242",
+        });
+        await handleMessage(dm.message);
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(calls.sendStream).toBe(0);
+        expect(dm.sentMessages.length).toBeGreaterThan(0);
+      } finally {
+        authorize.mockRestore();
+      }
+    });
+  });
+
+  for (const mediaType of ["application/pdf", "image/png", "audio/ogg"]) {
+    test(`failed ${mediaType} download stops before model completion`, async () => {
+      await withTempHome(async (homeDir) => {
+        fetchSpy = spyOn(globalThis, "fetch").mockRejectedValue(
+          new Error("CDN unavailable")
+        );
+        const { handleMessage, calls } = await createPairedHandler(homeDir);
+        const dm = createDmMessage({
+          attachments: [{ contentType: mediaType, name: "source" }],
+          content: "What is in this file?",
+          userId: "424242424242424242",
+        });
+        await handleMessage(dm.message);
+        expect(calls.sendStream).toBe(0);
+        expect(calls.transcribeAudio).toBe(0);
+        expect(dm.sentMessages).toContain(DOWNLOAD_FAILED_REPLY);
+      });
+    });
+  }
+
+  for (const file of [
+    {
+      contentType: "application/pdf",
+      name: "large.pdf",
+      reply: OVERSIZED_FILE_REPLY,
+      size: 26 * 1024 * 1024,
+    },
+    {
+      contentType: "image/png",
+      name: "large.png",
+      reply: OVERSIZED_IMAGE_REPLY,
+      size: 6 * 1024 * 1024,
+    },
+    {
+      contentType: "application/zip",
+      name: "archive.zip",
+      reply: UNSUPPORTED_DOCUMENT_TYPES_REPLY,
+      size: 10,
+    },
+  ]) {
+    test(`rejects ${file.name} before download and model completion`, async () => {
+      await withTempHome(async (homeDir) => {
+        fetchSpy = spyOn(globalThis, "fetch");
+        const { handleMessage, calls } = await createPairedHandler(homeDir);
+        const dm = createDmMessage({
+          attachments: [file],
+          content: "Analyze this",
+          userId: "424242424242424242",
+        });
+        await handleMessage(dm.message);
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(calls.sendStream).toBe(0);
+        expect(dm.sentMessages).toContain(file.reply);
+      });
+    });
+  }
+
+  for (const mediaKind of ["document", "image", "audio"]) {
+    const image = mediaKind === "image";
+    test(`failed ${mediaKind} save stops before model completion`, async () => {
+      await withTempHome(async (homeDir) => {
+        const directory = path.join(
+          homeDir,
+          ".atlas/orgs/org_test/profiles/default"
+        );
+        await mkdir(directory, { recursive: true });
+        await writeFile(path.join(directory, "artifacts"), "not a directory");
+        fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+          new Response(image ? pngBytes : "source text")
+        );
+        const { handleMessage, calls } = await createPairedHandler(homeDir);
+        const dm = createDmMessage({
+          attachments: [
+            {
+              contentType: image
+                ? "image/png"
+                : mediaKind === "audio"
+                  ? "audio/ogg"
+                  : "text/plain",
+              name: image
+                ? "photo.png"
+                : mediaKind === "audio"
+                  ? "voice.ogg"
+                  : "notes.txt",
+            },
+          ],
+          userId: "424242424242424242",
+        });
+        await handleMessage(dm.message);
+        expect(calls.sendStream).toBe(0);
+        expect(dm.sentMessages.length).toBeGreaterThan(0);
+        expect(await readFile(path.join(directory, "artifacts"), "utf8")).toBe(
+          "not a directory"
+        );
+      });
+    });
+  }
+
+  for (const paired of [true, false]) {
+    test(`saves original audio before transcribing for an authorized ${paired ? "paired" : "unpaired"} sender`, async () => {
+      await withTempHome(async (homeDir) => {
+        fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+          new Response("ogg-bytes", {
+            headers: { "content-type": "audio/ogg" },
+          })
+        );
+
+        let lastInput: unknown;
+        const { handleMessage, calls, getLastTranscribeAudioInput } =
+          await createPairedHandler(homeDir, {
+            accessMode: "allowlist",
+            allowedUserIds: ["424242424242424242"],
+            onSendStream: async (input) => {
+              lastInput = input as SendMessageInput;
+              return "Agent reply";
+            },
+            pairedUserIds: paired ? ["424242424242424242"] : [],
+          });
+
+        const dm = createDmMessage({
+          attachments: [
+            {
+              contentType: "audio/ogg",
+              name: "voice-message.ogg",
+            },
+          ],
+          content: "Please summarize",
+          userId: "424242424242424242",
+        });
+        await handleMessage(dm.message);
+
+        expect(
+          await readFile(
+            path.join(
+              homeDir,
+              ".atlas/orgs/org_test/profiles/default/artifacts/voice-message.ogg"
+            )
+          )
+        ).toEqual(Buffer.from("ogg-bytes"));
+        expect((lastInput as SendMessageInput).message).toContain(
+          "artifacts/voice-message.ogg"
+        );
+        expect(calls.transcribeAudio).toBe(1);
+        expect(getLastTranscribeAudioInput()).toEqual(
+          expect.objectContaining({ sessionId: "session_test" })
+        );
+        expect(calls.sendStream).toBe(1);
+        expect(lastInput).toEqual({
+          documents: undefined,
+          images: undefined,
+          message: expect.stringContaining(
+            "Transcribed voice message\n\nPlease summarize"
+          ),
+        });
+      });
+    });
+  }
 
   test("runs /org even when the same message has an unsupported file", async () => {
     await withTempHome(async (homeDir) => {

@@ -1,0 +1,25 @@
+{
+  "at": "2026-09-07T10:21:26.598430+00:00",
+  "scope": "Root accepts closed independent instrumentation finding only; all18 combined failure diagnosis and final contributor report remain pending. No claim gate or quality rescore.",
+  "bindings": {
+    "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/review.json": "402c0232b86b42c2490c39c5815053dece65dc91b55e9a93a58fb9ad4046cef0",
+    "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/manifest.json": "4f83f4669ba5706ee4b775e13faf1109d5dbb8486eef6ccc9b411d392aef2abe",
+    "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/seal.json": "56e853648d3e305fbb5509d73364229012c67f4582a9ff1612105c43a0a10eb9",
+    "/private/tmp/atlas-native-file-v3-c9-confirmation-docx-contract-review/manifest.json": "cef8f3c7f390eb7bf15cfff13fde7aa695ea31f844d1c604e58e5f39c131205b",
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/analysis-final.json": "180ceb12182c8febc7c13f3290f2140ea787784b2ddab94f8fbbbb4639920064"
+  },
+  "independentManifestMembersReverified": 592,
+  "rootReadScope": "Original main conclusions, scope, sources, profile, admission, resource/clock/identity/cleanup qualifications and full compact10unknown+4unavailable projections. Initial whole review output was truncated; explicit subsequent projections covered the missing critical failure fields.",
+  "instrumentationValiditySupported": true,
+  "originalPrimaryCounts": {
+    "atlas": 44,
+    "hermes": 46,
+    "pairs": 54
+  },
+  "finiteEqualOrBetterClaimEstablished": false,
+  "hostConditionQualification": "Five OS sleep/wake intervals match large clock gaps. All attempts and original times retained; continuously awake300wallsecond service is not certified.",
+  "oracleQualification": "Root sevenDOCX inspection retains6 paragraph-placement failures and1 case-sensitive oracle mismatch with allfacts present. Original checks/denominators unchanged.",
+  "newPaidRunAuthorizedByThisReceipt": false,
+  "sourceChanges": false,
+  "testsOrRescores": 0
+}

@@ -22,6 +22,30 @@ With Telegram enabled, users can:
 - send text, photos, voice notes, and supported documents
 - receive Markdown-style rich replies when Telegram accepts the formatting
 
+## Channel controls
+
+Workspace administrators can open **Integrations → Telegram → Channel controls** to control what the bot may do in that workspace.
+
+1. Set **Channel enabled** and **Approval buttons** as needed.
+2. Under **Native actions**, enable the actions your team needs. The replying profile also needs the `channel_action` tool. Telegram supports reactions, polls, editing or deleting its own session messages, pins, forum topic creation or changes, and saved media delivery. Topic actions require a forum supergroup and the bot's Telegram permissions.
+3. Use **Direct messages**, **Groups**, **Room rules**, and **Sender rules** to restrict senders, workspace roles, tools, and actions. Choose **Save controls**.
+
+Rules apply together with **Access mode** and workspace permissions. A denial takes precedence. **Inherit** uses broader or default settings; an empty specified allowed list permits nobody, while an empty blocked list blocks nobody. A room rule can use a chat ID, topic ID, or `*`.
+
+Groups normally require a mention or reply. An administrator can set **Groups → Require mention or reply → Disabled** to permit unaddressed messages that pass the other rules. Telegram must still deliver those messages to the bot; check Group Privacy below.
+
+### Answer questions and approvals
+
+When the agent presents choices, tap the buttons and then **Submit answers**. Questions can allow one or several choices. Type a reply when you need a custom answer. Pending approval cards offer **Approve** and **Deny**.
+
+Controls belong to the original sender, workspace, conversation, and topic. Old or replaced cards cannot submit another answer or approval. If access changes, start from the current conversation instead of reusing an old card.
+
+### Photos, video, and audio replies
+
+Static WebP stickers are sent to the agent as images. MP4 clips up to **60 seconds** and **25 MB** are represented by up to four sampled frames; their audio is not transcribed. Those frames do not represent every moment. Animated and video stickers are rejected with a message.
+
+Saved MP3/M4A audio, Ogg Opus voice notes, and MP4 video can be returned using Telegram's native media presentation. Voice notes remain message-based conversations; the Telegram bridge does not join live voice calls.
+
 ## Step 1: Create a bot with BotFather
 
 Every Telegram setup starts with a bot token from `@BotFather`.
@@ -76,6 +100,8 @@ After a successful match, that Telegram user is linked and the chat access code 
 The bot token only connects Atlas to Telegram.
 
 Pairing connects **your Telegram user account** to Atlas permissions.
+
+Your workspace role still applies after pairing. Removing a member or changing their role stops their active turns and pending approvals in that workspace. In denylist mode, a blocked user cannot use a valid chat access code until an administrator removes the block.
 
 That means Atlas can:
 

@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-07T00:17:50.006815+00:00",
+  "name": "final-regressions",
+  "command": [
+    "bun",
+    "test",
+    "apps/server/src/services/artifact-producer-seam.test.ts",
+    "packages/core/src/tools/builtin-publication.test.ts",
+    "packages/core/src/tools/spreadsheet-io.test.ts",
+    "apps/server/src/tools/generate-image-tool.test.ts",
+    "apps/server/src/services/artifact-service.test.ts",
+    "apps/server/src/services/artifact-publication-service.test.ts"
+  ],
+  "exitCode": 0,
+  "log": "final-regressions.log"
+}

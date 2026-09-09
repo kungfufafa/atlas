@@ -8,7 +8,8 @@ import {
   parseImageDescriptionText,
 } from "@atlas/core/image-content";
 import {
-  normalizeDocumentMediaType,
+  DOCUMENT_ATTACHMENT_ACCEPT,
+  isSupportedDocumentMediaType,
   normalizeImageMediaType,
   parseDataUrl,
   parseDocumentDataUrl,
@@ -27,22 +28,9 @@ export type AttachmentUrlResolver = (
 
 export const IMAGE_ACCEPT = "image/jpeg,image/png,image/gif,image/webp";
 
-export const DOCUMENT_ACCEPT =
-  ".pdf,.docx,.xls,.xlsx,.xlsm,.xlsb,.csv,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel.sheet.binary.macroEnabled.12,text/plain,text/csv,text/markdown";
+export const DOCUMENT_ACCEPT = DOCUMENT_ATTACHMENT_ACCEPT;
 
 export const ALL_ATTACHMENT_ACCEPT = `${IMAGE_ACCEPT},${DOCUMENT_ACCEPT}`;
-
-const DOCUMENT_MEDIA_TYPES = new Set([
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-excel",
-  "application/vnd.ms-excel.sheet.macroEnabled.12",
-  "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
-  "text/plain",
-  "text/csv",
-  "text/markdown",
-]);
 
 export function isImageFilePart(file: FileUIPart): boolean {
   return normalizeImageMediaType(file.mediaType ?? "").startsWith("image/");
@@ -54,8 +42,7 @@ export function isDocumentFilePart(file: FileUIPart): boolean {
   }
 
   const filename = file.filename ?? "";
-  const mediaType = normalizeDocumentMediaType(file.mediaType ?? "", filename);
-  return DOCUMENT_MEDIA_TYPES.has(mediaType);
+  return isSupportedDocumentMediaType(file.mediaType ?? "", filename);
 }
 
 export function filePartsToImageAttachments(

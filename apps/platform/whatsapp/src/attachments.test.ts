@@ -5,7 +5,6 @@ import {
   buildWhatsAppMediaInput,
   collectBoundedMediaStream,
   DOWNLOAD_FAILED_REPLY,
-  formatExtractedWhatsAppDocumentMessage,
   formatSavedWhatsAppDocumentMessage,
   mergeWhatsAppUserMessage,
   OVERSIZED_FILE_REPLY,
@@ -15,7 +14,6 @@ import {
   resolveWhatsAppDocumentHandling,
   SAVE_FAILED_DOCUMENT_REPLY,
   savedWorkspaceDocumentHint,
-  UNREADABLE_DOCUMENT_REPLY,
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
   UNSUPPORTED_MEDIA_REPLY,
 } from "./attachments";
@@ -105,84 +103,76 @@ function createImageMessage(options: {
 }
 
 describe("buildWhatsAppMediaInput", () => {
-  test("forwards a pdf document with caption", async () => {
-    const bytes = Buffer.from("pdf-bytes");
-    const result = await buildWhatsAppMediaInput(
-      createDocumentMessage({
-        caption: "Summarize this",
-        fileName: "report.pdf",
-        mimeType: "application/pdf",
-      }),
-      async () => bytes
-    );
-
-    expect(result).toEqual({
-      input: {
-        documents: [
-          {
-            data: bytes.toString("base64"),
-            filename: "report.pdf",
-            mediaType: "application/pdf",
+  test.each([
+    [
+      "sales.xlsx",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "spreadsheet",
+    ],
+    ["sales.xls", "application/vnd.ms-excel", "spreadsheet"],
+    [
+      "sales.xlsm",
+      "application/vnd.ms-excel.sheet.macroEnabled.12",
+      "spreadsheet",
+    ],
+    [
+      "sales.xlsb",
+      "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
+      "spreadsheet",
+    ],
+    ["export.csv", "text/csv", "spreadsheet"],
+    ["report.pdf", "application/pdf", "extract_document_text"],
+    [
+      "notes.docx",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "extract_document_text",
+    ],
+    ["notes.txt", "application/octet-stream", "read_file"],
+    ["notes.md", "text/markdown", "read_file"],
+  ])(
+    "saves original %s bytes and sends a tool hint",
+    async (filename, mediaType, tool) => {
+      const bytes = Buffer.from("original source bytes");
+      let savedBytes: Buffer | undefined;
+      let extracted = false;
+      const result = await buildWhatsAppMediaInput(
+        createDocumentMessage({
+          caption: "Finish this report",
+          fileName: filename,
+          mimeType: mediaType,
+        }),
+        async () => bytes,
+        {
+          extractDocumentText: async () => {
+            extracted = true;
+            return { text: "must not run", truncated: true };
           },
-        ],
-        message: "Summarize this",
-      },
-      kind: "input",
-    });
-  });
-
-  test("accepts xlsx documents", async () => {
-    const bytes = Buffer.from("xlsx-bytes");
-    const result = await buildWhatsAppMediaInput(
-      createDocumentMessage({
-        caption: "Analyze",
-        fileName: "sales.xlsx",
-        mimeType:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      }),
-      async () => bytes
-    );
-
-    expect(result).toEqual({
-      input: {
-        documents: [
-          {
-            data: bytes.toString("base64"),
-            filename: "sales.xlsx",
-            mediaType:
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          saveInboundDocument: async (file) => {
+            savedBytes = file.bytes;
+            return {
+              relativePath: `artifacts/${filename}`,
+              sizeBytes: file.bytes.byteLength,
+            };
           },
-        ],
-        message: "Analyze",
-      },
-      kind: "input",
-    });
-  });
-
-  test("accepts txt via filename when mime is octet-stream", async () => {
-    const bytes = Buffer.from("notes");
-    const result = await buildWhatsAppMediaInput(
-      createDocumentMessage({
-        fileName: "notes.txt",
-        mimeType: "application/octet-stream",
-      }),
-      async () => bytes
-    );
-
-    expect(result).toEqual({
-      input: {
-        documents: [
-          {
-            data: bytes.toString("base64"),
-            filename: "notes.txt",
-            mediaType: "text/plain",
-          },
-        ],
-        message: "",
-      },
-      kind: "input",
-    });
-  });
+        }
+      );
+      expect(savedBytes).toEqual(bytes);
+      expect(extracted).toBe(false);
+      expect(result?.kind).toBe("input");
+      if (result?.kind !== "input") {
+        throw new Error("Expected saved attachment");
+      }
+      expect(result.input.documents).toBeUndefined();
+      expect(result.input.message).toContain(`artifacts/${filename}`);
+      expect(result.input.message).toContain(tool);
+      expect(result.input.message).toContain("Finish this report");
+      expect(result.input.message).not.toContain(bytes.toString());
+      expect(result.input.message).not.toContain("[File:");
+      expect(result.input.message).not.toContain(
+        "Extracted text was truncated"
+      );
+    }
+  );
 
   test("rejects heic images instead of relabeling them as jpeg", async () => {
     let downloaded = false;
@@ -211,13 +201,25 @@ describe("buildWhatsAppMediaInput", () => {
         caption: "what is this",
         mimeType: "IMAGE/JPG; charset=binary",
       }),
-      async () => bytes
+      async () => bytes,
+      {
+        saveInboundDocument: async (file) => ({
+          relativePath: "artifacts/image.jpg",
+          sizeBytes: file.bytes.byteLength,
+        }),
+      }
     );
 
     expect(result).toEqual({
       input: {
         images: [{ data: bytes.toString("base64"), mediaType: "image/jpeg" }],
-        message: "what is this",
+        message: formatSavedWhatsAppDocumentMessage({
+          caption: "what is this",
+          filename: "image.jpg",
+          mediaType: "image/jpeg",
+          relativePath: "artifacts/image.jpg",
+          sizeBytes: bytes.byteLength,
+        }),
       },
       kind: "input",
     });
@@ -264,55 +266,40 @@ describe("buildWhatsAppMediaInput", () => {
     });
   });
 
-  test("extracts text from documents larger than the inline limit", async () => {
-    const bytes = Buffer.from("extracted-source");
-    const result = await buildWhatsAppMediaInput(
-      createDocumentMessage({
-        caption: "Summarize this",
-        fileName: "report.pdf",
-        mimeType: "application/pdf",
-      }),
-      async () => bytes,
-      {
-        extractDocumentText: async () => ({
-          text: "Quarterly revenue rose.",
-          truncated: false,
+  test.each([4, 100])(
+    "rejects a document without storage at inline limit %d",
+    async (inlineMaxBytes) => {
+      let extracted = false;
+      const result = await buildWhatsAppMediaInput(
+        createDocumentMessage({
+          fileName: "report.pdf",
+          mimeType: "application/pdf",
         }),
-        ingestMaxBytes: 100,
-        inlineMaxBytes: 8,
-      }
-    );
+        async () => Buffer.from("original source"),
+        {
+          extractDocumentText: async () => {
+            extracted = true;
+            return { text: "must not run", truncated: false };
+          },
+          inlineMaxBytes,
+        }
+      );
+      expect(result).toEqual({
+        kind: "reject",
+        message: SAVE_FAILED_DOCUMENT_REPLY,
+      });
+      expect(extracted).toBe(false);
+    }
+  );
 
-    expect(result).toEqual({
-      input: {
-        message: formatExtractedWhatsAppDocumentMessage({
-          caption: "Summarize this",
-          filename: "report.pdf",
-          text: "Quarterly revenue rose.",
-          truncated: false,
-        }),
-      },
-      kind: "input",
-    });
-  });
-
-  test("rejects extracted documents with no readable text", async () => {
+  test("rejects an image without workspace storage", async () => {
     const result = await buildWhatsAppMediaInput(
-      createDocumentMessage({
-        fileName: "scan.pdf",
-        mimeType: "application/pdf",
-      }),
-      async () => Buffer.from("scanned"),
-      {
-        extractDocumentText: async () => ({ text: "  ", truncated: false }),
-        ingestMaxBytes: 100,
-        inlineMaxBytes: 4,
-      }
+      createImageMessage({ mimeType: "image/jpeg" }),
+      async () => tinyJpegBytes
     );
-
     expect(result).toEqual({
       kind: "reject",
-      message: UNREADABLE_DOCUMENT_REPLY,
+      message: SAVE_FAILED_DOCUMENT_REPLY,
     });
   });
 
@@ -508,14 +495,14 @@ describe("savedWorkspaceDocumentHint", () => {
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         relativePath: "artifacts/notes.docx",
       })
-    ).toContain("Finish the user's request in this turn");
+    ).toContain("artifacts/notes.docx");
     expect(
       savedWorkspaceDocumentHint({
         filename: "readme.txt",
         mediaType: "text/plain",
         relativePath: "artifacts/readme.txt",
       })
-    ).toContain("Read it from the profile workspace");
+    ).toContain("read_file");
   });
 });
 
@@ -540,12 +527,12 @@ describe("mergeWhatsAppUserMessage", () => {
 });
 
 describe("resolveWhatsAppDocumentHandling", () => {
-  test("keeps small files inline, extracts mid-size files, and rejects huge files", () => {
-    const limits = { ingestMaxBytes: 25, inlineMaxBytes: 5 };
+  test("saves supported file sizes and rejects huge files", () => {
+    const limits = { ingestMaxBytes: 25 };
 
-    expect(resolveWhatsAppDocumentHandling(5, limits)).toBe("inline");
-    expect(resolveWhatsAppDocumentHandling(6, limits)).toBe("extract");
-    expect(resolveWhatsAppDocumentHandling(25, limits)).toBe("extract");
+    expect(resolveWhatsAppDocumentHandling(5, limits)).toBe("save");
+    expect(resolveWhatsAppDocumentHandling(6, limits)).toBe("save");
+    expect(resolveWhatsAppDocumentHandling(25, limits)).toBe("save");
     expect(resolveWhatsAppDocumentHandling(26, limits)).toBe("reject");
   });
 });

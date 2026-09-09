@@ -10,7 +10,9 @@ describe("Telegram SessionStore hot session cache", () => {
       updatedAt: "2026-08-31T00:00:00.000Z",
     });
     store.setHotSession("chat-1", { id: "session-a" });
-    expect(store.getHotSession("chat-1")).toEqual({ id: "session-a" });
+    expect(store.getHotSession<{ id: string }>("chat-1")).toEqual({
+      id: "session-a",
+    });
 
     store.set("chat-1", {
       profileId: "default",

@@ -305,7 +305,14 @@ export function registerOrgMemberRoutes(
     }
 
     const body = await readJson<UpdateOrgMemberRequest>(c.req.raw);
+    const previousRole =
+      body.role === undefined
+        ? undefined
+        : (await options.databaseAdapter?.getOrgMember(orgId, userId))?.role;
     const member = await orgService.updateMember(orgId, userId, body);
+    if (body.role !== undefined && body.role !== previousRole) {
+      await options.agent.invalidateSessionsForUser(orgId, userId);
+    }
     return json<OrgMemberResponse>(member);
   });
 
@@ -353,6 +360,7 @@ export function registerOrgMemberRoutes(
     }
 
     await orgService.removeMember(orgId, userId);
+    await options.agent.invalidateSessionsForUser(orgId, userId);
     return new Response(null, { status: 204 });
   });
 

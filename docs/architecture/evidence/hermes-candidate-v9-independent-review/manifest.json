@@ -1,0 +1,40 @@
+{
+  "entries": [
+    {
+      "path": "binding-check.json",
+      "bytes": 6649,
+      "sha256": "e2faba354358e4b16a7879dc9634e7dd6b6bbe5e30eff83b42cf843428c69bb4"
+    },
+    {
+      "path": "combined-c8.patch.check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "production-c8.patch.check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "registration.json",
+      "bytes": 1456,
+      "sha256": "b14eff404459f3ead847c5cd0b6f4a278c7ccae86e966ee8bbb83396089ae706"
+    },
+    {
+      "path": "review.json",
+      "bytes": 1597,
+      "sha256": "6bc69cdf1b48ec02aa845d9e90f5dcba79237231a8d248e37f8255a0287108c7"
+    },
+    {
+      "path": "review.md",
+      "bytes": 5184,
+      "sha256": "d2ae90648241d35cff7b47888ffae36333caa3724aaf76f7207b9f74fd27baf3"
+    },
+    {
+      "path": "verify.py",
+      "bytes": 5024,
+      "sha256": "9c51cc115a43ef6d23c85e2597a33e762780186cae8bb54beba6b47cb2ea1eae"
+    }
+  ],
+  "credentialScan": "pass; literal and private file excluded"
+}

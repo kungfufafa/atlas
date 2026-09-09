@@ -1,0 +1,84 @@
+{
+  "at": "2026-09-06T23:53:57.646895+00:00",
+  "status": "owner-gates-passed-awaiting-independent-review",
+  "componentReadyForIntegrationReview": true,
+  "productionActivationReady": false,
+  "sourceHash": "17a262bf4fd5ab96f72fe4e7ca741cc0066542c321b037c70f713e35a621faeb",
+  "baselineSourceHash": "6cf23f28cc6a9e7c0056c29e605850437e2175e93d63b80111e6f090d7df66dd",
+  "sourceFiles": 2086,
+  "changedFiles": [
+    "apps/server/src/index.ts",
+    "apps/server/src/services/artifact-producer-seam.test.ts",
+    "apps/server/src/services/artifact-service.ts",
+    "apps/server/src/services/browser-session-service.ts",
+    "apps/server/src/tools/generate-image-tool.ts",
+    "packages/core/src/artifact-publication.ts",
+    "packages/core/src/contract.ts",
+    "packages/core/src/files/assets.ts",
+    "packages/core/src/files/versioned-write.ts",
+    "packages/core/src/skills/bundled/save-artifact/SKILL.md",
+    "packages/core/src/tools/builtin.ts",
+    "packages/core/src/tools/spreadsheet-io.ts",
+    "packages/core/src/tools/spreadsheet.ts"
+  ],
+  "rootC5FilesUnchanged": 2078,
+  "foundationFilesUnchanged": 2085,
+  "frozenFoundationEvidenceUnchanged": true,
+  "patches": {
+    "combined.patch": "4809370cdce4ab3f756107576b605f6266d5f4c8d3b5190d8a47b33f18dbd4fc",
+    "production.patch": "776a6e5235cf5ebd0739f47daa7bb1e2eac35ff03130210ba723f6729c70b4e6",
+    "source-inventory.json": "b78f0aa65a6f06a54ab682499904370d1abc896dcbafcc179480109a12008f62",
+    "gates.json": "70b9a86f940dd4803dcf71d7c729d4b2b4d9f9dfb840c3cf78303cf32397c116",
+    "implementation-notes.md": "97d631ca4c4dea19f3f742ffc9778af2d7defd34b66a3a567b5168b7bd7cd2ee"
+  },
+  "gates": [
+    {
+      "name": "owner-regressions",
+      "command": "bun test apps/server/src/services/artifact-producer-seam.test.ts packages/core/src/tools/builtin-publication.test.ts packages/core/src/tools/spreadsheet-io.test.ts apps/server/src/tools/generate-image-tool.test.ts apps/server/src/services/artifact-service.test.ts apps/server/src/services/artifact-publication-service.test.ts",
+      "exitCode": 0,
+      "log": "final-regressions.log",
+      "tests": 70,
+      "assertions": 325,
+      "files": 6,
+      "newSeamTests": 16,
+      "logSha256": "2bccbee530c99703acad2416d5ab2f70d71518374c2f65b95d2fad4c18c9664b"
+    },
+    {
+      "name": "scoped-types",
+      "command": "bun x --no-install tsc --noEmit -p tsconfig.producer.json",
+      "exitCode": 0,
+      "log": "final-typecheck.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "scoped-lint",
+      "exitCode": 0,
+      "log": "final-lint.log",
+      "files": 12,
+      "logSha256": "4e07ac9498f4ceb2bcb8405851a3904ca0191770c25f5b27f6a5fdbb819693c9"
+    },
+    {
+      "name": "patch-check",
+      "command": "git apply --check combined.patch (cwd frozen foundation source; read-only)",
+      "exitCode": 0,
+      "log": "patch-check.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "independentReview": {
+    "status": "pending-root-source-review",
+    "testRerun": false
+  },
+  "limitations": [
+    "Unwired execution lifecycle and legacy consumers; no activation or strict cutover.",
+    "Generic writes/edits require explicit deliverable:true for new authority. Existing-file/Bash/Python selection remains separate.",
+    "Browser page is an in-process stub; image provider is offline fake. No provider calls or OS confinement tests.",
+    "Trusted low-level producer must synchronously capture properties/bytes inside a failure boundary and retain all failed stages.",
+    "Foundation auth/GC/concurrency/crash/host limits continue to apply. No parity/live gain/full racefix claim."
+  ],
+  "retainedFailures": [
+    "initial-tests.log: 13 fixture failures because private parent directory missing; corrected fixture mkdir.",
+    "initial-typecheck.log: test-only Office default fields and image UserConfig defaultProviderId omitted; corrected test values.",
+    "inspection-errors.md plus verbose truncated inventory, missing tsconfig.foundation.json and guessed test files; resolved through actual inventory."
+  ]
+}

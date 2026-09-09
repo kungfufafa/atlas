@@ -13,14 +13,49 @@ import {
 import { formatDiscordAttachmentSizeLimitMessage } from "@atlas/core/discord-attachment";
 import type { TextBasedChannel } from "discord.js";
 import type { DiscordMessenger } from "./messenger";
+import { resolveDiscordNativeOrigin } from "./native-origin";
 import {
   DISCORD_ARTIFACT_ATTACHMENT_MAX_BYTES,
   sendDiscordArtifactAttachment,
 } from "./send-artifact-attachment";
 import type { SessionStore } from "./session-store";
 
+async function authorizeDiscordArtifactRead(input: {
+  channel: TextBasedChannel;
+  channelAddressed?: boolean;
+  channelUserId: string;
+  client: AtlasClient;
+  profileId: string;
+  sessionId: string;
+}): Promise<void> {
+  await input.client.authorizeChannelPrincipal({
+    ...(await resolveDiscordNativeOrigin(
+      input.channel,
+      input.channelAddressed
+    )),
+    channel: "discord",
+    channelUserId: input.channelUserId,
+    intent: "read",
+    profileId: input.profileId,
+    sessionId: input.sessionId,
+  });
+}
+
+async function canStillDeliver(
+  authorize: () => Promise<void>
+): Promise<boolean> {
+  try {
+    await authorize();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function uploadDiscordArtifactFromToolResult(input: {
   channel: TextBasedChannel;
+  channelAddressed?: boolean;
+  channelUserId: string;
   client: AtlasClient;
   messenger: DiscordMessenger;
   profileId: string;
@@ -33,11 +68,13 @@ export async function uploadDiscordArtifactFromToolResult(input: {
   }
 
   try {
+    await authorizeDiscordArtifactRead(input);
     const { data } = await input.client.readProfileArtifactContent(
       input.profileId,
       artifact.path,
       { sessionId: input.sessionId }
     );
+    await authorizeDiscordArtifactRead(input);
     const result = await sendDiscordArtifactAttachment(input.channel, {
       bytes: new Uint8Array(data),
       filename: artifact.filename,
@@ -45,12 +82,18 @@ export async function uploadDiscordArtifactFromToolResult(input: {
     });
 
     if (!result.ok && result.error) {
-      await input.messenger.send(result.error);
+      await authorizeDiscordArtifactRead(input);
+      await input.messenger.send(
+        `${result.error} Saved file: ${artifact.path.startsWith("artifacts/") ? artifact.path : `artifacts/${artifact.path}`}`
+      );
       return null;
     }
 
     return result.ok ? artifact.path : null;
   } catch (error) {
+    if (!(await canStillDeliver(() => authorizeDiscordArtifactRead(input)))) {
+      return null;
+    }
     await input.messenger.send(
       error instanceof Error
         ? error.message
@@ -91,6 +134,8 @@ function parseSendDiscordArtifactResult(result: unknown): {
 
 export async function maybeSendRequestedDiscordArtifactAttachment(input: {
   channel: TextBasedChannel;
+  channelAddressed?: boolean;
+  channelUserId: string;
   client: AtlasClient;
   conversationKey: string;
   profileId: string;
@@ -103,10 +148,13 @@ export async function maybeSendRequestedDiscordArtifactAttachment(input: {
     return false;
   }
 
+  await authorizeArtifactDelivery(input);
+
   const registry = input.sessionStore.getDeliverableArtifacts(
     input.conversationKey
   );
   const sessionId = input.sessionStore.get(input.conversationKey)?.sessionId;
+  const deliveryInput = { ...input, sessionId };
   let listed: Awaited<
     ReturnType<AtlasClient["listProfileArtifacts"]>
   >["artifacts"] = [];
@@ -132,6 +180,7 @@ export async function maybeSendRequestedDiscordArtifactAttachment(input: {
   });
 
   if (!artifact) {
+    await authorizeArtifactDelivery(deliveryInput);
     await input.messenger.send(formatMissingAttachArtifactMessage());
     return false;
   }
@@ -145,11 +194,13 @@ export async function maybeSendRequestedDiscordArtifactAttachment(input: {
   }
 
   try {
+    await authorizeArtifactDelivery(deliveryInput);
     const { data } = await input.client.readProfileArtifactContent(
       input.profileId,
       artifact.path,
       { sessionId }
     );
+    await authorizeArtifactDelivery(deliveryInput);
     const result = await sendDiscordArtifactAttachment(input.channel, {
       bytes: new Uint8Array(data),
       filename: artifact.filename,
@@ -157,12 +208,20 @@ export async function maybeSendRequestedDiscordArtifactAttachment(input: {
     });
 
     if (!result.ok && result.error) {
-      await input.messenger.send(result.error);
+      await authorizeArtifactDelivery(deliveryInput);
+      await input.messenger.send(
+        `${result.error} Saved file: ${artifact.path.startsWith("artifacts/") ? artifact.path : `artifacts/${artifact.path}`}`
+      );
       return false;
     }
 
     return result.ok;
   } catch (error) {
+    if (
+      !(await canStillDeliver(() => authorizeArtifactDelivery(deliveryInput)))
+    ) {
+      return false;
+    }
     await input.messenger.send(
       error instanceof Error
         ? error.message
@@ -174,6 +233,8 @@ export async function maybeSendRequestedDiscordArtifactAttachment(input: {
 
 export async function deliverDiscordTurnArtifactShares(input: {
   channel: TextBasedChannel;
+  channelAddressed?: boolean;
+  channelUserId: string;
   client: AtlasClient;
   session: RemoteChatSession;
   conversationKey: string;
@@ -192,6 +253,8 @@ export async function deliverDiscordTurnArtifactShares(input: {
     return;
   }
 
+  await authorizeArtifactDelivery(input);
+
   const shareUrlCache = input.sessionStore.getArtifactShareUrls(
     input.conversationKey
   );
@@ -199,6 +262,7 @@ export async function deliverDiscordTurnArtifactShares(input: {
   const delivered = await mintDeliverableArtifacts({
     artifacts: paired,
     publish: async (path) => {
+      await authorizeArtifactDelivery(input);
       const response = await input.client.publishProfileArtifactShare(
         input.profileId,
         path,
@@ -230,12 +294,14 @@ export async function deliverDiscordTurnArtifactShares(input: {
   const alreadyUploaded = new Set(input.skipPaths ?? []);
 
   for (const artifact of delivered) {
+    await authorizeArtifactDelivery(input);
     if (alreadyUploaded.has(artifact.path)) {
       continue;
     }
 
     const uploaded = await tryUploadDiscordArtifact({
       artifact,
+      authorize: () => authorizeArtifactDelivery(input),
       channel: input.channel,
       client: input.client,
       profileId: input.profileId,
@@ -247,7 +313,10 @@ export async function deliverDiscordTurnArtifactShares(input: {
         artifact.sizeBytes > DISCORD_ARTIFACT_ATTACHMENT_MAX_BYTES
           ? formatDiscordAttachmentSizeLimitMessage(artifact.sizeBytes)
           : `Failed to send ${artifact.filename}.`;
-      await input.messenger.send(error);
+      await authorizeArtifactDelivery(input);
+      await input.messenger.send(
+        `${error} Saved file: ${artifact.path.startsWith("artifacts/") ? artifact.path : `artifacts/${artifact.path}`}`
+      );
     }
   }
 
@@ -257,17 +326,20 @@ export async function deliverDiscordTurnArtifactShares(input: {
   });
 
   if (footer.trim()) {
+    await authorizeArtifactDelivery(input);
     await input.messenger.send(footer);
   }
 }
 
 async function tryUploadDiscordArtifact(input: {
+  authorize: () => Promise<void>;
   channel: TextBasedChannel;
   client: AtlasClient;
   profileId: string;
   sessionId: string;
   artifact: DeliverableChannelArtifact;
 }): Promise<boolean> {
+  await input.authorize();
   if (input.artifact.sizeBytes > DISCORD_ARTIFACT_ATTACHMENT_MAX_BYTES) {
     return false;
   }
@@ -283,6 +355,7 @@ async function tryUploadDiscordArtifact(input: {
       return false;
     }
 
+    await input.authorize();
     const result = await sendDiscordArtifactAttachment(input.channel, {
       bytes,
       filename: input.artifact.filename,
@@ -298,10 +371,43 @@ async function tryUploadDiscordArtifact(input: {
 
     return result.ok;
   } catch (error) {
+    await input.authorize();
     console.warn(
       `Discord artifact upload failed for ${input.artifact.filename}; falling back to share link.`,
       error instanceof Error ? error.message : error
     );
     return false;
   }
+}
+
+async function authorizeArtifactDelivery(input: {
+  channel: TextBasedChannel;
+  channelAddressed?: boolean;
+  channelUserId: string;
+  client: AtlasClient;
+  session?: RemoteChatSession;
+  sessionId?: string;
+  conversationKey: string;
+  profileId: string;
+  sessionStore: SessionStore;
+}): Promise<void> {
+  const stored = input.sessionStore.get(input.conversationKey);
+  const channelUserId = input.channelUserId.trim();
+  if (
+    !(stored && channelUserId) ||
+    stored.channelUserId?.trim() !== channelUserId ||
+    stored.profileId !== input.profileId ||
+    (input.sessionId && input.sessionId !== stored.sessionId) ||
+    (input.session && input.session.id !== stored.sessionId)
+  ) {
+    throw new Error("The saved conversation has no verified sender.");
+  }
+  await authorizeDiscordArtifactRead({
+    channel: input.channel,
+    channelAddressed: input.channelAddressed,
+    channelUserId,
+    client: input.client,
+    profileId: input.profileId,
+    sessionId: stored.sessionId,
+  });
 }

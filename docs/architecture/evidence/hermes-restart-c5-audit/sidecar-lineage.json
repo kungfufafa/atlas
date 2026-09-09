@@ -1,0 +1,42 @@
+{
+  "initialManifestSha256": "a329cdeb9a7c63395b784f2691c212591e20a5826e9aa54893265e5a737a2614",
+  "preservedInitialHashesButNotOriginalSidecarBytes": true,
+  "changes": [
+    {
+      "path": "after_effect_before_receipt/restart.sqlite-shm",
+      "originalSha256": "287a0f142bbc32c7746d604ceda3e803ccf58cf95d9313ee0508bb98ae2683ce",
+      "currentSha256": "53b58d521f338cc69daf71d59b113403cd009fb2f292bd8b5da7dcadf496a51a",
+      "kind": "SQLite transient sidecar changed or removed during explicit later reopen"
+    },
+    {
+      "path": "after_effect_before_receipt/restart.sqlite-wal",
+      "originalSha256": "c2084ff9bc65f24408aa7ee400f3a702d1cc7a2df2d3ad74bbbf70cb785a3292",
+      "currentSha256": "a5fda6d72e5c2e78feffb220f83d08620cbdb28a947ad61f7ea2d9c85e9cd202",
+      "kind": "SQLite transient sidecar changed or removed during explicit later reopen"
+    },
+    {
+      "path": "approval_wait/restart.sqlite-shm",
+      "originalSha256": "4923302f5b64a5d6779f7f87991366f238ceaad87a175920b146f5e0f1579a6a",
+      "currentSha256": "ad47ea881f1b1c44c40f547378862bf76b7af1a44f8a7ce3289447d48476a7f3",
+      "kind": "SQLite transient sidecar changed or removed during explicit later reopen"
+    },
+    {
+      "path": "approval_wait/restart.sqlite-wal",
+      "originalSha256": "7b14b42717992c52107d40f8a009aa468510cd660df7bcadf7296fc906438fd6",
+      "currentSha256": "20989fc911a4abae5b841738a03c20613af5f73b9c0eaa4e8f0c944b0b5315f9",
+      "kind": "SQLite transient sidecar changed or removed during explicit later reopen"
+    },
+    {
+      "path": "before_effect/restart.sqlite-shm",
+      "originalSha256": "6d970708145d23b2f64913b7edf96a185b7391d9d1d9f4c8d80666cf2aabed6a",
+      "currentSha256": "a1acf54e9e93f86e0aba945a31a0bdaec505860360889b3e92d282a71cc6662b",
+      "kind": "SQLite transient sidecar changed or removed during explicit later reopen"
+    },
+    {
+      "path": "before_effect/restart.sqlite-wal",
+      "originalSha256": "41bcabc9d0812604dcc01406a4769baaa9e4aaa7cea316dacc9283ec2b6fbcf3",
+      "currentSha256": "7f9519b28fd956ea8ef6aad8ef1725d65250f6ad4d04b0258c21289c5cabaaf9",
+      "kind": "SQLite transient sidecar changed or removed during explicit later reopen"
+    }
+  ]
+}

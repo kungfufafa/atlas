@@ -1,0 +1,29 @@
+{
+  "activeCombinedCandidateExcluded": "/private/tmp/atlas-candidate6-integration",
+  "candidateSourceHash": null,
+  "createdAt": "2026-09-07T02:49:56.324593+00:00",
+  "fullOriginalRoots": [
+    "/private/tmp/atlas-artifact-agent-service-activation-design-v1"
+  ],
+  "fullReplayArchive": false,
+  "fullSourceRoots": [],
+  "kind": "source-only-prospective-design",
+  "knownCredentialScan": "All copied/generated pack bytes checked with the existing private key and finite known-value scanner; no key value/hash copied or printed.",
+  "limits": [
+    "The exact copied plan predates final principal review and retains its then-reported interface/order. The sealed principal review supersedes that planned guard order: existing guard first, fresh current guard last.",
+    "Mandatory pre-load/pre-spawn admission must bind actual roots and preserve trusted evidence after temporary-root cleanup; the base session context alone cannot provide that evidence.",
+    "Unsafe same-UID processes, other profiles, stale MCP connections and trusted fixed workers require explicit deployment-wide scope; publication-profile checks alone do not protect old private blobs.",
+    "No code, tests, production activation, complete artifact UX, automatic Bash/Python publication or model comparison was delivered by this design."
+  ],
+  "originalsRetained": true,
+  "ownerReadinessHistoricalBytesUnchanged": true,
+  "productionActivationApproved": false,
+  "rootC5SourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "scoresRecomputed": false,
+  "selectedFilesOnly": true,
+  "sourceBindings": {
+    "C5": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+    "assembly": "092cddfec661d7e35a8061f16e52d4389c158a3b64a7c102523b8a4b31b9233c",
+    "principalScratchReadByDesignAuthor": false
+  }
+}

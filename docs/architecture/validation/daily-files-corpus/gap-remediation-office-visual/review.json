@@ -1,0 +1,92 @@
+{
+  "renderer": "Bundled LibreOffice via Codex runtime 26.904.11930",
+  "wordRenderer": "documents/render_docx.py; all pages inspected",
+  "date": "2026-09-06",
+  "reviews": [
+    {
+      "case": "D03 historical source",
+      "pagesBefore": 1,
+      "pagesAfter": 1,
+      "status": "source_rendering_limit",
+      "observation": "Source and output omit the body paragraph because the fixture wraps w:p in body-level w:ins. Header/footer retained. Does not prove visible text edit."
+    },
+    {
+      "case": "additional inline Word insertion",
+      "source": "packages/core/src/testing/fixtures/word-tracked-runs-python.docx",
+      "producer": "scripts/daily-files-corpus/generate-tracked-inline.py (python-docx)",
+      "pagesBefore": 1,
+      "pagesAfter": 1,
+      "status": "verified",
+      "observation": "Before displays bold underlined Inserted draft. After displays deleted Inserted draft with strike-through and inserted Inserted approved with underline. Existing formatting retained. Word desktop itself was not tested."
+    },
+    {
+      "case": "X03",
+      "pagesBefore": 2,
+      "pagesAfter": 2,
+      "status": "verified_with_source_print_layout_limit",
+      "observation": "Table input Alpha changed 4 to 12; bar chart first series visibly grows to 12; Beta remains 5. Chart spans two printed pages in both source and output. Source layout was retained, not repaired."
+    }
+  ],
+  "files": [
+    {
+      "path": "d03-after/input-edited.pdf",
+      "sha256": "605435cdab2cb9b0cdbc3c79e0fba46e3cea92ddc401cc819d98a7ea02c579a2"
+    },
+    {
+      "path": "d03-after/page-1.png",
+      "sha256": "8fc29537087a18cd3d88984564f816d3d7ec0d13360b7bac21e7dbc2f6003722"
+    },
+    {
+      "path": "d03-before/input.pdf",
+      "sha256": "5dbcf3c63e316b84785504b890540f74bf93949c64c05a28c5b1a0496f62c0d0"
+    },
+    {
+      "path": "d03-before/page-1.png",
+      "sha256": "8fc29537087a18cd3d88984564f816d3d7ec0d13360b7bac21e7dbc2f6003722"
+    },
+    {
+      "path": "inline-after/input-edited.docx",
+      "sha256": "4cf72e6a873538c5054bc811ab5d42e037bc45c82d173ae04783e215557c3b18"
+    },
+    {
+      "path": "inline-after/input-edited.pdf",
+      "sha256": "19de873a42c0bdc4a13b3730151c5be4446393bed02bb69b415ad515e785cca2"
+    },
+    {
+      "path": "inline-after/page-1.png",
+      "sha256": "90df15cc156b499c511445a8d0eed4313fb11b3db6f45de6bbe4376628387900"
+    },
+    {
+      "path": "inline-before/input.pdf",
+      "sha256": "5c5c7c2a7e296a0730158e216803cc29664b5ee3648d0fd0f010c48a6050c954"
+    },
+    {
+      "path": "inline-before/page-1.png",
+      "sha256": "6256271863ec76f2fe47bbe43d18b6c83f1a741655d535bc9d240ea8e3253217"
+    },
+    {
+      "path": "x03-after/input-v2.pdf",
+      "sha256": "047c58605d2d447975eb56d3746f78b38b94b007eac74863f8f02e7d22373be5"
+    },
+    {
+      "path": "x03-after/page-1.png",
+      "sha256": "1b5e19a6b196ab75e120087f98b0c2bbac0ed844946014b63bd7447178af5536"
+    },
+    {
+      "path": "x03-after/page-2.png",
+      "sha256": "ab39ed52d59239bd816e95c818306d2d1e0ea94392d46310779314ac28df029a"
+    },
+    {
+      "path": "x03-before/input.pdf",
+      "sha256": "80312be7a1c09c6019996a3a75dfef4d27b00e87d5deaa7e5d9ef6f66a377015"
+    },
+    {
+      "path": "x03-before/page-1.png",
+      "sha256": "b89329a83b6da726f3d183568a7e6623c81d6bf9a782f36859d5e97fe0e028ac"
+    },
+    {
+      "path": "x03-before/page-2.png",
+      "sha256": "a07a38de6416ca67f670ab262e359a1096978861529a16af75e3fd0012bfeaf6"
+    }
+  ]
+}

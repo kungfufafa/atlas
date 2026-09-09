@@ -1,0 +1,41 @@
+--- a/packages/core/src/files/assets.ts
++++ b/packages/core/src/files/assets.ts
+@@ -105,7 +105,11 @@
+   path: string;
+   revision: string;
+ }> {
+-  const bytes = new Uint8Array(input.bytes);
++  const suppliedBytes = input.bytes;
++  if (suppliedBytes.byteLength > MAX_FILE_ASSET_BYTES) {
++    throw new Error(`Output exceeds the ${MAX_FILE_ASSET_BYTES} byte limit.`);
++  }
++  const bytes = new Uint8Array(suppliedBytes);
+   input.context.signal?.throwIfAborted();
+   const root = fileAssetWorkspace(input.context);
+   // Materialized input is a working source, not a new deliverable for channels.
+@@ -123,9 +127,6 @@
+     throw new Error(
+       "outputFilename must be a filename without directories (maximum 180 characters)."
+     );
+-  }
+-  if (bytes.length > MAX_FILE_ASSET_BYTES) {
+-    throw new Error(`Output exceeds the ${MAX_FILE_ASSET_BYTES} byte limit.`);
+   }
+   const directory = await guardFilePath(outputDirectory, null, undefined, {
+     allowedDirs: [root],
+--- a/packages/core/src/tools/spreadsheet-io.ts
++++ b/packages/core/src/tools/spreadsheet-io.ts
+@@ -106,10 +106,11 @@
+   signal?: AbortSignal;
+   writeMode: "inplace" | "versioned";
+ }): Promise<{ path: string; revision: string }> {
+-  const bytes = Buffer.from(input.bytes);
+-  if (bytes.length > MAX_SPREADSHEET_BYTES) {
++  const suppliedBytes = input.bytes;
++  if (suppliedBytes.byteLength > MAX_SPREADSHEET_BYTES) {
+     throw new Error("Generated spreadsheet exceeds the 25 MiB limit.");
+   }
++  const bytes = Buffer.from(suppliedBytes);
+   const directory = path.dirname(input.path);
+   await mkdir(directory, { recursive: true });
+   const temporary = path.join(

@@ -1,0 +1,88 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/tools/generate-image-tool.test.ts:
+(pass) generate_image tool seed and resolver (U3) > seed creates generate_image tool definition [3.18ms]
+(pass) generate_image tool seed and resolver (U3) > unsupported-handler cleanup retains generate_image after seed [2.29ms]
+(pass) generate_image tool seed and resolver (U3) > seedDatabase includes generate_image and Super Agent is not auto-assigned [76.54ms]
+(pass) generate_image tool seed and resolver (U3) > resolver returns runnable generate_image for assigned profile [2.98ms]
+(pass) generate_image tool seed and resolver (U3) > unassigned profile session does not expose generate_image [0.55ms]
+(pass) generate_image tool seed and resolver (U3) > assigned profile tool list includes generate_image once [0.14ms]
+(pass) generate_image tool persistence (U4) > prompt produces PNG path + sidecar + attachmentId [5.19ms]
+(pass) generate_image tool persistence (U4) > records the request with zero tokens when the model reports no usage [2.02ms]
+(pass) generate_image tool persistence (U4) > filename collision gets unique suffix and remapped sidecar pairs on disk [2.16ms]
+(pass) generate_image tool persistence (U4) > unset model returns error and writes no files (AE2) [0.62ms]
+(pass) generate_image tool persistence (U4) > provider failure writes no partial sidecar or attachment [0.85ms]
+(pass) generate_image tool persistence (U4) > tool result includes path, mimeType, sizeBytes, attachmentId, model [1.60ms]
+
+apps/server/src/services/artifact-producer-seam.test.ts:
+(pass) saveFileArtifact freezes caller bytes before awaits; disk, revision and private publication agree [10.65ms]
+(pass) generic writes and edits publish only explicit deliverables and reject invalid destinations before mutation [18.19ms]
+(pass) nested document helpers assign distinct ordinals without publishing materialized sources or reads [158.11ms]
+(pass) spreadsheet creates and exports stage exact complete bytes; reads do not stage [53.88ms]
+(pass) low-level versioned writers freeze mutable bytes before IO and revision calculation [1.76ms]
+(pass) storage preserves original workspace receipts and blocks the complete publication set without producer replay [3.02ms]
+(pass) invalid-stage preserves original workspace receipts and blocks the complete publication set without producer replay [3.02ms]
+(pass) throwing bytes getter reaches trusted failure boundary and poisons earlier staged output [4.40ms]
+(pass) throwing sourcePath getter reaches trusted failure boundary and poisons earlier staged output [1.55ms]
+(pass) one invocation owns ordinals across overlapping nested saves; a second publisher starts independently [3.08ms]
+(pass) symlinked profile root produces canonical relative publication paths [7.97ms]
+(pass) generated image stages the same bytes as its file and preserves success when staging rejects [2.95ms]
+(pass) ArtifactService captures buffer before awaits, and browser screenshot/download forward one capability per output [8.90ms]
+(pass) all direct core producers retain successful effect receipts when publication storage fails [15.01ms]
+(pass) generic explicit edit rejects outside artifacts before changing the file [1.60ms]
+(pass) tool input cannot choose output ordinal or publication ownership [1.23ms]
+
+apps/server/src/services/artifact-publication-service.test.ts:
+(pass) sqlite authoritative publication > overlapping sessions publish only their explicit captured bytes; workspace overwrite is harmless [36.69ms]
+(pass) sqlite authoritative publication > failed completed operations and cancellation never publish staged outputs or delete user files [20.06ms]
+(pass) sqlite authoritative publication > forged tool metadata cannot create, reassign or finalize publications [19.76ms]
+(pass) sqlite authoritative publication > exact retries across controllers are idempotent; differing bytes, metadata or output sets conflict atomically [19.15ms]
+(pass) sqlite authoritative publication > wrong scopes and guessed IDs fail; current authorization and revocation remain authoritative [17.38ms]
+(pass) sqlite authoritative publication > uncertain post-commit DB error retries persistence without replaying producer [14.56ms]
+(pass) sqlite authoritative publication > deleted and recreated sessions cannot resurrect old publication authority [17.15ms]
+(pass) sqlite authoritative publication > blob staging failure preserves existing user output and cannot publish a partial set [14.65ms]
+(pass) sqlite authoritative publication > repeated exact staging is idempotent and differing same-ordinal bytes conflict [16.19ms]
+(pass) sqlite authoritative publication > a staging error cannot be ignored to commit only the other outputs [14.72ms]
+(pass) sqlite authoritative publication > an insertion conflict rolls back every output and the execution reservation [15.52ms]
+(pass) sqlite authoritative publication > unrestricted-host tampering is detected, never mislabeled immutable [17.53ms]
+(pass) sqlite authoritative publication > revocation while a read is in flight blocks returned bytes [16.19ms]
+(pass) sqlite authoritative publication > producer buffers are captured before await and private storage cannot overlap admitted roots [14.50ms]
+(pass) memory authoritative publication > overlapping sessions publish only their explicit captured bytes; workspace overwrite is harmless [1.90ms]
+(pass) memory authoritative publication > failed completed operations and cancellation never publish staged outputs or delete user files [5.33ms]
+(pass) memory authoritative publication > forged tool metadata cannot create, reassign or finalize publications [1.28ms]
+(pass) memory authoritative publication > exact retries across controllers are idempotent; differing bytes, metadata or output sets conflict atomically [2.60ms]
+(pass) memory authoritative publication > wrong scopes and guessed IDs fail; current authorization and revocation remain authoritative [1.34ms]
+(pass) memory authoritative publication > uncertain post-commit DB error retries persistence without replaying producer [1.29ms]
+(pass) memory authoritative publication > deleted and recreated sessions cannot resurrect old publication authority [1.45ms]
+(pass) memory authoritative publication > blob staging failure preserves existing user output and cannot publish a partial set [1.04ms]
+(pass) memory authoritative publication > repeated exact staging is idempotent and differing same-ordinal bytes conflict [1.33ms]
+(pass) memory authoritative publication > a staging error cannot be ignored to commit only the other outputs [1.04ms]
+(pass) memory authoritative publication > an insertion conflict rolls back every output and the execution reservation [1.06ms]
+(pass) memory authoritative publication > unrestricted-host tampering is detected, never mislabeled immutable [1.22ms]
+(pass) memory authoritative publication > revocation while a read is in flight blocks returned bytes [2.35ms]
+(pass) memory authoritative publication > producer buffers are captured before await and private storage cannot overlap admitted roots [1.78ms]
+(pass) SQLite concurrent connections and restart preserve exact committed bytes and idempotency [28.53ms]
+
+apps/server/src/services/artifact-service.test.ts:
+(pass) ArtifactService > detects common MIME types accurately [0.60ms]
+(pass) ArtifactService > saved artifacts remain readable through a symlinked configuration root [1.40ms]
+(pass) ArtifactService > saves, lists, inspects, reads, and deletes artifacts [5.10ms]
+
+packages/core/src/tools/builtin-publication.test.ts:
+(pass) B02 writing the returned absolute txt artifact path preserves its original bytes [5.76ms]
+(pass) B02 writing the returned absolute docx artifact path preserves its original bytes [12.18ms]
+(pass) B02 writing the returned absolute pptx artifact path preserves its original bytes [9.62ms]
+(pass) B03 metadata enrichment preserves the content version's lineage [3.77ms]
+(pass) B04 same relative artifact names in different working directories keep independent metadata [10.01ms]
+(pass) B05 docx creation and metadata wait for the profile mutation lock [6.44ms]
+(pass) B01 simultaneous docx creation keeps every complete result [44.05ms]
+(pass) B05 pptx creation and metadata wait for the profile mutation lock [2.73ms]
+(pass) B01 simultaneous pptx creation keeps every complete result [19.86ms]
+
+packages/core/src/tools/spreadsheet-io.test.ts:
+(pass) spreadsheet preflight validates actual expansion before handing a ZIP to ExcelJS [41.47ms]
+
+ 70 pass
+ 0 fail
+ 325 expect() calls
+Ran 70 tests across 6 files. [2.13s]

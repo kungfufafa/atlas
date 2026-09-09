@@ -152,61 +152,71 @@ describe("agent chat tool loop", () => {
     expect(events).toEqual(["start:sample", "end:sample", "chunk:done"]);
   });
 
-  test("emits artifacts created by a tool", async () => {
-    const artifactTool: ToolDefinition = {
-      description: "Create a report",
-      name: "artifact_sample",
-      parameters: { properties: {}, type: "object" },
-      run() {
-        return Promise.resolve({
-          artifacts: [
-            {
-              createdAt: "2026-08-25T10:00:00.000Z",
-              filename: "report.pdf",
-              id: "artifact_1",
-              mimeType: "application/pdf",
-              path: "artifacts/report.pdf",
-              sizeBytes: 42,
-            },
-          ],
-          status: "created",
-        });
-      },
-    };
-    const provider = createMockProvider([
-      {
-        assistantMessage: {
+  test.each([false, true])(
+    "emits artifacts only for successful tool results (failed=%s)",
+    async (failed) => {
+      const artifactTool: ToolDefinition = {
+        description: "Create a report",
+        name: "artifact_sample",
+        parameters: { properties: {}, type: "object" },
+        run() {
+          return Promise.resolve({
+            artifacts: [
+              {
+                createdAt: "2026-08-25T10:00:00.000Z",
+                filename: "report.pdf",
+                id: "artifact_1",
+                mimeType: "application/pdf",
+                path: "artifacts/report.pdf",
+                sizeBytes: 42,
+              },
+            ],
+            status: "created",
+            success: !failed,
+          });
+        },
+      };
+      const provider = createMockProvider([
+        {
+          assistantMessage: {
+            content: "",
+            role: "assistant",
+            toolCalls: [
+              { arguments: {}, id: "call_1", name: "artifact_sample" },
+            ],
+          },
           content: "",
-          role: "assistant",
           toolCalls: [{ arguments: {}, id: "call_1", name: "artifact_sample" }],
         },
-        content: "",
-        toolCalls: [{ arguments: {}, id: "call_1", name: "artifact_sample" }],
-      },
-      {
-        assistantMessage: { content: "Done", role: "assistant" },
-        content: "Done",
-        toolCalls: [],
-      },
-    ]);
-    const harness = createAgentHarness({ provider, tools: [artifactTool] });
-    const session = harness.createChatSession({ tools: [artifactTool] });
-    const artifacts: Array<{ filename: string; size: number; type: string }> =
-      [];
+        {
+          assistantMessage: { content: "Done", role: "assistant" },
+          content: "Done",
+          toolCalls: [],
+        },
+      ]);
+      const harness = createAgentHarness({ provider, tools: [artifactTool] });
+      const session = harness.createChatSession({ tools: [artifactTool] });
+      const artifacts: Array<{ filename: string; size: number; type: string }> =
+        [];
 
-    await session.sendStream("create report", {
-      onArtifactCreated: (artifact) => artifacts.push(artifact),
-      onChunk: () => undefined,
-    });
+      await session.sendStream("create report", {
+        onArtifactCreated: (artifact) => artifacts.push(artifact),
+        onChunk: () => undefined,
+      });
 
-    expect(artifacts).toEqual([
-      expect.objectContaining({
-        filename: "report.pdf",
-        size: 42,
-        type: "pdf",
-      }),
-    ]);
-  });
+      expect(artifacts).toEqual(
+        failed
+          ? []
+          : [
+              expect.objectContaining({
+                filename: "report.pdf",
+                size: 42,
+                type: "pdf",
+              }),
+            ]
+      );
+    }
+  );
 
   test("fires parallel tool stream handlers", async () => {
     const parallelTool: ToolDefinition = {

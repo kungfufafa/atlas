@@ -1,0 +1,42 @@
+{
+  "entries": [
+    {
+      "path": "assessment.json",
+      "bytes": 1338,
+      "sha256": "b1638b2fe99e2385d8923f4c7916b568f5462bde83c0a39a63d2a421fce291d7"
+    },
+    {
+      "path": "closed-title-failure-projection.json",
+      "bytes": 4235,
+      "sha256": "6031a64028cd5f4b1f7fa11a19e14868b4f7d72e42df952835e40b7c96aa2e98"
+    },
+    {
+      "path": "inspection-limitations.json",
+      "bytes": 911,
+      "sha256": "794d82e593c40534e875472540e4b7d4186525eae7fc7d3e493353625b0274f2"
+    },
+    {
+      "path": "memo.md",
+      "bytes": 7317,
+      "sha256": "5dfac435fe6ed98338f18a3ad5927306a75489bd0b2bd601b0e8ba33fb764202"
+    },
+    {
+      "path": "scope.json",
+      "bytes": 916,
+      "sha256": "897727fcc049f6fc6d07868d722d7fe6e38d1b60794f23e03acea13a7be5e96a"
+    },
+    {
+      "path": "seal_assessment.py",
+      "bytes": 11679,
+      "sha256": "220cec41d3c5baf5786d246fe701907fb51ba6723c25737f4d8e9e3716ef34a4"
+    },
+    {
+      "path": "source-bindings.json",
+      "bytes": 11713,
+      "sha256": "975aae3455d85a6eb5e1008802d7c974af4a22d6bab88e7dd578e77464f5c654"
+    }
+  ],
+  "fileCount": 7,
+  "totalBytes": 38109,
+  "scope": "All assessment files except manifest/seal themselves; no product source copied/changed."
+}

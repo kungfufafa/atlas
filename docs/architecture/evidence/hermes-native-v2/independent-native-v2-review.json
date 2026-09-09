@@ -1,0 +1,99 @@
+{
+  "reviewedAt": "2026-09-06T16:15:45.218821+00:00",
+  "scope": "Independent read-only native product V2 identity, source provenance, queue lifetime and retained accounting failures. No confirmatory task contents or results inspected.",
+  "decision": "Scoped source-review approval: no remaining identity, queue or control-provenance blockers. Root launch still requires final guarded native fake pilots and checks against these exact final controls.",
+  "resolvedFindings": [
+    {
+      "finding": "Both control inventories listed old directory and omitted new identity helper",
+      "resolution": "Both list V2; tests assert helper/identity test/queue test captured; analyzer requires helper hash and checks archive members."
+    },
+    {
+      "finding": "Malformed captured request {} caused privacy scan to throw before producing invalid analysis",
+      "resolution": "Safe effective object conversion; regression verifies invalid report with 54 scheduled pairs retained."
+    },
+    {
+      "finding": "File prereg inaccurately described memory identity paths and phases",
+      "resolution": "Now describes fixed synthetic file org/profile names within random roots and one actual native session."
+    },
+    {
+      "finding": "Declared native root binding did not validate reported output-state ancestry",
+      "resolution": "Canonical absolute output/session/snapshot paths must stay within mapped root; completed observations require a positive root; failed setup may omit roots. Regression covers swapped state and traversal."
+    }
+  ],
+  "independentTests": [
+    {
+      "suite": "product-proxy + product-proxy-queue",
+      "passed": 10,
+      "assertions": 93,
+      "log": "independent-queue-tests.log",
+      "note": "Initial sandbox loopback bind failed; same offline scripted tests passed outside sandbox, no upstream inference."
+    },
+    {
+      "suite": "product-analysis + product-identity final including path ancestry",
+      "passed": 18,
+      "assertions": 160,
+      "log": "independent-identity-analysis-final.log"
+    }
+  ],
+  "inspectedPilotEvidence": [
+    {
+      "track": "memory",
+      "path": "/private/tmp/atlas-memory-orchestrator-test/pilot-rmHUjn/study/batches/pilot-2026-09-06T16-06-43-898Z-8927c070",
+      "arms": 4,
+      "wireRequests": 16
+    },
+    {
+      "track": "files",
+      "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-E4ennF/batches/pilot-1788710819642-feb8ab3a",
+      "arms": 4,
+      "wireRequests": 12
+    }
+  ],
+  "pilotObservation": "All inspected effective requests lacked their full private attempt, pair, task, study/trial-root and synthetic family labels. Native sessions were distinct/random, roots were neutral. These prior pilot archives precede the source-inventory/parser fixes and are retained as earlier instrumentation evidence, not final frozen provenance.",
+  "checks": [
+    "Private mapping SHA matches start/end/error identity fields, binds completion index and is separate from native state.",
+    "Opaque transport and state roots are unique per attempt. Input/output/loopback route binding checked; control/source archives verified by member content hashes and analyzer identity.",
+    "Task generator, memory/file oracles, memory budget types, code admission contract and grader byte-identical to originals; schedule digest tests compare both projections without displaying task contents.",
+    "Queue lifetime change holds slot through full broker response body even after requester abort; pre-admission abort consumes no request; finalization cancels pending work and retains unknown mandatory usage.",
+    "HTTP errors, transport errors and missing usage remain uncertifiable failures even after successful native retry; missing/duplicate arms remain in scheduled denominators.",
+    "All inspected earlier fake output roots were within assigned parent; final analyzer enforces canonical ancestry without reading mutable native state."
+  ],
+  "limits": [
+    "Scripted probes validate instrumentation, not memory competence, quality improvement, provider compatibility or native subscription behavior.",
+    "Metadata hygiene is bounded; semantic task contents and generic study/runtime labels remain. It is not a proof against every possible incidental clue or hostile runtime.",
+    "Native title timeouts and retries can still occur, within shared accounting; queue repair does not guarantee all provider/client requests complete.",
+    "Root alone authorizes freeze/live; no production, controls, scores or live runs were modified by this reviewer."
+  ],
+  "controlHashes": {
+    "docs/architecture/hermes-memory-preregistration-v2.md": "780302fc0dcf79b65fe85448015f85283c6fc4678834d934280a716eb62d5b4b",
+    "docs/architecture/hermes-native-files-preregistration-v2.md": "faacbf73d481bfaf5210ea0a135fc01f33b9d31bca40d11636be479673178afc",
+    "scripts/harness-product-compare-v2/file-atlas-runner.test.ts": "c23e9ba30bde65e74939618779e3f19e020283104a8f3c2beb1e951c97eb2144",
+    "scripts/harness-product-compare-v2/file-atlas-runner.ts": "ae237ebf3e7dd6bc59897be12ee6397762541f1bf66bec863ebcbe1ef432aa94",
+    "scripts/harness-product-compare-v2/file-code-check-test.py": "72c2ea4618565562c3d89689543e7c26796880acfed3e1070ff8aa095e8c71b0",
+    "scripts/harness-product-compare-v2/file-code-check.py": "758235b97785e7b6351f0084d00697dca4d1ffe9ea1410f53385113782920c53",
+    "scripts/harness-product-compare-v2/file-code-contract.py": "dece0956900d5b51d942b26f11a55fbb3ddcea2838c66e411f6705d31368645a",
+    "scripts/harness-product-compare-v2/file-fixtures.py": "f888bd34c6cac99da6183c346cc885ec0d11e132d1a5e021302cc762186ea6f2",
+    "scripts/harness-product-compare-v2/file-hermes-runner-test.py": "18ca2031b16650a9d11eb6b38bd54d98d2d5b70127a488b50946bd65afbd25c6",
+    "scripts/harness-product-compare-v2/file-oracles-test.py": "f97efb5113409954c89c0c5fd30109747e8d858d4e12eeae75b720ac7560d646",
+    "scripts/harness-product-compare-v2/file-oracles.py": "b330f312c8d791918077be2f61110af611f2f531735b55989cb89ce8aaaa8e8e",
+    "scripts/harness-product-compare-v2/file-run.test.ts": "a5f6d2e219dc54baeae3bd1b03a383de3ab9470c6bf6b5fc1938d176d51c21a3",
+    "scripts/harness-product-compare-v2/file-run.ts": "1fbc2a7b2bbd186753c574e7d26ea23b2645893eb7d9dcaa4ab5b4b4946ac7e2",
+    "scripts/harness-product-compare-v2/file_hermes_runner.py": "7a358bb570d0a341d303539dddc03d157569b7aafbb1a767183a749ed174ec52",
+    "scripts/harness-product-compare-v2/memory-atlas-runner.test.ts": "3bfa287df4c075287fd8a8ac28efd1fa17ca6ad8fdd3d9795ae930f4187103cd",
+    "scripts/harness-product-compare-v2/memory-atlas-runner.ts": "2329d6f750a430710df8af3acdd2c63ee7ad5b917b9c5d0b400933f70eb05124",
+    "scripts/harness-product-compare-v2/memory-oracles.ts": "f00a54d05942c752253d28cb6c73045539a0c3467b129d71e56ddf47fcc35e38",
+    "scripts/harness-product-compare-v2/memory-run.test.ts": "cec941ca95c340f14dde4812a324f43f36df5d0bcbd3d629de426977b4961ef9",
+    "scripts/harness-product-compare-v2/memory-run.ts": "535ac3d657c54578204000c615bb989bf9956385b241867eeac06ac9617ef72b",
+    "scripts/harness-product-compare-v2/memory-tasks.test.ts": "488678fadaf237629872ccb72d9fdc491c4333aaef79d4e38065483753e28dfb",
+    "scripts/harness-product-compare-v2/memory-tasks.ts": "16fb8ae75d9ff18d5a6f27ae98f415b7d650bc9294494bccb45d48f22512fdaa",
+    "scripts/harness-product-compare-v2/memory-types.ts": "dec52fba1b1dcbcabfc16afb9ce93e89a6936ffd87377f5adaed4865d597c6dd",
+    "scripts/harness-product-compare-v2/memory_hermes_runner.py": "e9bfde626ab06988f7ee7549ab7de5eb0b55454d42d5e92c6baea72e4bea15ff",
+    "scripts/harness-product-compare-v2/product-analysis.test.ts": "83583e2701a27efeca3747b518db78947818375b3b23035b0296ad48c9e549b3",
+    "scripts/harness-product-compare-v2/product-analysis.ts": "88175947315a5edb06ebe93d99cdc38ae760553ae4ee9a3c2fc3f51f86168f31",
+    "scripts/harness-product-compare-v2/product-identity.test.ts": "3740c28933f0057426e485e6128b72cc73d18f9715b5153e4f653309e25e8af4",
+    "scripts/harness-product-compare-v2/product-identity.ts": "ab2fd2fb011c972b5b6855a4f0b1f6d9c792d7282677fe52203c8d5b2442a0a3",
+    "scripts/harness-product-compare-v2/product-proxy-queue.test.ts": "f58e188646f887ce5a93225d3b60b77ca97075102684f57f954127e27afb1c60",
+    "scripts/harness-product-compare-v2/product-proxy.test.ts": "d64b2d1e2eddf5ffd380e0ff59c5ed2540644d1ba1d1122d4d6a799535753a91",
+    "scripts/harness-product-compare-v2/product-proxy.ts": "5ba5a87499100bf6bc3b630920f2c3610091f8419e9facc004d2914a95cef0d2"
+  }
+}

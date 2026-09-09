@@ -1,0 +1,876 @@
+{
+  "schemaVersion": 1,
+  "closedAt": "2026-09-07T07:24:30.407468+00:00",
+  "status": "closed",
+  "scope": "Independent full CLOSED C9 development instrumentation review only. No new model/provider, test, analyzer or oracle execution; no rescoring or confirmation access.",
+  "batch": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763",
+  "registration": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-development-independent-review/registration.json",
+    "bytes": 2012,
+    "sha256": "aeb9902073eba219dad6f46e610fd2d8e4ca75f9c9ac049ecac9e51ba2522592"
+  },
+  "verification": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-development-independent-review/full-instrumentation-verification.json",
+    "bytes": 1124537,
+    "sha256": "af82cc9d7d8aa8f0dd60209b799e949f1665479c80dc1798c81675f3d6018b2e"
+  },
+  "census": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-development-independent-review/census.json",
+    "bytes": 147834,
+    "sha256": "52bea495176a8dfff630115c156cb910c3774df2e4bf27b79040ecd631660296"
+  },
+  "selectedEvidenceBindings": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-development-independent-review/selected-evidence-bindings.json",
+    "bytes": 104180,
+    "sha256": "0ea0c6cfa858739aaefedfb6d34e54994806fc62721b2c3163191d79f941ecca"
+  },
+  "conclusion": {
+    "structuralBlockerFound": false,
+    "authenticationBlockerFound": false,
+    "nonfunctionalEndpointBlockerFound": false,
+    "allOriginalScheduledArmsRetained": true,
+    "knownTaskFailuresAreNotStructuralInvalidity": true,
+    "apiAdmissionGrantedByThisReview": false
+  },
+  "verifiedCounts": {
+    "scheduledPairs": 18,
+    "scheduledArms": 36,
+    "originalStarts": 36,
+    "originalEnds": 36,
+    "originalLedgerErrorRows": 0,
+    "processCallerReferenceFiles": 324,
+    "originalSingleSpawnCalls": 36,
+    "nativeIdentitiesBound": 35,
+    "nativeIdentityUnavailable": 1,
+    "sourceAssignments": 18,
+    "originalInputFilesHashedOpaquely": 24,
+    "sourceArchiveMembersHashedOpaquely": {
+      "atlas": 2121,
+      "controls": 53,
+      "hermes": 7481
+    },
+    "wireFiles": 951,
+    "requestGroups": 269,
+    "reportedHttp200AndExactModel": 268,
+    "transportErrorWithUnknownReportedModelAndCounters": 1,
+    "nativeQueueFiles": 36,
+    "knownMandatoryUsageArms": 35,
+    "unknownMandatoryUsageArms": 1,
+    "originalCallerFailureRows": 8,
+    "selectedExactCopies": 154
+  },
+  "frozenBindings": {
+    "candidateSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+    "controlsHash": "b3673405fab43fdd268aa286d4f6f0164ea00c2332ba43d00e28abd3d538fde5",
+    "frozenManifest": {
+      "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/frozen/manifest.json",
+      "bytes": 1177733,
+      "sha256": "b50f7517975762665cd627e4c0493f5cbe6228d22c9581781b9100946d07b30f"
+    },
+    "developmentSchedule": {
+      "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/frozen/development-schedule.json",
+      "bytes": 3938,
+      "sha256": "964d09a1cae8b3487ec67103d12228929778536b4c3ff1451470961b8e6ee43e"
+    },
+    "scope": "Compared all original Atlas, controls, Hermes maps and runtime/budget/source bindings with frozen metadata. Streamed archive members against exact maps without extraction, execution or interpretation of source bodies."
+  },
+  "transport": {
+    "requestedModel": "mimo-v2.5",
+    "effectiveModel": "mimo-v2.5",
+    "endpoint": "https://opencode.ai/zen/go/v1",
+    "userAgent": "Atlas-Hermes-Compatibility-Probe/1.0 (nonstreaming)",
+    "temperature": 0.2,
+    "stream": false,
+    "perResponseLimit": "Positive and at most min(4096, remaining reported-generated allowance of 12000); not necessarily 4096 on every request.",
+    "reportedModel": "268 exact response metadata matches; the transport-error request has no response and remains unverifiable.",
+    "status": "All 268 recorded HTTP responses were 200. One additional recorded transport error retains no HTTP status; its exact underlying network cause was not inferred."
+  },
+  "unknownAccountingArm": {
+    "scheduleOrdinal": 34,
+    "scheduledIdentity": {
+      "attemptId": "development-1788761674761-248ff763-native-files-development-pptx_revision-v0-r0-hermes",
+      "family": "pptx_revision",
+      "harness": "hermes",
+      "pairId": "native-files-development-pptx_revision-v0-r0",
+      "repetition": 0,
+      "variant": 0
+    },
+    "originalCaller": {
+      "status": "accounting_uncertain",
+      "success": false,
+      "inputIdentical": false,
+      "boundaryValid": false,
+      "inspectionAllowed": false
+    },
+    "originalEvaluation": {
+      "success": false,
+      "bindingPass": null,
+      "oraclePass": null,
+      "oracleIntegrityFailure": null
+    },
+    "process": {
+      "identity": "unavailable",
+      "observedIdentity": null,
+      "reportedStatus": null,
+      "receiptComplete": true,
+      "parentBinding": "bound",
+      "closed": true,
+      "timedOut": true,
+      "processFailure": true,
+      "failureCodes": [
+        "process_deadline",
+        "child_exit_not_zero",
+        "native_empty_output",
+        "deadline_exceeded_at_observation"
+      ],
+      "cleanup": {
+        "allDescendantsGone": "unproved",
+        "directChildCloseObserved": true,
+        "directChildExitObserved": true,
+        "nativeReport": null,
+        "processGroupProbe": "absent_at_probe"
+      },
+      "exit": {
+        "at": {
+          "monotonicMs": 3018396.966042,
+          "wallMs": 1788764691005
+        },
+        "code": null,
+        "signal": "SIGTERM"
+      },
+      "oneOriginalSpawn": true
+    },
+    "callerTiming": {
+      "callerInvocationReturned": {
+        "monotonicMs": 3018404.924083,
+        "wallMs": 1788764691013
+      },
+      "callerInvocationStarted": {
+        "monotonicMs": 2718380.153792,
+        "wallMs": 1788764390984
+      },
+      "deadline": {
+        "atMonotonicMs": 3018376.284708,
+        "atWallMs": 1788764690980,
+        "scope": "scheduled_attempt"
+      },
+      "invocation": {
+        "bytes": 2120,
+        "path": "invocation.json",
+        "sha256": "baf3f1124ec9d155fdaaa3b83e8c5612e54cb51de7939194a0ce88d335100f9c"
+      },
+      "outerInvocationElapsedMs": 300024.77029100014,
+      "outerInvocationElapsedWallMs": 300029,
+      "schemaVersion": 3
+    },
+    "identityBinding": {
+      "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/trials/development-1788761674761-248ff763-native-files-development-pptx_revision-v0-r0-hermes/runtime-identity.json",
+      "bytes": 467,
+      "sha256": "d03151755828fe366574374dc0cad2840bfed2957d6f06d2c095649ce2127b32"
+    },
+    "sourceAssignmentBinding": {
+      "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/pairs/native-files-development-pptx_revision-v0-r0/source-assignment.json",
+      "bytes": 601,
+      "sha256": "a939a2401a9a89c0d2be1b8b179201808dc23d8ee2c76dc5dd12f7b74c663fdf"
+    },
+    "originalUsage": {
+      "budgetExceeded": true,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 1030,
+      "observedPromptTokens": 27606,
+      "promptTokens": null,
+      "providerRequests": 7
+    },
+    "originalAccounting": {
+      "cachedTokens": null,
+      "finalized": true,
+      "generatedTokens": null,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": false,
+      "observationError": false,
+      "observedGeneratedTokens": 1030,
+      "observedPromptTokens": 27606,
+      "promptTokens": null
+    },
+    "requestCount": 7,
+    "originalRequestStatuses": {
+      "200": 6,
+      "None": 1
+    }
+  },
+  "unknownAccountingInterpretation": "Hermes pptx_revision-v0 timed out with complete bound parent/caller receipts and empty native output. Native identity remains unavailable, never reconstructed from parent metadata. One of seven requests has transport-error status and unknown counters; mandatory totals remain null despite observed 27606 prompt / 1030 generated. This fully attributed failed arm remains in the original denominator; no conflicting identity or malformed evidence was found.",
+  "failedRows": [
+    {
+      "scheduledIdentity": {
+        "attemptId": "development-1788761674761-248ff763-native-files-development-xlsx_reconciliation-v0-r0-atlas",
+        "family": "xlsx_reconciliation",
+        "harness": "atlas",
+        "pairId": "native-files-development-xlsx_reconciliation-v0-r0",
+        "repetition": 0,
+        "variant": 0
+      },
+      "originalCaller": {
+        "status": "failed",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-06c5e5ef-592a-4584-9a31-2202fad5f3e4"
+        },
+        "reportedStatus": "failed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": true,
+        "failureCodes": ["child_exit_not_zero", "native_reported_failure"],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 760113.364875,
+            "wallMs": 1788762432697
+          },
+          "code": 1,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": 54784,
+        "costUsd": null,
+        "generatedTokens": 12000,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 12000,
+        "observedPromptTokens": 91634,
+        "promptTokens": 91634,
+        "providerRequests": 10
+      }
+    },
+    {
+      "scheduledIdentity": {
+        "attemptId": "development-1788761674761-248ff763-native-files-development-docx_report-v0-r0-hermes",
+        "family": "docx_report",
+        "harness": "hermes",
+        "pairId": "native-files-development-docx_report-v0-r0",
+        "repetition": 0,
+        "variant": 0
+      },
+      "originalCaller": {
+        "status": "completed",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": true,
+        "oraclePass": false,
+        "oracleIntegrityFailure": false
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "hermes",
+          "runId": "transport-72187701-498d-447d-94b3-de0d2c571d40"
+        },
+        "reportedStatus": "completed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": false,
+        "failureCodes": [],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": {
+              "completed": true
+            },
+            "supervisorCleanup": {
+              "completed": true
+            }
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 1495340.788875,
+            "wallMs": 1788763167937
+          },
+          "code": 0,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": 42624,
+        "costUsd": null,
+        "generatedTokens": 1100,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 1100,
+        "observedPromptTokens": 57156,
+        "promptTokens": 57156,
+        "providerRequests": 9
+      }
+    },
+    {
+      "scheduledIdentity": {
+        "attemptId": "development-1788761674761-248ff763-native-files-development-docx_report-v0-r0-atlas",
+        "family": "docx_report",
+        "harness": "atlas",
+        "pairId": "native-files-development-docx_report-v0-r0",
+        "repetition": 0,
+        "variant": 0
+      },
+      "originalCaller": {
+        "status": "completed",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": true,
+        "oraclePass": false,
+        "oracleIntegrityFailure": false
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-5d97dd8a-a9ca-444a-b70d-522a577b5cfb"
+        },
+        "reportedStatus": "completed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": false,
+        "failureCodes": [],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 1577740.688042,
+            "wallMs": 1788763250336
+          },
+          "code": 0,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": 9600,
+        "costUsd": null,
+        "generatedTokens": 1788,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 1788,
+        "observedPromptTokens": 18584,
+        "promptTokens": 18584,
+        "providerRequests": 4
+      }
+    },
+    {
+      "scheduledIdentity": {
+        "attemptId": "development-1788761674761-248ff763-native-files-development-code_fix-v0-r0-hermes",
+        "family": "code_fix",
+        "harness": "hermes",
+        "pairId": "native-files-development-code_fix-v0-r0",
+        "repetition": 0,
+        "variant": 0
+      },
+      "originalCaller": {
+        "status": "completed",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": true,
+        "oraclePass": false,
+        "oracleIntegrityFailure": false
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "hermes",
+          "runId": "transport-54ea2aa8-4b17-4024-b040-3fa8da98b05b"
+        },
+        "reportedStatus": "completed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": false,
+        "failureCodes": [],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": {
+              "completed": true
+            },
+            "supervisorCleanup": {
+              "completed": true
+            }
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 2369596.333167,
+            "wallMs": 1788764042204
+          },
+          "code": 0,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": 75776,
+        "costUsd": null,
+        "generatedTokens": 7152,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 7152,
+        "observedPromptTokens": 88958,
+        "promptTokens": 88958,
+        "providerRequests": 11
+      }
+    },
+    {
+      "scheduledIdentity": {
+        "attemptId": "development-1788761674761-248ff763-native-files-development-xlsx_surgical_edit-v0-r0-atlas",
+        "family": "xlsx_surgical_edit",
+        "harness": "atlas",
+        "pairId": "native-files-development-xlsx_surgical_edit-v0-r0",
+        "repetition": 0,
+        "variant": 0
+      },
+      "originalCaller": {
+        "status": "completed",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": false,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-80b5a878-5c50-4c38-88f2-3aa7cca4a7d4"
+        },
+        "reportedStatus": "completed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": false,
+        "failureCodes": [],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 2510608.771917,
+            "wallMs": 1788764183219
+          },
+          "code": 0,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": 12032,
+        "costUsd": null,
+        "generatedTokens": 1745,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 1745,
+        "observedPromptTokens": 25203,
+        "promptTokens": 25203,
+        "providerRequests": 5
+      }
+    },
+    {
+      "scheduledIdentity": {
+        "attemptId": "development-1788761674761-248ff763-native-files-development-pptx_revision-v0-r0-hermes",
+        "family": "pptx_revision",
+        "harness": "hermes",
+        "pairId": "native-files-development-pptx_revision-v0-r0",
+        "repetition": 0,
+        "variant": 0
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": false,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "unavailable",
+        "observedIdentity": null,
+        "reportedStatus": null,
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": true,
+        "processFailure": true,
+        "failureCodes": [
+          "process_deadline",
+          "child_exit_not_zero",
+          "native_empty_output",
+          "deadline_exceeded_at_observation"
+        ],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": null,
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3018396.966042,
+            "wallMs": 1788764691005
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "oneOriginalSpawn": true
+      },
+      "originalUsage": {
+        "budgetExceeded": true,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 1030,
+        "observedPromptTokens": 27606,
+        "promptTokens": null,
+        "providerRequests": 7
+      }
+    },
+    {
+      "scheduledIdentity": {
+        "attemptId": "development-1788761674761-248ff763-native-files-development-docx_report-v1-r0-atlas",
+        "family": "docx_report",
+        "harness": "atlas",
+        "pairId": "native-files-development-docx_report-v1-r0",
+        "repetition": 0,
+        "variant": 1
+      },
+      "originalCaller": {
+        "status": "completed",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": true,
+        "oraclePass": false,
+        "oracleIntegrityFailure": false
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-c607b9e3-6434-4e3a-9b72-001203c98c09"
+        },
+        "reportedStatus": "completed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": false,
+        "failureCodes": [],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3083555.212417,
+            "wallMs": 1788764756164
+          },
+          "code": 0,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": 38528,
+        "costUsd": null,
+        "generatedTokens": 2418,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 2418,
+        "observedPromptTokens": 48805,
+        "promptTokens": 48805,
+        "providerRequests": 8
+      }
+    },
+    {
+      "scheduledIdentity": {
+        "attemptId": "development-1788761674761-248ff763-native-files-development-docx_report-v1-r0-hermes",
+        "family": "docx_report",
+        "harness": "hermes",
+        "pairId": "native-files-development-docx_report-v1-r0",
+        "repetition": 0,
+        "variant": 1
+      },
+      "originalCaller": {
+        "status": "completed",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": true,
+        "oraclePass": false,
+        "oracleIntegrityFailure": false
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "hermes",
+          "runId": "transport-7005f0fc-c0f0-415e-9248-be8e42423b7c"
+        },
+        "reportedStatus": "completed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": false,
+        "failureCodes": [],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": {
+              "completed": true
+            },
+            "supervisorCleanup": {
+              "completed": true
+            }
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3131547.578375,
+            "wallMs": 1788764804157
+          },
+          "code": 0,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": 64448,
+        "costUsd": null,
+        "generatedTokens": 1326,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 1326,
+        "observedPromptTokens": 74436,
+        "promptTokens": 74436,
+        "providerRequests": 11
+      }
+    }
+  ],
+  "failureQualifications": [
+    "Atlas xlsx_reconciliation-v0 failed with exactly 12000 reported generated tokens and ten HTTP 200 requests. Its original usage.budgetExceeded is false at equality; this review does not relabel it.",
+    "Six other original unsuccessful arms completed natively and retain original task/evaluation failures; this review does not reevaluate their semantic oracles.",
+    "The parent separate DOCX contract opinion and raw development archive are not independently re-reviewed here."
+  ],
+  "originalAnalyzerQuoted": {
+    "binding": {
+      "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/analysis-final.json",
+      "bytes": 21213,
+      "sha256": "392b5b60309f8a0fc12992e50bee71eb56129587183025b74baad87de17273df"
+    },
+    "validity": {
+      "issues": [],
+      "valid": true
+    },
+    "coverage": {
+      "batchErrors": 0,
+      "duplicateLifecycleRecords": 0,
+      "endsWithoutStart": 0,
+      "identifiableAttempts": 36,
+      "pairPreparationErrors": 0,
+      "rawEndRecords": 36,
+      "rawErrorRecords": 0,
+      "rawStartRecords": 36,
+      "scheduledArms": 36,
+      "scheduledArmsMissingOrAmbiguous": 0,
+      "scheduledPairs": 18,
+      "startsWithoutEnd": 0
+    },
+    "completePaired": {
+      "atlasRate": 0.7777777777777778,
+      "counts": {
+        "atlasOnly": 2,
+        "bothPass": 12,
+        "hermesOnly": 2,
+        "neitherSuccessful": 2
+      },
+      "delta": 0,
+      "hermesRate": 0.7777777777777778,
+      "pairs": 18,
+      "pairsWithMissingOrAmbiguousArm": 0
+    },
+    "decision": {
+      "aggregateFloor": 0.9,
+      "comparativeAccountingKnown": false,
+      "complete": true,
+      "criticalIntegrityFailure": false,
+      "exploratory": true,
+      "familyFloor": 0.8,
+      "finiteCensus": {
+        "atlasAtLeastHermes": true,
+        "atlasPrimaryCount": 14,
+        "eligible": false,
+        "fullScheduledDenominator": 18,
+        "hermesPrimaryCount": 14,
+        "populationInference": false,
+        "scope": "Exact finite scheduled census, model and execution setup only; no inference to unseen tasks or providers."
+      },
+      "floorPass": false,
+      "informationAdequate": true,
+      "intervalConfidence": null,
+      "multiplicity": "Fixed finite census; no statistical noninferiority or multiplicity-calibrated interval.",
+      "noninferiority": "not_evaluated_finite_census",
+      "observedTie": false,
+      "statement": "Descriptive complete-denominator counts only; finite-census equal-or-better prerequisites do not qualify.",
+      "superiority": "not_evaluated_finite_census"
+    },
+    "note": "Original Atlas 14/18 and Hermes 14/18 are descriptive counts only, not independently rescored, not equality/noninferiority/parity proof and not a filter for confirmation admission."
+  },
+  "reportedUsageSummary": {
+    "atlas": {
+      "arms": 18,
+      "knownUsageArms": 18,
+      "unknownUsageArms": 0,
+      "providerRequests": 120,
+      "knownPromptSubtotals": 749653,
+      "knownGeneratedSubtotals": 57924,
+      "observedPromptSubtotals": 749653,
+      "observedGeneratedSubtotals": 57924
+    },
+    "hermes": {
+      "arms": 18,
+      "knownUsageArms": 17,
+      "unknownUsageArms": 1,
+      "providerRequests": 149,
+      "knownPromptSubtotals": 949185,
+      "knownGeneratedSubtotals": 34503,
+      "observedPromptSubtotals": 976791,
+      "observedGeneratedSubtotals": 35533
+    }
+  },
+  "resourceLimits": "Atlas recorded total is 749653 prompt / 57924 generated across 120 request records. Hermes known-arm subtotal is 949185 prompt / 34503 generated across 17 known arms; observed counters including its uncertain arm are 976791 prompt / 35533 generated across 149 request records. Complete Hermes prompt/generated totals remain unknown. Cost remains unknown for both.",
+  "cleanupAndDeadlineLimits": [
+    "All direct child closures and parent receipts were verified. Recorded descendant absence probes do not prove all descendants gone; original allDescendantsGone=unproved is retained.",
+    "Caller deadline includes full await invoke with internal reference/compatibility persistence. Subsequent caller-receipt writing, broker finalization and private grading are not certified by this review as a hard whole-pipeline watchdog."
+  ],
+  "reviewerCorrection": {
+    "record": {
+      "path": "/private/tmp/atlas-native-file-v3-c9-development-independent-review/initial-verifier-null-projection-failure.json",
+      "bytes": 867,
+      "sha256": "860c0bae0d98c03e9266f97c9321eca36151da8432ef53dd79b872f3ec24c292"
+    },
+    "meaning": "First reviewer utility stopped on a legitimate null optional evaluation field before writing output. Additive v2 only guards nullable report projection. This was not an instrumentation finding or source/score correction; original utility preserved."
+  },
+  "independence": "Reviewer did not author current caller or analyzer. Prior underlying authenticated guard authorship and prior offline seam review are disclosed; current evidence audit checks frozen live instrumentation, not independent revalidation of that guard design.",
+  "nextSequence": "Under the already bound prospective decision, structurally valid development continues to all 54 frozen confirmation pairs on the same bytes regardless of development scores. This review grants no API admission and has not accessed confirmation inputs/results."
+}

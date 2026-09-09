@@ -1,0 +1,28 @@
+{
+  "status": "prerequisite-established-no-safe-cleanup-patch",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "sourceRoot": "/private/tmp/atlas-chat-reconciliation-design-c5/source",
+  "productionFileChanges": [],
+  "rootFileChanges": [],
+  "modelProviderCalls": 0,
+  "boundedCounterexamples": {
+    "realLiveLeaseExpiryAndLateApprovalResurrection": true,
+    "lateSharedCheckpointRestoresOwner": true,
+    "lateCleanupOverwritesGenuineReceipt": true,
+    "actualKillBetweenHypotheticalRecoveryWritesLeavesPartialState": true
+  },
+  "scope": "Real services/SQLite/executor with fixture-controlled write barriers and hypothetical CAS-only recovery; not an existing recovery worker or a fixed implementation",
+  "realLeaseWaitMs": 30066,
+  "firstRecoveryCrashSetupFailedMainOnlyCopy": true,
+  "setupFailurePreserved": "recovery-crash/child.stderr",
+  "correctedCompleteDbSet": "recovery-crash-v2",
+  "priorActualThreeBoundaryReproduction": "/private/tmp/atlas-restart-reproduction/report.json",
+  "requiredPrerequisite": "Versioned chat execution ownership retained through waits/dispatch/receipts; atomic scoped owner-fenced multirow commands; explicit late evidence and legacy deployment policy",
+  "proposedDbApiChangesImplemented": false,
+  "newOwnerProtocolImplemented": false,
+  "fixedImplementationGatesRun": false,
+  "designSha256": "da2fe7f89096183be173a10b14979c35272ceec63c6c9fa63944ebc4861b4ca0",
+  "sourceBindingSha256": "f369df6b568bf2b37a05dde6cd80d43050438fa1d6a3ecf70021a9bcc83d8bb9",
+  "probeResultSha256": "9de45fe5a5c92bc58c37d17a19c614dee71a1feb1833840a86738243ad470d66",
+  "recoveryCrashResultSha256": "c470be6273b01f97da2e65ce8aae0609ac2716827f69bdfe8d484fba23608c99"
+}

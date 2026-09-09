@@ -1,0 +1,145 @@
+{
+  "at": "2026-09-07T02:13:14.974804+00:00",
+  "status": "assembled and selected-evidence owner gates complete; awaiting independent review; unwired",
+  "sourceHash": "092cddfec661d7e35a8061f16e52d4389c158a3b64a7c102523b8a4b31b9233c",
+  "sourceFiles": 2103,
+  "assemblyBaselineSourceHash": "36fa79f8a034e8e1fbcbbefe60b15ac6c7c4d516bd14043727a591cf88b86522",
+  "consumerBaseSourceHash": "abf870f82dc97c64deb0e51d4190e1bc2b674c563d583ca577d53486923ca068",
+  "integrationOwnedFiles": [
+    "apps/server/src/services/artifact-publication-service.ts",
+    "apps/server/src/services/selected-artifact-publication.test.ts",
+    "packages/core/src/artifact-publication.ts",
+    "packages/db/src/artifact-publication-evidence.ts",
+    "packages/db/src/artifact-publication-identity.ts",
+    "packages/db/src/index.ts",
+    "packages/db/src/types.ts"
+  ],
+  "changedFromConsumerV2": [
+    "apps/server/src/services/artifact-producer-seam.test.ts",
+    "apps/server/src/services/artifact-publication-service.ts",
+    "apps/server/src/services/selected-artifact-capture-worker.ts",
+    "apps/server/src/services/selected-artifact-capture.test.ts",
+    "apps/server/src/services/selected-artifact-capture.ts",
+    "apps/server/src/services/selected-artifact-publication.test.ts",
+    "packages/core/src/artifact-publication.ts",
+    "packages/core/src/files/assets.ts",
+    "packages/core/src/tools/spreadsheet-io.ts",
+    "packages/db/src/artifact-publication-evidence.ts",
+    "packages/db/src/artifact-publication-identity.ts",
+    "packages/db/src/index.ts",
+    "packages/db/src/types.ts"
+  ],
+  "patches": {
+    "component.patch": "3b5ba13e6720dfc71e165b3240ca38ec486f538376eff9f21d953353de0f23f1",
+    "selected-publication.patch": "0ae3289002954f4396f02a820b240a90985924f8bb9a8f00a9b90d450b70cfc7",
+    "production.patch": "7d3b00d768d5595566dca425aa0b38e2ea01e2de80c684e627174f010225d1b4"
+  },
+  "sourceInventorySha256": "5f9ff6a44763389966b6cf5041d7c8518c9b6e0372a611c39b6566313a915a19",
+  "evidenceManifestSha256": "f92f21625b194aa07e535437863f357f092533c85ebfcb771874c9e0e8df19ca",
+  "designBeforeEditsSha256": "ac22b0f389b61fc49a202fe9297890c0ee5c12b11dccc90a20345a32f02f1a24",
+  "implementationNotesSha256": "3b3d76e11af5f25163256f2cde3dbc383a3ede9996d31ed535cb1eadf6cf4e66",
+  "ownerGates": {
+    "tests": 92,
+    "assertions": 594,
+    "files": 4,
+    "newIntegrationTests": 27,
+    "scopedTypecheckExitCode": 0,
+    "lintExitCode": 0,
+    "lintFiles": 7,
+    "patchCheckExitCodes": [0, 0, 0],
+    "gates": [
+      {
+        "name": "final-regressions",
+        "command": [
+          "bun",
+          "test",
+          "apps/server/src/services/artifact-publication-service.test.ts",
+          "apps/server/src/services/selected-artifact-capture.test.ts",
+          "apps/server/src/services/selected-artifact-publication.test.ts",
+          "packages/db/src/artifact-publication-page.test.ts"
+        ],
+        "startedAt": "2026-09-07T02:08:29.120609+00:00",
+        "endedAt": "2026-09-07T02:08:47.589384+00:00",
+        "exitCode": 0,
+        "log": "final-regressions.log",
+        "sha256": "d869b65da4e3dca6f5c6c046190c6c3d887bd8ac0fb4d865fec9d2885d1fb7bc"
+      },
+      {
+        "name": "final-typecheck",
+        "command": [
+          "bun",
+          "x",
+          "--no-install",
+          "tsc",
+          "--noEmit",
+          "-p",
+          "tsconfig.selected-publication.json"
+        ],
+        "startedAt": "2026-09-07T02:08:29.120619+00:00",
+        "endedAt": "2026-09-07T02:08:40.332540+00:00",
+        "exitCode": 0,
+        "log": "final-typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "final-lint",
+        "command": [
+          "bun",
+          "x",
+          "--no-install",
+          "ultracite",
+          "check",
+          "apps/server/src/services/artifact-publication-service.ts",
+          "apps/server/src/services/selected-artifact-publication.test.ts",
+          "packages/core/src/artifact-publication.ts",
+          "packages/db/src/artifact-publication-evidence.ts",
+          "packages/db/src/artifact-publication-identity.ts",
+          "packages/db/src/index.ts",
+          "packages/db/src/types.ts"
+        ],
+        "startedAt": "2026-09-07T02:09:44.992546+00:00",
+        "endedAt": "2026-09-07T02:09:46.434605+00:00",
+        "exitCode": 0,
+        "log": "final-lint.log",
+        "sha256": "fe34813e2ca233b1cd780dec987a31fccdd5eb99a0bfbb65d7c7d1b4bb69ada1"
+      }
+    ]
+  },
+  "allInputsVerified": [
+    {
+      "root": "/private/tmp/atlas-artifact-consumer-v2",
+      "sourceHash": "abf870f82dc97c64deb0e51d4190e1bc2b674c563d583ca577d53486923ca068",
+      "filesVerified": 2098
+    },
+    {
+      "root": "/private/tmp/atlas-artifact-producer-seam-v2",
+      "sourceHash": "387f0723afe934f8a8ee36b1d6e74d17fa98295d5456d9e2ee3667ae0ef961e0",
+      "filesVerified": 2086
+    },
+    {
+      "root": "/private/tmp/atlas-selected-artifact-capture-foundation",
+      "sourceHash": "8942bd95dc70c06f260842a730b64919139341f2727ab79a000146743109c3ad",
+      "filesVerified": 2088
+    }
+  ],
+  "rootC5FilesUnchanged": 2078,
+  "dependencyLinksVerified": 13,
+  "originalCaptureFilesUnchanged": 3,
+  "generatedFingerprintRepresentationUnchanged": true,
+  "publicSelectedEvidenceClass": "selected_workspace_capture",
+  "privateCaptureEvidenceExposedInPublicRecords": false,
+  "productionActivationReady": false,
+  "providerCalls": 0,
+  "paidCalls": 0,
+  "inputSourceEdits": 0,
+  "rootSourceEdits": 0,
+  "independentReview": null,
+  "limitations": [
+    "Configured profile root only; no arbitrary ToolContext/cwd/root selector.",
+    "Selected capture does not prove authorship or atomic filesystem snapshot.",
+    "Detailed capture metadata is private but not a hostile-host attestation.",
+    "Persistence retry never recaptures; a new explicit selection under same identity can conflict after metadata change.",
+    "Full actual runtime admission, per-turn invoker/effect principal, lease ownership and consumer cutover remain separate.",
+    "No Linux run, full suite, production activation or Hermes parity/live-gain claim."
+  ]
+}

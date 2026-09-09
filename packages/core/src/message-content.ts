@@ -55,6 +55,9 @@ const XLSB_MEDIA_TYPE = "application/vnd.ms-excel.sheet.binary.macroEnabled.12";
 
 const ALLOWED_DOCUMENT_MEDIA_TYPES = new Set([
   "application/pdf",
+  "application/json",
+  "application/x-ndjson",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   XLSX_MEDIA_TYPE,
   XLS_MEDIA_TYPE,
@@ -63,20 +66,33 @@ const ALLOWED_DOCUMENT_MEDIA_TYPES = new Set([
   "text/plain",
   "text/csv",
   "text/markdown",
+  "text/tab-separated-values",
 ]);
 
 const DOCUMENT_EXTENSION_MEDIA_TYPES: Record<string, string> = {
   ".csv": "text/csv",
   ".docx":
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".json": "application/json",
+  ".jsonl": "application/x-ndjson",
   ".md": "text/markdown",
+  ".ndjson": "application/x-ndjson",
   ".pdf": "application/pdf",
+  ".pptx":
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ".tsv": "text/tab-separated-values",
   ".txt": "text/plain",
   ".xls": XLS_MEDIA_TYPE,
   ".xlsb": XLSB_MEDIA_TYPE,
   ".xlsm": XLSM_MEDIA_TYPE,
   ".xlsx": XLSX_MEDIA_TYPE,
 };
+
+/** Shared browser picker and server validation catalog. Format support is harness-owned. */
+export const DOCUMENT_ATTACHMENT_ACCEPT = [
+  ...Object.keys(DOCUMENT_EXTENSION_MEDIA_TYPES),
+  ...ALLOWED_DOCUMENT_MEDIA_TYPES,
+].join(",");
 
 export function isMessageContentPartArray(
   content: string | MessageContentPart[]
@@ -200,7 +216,7 @@ export function validateDocumentAttachments(
 
     if (!ALLOWED_DOCUMENT_MEDIA_TYPES.has(mediaType)) {
       throw new AtlasApiError(
-        `Unsupported document type: ${document.mediaType}. Allowed: pdf, docx, xls, xlsx, xlsm, xlsb, csv, txt, md.`,
+        `Unsupported document type: ${document.mediaType}. Allowed: pdf, docx, pptx, xls, xlsx, xlsm, xlsb, csv, tsv, json, jsonl, txt, md.`,
         400
       );
     }
@@ -224,7 +240,7 @@ export function normalizeDocumentMediaType(
 }
 
 export const SUPPORTED_DOCUMENT_TYPE_LABEL =
-  "pdf, docx, xls, xlsx, xlsm, xlsb, csv, txt, or md";
+  "pdf, docx, pptx, xls, xlsx, xlsm, xlsb, csv, tsv, json, jsonl, txt, or md";
 
 export function isSupportedDocumentMediaType(
   mediaType: string,
@@ -729,6 +745,17 @@ export function stripImagesForCompaction(
       suffixParts.push(
         `[${documentCount} document${documentCount === 1 ? "" : "s"} omitted from summary]`
       );
+      for (const part of message.content) {
+        if (part.type === "document_ref") {
+          suffixParts.push(
+            `[Original file: ${JSON.stringify({ bytes: part.size, documentRef: part.attachmentId, filename: part.filename })}]`
+          );
+        } else if (part.type === "document") {
+          suffixParts.push(
+            `[Document filename: ${JSON.stringify(part.filename)}]`
+          );
+        }
+      }
     }
 
     const suffix = suffixParts.length > 0 ? `\n${suffixParts.join("\n")}` : "";

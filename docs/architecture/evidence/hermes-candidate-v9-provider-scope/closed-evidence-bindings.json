@@ -1,0 +1,59 @@
+{
+  "selected": [
+    {
+      "path": "/private/tmp/atlas-candidate9-integration-independent-review/review.json",
+      "bytes": 1597,
+      "sha256": "6bc69cdf1b48ec02aa845d9e90f5dcba79237231a8d248e37f8255a0287108c7",
+      "qualification": "Closed independent C9 integration source/evidence review; not a new real subscription run."
+    },
+    {
+      "path": "/private/tmp/atlas-candidate9-integration-independent-review/review.md",
+      "bytes": 5184,
+      "sha256": "d2ae90648241d35cff7b47888ffae36333caa3724aaf76f7207b9f74fd27baf3",
+      "qualification": "Readable closed C9 integration limits and actual HTTP/scripted test scope."
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-development-independent-review/review.json",
+      "bytes": 30538,
+      "sha256": "7037e44de48d2e18774615b930db835c1ba0e0f45c4ad87c8ee83cea4067ec76",
+      "qualification": "Closed C9 MiMo development instrumentation; original quality counts only."
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-live-pilot-independent-review/review.json",
+      "bytes": 3704,
+      "sha256": "1aa27eba4eba8360ec7db946cb345eb2fa2293ecab42b11625ab06afbd574543",
+      "qualification": "Closed C9 MiMo live pilot instrumentation, unscored pilot."
+    },
+    {
+      "path": "/private/tmp/atlas-subscription-fidelity/README.md",
+      "bytes": 6318,
+      "sha256": "394037144c636a1a857e9df324d17ae5704bb98310c66740bb0a7379baaea6a1",
+      "qualification": "Historical candidate2 fake native transports and explicit model/cancellation limitations; not current C9 live proof."
+    },
+    {
+      "path": "/private/tmp/atlas-subscription-failure-usage/v2-readiness.json",
+      "bytes": 4141,
+      "sha256": "5618a8cea5d25070eed4fd0605bf498823553a9fb6ea5acd0bd07dfe9ea9b294",
+      "qualification": "Historical offline native failure accounting evidence; no new execution in this memo."
+    },
+    {
+      "path": "/private/tmp/atlas-chatgpt-success-usage/v2-readiness.json",
+      "bytes": 1630,
+      "sha256": "d90187306697e0d6e3dcdba98cc01478a9025392af878a5fc595c706d026e8cd",
+      "qualification": "Historical offline native completion/occupancy accounting evidence; no new execution in this memo."
+    },
+    {
+      "path": "/private/tmp/atlas-live-provider-proof/results.json",
+      "bytes": 613,
+      "sha256": "7a073c0c6cd32e7a000f18a0568b2d7df39acb47bcc50925d8de5c88c2e416e1",
+      "qualification": "Historical 2026-09-06 actual ChatGPT probe has one FAIL; it is not attributed to frozen C9."
+    },
+    {
+      "path": "/private/tmp/atlas-live-provider-proof/manifest.json",
+      "bytes": 4187,
+      "sha256": "c055fcc3d14decf70e4c46c0b53fb756d346086d7b0b88ba2b590469dd1fa219",
+      "qualification": "Historical planned live scope, not proof every planned case executed."
+    }
+  ],
+  "scope": "Reports/readiness and scalar historical probe fields only; no raw native trace, hidden reasoning, confirmation, model/test/oracle execution or source changes."
+}

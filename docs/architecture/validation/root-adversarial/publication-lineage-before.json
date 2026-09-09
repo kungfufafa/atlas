@@ -1,0 +1,100 @@
+[
+  {
+    "batch": 0,
+    "parent": {
+      "formatDetails": {},
+      "id": "fKSbpdOI1zKC",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "fKSbpdOI1zKC",
+      "savedAt": "2026-09-06T04:03:52.096Z",
+      "sizeBytes": 0
+    },
+    "children": 7,
+    "broken": []
+  },
+  {
+    "batch": 1,
+    "parent": {
+      "formatDetails": {},
+      "id": "y914TTAERQxt",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "y914TTAERQxt",
+      "savedAt": "2026-09-06T04:03:52.133Z",
+      "sizeBytes": 8610
+    },
+    "children": 7,
+    "broken": []
+  },
+  {
+    "batch": 2,
+    "parent": {
+      "formatDetails": {},
+      "id": "kPTnHYsfJU_2",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "kPTnHYsfJU_2",
+      "savedAt": "2026-09-06T04:03:52.195Z",
+      "sizeBytes": 0
+    },
+    "children": 7,
+    "broken": [
+      {
+        "path": "/private/tmp/atlas-lineage-race-L3rFcG/artifacts/report-2-2026-09-06-2.docx",
+        "meta": {
+          "formatDetails": {},
+          "id": "A42uFpvr2eH-",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "parentArtifactId": "pVqfGzIC0QLA",
+          "revision": 2,
+          "rootArtifactId": "pVqfGzIC0QLA",
+          "savedAt": "2026-09-06T04:03:52.196Z",
+          "sizeBytes": 8611
+        }
+      }
+    ]
+  },
+  {
+    "batch": 3,
+    "parent": {
+      "formatDetails": {},
+      "id": "yVlCTW40a1Ju",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "yVlCTW40a1Ju",
+      "savedAt": "2026-09-06T04:03:52.235Z",
+      "sizeBytes": 8610
+    },
+    "children": 7,
+    "broken": []
+  },
+  {
+    "batch": 4,
+    "parent": {
+      "formatDetails": {},
+      "id": "TlNYF63UDOSS",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "TlNYF63UDOSS",
+      "savedAt": "2026-09-06T04:03:52.278Z",
+      "sizeBytes": 0
+    },
+    "children": 7,
+    "broken": [
+      {
+        "path": "/private/tmp/atlas-lineage-race-L3rFcG/artifacts/report-4-2026-09-06-2.docx",
+        "meta": {
+          "formatDetails": {},
+          "id": "v4uqdAiYeCF6",
+          "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "parentArtifactId": "UVn95EBeW9rt",
+          "revision": 2,
+          "rootArtifactId": "UVn95EBeW9rt",
+          "savedAt": "2026-09-06T04:03:52.278Z",
+          "sizeBytes": 8610
+        }
+      }
+    ]
+  }
+]

@@ -1,0 +1,98 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/artifact-producer-seam.test.ts:
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-VsWWsN/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-VsWWsN/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) saveFileArtifact freezes caller bytes before awaits; disk, revision and private publication agree [6.00ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-iuC75x/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-iuC75x/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) generic writes and edits publish only explicit deliverables and reject invalid destinations before mutation [0.57ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-V2MkHF/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-V2MkHF/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) nested document helpers assign distinct ordinals without publishing materialized sources or reads [0.43ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-OKq4H5/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-OKq4H5/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) spreadsheet creates and exports stage exact complete bytes; reads do not stage [0.24ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-qXm6zN/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-qXm6zN/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) low-level versioned writers freeze mutable bytes before IO and revision calculation [0.39ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-occHWt/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-occHWt/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) storage preserves original workspace receipts and blocks the complete publication set without producer replay [0.34ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-pLxS9z/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-pLxS9z/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) invalid-stage preserves original workspace receipts and blocks the complete publication set without producer replay [0.28ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-e9A134/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-e9A134/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) throwing bytes getter reaches trusted failure boundary and poisons earlier staged output [0.30ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-kWrYMk/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-kWrYMk/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) throwing sourcePath getter reaches trusted failure boundary and poisons earlier staged output [0.30ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-5Sbuok/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-5Sbuok/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) one invocation owns ordinals across overlapping nested saves; a second publisher starts independently [0.44ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-azJqeC/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-azJqeC/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) symlinked profile root produces canonical relative publication paths [0.56ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-LAaH8N/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-LAaH8N/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) generated image stages the same bytes as its file and preserves success when staging rejects [0.75ms]
+ENOENT: no such file or directory, lstat '/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-GruR8x/private'
+    path: "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-producer-seam-GruR8x/private",
+ syscall: "lstat",
+   errno: -2,
+    code: "ENOENT"
+
+(fail) ArtifactService captures buffer before awaits, and browser screenshot/download forward one capability per output [0.47ms]
+
+ 0 pass
+ 13 fail
+Ran 13 tests across 1 file. [1154.00ms]

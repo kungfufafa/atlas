@@ -1,0 +1,11 @@
+# Additive clarification: Atlas PDF create v1
+
+The [original development report](report.md) remains byte-identical (SHA256 `ab53b94fbeadee1df277d14e1692aeb4b09f2cd297c053b3a92ae476887d980b`). Its PDF-create row's “supplied fact 0” refers to the **exact requested title**, not a wrong shipment value. The requested title was `Shipment handover`; the selected PDF says `Shipment Handover`. The frozen `fact:0` failure and primary failure remain unchanged.
+
+The sealed public census verifies all five supplied values: batch `SHIP-1643`, destination `Surabaya`, 39 boxes, contact `Rani Kusuma`, and warning `Keep dry. Do not stack.` No fabricated supplied field, approval, signature or delivery status was proved in this arm. These observations do not establish exact-title compliance or comprehensive visual/factual correctness.
+
+The [original manual disposition](qualification-evidence/atlas-pdf-create-v1-manual.json) records the successful producer and actual PdfReader read-back. The [original oracle](qualification-evidence/atlas-pdf-create-v1-oracle.json), [pair input](qualification-evidence/atlas-pdf-create-v1-pair-input.json) and [source values](qualification-evidence/atlas-pdf-create-v1-source-input.json) are selected exact copies. The 2,048-byte PDF remains bound by SHA256 `1af026898e2d23f8a2539ad11b9fc5a7d267c38cb11d8d8de0f222c1d73f914e`; no new parser, render or grader ran for this correction. [All original and durable archive bindings](report-qualification-20260907.json).
+
+The full FILE V2 development comparison remains invalid, with raw Atlas 13/18 and Hermes 15/18. Hermes PPTX revision v0 lacks a fallback output runId; missing identity evidence is not proof of a foreign identity. No score, original report, trial, evaluator or denominator was replaced. This correction establishes no parity or superiority.
+
+The original report's final census pointer pairs the Markdown filename with the JSON report hash. The correct source for SHA256 `4b084fefd0ae2553671af8279c2baa174e660919b0e80144e480148c861a5afc` is `report-final.json`, recorded in the additive binding. The original pointer remains historical. Full census, closure and source/runtime evidence are now preserved in the [Sep7 archive reference](../../hermes-archive-20260907.json).

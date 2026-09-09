@@ -1,0 +1,74 @@
+{
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/analysis-final.json": {
+    "sha256": "392b5b60309f8a0fc12992e50bee71eb56129587183025b74baad87de17273df",
+    "bytes": 21213
+  },
+  "/private/tmp/atlas-native-file-v3-c9-development-census/docx-reference-map-final.json": {
+    "sha256": "1da4843f975b74b38b757800453b54f6cf696c37de872f6a63effe67a0d2403a",
+    "bytes": 6926
+  },
+  "/private/tmp/atlas-native-file-v3-c9-integration/source/scripts/harness-native-files-mimo-v3/file-oracles.py": {
+    "sha256": "b330f312c8d791918077be2f61110af611f2f531735b55989cb89ce8aaaa8e8e",
+    "bytes": 17174
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/attempts.jsonl": {
+    "sha256": "c1135833f688d48b7393588609cfaa9dcfa891c6491ad44df40a375fde1849c3",
+    "bytes": 269327
+  },
+  "/private/tmp/agent-runtime-xzYeEJ/state-yFRknN/hermes-native-files-njni51vd/workspace/artifacts/incident-report.docx": {
+    "sha256": "ea784d227c37f6c650b3aaf1ee86b29a0cf38ae741a5a0eddc0c50ffea084f84",
+    "bytes": 36858
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/trials/development-1788761674761-248ff763-native-files-development-docx_report-v0-r0-hermes/runner-input.json": {
+    "sha256": "d07fccf511dfd8f18dfdf16d1a025d408f5c8f99e0eaab02b37f729ea8cd0e42",
+    "bytes": 2395
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/pairs/native-files-development-docx_report-v0-r0/source-originals/input/incident.json": {
+    "sha256": "070351bc0497e0665420aa35adcbd70b77a1deb81d1168193193eb3eccb19e71",
+    "bytes": 178
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/trials/development-1788761674761-248ff763-native-files-development-docx_report-v0-r0-hermes/artifact-oracle.json": {
+    "sha256": "1abb75009857a715ea780b086d1bb2994a880de9a4b05563b75ff529de334efd",
+    "bytes": 1342
+  },
+  "/private/tmp/agent-runtime-xzYeEJ/state-sQcPZe/atlas-native-file-57gAJi/orgs/file_study_org/profiles/file_study_profile/artifacts/incident-report.docx": {
+    "sha256": "b24b57c65be312f379eaf16534db0527ffd75c89ec5b3adf906fc06f53a6ecc2",
+    "bytes": 36858
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/trials/development-1788761674761-248ff763-native-files-development-docx_report-v0-r0-atlas/runner-input.json": {
+    "sha256": "788c37b9d57a54f7da99cf878f99941d07da55bae0daa984d5f15aae6c3b24f2",
+    "bytes": 2395
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/trials/development-1788761674761-248ff763-native-files-development-docx_report-v0-r0-atlas/artifact-oracle.json": {
+    "sha256": "1abb75009857a715ea780b086d1bb2994a880de9a4b05563b75ff529de334efd",
+    "bytes": 1342
+  },
+  "/private/tmp/agent-runtime-xzYeEJ/state-XHDlir/atlas-native-file-uB8q8O/orgs/file_study_org/profiles/file_study_profile/artifacts/incident-report.docx": {
+    "sha256": "652e30f8cda6662104f2871450638aacbbdffeec67cf18617de183dadb783be8",
+    "bytes": 36858
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/trials/development-1788761674761-248ff763-native-files-development-docx_report-v1-r0-atlas/runner-input.json": {
+    "sha256": "4aac09dbbebfa9fc019f3bf29cefb344038a93d7d4ea42c624e2c320830acd82",
+    "bytes": 2395
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/pairs/native-files-development-docx_report-v1-r0/source-originals/input/incident.json": {
+    "sha256": "4d9249d4f27711e936158d80d5efb5f67a82a0e38801be34de212fc9684d6455",
+    "bytes": 178
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/trials/development-1788761674761-248ff763-native-files-development-docx_report-v1-r0-atlas/artifact-oracle.json": {
+    "sha256": "1abb75009857a715ea780b086d1bb2994a880de9a4b05563b75ff529de334efd",
+    "bytes": 1342
+  },
+  "/private/tmp/agent-runtime-xzYeEJ/state-0uDayJ/hermes-native-files-aqnayeex/workspace/artifacts/incident-report.docx": {
+    "sha256": "f73d1195b0322a3eedf12435208c558a5cb2492ab768bc7e104f9fbd0a2777d0",
+    "bytes": 36868
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/trials/development-1788761674761-248ff763-native-files-development-docx_report-v1-r0-hermes/runner-input.json": {
+    "sha256": "9df92103e30ce03dad434eebaa0598352073a10adbafb997c64fff8ca843d4ba",
+    "bytes": 2395
+  },
+  "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/trials/development-1788761674761-248ff763-native-files-development-docx_report-v1-r0-hermes/artifact-oracle.json": {
+    "sha256": "1abb75009857a715ea780b086d1bb2994a880de9a4b05563b75ff529de334efd",
+    "bytes": 1342
+  }
+}

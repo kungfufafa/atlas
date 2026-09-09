@@ -1,0 +1,1834 @@
+--- /dev/null
++++ b/apps/server/src/services/artifact-publication-service.test.ts
+@@ -0,0 +1,714 @@
++import { describe, expect, test } from "bun:test";
++import { randomUUID } from "node:crypto";
++import {
++  mkdir,
++  mkdtemp,
++  readdir,
++  readFile,
++  rm,
++  writeFile,
++} from "node:fs/promises";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import type { ArtifactPublicationIdentity } from "@atlas/core/artifact-publication";
++import {
++  createInMemoryDatabaseAdapter,
++  createSqliteDatabase,
++  type DatabaseAdapter,
++} from "@atlas/db";
++import { ArtifactPublicationService } from "./artifact-publication-service";
++import { ArtifactPublicationStore } from "./artifact-publication-store";
++
++const now = "2026-01-01T00:00:00.000Z";
++function identity(
++  sessionId = "s1",
++  executionId = randomUUID()
++): ArtifactPublicationIdentity {
++  return {
++    actorId: "actor",
++    executionId,
++    orgId: "org",
++    profileId: "profile",
++    runId: "run",
++    sessionId,
++    toolCallId: "call",
++  };
++}
++async function seed(db: DatabaseAdapter): Promise<void> {
++  await db.upsertOrganization({
++    createdAt: now,
++    id: "org",
++    name: "Org",
++    slug: "org",
++    updatedAt: now,
++  });
++  await db.upsertProfile({
++    createdAt: now,
++    id: "profile",
++    isSuper: false,
++    model: null,
++    name: "Profile",
++    orgId: "org",
++    systemPrompt: "",
++    updatedAt: now,
++  });
++  for (const id of ["s1", "s2"]) {
++    await db.upsertSession({
++      agentQuestionnaire: null,
++      agentTodos: [],
++      channel: "web",
++      createdAt: now,
++      id,
++      modelOverride: null,
++      orgId: "org",
++      profileId: "profile",
++      title: null,
++    });
++  }
++}
++async function fixture(
++  kind: "sqlite" | "memory",
++  run: (context: {
++    db: DatabaseAdapter;
++    service: ArtifactPublicationService;
++    store: ArtifactPublicationStore;
++    root: string;
++    workspace: string;
++    authorize: () => void;
++    deny: () => void;
++  }) => Promise<void>
++): Promise<void> {
++  const root = await mkdtemp(join(tmpdir(), "publication-foundation-"));
++  const workspace = join(root, "workspace");
++  const config = join(root, "config");
++  await mkdir(workspace);
++  await mkdir(config);
++  await mkdir(join(workspace, "artifacts"));
++  const sql =
++    kind === "sqlite"
++      ? await createSqliteDatabase(join(root, "state.sqlite"))
++      : null;
++  const db = sql?.adapter ?? createInMemoryDatabaseAdapter();
++  await seed(db);
++  const store = await ArtifactPublicationStore.create(config);
++  let authorized = true;
++  const service = new ArtifactPublicationService(db, store, async (scope) => {
++    if (!authorized || scope.actorId !== "actor") {
++      throw new Error("Access denied");
++    }
++  });
++  try {
++    await run({
++      authorize: () => {
++        authorized = true;
++      },
++      db,
++      deny: () => {
++        authorized = false;
++      },
++      root,
++      service,
++      store,
++      workspace,
++    });
++  } finally {
++    sql?.close();
++    await rm(root, { force: true, recursive: true });
++  }
++}
++async function stage(
++  service: ArtifactPublicationService,
++  workspace: string,
++  owner = identity(),
++  bytes = "first",
++  path = "artifacts/output.txt"
++) {
++  const execution = await service.beginExecution(owner, [workspace]);
++  await execution.producer.stageBytes({
++    bytes: Buffer.from(bytes),
++    outputOrdinal: 0,
++    sourcePath: path,
++  });
++  return execution;
++}
++for (const kind of ["sqlite", "memory"] as const) {
++  describe(`${kind} authoritative publication`, () => {
++    test("overlapping sessions publish only their explicit captured bytes; workspace overwrite is harmless", async () => {
++      await fixture(kind, async ({ service, workspace }) => {
++        const a = identity("s1"),
++          b = identity("s2");
++        const exA = await stage(service, workspace, a, "alpha");
++        const exB = await stage(service, workspace, b, "beta");
++        await writeFile(
++          join(workspace, "artifacts/output.txt"),
++          "unrelated last workspace writer"
++        );
++        const [ra, rb] = await Promise.all([
++          exA.finalize({ data: {}, success: true }),
++          exB.finalize({ data: {}, success: true }),
++        ]);
++        expect(ra.status).toBe("committed");
++        expect(rb.status).toBe("committed");
++        expect(ra.publications).toHaveLength(1);
++        expect(rb.publications).toHaveLength(1);
++        expect(
++          (await service.read(a, ra.publications[0]!.id))?.bytes.toString()
++        ).toBe("alpha");
++        expect(
++          (await service.read(b, rb.publications[0]!.id))?.bytes.toString()
++        ).toBe("beta");
++        expect(await service.read(a, rb.publications[0]!.id)).toBeNull();
++        expect(await service.read(b, ra.publications[0]!.id)).toBeNull();
++        expect(
++          await readFile(join(workspace, "artifacts/output.txt"), "utf8")
++        ).toBe("unrelated last workspace writer");
++      });
++    });
++    test("failed completed operations and cancellation never publish staged outputs or delete user files", async () => {
++      await fixture(kind, async ({ service, workspace, root }) => {
++        await writeFile(join(workspace, "artifacts/output.txt"), "user output");
++        for (const result of [
++          {
++            error: {
++              code: "INTERNAL_ERROR" as const,
++              message: "failed",
++              retryable: false,
++            },
++            success: false,
++          },
++          { data: { success: false }, success: true },
++          { data: { error: "failed" }, success: true },
++          { data: { ok: false }, success: true },
++          { data: { isError: true }, success: true },
++        ]) {
++          const ex = await stage(service, workspace);
++          expect((await ex.finalize(result)).status).toBe("discarded");
++          expect(await ex.retryPublication().catch(() => "denied")).toBe(
++            "denied"
++          );
++        }
++        const signal = new AbortController();
++        const ex = await service.beginExecution(
++          identity(),
++          [workspace],
++          signal.signal
++        );
++        await ex.producer.stageBytes({
++          bytes: Buffer.from("staged"),
++          outputOrdinal: 0,
++          sourcePath: "artifacts/output.txt",
++        });
++        signal.abort();
++        expect((await ex.finalize({ success: true })).status).toBe("discarded");
++        expect(
++          await readdir(join(root, "config/artifact-publications"))
++        ).toEqual([]);
++        expect(
++          await readFile(join(workspace, "artifacts/output.txt"), "utf8")
++        ).toBe("user output");
++      });
++    });
++    test("forged tool metadata cannot create, reassign or finalize publications", async () => {
++      await fixture(kind, async ({ service, workspace }) => {
++        const a = identity();
++        const original = await stage(service, workspace, a);
++        const record = (await original.finalize({ success: true }))
++          .publications[0]!;
++        const b = identity("s2");
++        const none = await service.beginExecution(b, [workspace]);
++        const forged = {
++          artifacts: [{ ...record, sessionId: "s2", sha256: "a".repeat(64) }],
++          publications: [record],
++          success: true,
++        };
++        const result = await none.finalize({ data: forged, success: true });
++        expect(result.publications).toEqual([]);
++        expect(await service.read(b, record.id)).toBeNull();
++        expect((await service.read(a, record.id))?.bytes.toString()).toBe(
++          "first"
++        );
++        expect(Object.keys(none.producer)).toEqual(["stageBytes"]);
++      });
++    });
++    test("exact retries across controllers are idempotent; differing bytes, metadata or output sets conflict atomically", async () => {
++      await fixture(kind, async ({ service, workspace }) => {
++        const owner = identity();
++        const first = await (await stage(service, workspace, owner)).finalize({
++          success: true,
++        });
++        const duplicate = await stage(service, workspace, owner);
++        const retried = await duplicate.finalize({ success: true });
++        expect(retried.publications).toEqual(first.publications);
++        for (const [bytes, path] of [
++          ["changed", "artifacts/output.txt"],
++          ["first", "artifacts/renamed.txt"],
++        ]) {
++          const bad = await stage(service, workspace, owner, bytes, path);
++          expect((await bad.finalize({ success: true })).status).toBe("failed");
++        }
++        const missing = await service.beginExecution(owner, [workspace]);
++        expect((await missing.finalize({ success: true })).status).toBe(
++          "failed"
++        );
++        const extra = await stage(service, workspace, owner);
++        await extra.producer.stageBytes({
++          bytes: Buffer.from("extra"),
++          outputOrdinal: 1,
++          sourcePath: "artifacts/extra.txt",
++        });
++        expect((await extra.finalize({ success: true })).status).toBe("failed");
++        expect(
++          (
++            await service.read(owner, first.publications[0]!.id)
++          )?.bytes.toString()
++        ).toBe("first");
++      });
++    });
++    test("wrong scopes and guessed IDs fail; current authorization and revocation remain authoritative", async () => {
++      await fixture(
++        kind,
++        async ({ db, service, workspace, deny, authorize }) => {
++          const owner = identity();
++          const record = (
++            await (
++              await stage(service, workspace, owner)
++            ).finalize({ success: true })
++          ).publications[0]!;
++          for (const patch of [
++            { orgId: "elsewhere" },
++            { profileId: "elsewhere" },
++            { sessionId: "elsewhere" },
++            { actorId: "forged" },
++          ]) {
++            expect(
++              await service.read({ ...owner, ...patch }, record.id).then(
++                () => false,
++                () => true
++              )
++            ).toBe(true);
++          }
++          for (const scope of [
++            {
++              orgId: "org",
++              profileId: "sibling",
++              sessionId: "sibling-session",
++            },
++            {
++              orgId: "other-org",
++              profileId: "other-profile",
++              sessionId: "other-session",
++            },
++          ]) {
++            if (scope.orgId !== "org") {
++              await db.upsertOrganization({
++                createdAt: now,
++                id: scope.orgId,
++                name: scope.orgId,
++                slug: scope.orgId,
++                updatedAt: now,
++              });
++            }
++            await db.upsertProfile({
++              createdAt: now,
++              id: scope.profileId,
++              isSuper: false,
++              model: null,
++              name: scope.profileId,
++              orgId: scope.orgId,
++              systemPrompt: "",
++              updatedAt: now,
++            });
++            await db.upsertSession({
++              agentQuestionnaire: null,
++              agentTodos: [],
++              channel: "web",
++              createdAt: now,
++              id: scope.sessionId,
++              modelOverride: null,
++              orgId: scope.orgId,
++              profileId: scope.profileId,
++              title: null,
++            });
++            expect(
++              await service.read({ ...scope, actorId: "actor" }, record.id)
++            ).toBeNull();
++          }
++          expect(
++            await service.read(owner, `publication_${randomUUID()}`)
++          ).toBeNull();
++          deny();
++          expect(
++            await service.read(owner, record.id).then(
++              () => false,
++              () => true
++            )
++          ).toBe(true);
++          authorize();
++          expect(await service.revoke(owner, record.id)).toBe(true);
++          expect(await service.read(owner, record.id)).toBeNull();
++        }
++      );
++    });
++    test("uncertain post-commit DB error retries persistence without replaying producer", async () => {
++      await fixture(kind, async ({ db, store, workspace }) => {
++        const original = db.commitArtifactPublications.bind(db);
++        let calls = 0;
++        const wrapped = new Proxy(db, {
++          get(target, property) {
++            if (property !== "commitArtifactPublications") {
++              return Reflect.get(target, property);
++            }
++            return async (
++              ...args: Parameters<DatabaseAdapter["commitArtifactPublications"]>
++            ) => {
++              const result = await original(...args);
++              if (++calls === 1) {
++                throw new Error("Connection lost after commit");
++              }
++              return result;
++            };
++          },
++        });
++        const service = new ArtifactPublicationService(
++          wrapped,
++          store,
++          async () => {}
++        );
++        const owner = identity();
++        let producerCalls = 0;
++        const ex = await service.beginExecution(owner, [workspace]);
++        producerCalls++;
++        await ex.producer.stageBytes({
++          bytes: Buffer.from("effect"),
++          outputOrdinal: 0,
++          sourcePath: "artifacts/output.txt",
++        });
++        expect(
++          (await ex.finalize({ data: { effect: "retained" }, success: true }))
++            .status
++        ).toBe("failed");
++        const recovered = await ex.retryPublication();
++        expect(recovered.status).toBe("committed");
++        expect(producerCalls).toBe(1);
++        expect(calls).toBe(2);
++        expect(
++          (
++            await service.read(owner, recovered.publications[0]!.id)
++          )?.bytes.toString()
++        ).toBe("effect");
++      });
++    });
++    test("deleted and recreated sessions cannot resurrect old publication authority", async () => {
++      await fixture(kind, async ({ db, service, workspace }) => {
++        const owner = identity();
++        const result = await (await stage(service, workspace, owner)).finalize({
++          success: true,
++        });
++        const id = result.publications[0]!.id;
++        const saved = await db.getArtifactPublication(owner, id);
++        expect(saved).not.toBeNull();
++        await db.deleteSession(owner.sessionId);
++        await db.upsertSession({
++          agentQuestionnaire: null,
++          agentTodos: [],
++          channel: "web",
++          createdAt: now,
++          id: owner.sessionId,
++          modelOverride: null,
++          orgId: "org",
++          profileId: "profile",
++          title: null,
++        });
++        expect(await service.read(owner, id)).toBeNull();
++        expect(
++          await db.isArtifactPublicationSnapshotReferenced(saved!.snapshotId)
++        ).toBe(false);
++      });
++    });
++    test("blob staging failure preserves existing user output and cannot publish a partial set", async () => {
++      await fixture(kind, async ({ db, store, workspace }) => {
++        const source = join(workspace, "artifacts/output.txt");
++        await writeFile(source, "saved effect");
++        const broken = new Proxy(store, {
++          get(target, property) {
++            if (property !== "stage") {
++              return Reflect.get(target, property);
++            }
++            return async () => {
++              throw new Error("Storage unavailable");
++            };
++          },
++        });
++        const service = new ArtifactPublicationService(
++          db,
++          broken,
++          async () => {}
++        );
++        const execution = await service.beginExecution(identity(), [workspace]);
++        expect(
++          await execution.producer
++            .stageBytes({
++              bytes: Buffer.from("saved effect"),
++              outputOrdinal: 0,
++              sourcePath: "artifacts/output.txt",
++            })
++            .then(
++              () => true,
++              () => false
++            )
++        ).toBe(true);
++        expect(
++          (
++            await execution.finalize({
++              data: { path: "artifacts/output.txt" },
++              success: true,
++            })
++          ).status
++        ).toBe("failed");
++        expect(await readFile(source, "utf8")).toBe("saved effect");
++      });
++    });
++    test("repeated exact staging is idempotent and differing same-ordinal bytes conflict", async () => {
++      await fixture(kind, async ({ service, workspace, root }) => {
++        const owner = identity();
++        const ex = await service.beginExecution(owner, [workspace]);
++        const input = {
++          bytes: Buffer.from("same"),
++          outputOrdinal: 0,
++          sourcePath: "artifacts/output.txt",
++        };
++        await Promise.all([
++          ex.producer.stageBytes(input),
++          ex.producer.stageBytes(input),
++        ]);
++        const result = await ex.finalize({ success: true });
++        expect(result.publications).toHaveLength(1);
++        expect(
++          await readdir(join(root, "config/artifact-publications"))
++        ).toHaveLength(1);
++        const conflict = await stage(service, workspace);
++        expect(
++          await conflict.producer
++            .stageBytes({ ...input, bytes: Buffer.from("different") })
++            .then(
++              () => false,
++              () => true
++            )
++        ).toBe(true);
++        expect((await conflict.finalize({ success: true })).status).toBe(
++          "failed"
++        );
++      });
++    });
++    test("a staging error cannot be ignored to commit only the other outputs", async () => {
++      await fixture(kind, async ({ service, workspace }) => {
++        const owner = identity();
++        const ex = await stage(service, workspace, owner);
++        expect(
++          await ex.producer
++            .stageBytes({
++              bytes: Buffer.from("bad"),
++              outputOrdinal: 1,
++              sourcePath: "../elsewhere",
++            })
++            .then(
++              () => false,
++              () => true
++            )
++        ).toBe(true);
++        const failed = await ex.finalize({ success: true });
++        expect(failed.status).toBe("failed");
++        expect(failed.publications).toEqual([]);
++      });
++    });
++    test("an insertion conflict rolls back every output and the execution reservation", async () => {
++      await fixture(kind, async ({ db, service, workspace }) => {
++        const owner = identity();
++        const existing = (
++          await (
++            await stage(service, workspace, owner)
++          ).finalize({ success: true })
++        ).publications[0]!;
++        const saved = await db.getArtifactPublication(owner, existing.id);
++        expect(saved).not.toBeNull();
++        const other = identity();
++        const first = {
++          ...saved!,
++          ...other,
++          id: `publication_${randomUUID()}`,
++          outputOrdinal: 0,
++          snapshotId: `snapshot_${randomUUID()}`,
++        };
++        const duplicate = {
++          ...first,
++          id: existing.id,
++          outputOrdinal: 1,
++          snapshotId: `snapshot_${randomUUID()}`,
++        };
++        expect(
++          await db.commitArtifactPublications(other, [first, duplicate]).then(
++            () => false,
++            () => true
++          )
++        ).toBe(true);
++        expect(await db.getArtifactPublication(other, first.id)).toBeNull();
++        expect(
++          await db.isArtifactPublicationSnapshotReferenced(first.snapshotId)
++        ).toBe(false);
++        expect(await db.commitArtifactPublications(other, [first])).toEqual([
++          first,
++        ]);
++      });
++    });
++    test("unrestricted-host tampering is detected, never mislabeled immutable", async () => {
++      await fixture(kind, async ({ db, service, workspace, root }) => {
++        const owner = identity();
++        const result = await (await stage(service, workspace, owner)).finalize({
++          success: true,
++        });
++        const id = result.publications[0]!.id;
++        const record = await db.getArtifactPublication(owner, id);
++        expect(record).not.toBeNull();
++        await writeFile(
++          join(root, "config/artifact-publications", record!.snapshotId),
++          "other"
++        );
++        expect(
++          await service.read(owner, id).then(
++            () => false,
++            () => true
++          )
++        ).toBe(true);
++      });
++    });
++    test("revocation while a read is in flight blocks returned bytes", async () => {
++      await fixture(kind, async ({ db, service, store, workspace }) => {
++        const owner = identity();
++        const id = (
++          await (
++            await stage(service, workspace, owner)
++          ).finalize({ success: true })
++        ).publications[0]!.id;
++        const wrapped = new Proxy(store, {
++          get(target, property) {
++            if (property !== "read") {
++              return Reflect.get(target, property);
++            }
++            return async (
++              ...args: Parameters<ArtifactPublicationStore["read"]>
++            ) => {
++              const bytes = await target.read(...args);
++              await db.revokeArtifactPublication(owner, id, now);
++              return bytes;
++            };
++          },
++        });
++        const reader = new ArtifactPublicationService(
++          db,
++          wrapped,
++          async () => {}
++        );
++        expect(await reader.read(owner, id)).toBeNull();
++      });
++    });
++    test("producer buffers are captured before await and private storage cannot overlap admitted roots", async () => {
++      await fixture(kind, async ({ service, workspace, root }) => {
++        const owner = identity();
++        const ex = await service.beginExecution(owner, [workspace]);
++        const bytes = Buffer.from("original");
++        const pending = ex.producer.stageBytes({
++          bytes,
++          outputOrdinal: 0,
++          sourcePath: "artifacts/output.txt",
++        });
++        bytes.fill(120);
++        await pending;
++        const result = await ex.finalize({ success: true });
++        expect(
++          (
++            await service.read(owner, result.publications[0]!.id)
++          )?.bytes.toString()
++        ).toBe("original");
++        expect(
++          await service.beginExecution(identity(), [root]).then(
++            () => false,
++            () => true
++          )
++        ).toBe(true);
++        expect(
++          await ex.producer
++            .stageBytes({
++              bytes,
++              outputOrdinal: 1,
++              sourcePath: "artifacts/later.txt",
++            })
++            .then(
++              () => false,
++              () => true
++            )
++        ).toBe(true);
++      });
++    });
++  });
++}
++
++test("SQLite concurrent connections and restart preserve exact committed bytes and idempotency", async () => {
++  const root = await mkdtemp(join(tmpdir(), "publication-restart-"));
++  const workspace = join(root, "workspace");
++  const config = join(root, "config");
++  await mkdir(workspace);
++  await mkdir(config);
++  const filename = join(root, "state.sqlite");
++  const first = await createSqliteDatabase(filename);
++  let second: Awaited<ReturnType<typeof createSqliteDatabase>> | undefined;
++  let third: Awaited<ReturnType<typeof createSqliteDatabase>> | undefined;
++  try {
++    await seed(first.adapter);
++    second = await createSqliteDatabase(filename);
++    const store = await ArtifactPublicationStore.create(config);
++    const serviceA = new ArtifactPublicationService(
++      first.adapter,
++      store,
++      async () => {}
++    );
++    const serviceB = new ArtifactPublicationService(
++      second.adapter,
++      store,
++      async () => {}
++    );
++    const owner = identity();
++    const [a, b] = await Promise.all([
++      stage(serviceA, workspace, owner, "durable"),
++      stage(serviceB, workspace, owner, "durable"),
++    ]);
++    const [ra, rb] = await Promise.all([
++      a.finalize({ success: true }),
++      b.finalize({ success: true }),
++    ]);
++    expect(ra.status).toBe("committed");
++    expect(rb.publications).toEqual(ra.publications);
++    first.close();
++    second.close();
++    third = await createSqliteDatabase(filename);
++    const serviceC = new ArtifactPublicationService(
++      third.adapter,
++      await ArtifactPublicationStore.create(config),
++      async () => {}
++    );
++    expect(
++      (await serviceC.read(owner, ra.publications[0]!.id))?.bytes.toString()
++    ).toBe("durable");
++    expect(
++      (
++        await (
++          await stage(serviceC, workspace, owner, "durable")
++        ).finalize({ success: true })
++      ).publications
++    ).toEqual(ra.publications);
++  } finally {
++    first.close();
++    second?.close();
++    third?.close();
++    await rm(root, { force: true, recursive: true });
++  }
++});
+--- /dev/null
++++ b/apps/server/src/services/artifact-publication-service.ts
+@@ -0,0 +1,296 @@
++import { createHash, randomUUID } from "node:crypto";
++import { inferArtifactMimeType } from "@atlas/core/artifact-mime";
++import type {
++  ArtifactPublication,
++  ArtifactPublicationIdentity,
++  ArtifactPublicationProducer,
++  ArtifactPublicationScope,
++} from "@atlas/core/artifact-publication";
++import type { ToolExecutionResult } from "@atlas/core/contract";
++import { isFailedToolResult } from "@atlas/core/tools/result-status";
++import {
++  type DatabaseAdapter,
++  MAX_PUBLICATION_BYTES,
++  MAX_PUBLICATION_OUTPUTS,
++  publicationIdentity,
++  type StoredArtifactPublicationRecord,
++  validatePublicationPath,
++} from "@atlas/db";
++import type { ArtifactPublicationStore } from "./artifact-publication-store";
++
++type Access = ArtifactPublicationScope & { actorId: string };
++export interface PublicationFinalization {
++  cleanupErrors?: unknown[];
++  /** Publication failure only; the caller retains the original execution result/effects. */
++  error?: unknown;
++  publications: ArtifactPublication[];
++  status: "committed" | "discarded" | "failed";
++}
++export interface ArtifactPublicationExecution {
++  /** Accept only the actual completed protected-executor result, never tool-returned JSON. */
++  finalize(
++    result: ToolExecutionResult<unknown>
++  ): Promise<PublicationFinalization>;
++  producer: ArtifactPublicationProducer;
++  /** Retries receipt persistence only. It never invokes the producer. */
++  retryPublication(): Promise<PublicationFinalization>;
++}
++function publicRecord(
++  record: StoredArtifactPublicationRecord
++): ArtifactPublication {
++  const { snapshotId: _, ...visible } = record;
++  return visible;
++}
++
++/** Foundation only: no producer, executor, HTTP or channel is wired to this service yet. */
++export class ArtifactPublicationService {
++  constructor(
++    private readonly db: DatabaseAdapter,
++    private readonly store: ArtifactPublicationStore,
++    /** Current principal authorization belongs to the host; this callback is mandatory. */
++    private readonly authorize: (
++      scope: Access,
++      action: "publish" | "read" | "revoke"
++    ) => Promise<void>
++  ) {}
++
++  async beginExecution(
++    identity: ArtifactPublicationIdentity,
++    admittedToolRoots: readonly string[],
++    signal?: AbortSignal
++  ): Promise<ArtifactPublicationExecution> {
++    const owner = Object.freeze({ ...identity });
++    publicationIdentity(owner);
++    signal?.throwIfAborted();
++    await this.requireAccess(owner, "publish");
++    await this.store.assertOutsideToolRoots(admittedToolRoots);
++    const staged = new Map<number, Promise<StoredArtifactPublicationRecord>>();
++    const stagedInputs = new Map<number, string>();
++    let closed = false;
++    let eligible = false;
++    let stageFailed = false;
++    let failedStage: unknown;
++    let settled: PublicationFinalization | undefined;
++    let inFlight: Promise<PublicationFinalization> | undefined;
++    const stageBytes: ArtifactPublicationProducer["stageBytes"] = async (
++      input
++    ) => {
++      if (closed) {
++        throw new Error("Publication execution is closed.");
++      }
++      let promise: Promise<StoredArtifactPublicationRecord>;
++      try {
++        signal?.throwIfAborted();
++        validatePublicationPath(input.sourcePath);
++        if (
++          !Number.isSafeInteger(input.outputOrdinal) ||
++          input.outputOrdinal < 0 ||
++          input.outputOrdinal >= MAX_PUBLICATION_OUTPUTS
++        ) {
++          throw new Error("Invalid output ordinal.");
++        }
++        if (input.bytes.byteLength > MAX_PUBLICATION_BYTES) {
++          throw new Error("Publication output exceeds the byte limit.");
++        }
++        const captured = Buffer.from(input.bytes);
++        const sourcePath = input.sourcePath;
++        const outputOrdinal = input.outputOrdinal;
++        const fingerprint = JSON.stringify([
++          sourcePath,
++          createHash("sha256").update(captured).digest("hex"),
++        ]);
++        const prior = staged.get(outputOrdinal);
++        if (prior) {
++          if (stagedInputs.get(outputOrdinal) !== fingerprint) {
++            throw new Error(
++              "Output ordinal conflicts with its staged bytes or path."
++            );
++          }
++          promise = prior;
++        } else {
++          promise = this.store.stage(captured).then((snapshot) => ({
++            ...owner,
++            ...snapshot,
++            createdAt: new Date().toISOString(),
++            filename: sourcePath.split("/").at(-1)!,
++            id: `publication_${randomUUID()}`,
++            mimeType: inferArtifactMimeType(sourcePath),
++            outputOrdinal,
++            revokedAt: null,
++            sourceEvidence: "tool_output_bytes" as const,
++            sourcePath,
++          }));
++          stagedInputs.set(outputOrdinal, fingerprint);
++          staged.set(outputOrdinal, promise);
++        }
++      } catch (error) {
++        stageFailed = true;
++        failedStage = error;
++        throw error;
++      }
++      // Storage failure belongs to publication, not the already successful workspace effect.
++      try {
++        await promise;
++      } catch (error) {
++        stageFailed = true;
++        failedStage = error;
++      }
++    };
++    const records = async () => {
++      const results = await Promise.allSettled(staged.values());
++      return results.flatMap((result) =>
++        result.status === "fulfilled" ? [result.value] : []
++      );
++    };
++    const cleanup = async (
++      items: readonly StoredArtifactPublicationRecord[]
++    ) => {
++      const results = await Promise.allSettled(
++        items.map((item) =>
++          this.store.removeUnreferenced(item.snapshotId, () =>
++            this.db.isArtifactPublicationSnapshotReferenced(item.snapshotId)
++          )
++        )
++      );
++      return results.flatMap((result) =>
++        result.status === "rejected" ? [result.reason] : []
++      );
++    };
++    const commit = async (): Promise<PublicationFinalization> => {
++      const items = await records();
++      try {
++        if (stageFailed) {
++          throw failedStage;
++        }
++        signal?.throwIfAborted();
++        await this.requireAccess(owner, "publish");
++        signal?.throwIfAborted();
++        // Atomic DB commit includes an empty successful output set, preventing later substitution.
++        const committed = await this.db.commitArtifactPublications(
++          owner,
++          items
++        );
++        const cleanupErrors = await cleanup(
++          items.filter(
++            (item) =>
++              !committed.some((record) => record.snapshotId === item.snapshotId)
++          )
++        );
++        return {
++          publications: committed.map(publicRecord),
++          status: "committed",
++          ...(cleanupErrors.length ? { cleanupErrors } : {}),
++        };
++      } catch (error) {
++        // Keep staged bytes on uncertain commit: DB may have committed before reporting failure.
++        return { error, publications: [], status: "failed" };
++      }
++    };
++    return {
++      finalize: async (result) => {
++        if (inFlight) {
++          return await inFlight;
++        }
++        if (settled) {
++          return settled;
++        }
++        closed = true;
++        eligible =
++          result.success === true &&
++          !isFailedToolResult(result.data) &&
++          !signal?.aborted;
++        inFlight = (async () => {
++          if (!eligible) {
++            const cleanupErrors = await cleanup(await records());
++            return {
++              publications: [],
++              status: "discarded" as const,
++              ...(cleanupErrors.length ? { cleanupErrors } : {}),
++            };
++          }
++          return await commit();
++        })();
++        try {
++          settled = await inFlight;
++          return settled;
++        } finally {
++          inFlight = undefined;
++        }
++      },
++      producer: Object.freeze({ stageBytes }),
++      retryPublication: async () => {
++        if (inFlight) {
++          return await inFlight;
++        }
++        if (!(closed && eligible) || settled?.status !== "failed") {
++          throw new Error("No failed eligible publication commit to retry.");
++        }
++        inFlight = commit();
++        try {
++          settled = await inFlight;
++          return settled;
++        } finally {
++          inFlight = undefined;
++        }
++      },
++    };
++  }
++
++  async read(
++    scope: Access,
++    id: string
++  ): Promise<{ publication: ArtifactPublication; bytes: Buffer } | null> {
++    const access = Object.freeze({ ...scope });
++    await this.requireAccess(access, "read");
++    const record = await this.db.getArtifactPublication(access, id);
++    if (!record) {
++      return null;
++    }
++    const bytes = await this.store.read(record);
++    await this.requireAccess(access, "read");
++    const current = await this.db.getArtifactPublication(access, id);
++    if (
++      !current ||
++      current.snapshotId !== record.snapshotId ||
++      current.sha256 !== record.sha256
++    ) {
++      return null;
++    }
++    return { bytes, publication: publicRecord(current) };
++  }
++  async revoke(scope: Access, id: string): Promise<boolean> {
++    const access = Object.freeze({ ...scope });
++    await this.requireAccess(access, "revoke");
++    return await this.db.revokeArtifactPublication(
++      access,
++      id,
++      new Date().toISOString()
++    );
++  }
++  private async requireAccess(
++    scope: Access,
++    action: "publish" | "read" | "revoke"
++  ): Promise<void> {
++    if (!scope.actorId?.trim()) {
++      throw new Error("A canonical publication principal is required.");
++    }
++    await this.authorize(scope, action);
++    const [org, profile, session] = await Promise.all([
++      this.db.getOrganizationById(scope.orgId),
++      this.db.getProfile(scope.profileId),
++      this.db.getSession(scope.sessionId),
++    ]);
++    if (
++      !org ||
++      org.archivedAt ||
++      !profile ||
++      profile.isImporting ||
++      profile.orgId !== scope.orgId ||
++      !session ||
++      session.orgId !== scope.orgId ||
++      session.profileId !== scope.profileId
++    ) {
++      throw new Error("Publication scope is unavailable.");
++    }
++  }
++}
+--- /dev/null
++++ b/apps/server/src/services/artifact-publication-store.ts
+@@ -0,0 +1,168 @@
++import { createHash, randomUUID } from "node:crypto";
++import { constants } from "node:fs";
++import { lstat, mkdir, open, realpath, unlink } from "node:fs/promises";
++import { isAbsolute, join, relative } from "node:path";
++import { PRIVATE_DIR_MODE, PRIVATE_FILE_MODE } from "@atlas/core/fs";
++import { MAX_PUBLICATION_BYTES } from "@atlas/db";
++
++const SNAPSHOT_ID = /^snapshot_[a-f0-9-]{36}$/;
++const digest = (bytes: Uint8Array): string =>
++  createHash("sha256").update(bytes).digest("hex");
++function contains(root: string, path: string): boolean {
++  const part = relative(root, path);
++  return (
++    part === "" ||
++    !(part === ".." || part.startsWith("../") || isAbsolute(part))
++  );
++}
++
++/** Write-once through this API. Unrestricted host code remains trusted. */
++export class ArtifactPublicationStore {
++  private constructor(private readonly directory: string) {}
++
++  static async create(
++    configDirectory: string
++  ): Promise<ArtifactPublicationStore> {
++    const config = await realpath(configDirectory);
++    const directory = join(config, "artifact-publications");
++    await mkdir(directory, { mode: PRIVATE_DIR_MODE, recursive: true });
++    if (
++      (await lstat(directory)).isSymbolicLink() ||
++      (await realpath(directory)) !== directory
++    ) {
++      throw new Error(
++        "Publication storage must be a private canonical directory."
++      );
++    }
++    return new ArtifactPublicationStore(directory);
++  }
++
++  /** Caller must supply every admitted tool read/write root, including runtime/temp roots. */
++  async assertOutsideToolRoots(roots: readonly string[]): Promise<void> {
++    if (!roots.length) {
++      throw new Error("Admitted tool roots must be declared.");
++    }
++    for (const root of roots) {
++      const canonical = await realpath(root);
++      if (
++        contains(canonical, this.directory) ||
++        contains(this.directory, canonical)
++      ) {
++        throw new Error("Publication storage overlaps an admitted tool root.");
++      }
++    }
++  }
++
++  async stage(
++    bytes: Uint8Array
++  ): Promise<{ snapshotId: string; sha256: string; sizeBytes: number }> {
++    // Copy before any await: later mutations of the producer's buffer cannot alter this snapshot.
++    if (bytes.byteLength > MAX_PUBLICATION_BYTES) {
++      throw new Error("Publication output exceeds the byte limit.");
++    }
++    const captured = Buffer.from(bytes);
++    const snapshotId = `snapshot_${randomUUID()}`;
++    const path = this.path(snapshotId);
++    const handle = await open(path, "wx", PRIVATE_FILE_MODE);
++    try {
++      try {
++        await handle.writeFile(captured);
++        await handle.sync();
++      } finally {
++        await handle.close();
++      }
++      await this.syncDirectory();
++      return {
++        sha256: digest(captured),
++        sizeBytes: captured.byteLength,
++        snapshotId,
++      };
++    } catch (error) {
++      await unlink(path).catch(() => undefined);
++      throw error;
++    }
++  }
++
++  async read(snapshot: {
++    snapshotId: string;
++    sha256: string;
++    sizeBytes: number;
++  }): Promise<Buffer> {
++    if (
++      !Number.isSafeInteger(snapshot.sizeBytes) ||
++      snapshot.sizeBytes < 0 ||
++      snapshot.sizeBytes > MAX_PUBLICATION_BYTES
++    ) {
++      throw new Error("Invalid publication byte count.");
++    }
++    const handle = await open(
++      this.path(snapshot.snapshotId),
++      // biome-ignore lint/suspicious/noBitwiseOperators: Refuse final-component symlinks.
++      constants.O_RDONLY | constants.O_NOFOLLOW
++    );
++    try {
++      const info = await handle.stat();
++      if (
++        !info.isFile() ||
++        info.nlink !== 1 ||
++        info.size !== snapshot.sizeBytes
++      ) {
++        throw new Error("Publication snapshot is unavailable or changed.");
++      }
++      const bytes = Buffer.alloc(snapshot.sizeBytes + 1);
++      let offset = 0;
++      while (offset < bytes.length) {
++        const result = await handle.read(
++          bytes,
++          offset,
++          bytes.length - offset,
++          null
++        );
++        if (!result.bytesRead) {
++          break;
++        }
++        offset += result.bytesRead;
++      }
++      const captured = bytes.subarray(0, offset);
++      if (
++        offset !== snapshot.sizeBytes ||
++        digest(captured) !== snapshot.sha256
++      ) {
++        throw new Error("Publication snapshot digest changed.");
++      }
++      return captured;
++    } finally {
++      await handle.close();
++    }
++  }
++
++  /** Server-only cleanup must first establish that no DB record references this object. */
++  async removeUnreferenced(
++    snapshotId: string,
++    isReferenced: () => Promise<boolean>
++  ): Promise<void> {
++    if (await isReferenced()) {
++      return;
++    }
++    await unlink(this.path(snapshotId)).catch((error) => {
++      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
++        throw error;
++      }
++    });
++    await this.syncDirectory();
++  }
++  private path(id: string): string {
++    if (!SNAPSHOT_ID.test(id)) {
++      throw new Error("Invalid snapshot ID.");
++    }
++    return join(this.directory, id);
++  }
++  private async syncDirectory(): Promise<void> {
++    const handle = await open(this.directory, "r");
++    try {
++      await handle.sync();
++    } finally {
++      await handle.close();
++    }
++  }
++}
+--- a/packages/core/package.json
++++ b/packages/core/package.json
+@@ -68,7 +68,8 @@
+     "./setup-validation": "./src/setup-validation.ts",
+     "./artifact-lineage": "./src/artifact-lineage.ts",
+     "./testing/atlas-home": "./src/testing/atlas-home.ts",
+-    "./testing/synthetic-secret-fixtures": "./src/testing/synthetic-secret-fixtures.ts"
++    "./testing/synthetic-secret-fixtures": "./src/testing/synthetic-secret-fixtures.ts",
++    "./artifact-publication": "./src/artifact-publication.ts"
+   },
+   "scripts": {
+     "build": "bun build ./src/index.ts --outdir dist --target bun",
+--- /dev/null
++++ b/packages/core/src/artifact-publication.ts
+@@ -0,0 +1,38 @@
++/** Server-resolved identity. Never construct this from model/tool-returned metadata. */
++export interface ArtifactPublicationScope {
++  orgId: string;
++  profileId: string;
++  sessionId: string;
++}
++export interface ArtifactPublicationIdentity extends ArtifactPublicationScope {
++  actorId: string;
++  executionId: string;
++  runId: string;
++  toolCallId: string;
++}
++export interface ArtifactPublication extends ArtifactPublicationIdentity {
++  createdAt: string;
++  filename: string;
++  id: string;
++  mimeType: string;
++  outputOrdinal: number;
++  revokedAt: string | null;
++  sha256: string;
++  sizeBytes: number;
++  sourceEvidence: "tool_output_bytes";
++  sourcePath: string;
++}
++/** Byte producers receive only this capability, never the execution finalizer. */
++export interface ArtifactPublicationProducer {
++  /**
++   * Storage failure is retained for the trusted finalizer and does not reject.
++   * Invalid input, conflicting output ordinal, cancellation or closed execution
++   * rejects; callers must still preserve any previously created workspace receipt.
++   * An exact repeated ordinal/path/byte sequence is idempotent.
++   */
++  stageBytes(input: {
++    bytes: Uint8Array;
++    sourcePath: string;
++    outputOrdinal: number;
++  }): Promise<void>;
++}
+--- a/packages/db/sql/schema.sql
++++ b/packages/db/sql/schema.sql
+@@ -762,3 +762,33 @@
+ 
+ CREATE INDEX IF NOT EXISTS profile_change_events_profile_created
+   ON profile_change_events (profile_id, created_at DESC);
++
++-- Explicit session publication authority, independent of mutable workspace paths.
++CREATE TABLE IF NOT EXISTS artifact_publication_executions (
++  org_id TEXT NOT NULL,
++  execution_id TEXT NOT NULL,
++  profile_id TEXT NOT NULL,
++  session_id TEXT NOT NULL,
++  fingerprint TEXT NOT NULL,
++  PRIMARY KEY (org_id, execution_id),
++  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
++  FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE,
++  FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
++);
++CREATE TABLE IF NOT EXISTS artifact_publications (
++  id TEXT PRIMARY KEY NOT NULL,
++  org_id TEXT NOT NULL,
++  profile_id TEXT NOT NULL,
++  session_id TEXT NOT NULL,
++  execution_id TEXT NOT NULL,
++  output_ordinal INTEGER NOT NULL,
++  snapshot_id TEXT UNIQUE NOT NULL,
++  payload TEXT NOT NULL,
++  revoked_at TEXT,
++  UNIQUE (org_id, execution_id, output_ordinal),
++  FOREIGN KEY (org_id, execution_id) REFERENCES artifact_publication_executions (org_id, execution_id) ON DELETE CASCADE,
++  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
++  FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE,
++  FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
++);
++CREATE INDEX IF NOT EXISTS artifact_publications_session ON artifact_publications (org_id, profile_id, session_id);
+--- a/packages/db/src/adapters/in-memory.ts
++++ b/packages/db/src/adapters/in-memory.ts
+@@ -4,6 +4,7 @@
+   type MessageContentPart,
+ } from "@atlas/core";
+ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
++import { memoryArtifactPublications } from "../artifact-publication-memory";
+ import { LLM_USAGE_STATS_ID } from "../constants";
+ import {
+   ConversationKeywordSearch,
+@@ -279,6 +280,22 @@
+   const llmUsageDaily = new Map<string, StoredLlmUsageDailyRecord>();
+   const orgUsageBudgets = new Map<string, StoredOrgUsageBudgetRecord>();
+ 
++  const publicationStore = memoryArtifactPublications((scope) => {
++    const org = organizations.get(scope.orgId);
++    const profile = profiles.get(scope.profileId);
++    const session = sessions.get(scope.sessionId);
++    return Boolean(
++      org &&
++        !org.archivedAt &&
++        profile &&
++        !profile.isImporting &&
++        profile.orgId === scope.orgId &&
++        session &&
++        session.orgId === scope.orgId &&
++        session.profileId === scope.profileId
++    );
++  });
++
+   return {
+     aggregateLlmUsage(options) {
+       const keyOf = (record: StoredLlmUsageDailyRecord): string => {
+@@ -533,6 +550,8 @@
+       return true;
+     },
+ 
++    commitArtifactPublications: publicationStore.commitArtifactPublications,
++
+     async compareAndSwapComposioUserConnection(record, expectedOAuthStateHash) {
+       const current = composioUserConnections.get(record.id);
+       if (
+@@ -625,7 +644,6 @@
+     async countUsers() {
+       return usersById.size;
+     },
+-
+     async createArtifactShare(record) {
+       artifactShares.set(record.id, record);
+       if (!record.revokedAt) {
+@@ -814,6 +832,7 @@
+         return false;
+       }
+ 
++      publicationStore.removeScope((scope) => scope.profileId === id);
+       profileTools.delete(id);
+       profileMcpServers.delete(id);
+       profileSkills.delete(id);
+@@ -831,6 +850,7 @@
+         return false;
+       }
+       profiles.delete(id);
++      publicationStore.removeScope((scope) => scope.profileId === id);
+       profileTools.delete(id);
+       profileMcpServers.delete(id);
+       profileSkills.delete(id);
+@@ -849,6 +869,7 @@
+         return false;
+       }
+       profiles.delete(id);
++      publicationStore.removeScope((scope) => scope.profileId === id);
+       profileTools.delete(id);
+       profileMcpServers.delete(id);
+       profileSkills.delete(id);
+@@ -857,6 +878,7 @@
+     },
+ 
+     async deleteSession(id) {
++      publicationStore.removeScope((scope) => scope.sessionId === id);
+       sessionMessages.delete(id);
+       for (const [archiveId, archive] of sessionHistoryArchives) {
+         if (archive.sessionId === id) {
+@@ -943,6 +965,7 @@
+           )[0] ?? null
+       );
+     },
++    getArtifactPublication: publicationStore.getArtifactPublication,
+ 
+     async getArtifactShareById(orgId, profileId, shareId) {
+       const share = artifactShares.get(shareId);
+@@ -1547,6 +1570,8 @@
+       const existing = taskRuns.get(record.taskId) ?? [];
+       taskRuns.set(record.taskId, [...existing, record]);
+     },
++    isArtifactPublicationSnapshotReferenced:
++      publicationStore.isArtifactPublicationSnapshotReferenced,
+     async listActionApprovalsForSession(sessionId) {
+       return [...actionApprovals.values()].filter(
+         (item) => item.sessionId === sessionId
+@@ -2253,6 +2278,7 @@
+       profiles.set(record.id, { ...record, isImporting: true });
+       return "reserved";
+     },
++    revokeArtifactPublication: publicationStore.revokeArtifactPublication,
+ 
+     async revokeArtifactShare(id, revokedAt) {
+       const share = artifactShares.get(id);
+--- a/packages/db/src/adapters/sqlite.ts
++++ b/packages/db/src/adapters/sqlite.ts
+@@ -7,6 +7,7 @@
+   PRIVATE_FILE_MODE,
+ } from "@atlas/core";
+ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
++import { sqliteArtifactPublications } from "../artifact-publication-sqlite";
+ import { LLM_USAGE_STATS_ID, WORKSPACE_SETTINGS_ID } from "../constants";
+ import {
+   ConversationKeywordSearch,
+@@ -2635,6 +2636,8 @@
+       const row = countUsersStmt.get() as { count: number };
+       return row.count;
+     },
++
++    ...sqliteArtifactPublications(db),
+ 
+     async createArtifactShare(record) {
+       createArtifactShareStmt.run(
+--- /dev/null
++++ b/packages/db/src/artifact-publication-identity.ts
+@@ -0,0 +1,93 @@
++import type { ArtifactPublicationIdentity } from "@atlas/core/artifact-publication";
++import type { StoredArtifactPublicationRecord } from "./types";
++
++const ID = /^[^\x00-\x1f\x7f]{1,256}$/;
++const HASH = /^[a-f0-9]{64}$/;
++const SNAPSHOT = /^snapshot_[a-f0-9-]{36}$/;
++const PUBLICATION = /^publication_[a-f0-9-]{36}$/;
++const PATH = /^artifacts\/(?!\.)(?:[^\\\x00-\x1f\x7f]+)$/;
++export const MAX_PUBLICATION_OUTPUTS = 32;
++export const MAX_PUBLICATION_BYTES = 25 * 1024 * 1024;
++export function publicationIdentity(
++  identity: ArtifactPublicationIdentity
++): string {
++  const fields = [
++    identity.orgId,
++    identity.profileId,
++    identity.sessionId,
++    identity.actorId,
++    identity.runId,
++    identity.executionId,
++    identity.toolCallId,
++  ];
++  if (
++    fields.some(
++      (value) =>
++        typeof value !== "string" || value !== value.trim() || !ID.test(value)
++    )
++  ) {
++    throw new Error("Invalid publication identity.");
++  }
++  return JSON.stringify(fields);
++}
++export function validatePublicationPath(sourcePath: string): void {
++  if (
++    typeof sourcePath !== "string" ||
++    sourcePath.length > 1024 ||
++    !PATH.test(sourcePath) ||
++    sourcePath
++      .split("/")
++      .some(
++        (part) => !part || part === "." || part === ".." || part.startsWith(".")
++      )
++  ) {
++    throw new Error("A canonical visible artifacts/ path is required.");
++  }
++}
++export function publicationCommitFingerprint(
++  identity: ArtifactPublicationIdentity,
++  records: readonly StoredArtifactPublicationRecord[]
++): string {
++  const owner = publicationIdentity(identity);
++  if (records.length > MAX_PUBLICATION_OUTPUTS) {
++    throw new Error("Too many publication outputs.");
++  }
++  const ordinals = new Set<number>();
++  const rows = [...records]
++    .sort((a, b) => a.outputOrdinal - b.outputOrdinal)
++    .map((record) => {
++      validatePublicationPath(record.sourcePath);
++      if (
++        publicationIdentity(record) !== owner ||
++        !Number.isSafeInteger(record.outputOrdinal) ||
++        record.outputOrdinal < 0 ||
++        record.outputOrdinal >= MAX_PUBLICATION_OUTPUTS ||
++        ordinals.has(record.outputOrdinal) ||
++        !Number.isSafeInteger(record.sizeBytes) ||
++        record.sizeBytes < 0 ||
++        record.sizeBytes > MAX_PUBLICATION_BYTES ||
++        !HASH.test(record.sha256) ||
++        !SNAPSHOT.test(record.snapshotId) ||
++        !PUBLICATION.test(record.id) ||
++        record.filename !== record.sourcePath.split("/").at(-1) ||
++        !record.mimeType ||
++        record.mimeType.length > 200 ||
++        !Number.isFinite(Date.parse(record.createdAt)) ||
++        record.revokedAt !== null ||
++        record.sourceEvidence !== "tool_output_bytes"
++      ) {
++        throw new Error("Invalid publication record.");
++      }
++      ordinals.add(record.outputOrdinal);
++      return [
++        record.outputOrdinal,
++        record.sourcePath,
++        record.filename,
++        record.mimeType,
++        record.sizeBytes,
++        record.sha256,
++        record.sourceEvidence,
++      ];
++    });
++  return JSON.stringify([owner, rows]);
++}
+--- /dev/null
++++ b/packages/db/src/artifact-publication-memory.ts
+@@ -0,0 +1,115 @@
++import type { ArtifactPublicationScope } from "@atlas/core/artifact-publication";
++import { publicationCommitFingerprint } from "./artifact-publication-identity";
++import type { DatabaseAdapter, StoredArtifactPublicationRecord } from "./types";
++export function memoryArtifactPublications(
++  activeScope: (scope: ArtifactPublicationScope) => boolean
++): Pick<
++  DatabaseAdapter,
++  | "commitArtifactPublications"
++  | "getArtifactPublication"
++  | "isArtifactPublicationSnapshotReferenced"
++  | "revokeArtifactPublication"
++> & {
++  removeScope(predicate: (scope: ArtifactPublicationScope) => boolean): void;
++} {
++  const executions = new Map<
++    string,
++    {
++      fingerprint: string;
++      scope: ArtifactPublicationScope;
++      records: StoredArtifactPublicationRecord[];
++    }
++  >();
++  const publications = new Map<string, StoredArtifactPublicationRecord>();
++  return {
++    async commitArtifactPublications(identity, records) {
++      const fingerprint = publicationCommitFingerprint(identity, records);
++      if (!activeScope(identity)) {
++        throw new Error("Publication scope is unavailable.");
++      }
++      const key = JSON.stringify([identity.orgId, identity.executionId]);
++      const old = executions.get(key);
++      if (old) {
++        if (old.fingerprint !== fingerprint) {
++          throw new Error(
++            "Publication execution conflicts with its committed output set."
++          );
++        }
++        return structuredClone(old.records);
++      }
++      if (
++        records.some((record) => publications.has(record.id)) ||
++        new Set(records.map((record) => record.id)).size !== records.length ||
++        new Set(records.map((record) => record.snapshotId)).size !==
++          records.length ||
++        records.some((record) =>
++          [...publications.values()].some(
++            (item) => item.snapshotId === record.snapshotId
++          )
++        )
++      ) {
++        throw new Error("Duplicate publication identity.");
++      }
++      const stored = structuredClone(
++        [...records].sort((a, b) => a.outputOrdinal - b.outputOrdinal)
++      );
++      executions.set(key, {
++        fingerprint,
++        records: stored,
++        scope: {
++          orgId: identity.orgId,
++          profileId: identity.profileId,
++          sessionId: identity.sessionId,
++        },
++      });
++      for (const record of stored) {
++        publications.set(record.id, record);
++      }
++      return structuredClone(stored);
++    },
++    async getArtifactPublication(scope, id) {
++      const record = publications.get(id);
++      return activeScope(scope) &&
++        record &&
++        record.orgId === scope.orgId &&
++        record.profileId === scope.profileId &&
++        record.sessionId === scope.sessionId &&
++        !record.revokedAt
++        ? structuredClone(record)
++        : null;
++    },
++    async isArtifactPublicationSnapshotReferenced(snapshotId) {
++      return [...publications.values()].some(
++        (record) => record.snapshotId === snapshotId
++      );
++    },
++    removeScope(predicate) {
++      for (const [key, execution] of executions) {
++        if (!predicate(execution.scope)) {
++          continue;
++        }
++        for (const record of execution.records) {
++          publications.delete(record.id);
++        }
++        executions.delete(key);
++      }
++    },
++    async revokeArtifactPublication(scope, id, revokedAt) {
++      if (!Number.isFinite(Date.parse(revokedAt))) {
++        throw new Error("Invalid revocation time.");
++      }
++      const record = publications.get(id);
++      if (
++        !(activeScope(scope) && record) ||
++        record.orgId !== scope.orgId ||
++        record.profileId !== scope.profileId ||
++        record.sessionId !== scope.sessionId ||
++        record.revokedAt
++      ) {
++        return false;
++      }
++      record.revokedAt = revokedAt;
++      return true;
++    },
++  };
++}
+--- /dev/null
++++ b/packages/db/src/artifact-publication-sqlite.ts
+@@ -0,0 +1,123 @@
++import type { Database } from "bun:sqlite";
++import type { ArtifactPublicationScope } from "@atlas/core/artifact-publication";
++import { publicationCommitFingerprint } from "./artifact-publication-identity";
++import type { DatabaseAdapter, StoredArtifactPublicationRecord } from "./types";
++
++type PublicationMethods = Pick<
++  DatabaseAdapter,
++  | "commitArtifactPublications"
++  | "getArtifactPublication"
++  | "isArtifactPublicationSnapshotReferenced"
++  | "revokeArtifactPublication"
++>;
++interface Row {
++  payload: string;
++  revoked_at: string | null;
++}
++export function sqliteArtifactPublications(db: Database): PublicationMethods {
++  const scopeExists = db.prepare(
++    "SELECT 1 FROM sessions s JOIN profiles p ON p.id=s.profile_id JOIN organizations o ON o.id=s.org_id WHERE s.org_id=? AND s.profile_id=? AND s.id=? AND p.org_id=s.org_id AND p.is_importing=0 AND o.archived_at IS NULL"
++  );
++  const activeScope = (scope: ArtifactPublicationScope) =>
++    Boolean(scopeExists.get(scope.orgId, scope.profileId, scope.sessionId));
++  const existing = db.prepare(
++    "SELECT fingerprint FROM artifact_publication_executions WHERE org_id=? AND execution_id=?"
++  );
++  const outputs = db.prepare(
++    "SELECT payload, revoked_at FROM artifact_publications WHERE org_id=? AND execution_id=? ORDER BY output_ordinal"
++  );
++  const insertExecution = db.prepare(
++    "INSERT INTO artifact_publication_executions (org_id, execution_id, profile_id, session_id, fingerprint) VALUES (?, ?, ?, ?, ?)"
++  );
++  const insert = db.prepare(
++    "INSERT INTO artifact_publications (id, org_id, profile_id, session_id, execution_id, output_ordinal, snapshot_id, payload, revoked_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)"
++  );
++  const byId = db.prepare(
++    "SELECT payload, revoked_at FROM artifact_publications WHERE org_id=? AND profile_id=? AND session_id=? AND id=? AND revoked_at IS NULL"
++  );
++  const referenced = db.prepare(
++    "SELECT 1 FROM artifact_publications WHERE snapshot_id=? LIMIT 1"
++  );
++  const revoke = db.prepare(
++    "UPDATE artifact_publications SET revoked_at=? WHERE org_id=? AND profile_id=? AND session_id=? AND id=? AND revoked_at IS NULL"
++  );
++  const decode = (row: Row): StoredArtifactPublicationRecord => ({
++    ...JSON.parse(row.payload),
++    revokedAt: row.revoked_at,
++  });
++  return {
++    async commitArtifactPublications(identity, records) {
++      const fingerprint = publicationCommitFingerprint(identity, records);
++      return db
++        .transaction(() => {
++          if (!activeScope(identity)) {
++            throw new Error("Publication scope is unavailable.");
++          }
++          const previous = existing.get(
++            identity.orgId,
++            identity.executionId
++          ) as { fingerprint: string } | null;
++          if (previous) {
++            if (previous.fingerprint !== fingerprint) {
++              throw new Error(
++                "Publication execution conflicts with its committed output set."
++              );
++            }
++            return (
++              outputs.all(identity.orgId, identity.executionId) as Row[]
++            ).map(decode);
++          }
++          insertExecution.run(
++            identity.orgId,
++            identity.executionId,
++            identity.profileId,
++            identity.sessionId,
++            fingerprint
++          );
++          for (const record of records) {
++            insert.run(
++              record.id,
++              record.orgId,
++              record.profileId,
++              record.sessionId,
++              record.executionId,
++              record.outputOrdinal,
++              record.snapshotId,
++              JSON.stringify(record)
++            );
++          }
++          return structuredClone(
++            [...records].sort((a, b) => a.outputOrdinal - b.outputOrdinal)
++          );
++        })
++        .immediate();
++    },
++    async getArtifactPublication(scope, id) {
++      if (!activeScope(scope)) {
++        return null;
++      }
++      const row = byId.get(
++        scope.orgId,
++        scope.profileId,
++        scope.sessionId,
++        id
++      ) as Row | null;
++      return row ? decode(row) : null;
++    },
++    async isArtifactPublicationSnapshotReferenced(snapshotId) {
++      return Boolean(referenced.get(snapshotId));
++    },
++    async revokeArtifactPublication(scope, id, revokedAt) {
++      if (!Number.isFinite(Date.parse(revokedAt))) {
++        throw new Error("Invalid revocation time.");
++      }
++      if (!activeScope(scope)) {
++        return false;
++      }
++      return (
++        revoke.run(revokedAt, scope.orgId, scope.profileId, scope.sessionId, id)
++          .changes > 0
++      );
++    },
++  };
++}
+--- a/packages/db/src/index.ts
++++ b/packages/db/src/index.ts
+@@ -8,6 +8,12 @@
+ 
+ export { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
+ export { createSqliteDatabase } from "./adapters/sqlite";
++export {
++  MAX_PUBLICATION_BYTES,
++  MAX_PUBLICATION_OUTPUTS,
++  publicationIdentity,
++  validatePublicationPath,
++} from "./artifact-publication-identity";
+ export * from "./automation-store";
+ export * from "./constants";
+ export type { ResolveDatabasePathOptions } from "./database-url";
+--- a/packages/db/src/types.ts
++++ b/packages/db/src/types.ts
+@@ -6,6 +6,11 @@
+   OrgRole,
+   ThinkingEffort,
+ } from "@atlas/core";
++import type {
++  ArtifactPublication,
++  ArtifactPublicationIdentity,
++  ArtifactPublicationScope,
++} from "@atlas/core/artifact-publication";
+ 
+ export type { OrgRole } from "@atlas/core";
+ export type ChannelType = "telegram" | "whatsapp" | "discord";
+@@ -675,6 +680,10 @@
+   source: SkillSuggestionSource;
+   status: SkillSuggestionStatus;
+   warnings: string[] | null;
++}
++
++export interface StoredArtifactPublicationRecord extends ArtifactPublication {
++  snapshotId: string;
+ }
+ 
+ export interface StoredArtifactShareRecord {
+@@ -896,6 +905,12 @@
+     userId: string,
+     updatedAt: string
+   ): Promise<boolean>;
++
++  /** Atomically commit the complete output set, or reuse an exactly matching execution. */
++  commitArtifactPublications(
++    identity: ArtifactPublicationIdentity,
++    records: readonly StoredArtifactPublicationRecord[]
++  ): Promise<StoredArtifactPublicationRecord[]>;
+   /**
+    * Atomically replaces an existing Composio connection only when its current
+    * OAuth state hash matches the expected generation.
+@@ -920,7 +935,6 @@
+     orgId: string
+   ): Promise<AutomationUnreadCountRecord[]>;
+   countUsers(): Promise<number>;
+-
+   createArtifactShare(record: StoredArtifactShareRecord): Promise<void>;
+   createAuditEvent(record: StoredAuditEventRecord): Promise<void>;
+ 
+@@ -983,6 +997,10 @@
+     automationId: string
+   ): Promise<StoredAutomationRunRecord | null>;
+   getActiveTaskRun(taskId: string): Promise<StoredTaskRunRecord | null>;
++  getArtifactPublication(
++    scope: ArtifactPublicationScope,
++    id: string
++  ): Promise<StoredArtifactPublicationRecord | null>;
+   getArtifactShareById(
+     orgId: string,
+     profileId: string,
+@@ -1189,6 +1207,7 @@
+     record: StoredExecutionRunRecord
+   ): Promise<boolean>;
+   insertTaskRun(record: StoredTaskRunRecord): Promise<void>;
++  isArtifactPublicationSnapshotReferenced(snapshotId: string): Promise<boolean>;
+   listActionApprovalsForSession(
+     sessionId: string
+   ): Promise<StoredActionApprovalRecord[]>;
+@@ -1354,6 +1373,11 @@
+   reserveProfileImport(
+     record: StoredProfileRecord
+   ): Promise<ProfileImportAdmission>;
++  revokeArtifactPublication(
++    scope: ArtifactPublicationScope,
++    id: string,
++    revokedAt: string
++  ): Promise<boolean>;
+   revokeArtifactShare(id: string, revokedAt: string): Promise<boolean>;
+   revokeBrowserSessionBySessionTokenHash(
+     sessionTokenHash: string,

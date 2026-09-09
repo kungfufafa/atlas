@@ -1,0 +1,35 @@
+{
+  "at": "2026-09-07T10:14:47.227319+00:00",
+  "scope": "Closed root retrospective seven-DOCX report; original scores retained, no alternative scoring.",
+  "files": {
+    "all-seven-diagnoses.json": {
+      "sha256": "620d380e60658f2557d8ced51750cf7c4dc7e1b0f72a673c3b3c4b6e4f9ccc3d",
+      "bytes": 5390
+    },
+    "inspect.py": {
+      "sha256": "17b159233ab204d4685d7dd161a13b02645ca9a4d46915e4644a646fd63d461d",
+      "bytes": 5150
+    },
+    "inspection-closure.json": {
+      "sha256": "a8486a25bbe37107e64a98491adb947f8b924002e69bd002df03e5df3166431f",
+      "bytes": 835
+    },
+    "public-package-projections.json": {
+      "sha256": "789f1bddcce7357cc8bf2355e878142eee82d6281b780d9dc4e1c0c9e608db29",
+      "bytes": 28407
+    },
+    "registration.json": {
+      "sha256": "0fbfe783336b297d57358a6372a40617e9c531e3658a9019f7cebb58002c14ea",
+      "bytes": 771
+    },
+    "report.md": {
+      "sha256": "752d1b63c339de4747a733df5c4e1d137785582f7c40b45e87321e788e8cb7ee",
+      "bytes": 3663
+    },
+    "source-bindings.json": {
+      "sha256": "17c88c0834c22accb20bae59f3e7c00aa0b5856cf24b9861416154313d3ff5bf",
+      "bytes": 8817
+    }
+  },
+  "sourceBindingsReverified": 30
+}

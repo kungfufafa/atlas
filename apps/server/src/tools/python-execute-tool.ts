@@ -1,9 +1,12 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import {
   getProfileSoulDir,
+  getUserConfigDir,
   guardFilePath,
+  inferArtifactMimeType,
   jsonSchemaFromZod,
   nanoid,
   parseToolInput,
@@ -14,6 +17,14 @@ import {
   withProtectedProfileSkillTree,
 } from "@atlas/core";
 import { z } from "zod";
+import {
+  createProcessToolPreparer,
+  type ProcessToolAdmissionPolicy,
+  type ProcessToolPreparer,
+} from "../services/process-tool-admission";
+import { resolvePythonReadRoots } from "../services/python-runtime-roots";
+import { prepareRestrictedProcess } from "../services/restricted-process";
+import { boundedPythonText, createPythonOutputCapture } from "./python-output";
 
 export const pythonExecuteInputSchema = z
   .object({
@@ -51,84 +62,24 @@ export interface PythonExecuteOutput {
   success: boolean;
 }
 
-const SENSITIVE_ENV_KEYS = [
-  "ATLAS_",
-  "DATABASE_",
-  "DB_",
-  "COOKIE_",
-  "SESSION_",
-  "API_KEY",
-  "SECRET",
-  "PASSWORD",
-  "TOKEN",
-  "AUTH",
-  "PRIVATE",
-  "OPENAI",
-  "ANTHROPIC",
-  "GEMINI",
-  "FIREWORKS",
-  "CEREBRAS",
-  "OPENROUTER",
-  "COMPOSIO",
-  "AWS_",
-  "AZURE_",
-  "GCP_",
-];
-
-function buildSanitizedEnv(): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = {
-    HOME: process.env.HOME,
-    LANG: "en_US.UTF-8",
-    LC_ALL: "en_US.UTF-8",
-    PATH: process.env.PATH,
-    PYTHONNOUSERSITE: "1",
-    PYTHONUNBUFFERED: "1",
-    TERM: "xterm-256color",
-    TMPDIR: process.env.TMPDIR,
-  };
-
-  for (const [key, value] of Object.entries(process.env)) {
-    if (!value) {
-      continue;
+export function resolvePythonRuntime(): string {
+  const configured = process.env.ATLAS_PYTHON_PATH?.trim();
+  if (configured) {
+    if (!(path.isAbsolute(configured) && existsSync(configured))) {
+      throw new Error(
+        "ATLAS_PYTHON_PATH must name an existing absolute Python executable. Run scripts/setup-file-runtime.sh on the Atlas host."
+      );
     }
-    const isSensitive = SENSITIVE_ENV_KEYS.some((pattern) =>
-      key.toUpperCase().includes(pattern)
-    );
-    if (!isSensitive) {
-      env[key] = value;
-    }
+    return configured;
   }
-
-  return env;
-}
-
-function detectArtifactMimeType(filePath: string): string {
-  const ext = path.extname(filePath).toLowerCase();
-  switch (ext) {
-    case ".png":
-      return "image/png";
-    case ".jpg":
-    case ".jpeg":
-      return "image/jpeg";
-    case ".svg":
-      return "image/svg+xml";
-    case ".webp":
-      return "image/webp";
-    case ".csv":
-      return "text/csv";
-    case ".json":
-      return "application/json";
-    case ".xlsx":
-      return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    case ".pdf":
-      return "application/pdf";
-    case ".html":
-      return "text/html";
-    case ".txt":
-      return "text/plain";
-    default:
-      return "application/octet-stream";
-  }
+  const managed = path.join(
+    getUserConfigDir(),
+    "runtime",
+    "python",
+    "bin",
+    "python3"
+  );
+  return existsSync(managed) ? managed : "python3";
 }
 
 async function scanWorkspaceArtifacts(
@@ -160,8 +111,26 @@ export async function runPythonExecute(
   input: unknown,
   context: ToolContext
 ): Promise<PythonExecuteOutput> {
+  return runPythonWithPreparer(input, context, prepareRestrictedProcess);
+}
+
+/** Capture trusted host admission once; model input cannot replace it. */
+export function createPythonExecutor(
+  policy: ProcessToolAdmissionPolicy
+): typeof runPythonExecute {
+  const prepareProcess = createProcessToolPreparer(policy);
+  return (input, context) =>
+    runPythonWithPreparer(input, context, prepareProcess);
+}
+
+async function runPythonWithPreparer(
+  input: unknown,
+  context: ToolContext,
+  prepareProcess: ProcessToolPreparer
+): Promise<PythonExecuteOutput> {
   const startTime = Date.now();
   const parsed = parseToolInput(pythonExecuteInputSchema, input);
+  const pythonRuntime = resolvePythonRuntime();
   const orgId = context.orgId?.trim();
   const profileId = context.profileId?.trim();
 
@@ -184,141 +153,175 @@ export async function runPythonExecute(
 
   const beforeScan = await scanWorkspaceArtifacts(workspaceRoot, workspaceRoot);
 
-  return withProtectedProfileSkillTree(
-    context,
+  const runtime = await resolvePythonReadRoots(pythonRuntime);
+  const prepared = await prepareProcess({
+    args: ["-I", "-u", "-c", parsed.code],
+    bin: runtime.bin,
+    readRoots: runtime.readRoots,
     workspaceRoot,
-    () =>
-      new Promise<PythonExecuteOutput>((resolve, reject) => {
-        if (context.signal?.aborted) {
-          return reject(
-            new Error("Execution cancelled before starting Python process.")
-          );
-        }
-
-        const child = spawn("python3", ["-c", parsed.code], {
-          cwd: workspaceRoot,
-          env: buildSanitizedEnv(),
-          stdio: ["pipe", "pipe", "pipe"],
-        });
-
-        let stdoutData = "";
-        let stderrData = "";
-        let truncated = false;
-        const MAX_OUTPUT_BYTES = 64 * 1024; // 64KB
-
-        child.stdout.on("data", (chunk: Buffer) => {
-          if (stdoutData.length < MAX_OUTPUT_BYTES) {
-            stdoutData += chunk.toString("utf8");
-          } else {
-            truncated = true;
-          }
-        });
-
-        child.stderr.on("data", (chunk: Buffer) => {
-          if (stderrData.length < MAX_OUTPUT_BYTES) {
-            stderrData += chunk.toString("utf8");
-          } else {
-            truncated = true;
-          }
-        });
-
-        let timedOut = false;
-        let cancelled = false;
-
-        const timer = setTimeout(() => {
-          timedOut = true;
-          child.kill("SIGKILL");
-        }, parsed.timeout);
-
-        const onAbort = () => {
-          cancelled = true;
-          clearTimeout(timer);
-          child.kill("SIGTERM");
-          setTimeout(() => {
-            child.kill("SIGKILL");
-          }, 500);
-        };
-
-        context.signal?.addEventListener("abort", onAbort, { once: true });
-
-        child.on("error", (err: Error) => {
-          clearTimeout(timer);
-          if (context.signal?.removeEventListener) {
-            context.signal.removeEventListener("abort", onAbort);
-          }
-          reject(new Error(`Failed to spawn Python process: ${err.message}`));
-        });
-
-        child.on("close", async (code) => {
-          clearTimeout(timer);
-          if (context.signal?.removeEventListener) {
-            context.signal.removeEventListener("abort", onAbort);
-          }
-
-          if (cancelled) {
+  });
+  try {
+    return await withProtectedProfileSkillTree(
+      context,
+      workspaceRoot,
+      () =>
+        new Promise<PythonExecuteOutput>((resolve, reject) => {
+          if (context.signal?.aborted) {
             return reject(
-              new Error("Python execution was cancelled by the user.")
+              new Error("Execution cancelled before starting Python process.")
             );
           }
 
-          const exitCode = timedOut ? -1 : (code ?? 0);
-          const success = !timedOut && exitCode === 0;
+          const child = spawn(prepared.bin, prepared.args, {
+            cwd: prepared.cwd,
+            detached: process.platform !== "win32",
+            env: prepared.env,
+            stdio: ["pipe", "pipe", "pipe"],
+          });
+          child.stdin.end();
 
-          let finalStderr = stderrData;
-          if (timedOut) {
-            finalStderr += `\nExecution timed out after ${parsed.timeout}ms.`;
-          }
-
-          const afterScan = await scanWorkspaceArtifacts(
-            workspaceRoot,
-            workspaceRoot
+          const stdoutCapture = createPythonOutputCapture();
+          const stderrCapture = createPythonOutputCapture();
+          child.stdout.on("data", (chunk: Buffer) =>
+            stdoutCapture.append(chunk)
           );
-          const generated: GeneratedArtifact[] = [];
-          const standardArtifacts: ToolArtifact[] = [];
+          child.stderr.on("data", (chunk: Buffer) =>
+            stderrCapture.append(chunk)
+          );
 
-          for (const [relPath, mtime] of afterScan) {
-            const prevMtime = beforeScan.get(relPath);
-            if (prevMtime === undefined || mtime > prevMtime) {
+          let timedOut = false;
+          let cancelled = false;
+          let forceKill: ReturnType<typeof setTimeout> | undefined;
+          const stopTree = (signal: NodeJS.Signals) => {
+            if (process.platform !== "win32" && child.pid) {
               try {
-                const fileStat = await stat(path.join(workspaceRoot, relPath));
-                const mime = detectArtifactMimeType(relPath);
-                const name = path.basename(relPath);
-                generated.push({
-                  mimeType: mime,
-                  name,
-                  path: relPath,
-                  size: fileStat.size,
-                });
-                standardArtifacts.push({
-                  createdAt: new Date().toISOString(),
-                  filename: name,
-                  id: nanoid(12),
-                  mimeType: mime,
-                  path: relPath,
-                  sessionId: context.sessionId,
-                  sizeBytes: fileStat.size,
-                });
+                process.kill(-child.pid, signal);
+                return;
               } catch {
-                // file might have been transient
+                // The group may already have exited. Fall back to the child handle.
               }
             }
-          }
+            child.kill(signal);
+          };
 
-          resolve({
-            artifacts: standardArtifacts,
-            artifactsGenerated: generated,
-            exitCode,
-            metadata: {
-              durationMs: Date.now() - startTime,
-              truncated,
-            },
-            stderr: finalStderr.trim(),
-            stdout: stdoutData.trim(),
-            success,
+          const timer = setTimeout(() => {
+            timedOut = true;
+            stopTree("SIGKILL");
+          }, parsed.timeout);
+
+          const onAbort = () => {
+            cancelled = true;
+            clearTimeout(timer);
+            stopTree("SIGTERM");
+            forceKill = setTimeout(() => {
+              stopTree("SIGKILL");
+            }, 500);
+          };
+
+          context.signal?.addEventListener("abort", onAbort, { once: true });
+
+          child.on("error", (err: Error) => {
+            clearTimeout(timer);
+            clearTimeout(forceKill);
+            if (context.signal?.removeEventListener) {
+              context.signal.removeEventListener("abort", onAbort);
+            }
+            reject(new Error(`Failed to spawn Python process: ${err.message}`));
           });
-        });
-      })
-  );
+
+          child.on("close", async (code) => {
+            clearTimeout(timer);
+            // Background descendants must not mutate a later turn's workspace
+            // after this tool has emitted its completion receipt.
+            stopTree("SIGKILL");
+            clearTimeout(forceKill);
+            if (context.signal?.removeEventListener) {
+              context.signal.removeEventListener("abort", onAbort);
+            }
+
+            if (cancelled) {
+              return reject(
+                new Error("Python execution was cancelled by the user.")
+              );
+            }
+
+            const exitCode = timedOut ? -1 : (code ?? -1);
+            const success = !timedOut && exitCode === 0;
+
+            const stdout = stdoutCapture.read();
+            const stderr = stderrCapture.read();
+            const finalStderr = boundedPythonText(
+              timedOut
+                ? `Execution timed out after ${parsed.timeout}ms.\n${stderr.text}`
+                : stderr.text
+            );
+
+            const afterScan = await scanWorkspaceArtifacts(
+              workspaceRoot,
+              workspaceRoot
+            );
+            const generated: GeneratedArtifact[] = [];
+            const standardArtifacts: ToolArtifact[] = [];
+
+            for (const [relPath, mtime] of afterScan) {
+              const prevMtime = beforeScan.get(relPath);
+              if (prevMtime === undefined || mtime > prevMtime) {
+                try {
+                  const fileStat = await stat(
+                    path.join(workspaceRoot, relPath)
+                  );
+                  const mime = inferArtifactMimeType(relPath);
+                  const name = path.basename(relPath);
+                  generated.push({
+                    mimeType: mime,
+                    name,
+                    path: relPath,
+                    size: fileStat.size,
+                  });
+                  const publicPath = relPath.split(path.sep).join("/");
+                  if (
+                    success &&
+                    publicPath.startsWith("artifacts/") &&
+                    !publicPath
+                      .split("/")
+                      .some((segment) => segment.startsWith(".")) &&
+                    !name.endsWith(".atlas-meta.json")
+                  ) {
+                    standardArtifacts.push({
+                      createdAt: new Date().toISOString(),
+                      filename: name,
+                      id: nanoid(12),
+                      mimeType: mime,
+                      path: relPath,
+                      sessionId: context.sessionId,
+                      sizeBytes: fileStat.size,
+                    });
+                  }
+                } catch {
+                  // file might have been transient
+                }
+              }
+            }
+
+            resolve({
+              artifacts: standardArtifacts,
+              artifactsGenerated: generated,
+              exitCode,
+              metadata: {
+                durationMs: Date.now() - startTime,
+                truncated:
+                  stdout.truncated || stderr.truncated || finalStderr.truncated,
+              },
+              stderr: finalStderr.text.trim(),
+              stdout: stdout.text.trim(),
+              success,
+            });
+          });
+        })
+    );
+  } finally {
+    await prepared.cleanup();
+  }
 }
 
 export const pythonExecuteTool: ToolDefinition<
@@ -326,7 +329,7 @@ export const pythonExecuteTool: ToolDefinition<
   PythonExecuteOutput
 > = {
   description:
-    "Execute Python code in an isolated workspace analysis sandbox. Useful for data analysis, CSV/Excel computation, statistics, data transformations, and generating artifacts/charts. stdout, stderr, and any newly generated files are captured.",
+    "Execute Python with required OS filesystem isolation in the active profile workspace using Atlas's configured runtime (ATLAS_PYTHON_PATH), managed file runtime, or installed python3. Use for data transformations and generating files. Inspect installed modules before relying on them; Docker bundles pandas, openpyxl, python-docx, python-pptx, pypdf, reportlab. Save deliverables under artifacts/. stdout, stderr and generated files are captured. Host home and other profiles are inaccessible; execution fails if the sandbox is unavailable.",
   name: "python_execute",
   parameters: jsonSchemaFromZod(pythonExecuteInputSchema),
   run(input, context) {

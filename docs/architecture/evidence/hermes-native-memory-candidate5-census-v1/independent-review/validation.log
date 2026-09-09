@@ -1,0 +1,54 @@
+{
+  "at": "2026-09-07T00:03:57.015826+00:00",
+  "selectedSourceFilesHashVerified": 60,
+  "selectedPublicReceiptsBoundToNativeEffects": 84,
+  "identitiesAndFrozenRecordsMatch": 20,
+  "checkpointHashMatches": true,
+  "rootC5SourceFilesUnchanged": 2078,
+  "counts": {
+    "publicAssistantEntries": 53,
+    "toolBearingPublicAssistantEntries": 3,
+    "chronologyToolReceipts": 84,
+    "nativeEventEntries": 139,
+    "snapshots": 138
+  },
+  "manualRevisions": {
+    "1": 20
+  },
+  "limitations": [
+    "Public chronology serialization order is not independently reconstructed UI/stream emission timing.",
+    "Only selected public projections inspected; original response reasoning not opened or analyzed.",
+    "No criteria/score/root/frozen mutation, paid calls, tests or reruns.",
+    "Selection intentionally uses known outcome metadata and finding-kind coverage; no prevalence, comparative performance, or parity inference."
+  ]
+}
+{
+  "fiveCedarCounts": [
+    35,
+    32,
+    52,
+    56,
+    83
+  ],
+  "fiveCedarTotal": 258,
+  "misappliedMinimumSum": 280,
+  "tenCedarCounts": [
+    35,
+    32,
+    52,
+    56,
+    83,
+    75,
+    39,
+    76,
+    79,
+    73
+  ],
+  "tenCedarTotal": 600,
+  "tenCedarPlusRequirement": 622,
+  "actualCobaltInventory": "unknown; a readiness minimum is not an actual current stock count",
+  "railSavings": 36,
+  "calendarDaysFromSep6ToOct27NextYear": 416,
+  "calendarDaysFromSep7LocalToOct27NextYear": 415,
+  "oneWeekBeforeInspection": "2027-04-20"
+}

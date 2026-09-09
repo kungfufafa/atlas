@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "probeId": "atlas-go-compatibility-v1",
+  "fixedRoot": "/private/tmp/atlas-go-compatibility-probe-v1",
+  "purpose": "Compatibility only; no task quality, benchmark tasks, holdout material, or harness ranking.",
+  "models": ["mimo-v2.5", "glm-5.3-flash"],
+  "selection": "After every scheduled slot resolves, select first fully eligible model in models order; test both even if first is eligible.",
+  "endpoint": "https://opencode.ai/zen/go/v1/chat/completions",
+  "wire": {
+    "temperature": 0.2,
+    "max_tokens": 4096,
+    "stream": false,
+    "userAgent": "Atlas-Hermes-Compatibility-Probe/1.0 (nonstreaming)",
+    "contentType": "application/json",
+    "authorization": "Bearer from key file at explicit execution only; never persisted",
+    "sessionHeader": "x-opencode-session: opaque UUID fixed independently per model",
+    "reasoningControls": "none; upstream default",
+    "transportAmendment": "New model-neutral User-Agent differs from historical DeepSeek study tag; same for both models, and required unchanged for any later alternate-model native stratum."
+  },
+  "limits": {
+    "requestTimeoutMs": 90000,
+    "wholeProbeTimeoutMs": 960000,
+    "maximumRequests": 10,
+    "maxRequestsPerModel": 5,
+    "maxGeneratedTokensPerResponse": 4096,
+    "maxGeneratedTokensAllResponses": 40960,
+    "retries": 0
+  },
+  "schedule": [
+    {
+      "slot": 1,
+      "model": "mimo-v2.5",
+      "kind": "title1"
+    },
+    {
+      "slot": 2,
+      "model": "glm-5.3-flash",
+      "kind": "title1"
+    },
+    {
+      "slot": 3,
+      "model": "mimo-v2.5",
+      "kind": "tool_init"
+    },
+    {
+      "slot": 4,
+      "model": "glm-5.3-flash",
+      "kind": "tool_init"
+    },
+    {
+      "slot": 5,
+      "model": "mimo-v2.5",
+      "kind": "title2"
+    },
+    {
+      "slot": 6,
+      "model": "glm-5.3-flash",
+      "kind": "title2"
+    },
+    {
+      "slot": 7,
+      "model": "mimo-v2.5",
+      "kind": "tool_followup"
+    },
+    {
+      "slot": 8,
+      "model": "glm-5.3-flash",
+      "kind": "tool_followup"
+    },
+    {
+      "slot": 9,
+      "model": "mimo-v2.5",
+      "kind": "title3"
+    },
+    {
+      "slot": 10,
+      "model": "glm-5.3-flash",
+      "kind": "title3"
+    }
+  ],
+  "titleMessages": {
+    "title1": "Organize a weekly checklist for watering indoor plants.",
+    "title2": "Help me plan a reminder to renew a library membership.",
+    "title3": "Create a packing checklist for a weekend train trip."
+  },
+  "tool": {
+    "name": "echo_value",
+    "description": "Return the supplied compatibility marker unchanged. This tool has no external side effects.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "enum": ["COMPAT_READY"]
+        }
+      },
+      "required": ["value"],
+      "additionalProperties": false
+    },
+    "prompt": "Call echo_value exactly once with value COMPAT_READY. After receiving its result, reply with only the returned value.",
+    "result": {
+      "value": "COMPAT_READY"
+    },
+    "finalText": "COMPAT_READY",
+    "choice": "auto (omitted on wire, native default)"
+  },
+  "eligibility": {
+    "requiredTitleResponses": 3,
+    "titleFormat": "HTTP 200, finish_reason stop, exact schema object with only a nonempty string title, no tool_calls; at most native 12 whitespace-separated words. No semantic quality score.",
+    "toolInit": "HTTP 200, finish_reason tool_calls, exactly one function call to echo_value with nonempty ID and exact object {value:COMPAT_READY}; preserve actual assistant reasoning_content and tool_calls in followup.",
+    "toolFollowup": "HTTP 200, finish_reason stop, no tool_calls, content trims to exact COMPAT_READY after actual deterministic tool result.",
+    "mandatoryUsage": "Every actual response has nonnegative safe-integer prompt_tokens and completion_tokens; completion_tokens <= 4096; reported total_tokens, if present, must equal their sum. Reasoning count, if present, must be a nonnegative safe integer <= completion_tokens and is not added again.",
+    "cachedUsage": "Unknown or invalid cached-token subcounter is recorded separately and does not invalidate otherwise valid mandatory usage.",
+    "modelIdentity": "Every actual response model exactly equals requested model; no name guessing or substitution accepted.",
+    "errors": "Every HTTP non-200, transport failure, malformed response, finish reason mismatch, or missing/invalid mandatory usage makes the model ineligible. Preserve raw sanitized response and all reported usage on failures.",
+    "dependency": "Malformed/failed initial tool response skips only its dependent followup with explicit ineligible evidence; independent titles and other model still attempted.",
+    "completion": "No selection until all 10 slots are durably accounted for, including skips. Crash leaves incomplete evidence and admission cannot be reused."
+  },
+  "nativeSource": {
+    "path": "/private/tmp/atlas-hermes-evaluation/source/agent/title_generator.py",
+    "sha256": "1eb801e5f020bb9f32373ed52afb68ab64e384618649260fdf82b12370c13d4b",
+    "snapshotFile": "title-native-snapshot.json"
+  },
+  "documentationFile": "docs-source.json",
+  "executionAdmission": {
+    "requiredStatus": "approved_for_one_execution",
+    "requiredBindings": [
+      "planSha256",
+      "runnerSha256",
+      "readinessSha256",
+      "admissionId",
+      "outputDirectory"
+    ],
+    "outputDirectory": "/private/tmp/atlas-go-compatibility-probe-v1/execution",
+    "claimPath": "/private/tmp/atlas-go-compatibility-probe-v1/execution-claim.json",
+    "restartPolicy": "No resume, retry, or new output directory; a durable wx claim is created before key reading or sends."
+  },
+  "limitations": [
+    "Raw compatibility requests reproduce exact pinned native title prompt/schema and shared effective controls, not the complete stock Hermes lifecycle or its fallback behavior.",
+    "Three successful title requests cannot prove future native whole-batch compatibility.",
+    "A separate later native model stratum must be preregistered; these probes never replace or rescore DeepSeek outcomes.",
+    "Request timeouts can leave provider-side usage unknown; no retries are allowed and all such uncertainty remains ineligibility.",
+    "Maximum generated tokens is a requested cap, not model capacity, price guarantee, or proven absence of provider overrun."
+  ]
+}

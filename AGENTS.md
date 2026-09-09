@@ -116,6 +116,10 @@ Routes: `/v1/subscription/{chatgpt|claude}` (status, login, logout, models). Ada
 
 **ChatGPT context:** `thread/tokenUsage/updated` supplies the effective `modelContextWindow` and current occupancy (`last.totalTokens`). Keep this separate from token usage totals; do not subtract an output reserve again. Codex `model/list` does not advertise context limits, so context stays unknown until the runtime reports it. ChatGPT sets `ProviderClient.managesContext`: preserve it through wrappers to let Codex own automatic compaction. Explicit Atlas compaction still works and invalidates the native snapshot.
 
+**Native usage and identity:** Successful and failed ChatGPT turns use explicit completion counters only; occupancy and cumulative snapshots never substitute for per-turn usage. Missing or partial native counters stay unknown. `providers/failure-evidence.ts` retains process-local, non-executable diagnostic snapshots through original error/cause objects. Once a native turn completes, its evidence takes precedence over stale evidence on a reused callback error. Cleanup errors retain their existing precedence. Claude `modelIdentity` uses exact reported IDs or an advertised `resolvedModel`; unresolved advertised aliases remain explicitly unverifiable. No model-name inference or silent replacement is allowed.
+
+**Usage provenance:** Platform-global and per-model tracker stats distinguish reported, estimated, unknown and legacy/unclassified outer provider invocations. Native runtimes may make additional internal requests. Numeric token/cost fields remain recorded subtotals; provenance does not certify billing or extend to existing daily/org/optimizer reports. Persistence remains asynchronous and is not an atomic global/model transaction.
+
 ## System prompt
 
 Merged in `agent-service` `resolveProfileSystemPrompt` → `generateReply` (`provider.generateChat` / `streamChat`):
@@ -154,7 +158,15 @@ Path: `~/.atlas/orgs/{orgId}/profiles/{profileId}/` (`getProfileSoulDir`). Load:
 | `skill_manage` | Interactive web/cli with `manage-skills` — create/patch/edit/delete profile skills + supporting-file write/remove + auto-assign (`apps/server/src/tools/skill-manage-tool.ts`). When org/profile **write approval** is enabled, mutations stage as proposals for org-admin review instead of writing immediately. When present, file tools refuse any path under `skills/*/` (`forbidProfileSkillMarkdownWrites`). Not injected for automations or Telegram/WhatsApp/Discord. Opt-in **post-turn skill review** (`skills_post_turn_review`) may suggest or stage create/patch after complex turns without writing into model history. |
 | Composio | Org toolkits + per-user OAuth — `docs/website/composio.md` |
 
-**Channel artifacts (Telegram/Discord):** `packages/core/src/channel-artifacts.ts`, `channel-artifact-delivery.ts`; handlers in `apps/platform/{telegram,discord}/src/channel-artifact-flow.ts`.
+**Database memory saves:** Native `memory_write` selects `MemoryService.writeMemory(..., { strategy: "preserve" })`. It atomically reuses exact trimmed content with the same normalized subject, org, owner and scope; changed facts remain separate even under one subject. Exact reuse preserves existing metadata. Use `memory_update` by ID for corrections, withdrawals and metadata changes, and ordinary approval-gated deletion for erasure. The legacy service/LearningPlane upsert remains unchanged. Exact lookup scans the authorized bucket under a SQLite write transaction; this is not a semantic contradiction resolver or an unbounded-scale performance guarantee. Database memory and active `MEMORY.md` do not synchronize automatically.
+
+**Native memory ownership:** New `memory_write` calls support `user` (default), `agent`, and `organization`, with owners derived from trusted execution context. New project writes or supplied `projectId` fail before persistence. Legacy project storage remains; explicit project reads/updates/deletes are limited to the current session owner. Arbitrary-owner legacy rows are neither migrated nor silently reassigned to a broader audience. Implementation: `apps/server/src/tools/memory-tools.ts`.
+
+**Conversation retrieval:** Native `search_chats` uses the database's `matchMode: "keywords"` for weighted lexical matching across authorized history, ranking before the result limit. Existing callers retain default literal matching. Both adapters preserve original text/scalar types through archive search and transcript retrieval, including JSON-looking strings. Query and result limits do not bound total history scanning. Implementations: `packages/db/src/conversation-keyword-search.ts` and `apps/server/src/tools/conversation-tools.ts`.
+
+**Channel work files (WhatsApp/Telegram/Discord):** `packages/core/src/attachments/inbound-document.ts` saves every authorized original through `saveInboundWorkspaceDocument`; it never substitutes inline office text or guest previews. `prepareChannelImage` also passes validated real image bytes; `prepareChannelAudio` saves accepted audio before the existing transcription call. Ingest ceilings: documents/audio 25 MiB (hosted Telegram downloads 20 MiB), images 5 MiB. Legacy XLS/XLSB use the existing managed Office converter to read/export XLSX; XLSM is read passively with VBA stripped from generated XLSX. Sources remain untouched. Persistence follows current channel authorization, not pairing. Channel sessions include standard file tools for older profiles; guest principals receive only artifact-confined spreadsheet/extract/read/write/DOCX/PPTX tools, never profile memory, arbitrary Python/Bash, MCP, or other assigned tools. Tool allowlists and current RBAC still apply. Implementation: `apps/server/src/services/channel-work-file-tools.ts` and `channel-guest-tool-policy.ts`.
+
+**Channel artifacts:** `packages/core/src/channel-artifacts.ts`, `channel-artifact-delivery.ts`; handlers in `apps/platform/{whatsapp,telegram,discord}/src/channel-artifact-flow.ts`. Originals are input references; only completed tool outputs enter normal artifact delivery.
 
 ## Tool execution & workspace
 
@@ -166,6 +178,8 @@ Path bugs (tool resolves under repo instead of `~/.atlas`) → start here. Overr
 | `~/.atlas/tools/*.js` | Custom JS tools — `getCustomToolsDir()` |
 
 Always build context with `buildToolExecutionContext()` (`packages/core/src/tools/context.ts`) so `workspaceRoot` = soul dir. Custom JS tools must use `context.workspaceRoot`, **not** `process.cwd()`.
+
+**Python/Bash network policy:** the host can set `ATLAS_PROCESS_NETWORK=deny` to block all networking inside their existing required macOS process sandbox, including descendants. The default is `allow`. Tool-supplied environment values cannot override this host setting. Invalid values and `deny` on platforms without full enforcement fail closed. This setting covers arbitrary Python/Bash execution only; it does not restrict provider traffic, custom JS tools, dedicated document workers, or other server tools. Implementation: `apps/server/src/services/restricted-process.ts`.
 
 | | Built-in | Custom JS |
 |---|---|---|
@@ -179,6 +193,10 @@ Always build context with `buildToolExecutionContext()` (`packages/core/src/tool
 | Tool loop | `packages/agent/src/tool-loop.ts` → `executeToolCall()`; parallel batching in `packages/agent/src/chat.ts` when every call in the turn is `parallelSafe` |
 
 **Parallel tool calls:** Built-in read/search/fetch tools (`read_file`, `search_files`, `knowledge_base_search`, `web_search`, `web_fetch`) set `parallelSafe: true` on `ToolDefinition`. Mutating, shell, delegation, and session-state tools stay sequential. Custom JS tools default to sequential; export `parallelSafe: true` from the module to opt in. When a turn mixes parallel-safe and sequential tools, the whole turn runs sequentially.
+
+**Incomplete API responses:** Chat Completions `length` errors retain diagnostic fragments and reported usage in `IncompleteCompletionError`; fragments are never executable tool calls or valid conversation history. The chat loop permits one concise continuation from completed history across the whole turn, including forced finalization. It refuses recovery after visible response/tool-draft output, native runtime dispatch or context management, cancellation, transport failure, or a second truncation. `onIncompleteCompletion` on send/stream options is diagnostic only. Known failed usage is counted; missing usage is not guessed. This recovery covers the OpenAI wire adapters; Responses, subscription runtimes, Anthropic and Gemini retain their existing retry behavior.
+
+**Mechanical task stops:** `SendStreamOptions.onToolLoopStop` reports `no_progress` or `iteration_limit` once per invocation, including a native runtime's rejected additional dispatch. Observer failures cannot replace generation/finalization errors. `AgentService.runTaskPrompt` forwards the observer; TaskRunner retains available output and marks these runs `failed` using the existing public task shape. This is not a general verifier of semantic task completion, and it adds no model generation.
 
 | Flow | Entry |
 |---|---|

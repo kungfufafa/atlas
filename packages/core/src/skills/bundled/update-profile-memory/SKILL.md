@@ -4,7 +4,7 @@ description: Record facts, preferences, and personal context in active MEMORY.md
 include-body-on-match: true
 ---
 
-Use this skill to **add** facts to active `MEMORY.md`.
+Use this skill to maintain current facts in active `MEMORY.md`.
 
 - Use profile skills for repeatable procedures — not for one-off facts.
 - Use `knowledge_base_search` for uploaded documents — do not dump reference content into `MEMORY.md`.
@@ -24,13 +24,20 @@ Facts are bullets under dated sections: `## YYYY-MM-DD` followed by `- bullet te
 
 Use the user's timezone from the system prompt when choosing today's date header.
 
-Copy existing text **verbatim** from `read_file` output when editing. Do not paraphrase.
+Use exact text from `read_file` for edit matches. Preserve unrelated text verbatim.
+
+## Corrections, withdrawals, and erasure
+
+- When a fact changes or a preference stops applying, replace the affected active bullet with the current state. If the user withdraws a preference without choosing a replacement, record that no current preference is set; do not leave the old value as current or invent a replacement.
+- If the same fact already exists in durable database memory, use `memory_search` and `memory_update` by ID to reconcile that authorized copy too. Database tools and file tools do not synchronize each other. Do not copy private user memory into a shared profile merely to keep both stores populated.
+- Follow the user's requested retention scope. A request to erase stored information must not become an inactive marker or a retained archive. Remove the authorized stored copies using the appropriate tools and required approvals; describe any pending approval or inaccessible copy without claiming complete erasure. This skill does not erase conversation history.
+- Re-read the affected active memory and verify that it reflects the current state. Preserve unrelated facts.
 
 ## Size limit
 
 `MEMORY.md` must stay at or below **4096 bytes**. Before writing, estimate the final file size. If a write would exceed the limit, follow `archive-profile-memory` to free space, then retry.
 
-## Workflow
+## Adding a new fact
 
 1. Choose the fact to record as a single concise bullet (no leading `-` in your mental draft — add it in the file).
 2. `read_file` `MEMORY.md`.

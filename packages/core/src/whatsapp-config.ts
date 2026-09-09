@@ -199,6 +199,10 @@ export function isWhatsAppOutboundDestinationAllowed(
     return false;
   }
 
+  if (config.accessMode === "denylist") {
+    return !config.blockedNumbers.includes(destDigits);
+  }
+
   const ownerDigits =
     whatsAppUserDigits(config.pairedJid ?? "") ||
     normalizePhoneNumberDigits(config.phoneNumber);
@@ -208,10 +212,6 @@ export function isWhatsAppOutboundDestinationAllowed(
 
   if (config.accessMode === "allowlist") {
     return config.allowedNumbers.includes(destDigits);
-  }
-
-  if (config.accessMode === "denylist") {
-    return !config.blockedNumbers.includes(destDigits);
   }
 
   return true;
@@ -450,6 +450,24 @@ export function isWhatsAppUserAuthorized(
       >
     >
 ): boolean {
+  const input =
+    typeof jidOrIdentity === "string" ? { jid: jidOrIdentity } : jidOrIdentity;
+  const phoneIdentities = new Set(
+    [
+      isWhatsAppLidJid(input.jid) ? null : input.jid,
+      input.senderPn,
+      input.participantPn,
+      input.mappedPhoneJid,
+      config.pairedLid && isSameWhatsAppUserJid(input.jid, config.pairedLid)
+        ? config.pairedJid
+        : null,
+    ]
+      .map((value) => toWhatsAppPhoneJid(value))
+      .filter((value): value is string => value !== null)
+  );
+  if (phoneIdentities.size > 1) {
+    return false;
+  }
   const identity =
     typeof jidOrIdentity === "string"
       ? resolveWhatsAppAuthIdentity({ jid: jidOrIdentity })
@@ -472,15 +490,13 @@ export function isWhatsAppUserAuthorized(
   }
 
   if (accessMode === "denylist") {
-    if (phoneDigits && config.blockedNumbers?.includes(phoneDigits)) {
+    const knownPhoneDigits =
+      phoneDigits || whatsAppUserDigits([...phoneIdentities][0] ?? "");
+    if (knownPhoneDigits && config.blockedNumbers?.includes(knownPhoneDigits)) {
       return false;
     }
 
-    if (isOwner) {
-      return true;
-    }
-
-    if (!phoneDigits && isWhatsAppLidJid(identity.jid)) {
+    if (!knownPhoneDigits && isWhatsAppLidJid(identity.jid)) {
       return false;
     }
 
@@ -840,6 +856,26 @@ export async function verifyAndPairWhatsAppUser(
     if (!config) {
       return {
         message: "WhatsApp is not configured on the server yet.",
+        ok: false,
+      };
+    }
+
+    if (
+      config.accessMode === "denylist" &&
+      !isWhatsAppUserAuthorized(
+        {
+          jid,
+          mappedPhoneJid: lookupWhatsAppLidPhone(
+            await loadWhatsAppLidMap(orgId),
+            jid
+          ),
+        },
+        config
+      )
+    ) {
+      return {
+        message:
+          "This sender is not authorized by the workspace WhatsApp policy.",
         ok: false,
       };
     }

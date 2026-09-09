@@ -1,0 +1,43 @@
+{
+  "status": "complete-unscored-native-transport-pilot",
+  "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T17-20-53-358Z-e282860e",
+  "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "files": {
+    "summary.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T17-20-53-358Z-e282860e/root-analysis.json",
+      "sha256": "02120c46086ff3108c7ed4eacff405c63b25acd75bea50cdd044c292bd8f0006",
+      "bytes": 81721
+    },
+    "attempts.jsonl": {
+      "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T17-20-53-358Z-e282860e/attempts.jsonl",
+      "sha256": "14153d90c4edccfa55f09cd821a36cf873e9c2c7c1174bc976c0fe0ab5f5ca14",
+      "bytes": 11834
+    },
+    "completed.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T17-20-53-358Z-e282860e/completed.json",
+      "sha256": "89ad95c14f0641594bfd3617c2f6dd5862cce098ca9d85d080a37e0fa2fccc49",
+      "bytes": 301
+    }
+  },
+  "observedOutcomes": {
+    "native-default": {
+      "atlasStatus": null,
+      "hermesStatus": null,
+      "expectedStatus": "READY",
+      "bothPass": false
+    },
+    "explicit-memory": {
+      "atlasStatus": "READY",
+      "hermesStatus": "READY",
+      "bothPass": true
+    }
+  },
+  "accounting": {
+    "providerRequests": 23,
+    "http200": 23,
+    "mandatoryUsageKnownAllArms": true,
+    "atlasGeneratedTokens": 3404,
+    "hermesGeneratedTokens": 1128
+  },
+  "scope": "All four trajectories completed valid two-session boundaries and unchanged source/identity/accounting checks. The temporary status word was recalled only with explicit saving instruction. Neither condition is pooled with scored development; no broad quality or autonomous-learning claim. Raw falseCompletion flags for null status record a required-value mismatch, not a fabricated asserted fact."
+}

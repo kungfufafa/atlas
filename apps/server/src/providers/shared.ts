@@ -8,6 +8,10 @@ import type {
   ThinkingEffort,
   ToolCall,
 } from "@atlas/core";
+import {
+  IncompleteCompletionError,
+  type IncompleteCompletionEvidence,
+} from "@atlas/core";
 
 export const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Atlas/1.0";
@@ -63,9 +67,9 @@ export function extractOpenAITokenUsage(
 ): ChatCompletionResult["usage"] | undefined {
   const record = readRecord(value);
   return buildTokenUsage({
-    inputTokens: record.prompt_tokens,
-    outputTokens: record.completion_tokens,
-    totalTokens: record.total_tokens,
+    inputTokens: record.prompt_tokens ?? record.promptTokens,
+    outputTokens: record.completion_tokens ?? record.completionTokens,
+    totalTokens: record.total_tokens ?? record.totalTokens,
   });
 }
 
@@ -351,6 +355,39 @@ export async function readSseEvents(
   }
 }
 
+/** Extract raw fragments before tool argument validation can discard evidence. */
+export function chatCompletionEvidence(
+  value: unknown
+): IncompleteCompletionEvidence {
+  const payload = readRecord(value);
+  const choice = Array.isArray(payload.choices)
+    ? readRecord(payload.choices[0])
+    : {};
+  const message = readRecord(choice.message ?? choice.delta);
+  const tools = message.tool_calls ?? message.toolCalls;
+  return {
+    content: typeof message.content === "string" ? message.content : "",
+    thinking:
+      typeof message.reasoning_content === "string"
+        ? message.reasoning_content
+        : typeof message.reasoning === "string"
+          ? message.reasoning
+          : undefined,
+    toolInputFragments: Array.isArray(tools)
+      ? tools.map((item) => {
+          const call = readRecord(item);
+          const fn = readRecord(call.function);
+          return {
+            ...(typeof call.id === "string" ? { id: call.id } : {}),
+            ...(typeof fn.name === "string" ? { name: fn.name } : {}),
+            arguments: typeof fn.arguments === "string" ? fn.arguments : "",
+          };
+        })
+      : [],
+    usage: extractOpenAITokenUsage(payload.usage),
+  };
+}
+
 /** A closed HTTP body alone does not establish that a generation completed. */
 export async function readChatCompletionSseEvents(
   body: ReadableStream<Uint8Array>,
@@ -358,28 +395,81 @@ export async function readChatCompletionSseEvents(
   label: string
 ): Promise<void> {
   let completed = false;
-  await readSseEvents(
-    body,
-    async (event) => {
-      if (event.data.trim() === "[DONE]") {
-        completed = true;
-        return;
-      }
-
-      const payload = readRecord(JSON.parse(event.data));
-      if (payload.error != null) {
-        throw new Error(`${label} reported a stream error.`);
-      }
-      const choice = Array.isArray(payload.choices)
-        ? readRecord(payload.choices[0])
-        : {};
-      if (assertChatCompletionFinishReason(choice.finish_reason, label)) {
-        completed = true;
-      }
-      await onEvent(event);
-    },
-    { includeDoneSentinel: true }
-  );
+  let limited = false;
+  const evidence: IncompleteCompletionEvidence = {
+    content: "",
+    thinking: "",
+    toolInputFragments: [],
+  };
+  const pending = new Map<
+    number,
+    IncompleteCompletionEvidence["toolInputFragments"][number]
+  >();
+  try {
+    await readSseEvents(
+      body,
+      async (event) => {
+        if (event.data.trim() === "[DONE]") {
+          completed = true;
+          return;
+        }
+        const payload = readRecord(JSON.parse(event.data));
+        if (payload.error != null) {
+          throw new Error(`${label} reported a stream error.`);
+        }
+        const choice = Array.isArray(payload.choices)
+          ? readRecord(payload.choices[0])
+          : {};
+        const partial = chatCompletionEvidence(payload);
+        evidence.content += partial.content;
+        evidence.thinking += partial.thinking ?? "";
+        evidence.usage = partial.usage ?? evidence.usage;
+        const delta = readRecord(choice.delta);
+        if (Array.isArray(delta.tool_calls)) {
+          for (const item of delta.tool_calls) {
+            const call = readRecord(item);
+            const fn = readRecord(call.function);
+            const index = typeof call.index === "number" ? call.index : 0;
+            const current = pending.get(index) ?? { arguments: "" };
+            if (typeof call.id === "string") {
+              current.id = call.id;
+            }
+            if (typeof fn.name === "string") {
+              current.name = fn.name;
+            }
+            if (typeof fn.arguments === "string") {
+              current.arguments += fn.arguments;
+            }
+            pending.set(index, current);
+          }
+        }
+        // Consume the terminal event and any usage trailer before rejecting length.
+        // Other failures remain failures; a later [DONE] cannot erase truncation.
+        if (choice.finish_reason === "length") {
+          limited = true;
+        } else if (
+          assertChatCompletionFinishReason(choice.finish_reason, label)
+        ) {
+          completed = true;
+        }
+        await onEvent(event);
+      },
+      { includeDoneSentinel: true }
+    );
+  } catch (cause) {
+    if (limited) {
+      evidence.toolInputFragments = [...pending.values()];
+      throw new IncompleteCompletionError(label, evidence, {
+        cause,
+        recoveryAllowed: false,
+      });
+    }
+    throw cause;
+  }
+  if (limited) {
+    evidence.toolInputFragments = [...pending.values()];
+    throw new IncompleteCompletionError(label, evidence);
+  }
   if (!completed) {
     throw new Error(`${label} stream ended before completion.`);
   }
@@ -387,16 +477,19 @@ export async function readChatCompletionSseEvents(
 
 export function assertChatCompletionFinishReason(
   reason: unknown,
-  label: string
+  label: string,
+  completion?: unknown
 ): boolean {
   if (typeof reason !== "string" || !reason) {
     return false;
   }
-  if (
-    reason === "length" ||
-    reason === "content_filter" ||
-    reason === "error"
-  ) {
+  if (reason === "length") {
+    throw new IncompleteCompletionError(
+      label,
+      chatCompletionEvidence(completion)
+    );
+  }
+  if (reason === "content_filter" || reason === "error") {
     throw new Error(
       `${label} stopped before completing the response (${reason}).`
     );

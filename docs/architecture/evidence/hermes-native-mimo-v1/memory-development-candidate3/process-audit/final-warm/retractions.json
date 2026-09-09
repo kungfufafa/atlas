@@ -1,0 +1,35 @@
+{
+  "at": "2026-09-06T19:23:35.225290+00:00",
+  "reason": "Final-only projections missed earlier tool-bearing assistant content. All64 warm public chronologies subsequently reviewed.",
+  "retractedFindingCases": [
+    "episodic_decision/2953/native-default/atlas",
+    "cross_language/2953/native-default/atlas"
+  ],
+  "retractedAncillaryNoteCases": [
+    "episodic_decision/1907/native-default/hermes"
+  ],
+  "retainedOriginalVersions": [
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-atlas-4cd896b65161.json",
+      "sha256": "4cd896b6516128553df15b1ee83c3aa7f705827218742fedc94c1bbeebf56234",
+      "bytes": 2185
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas-eca7911a620b10bf89ab6067e48110ff0dde01c98aef8d0015927ce77993eb9f.json",
+      "sha256": "eca7911a620b10bf89ab6067e48110ff0dde01c98aef8d0015927ce77993eb9f",
+      "bytes": 1684
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-97edfe94bc17.json",
+      "sha256": "97edfe94bc17c244853fa76ca339df23e76ba073dfea293b3d66f34a9c176db9",
+      "bytes": 2152
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas-57dc042c16b9.json",
+      "sha256": "57dc042c16b955ba10045531fd4a705364315f9b67ebbc4cfa1d8c3506e22ee4",
+      "bytes": 2199
+    }
+  ],
+  "qualification": "The fourth retained prior version is an earlier additive calendar-arithmetic correction, not an omission retraction. Serialized pre-receipt text does not prove actual user-visible emission timing; later successful effects and final acknowledgements are retained.",
+  "frozenScoresChanged": false
+}

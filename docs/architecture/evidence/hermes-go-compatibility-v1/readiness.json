@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "status": "prepared_not_executed",
+  "createdAt": "2026-09-06T16:47:46.925790+00:00",
+  "planSha256": "5c5981703f649a6008b07f9d66a4bfe4d396db4e0796a7f05b92d14f9e992a37",
+  "runnerSha256": "54e23c0d247df09f1df32460533329878b533cf2424838497d03cae45ca13d2e",
+  "fileHashes": {
+    "title-native-snapshot.json": "b9fa04e8e3d1b99cee0621df0e681807eacd34c255075cacb5308d74f09cec4c",
+    "docs-source.json": "f29bb94b55ed6dd3498eb16b5f1f6622b4ef111ab8e35de745ffad3e8a5bcc74",
+    "preregistration.md": "e68db837aff81e570afc5c97ee7c9b0ea50dd2fcc2dc3fad1a9bbd3cb3ce6dec"
+  },
+  "nativeTitleSourceSha256": "1eb801e5f020bb9f32373ed52afb68ab64e384618649260fdf82b12370c13d4b",
+  "validation": {
+    "offlineTests": 9,
+    "assertions": 37,
+    "networkCalls": 0,
+    "fakeApiCalls": 0,
+    "method": "Pure response/accounting protocol checks plus temporary-file exclusive durable claim test; no main execution.",
+    "testSourceSha256": "282c16d8e52ca0642cc5e388c44a0189e79225d64c7026603c49b27c3a8dbdbf",
+    "testLogSha256": "c11057ad76f5246a514cdb1cfbb7bd93470edb6a7caac8581dd3e468e244cba3",
+    "strictTypecheck": "passed",
+    "typecheckConfigSha256": "98e67d625e87cd433824e7e6ff105ca375e3cf54bbec422b0b37dbc81e34af59",
+    "nativeConstantAstParity": "passed; source not executed"
+  },
+  "execution": {
+    "liveCalls": 0,
+    "keyRead": false,
+    "claimCreated": false,
+    "admissionCreated": false,
+    "requiresParentAuthorizationAfterIndependentReview": true
+  },
+  "limitations": [
+    "No full-run fake HTTP integration was performed; bounded offline tests cover predicates and exclusive claim helper.",
+    "This is a raw compatibility probe of the frozen header/model/endpoint/payload profile, not proof of complete stock Hermes lifecycle compatibility.",
+    "No claim that changing only the model explains old DeepSeek failures because the neutral User-Agent is also amended."
+  ]
+}

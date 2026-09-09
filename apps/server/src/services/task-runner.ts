@@ -1,3 +1,4 @@
+import type { ToolLoopStopReason } from "@atlas/agent";
 import {
   AtlasApiError,
   type CanonicalPrincipal,
@@ -34,20 +35,35 @@ export class TaskRunner {
 
     try {
       const run = await this.taskService.createRun(taskId);
+      let stopReason: ToolLoopStopReason | undefined;
 
       try {
         const output = await this.agentService.runTaskPrompt(
           taskId,
           task.profileId,
           task.prompt,
-          principal
+          principal,
+          {
+            onToolLoopStop: (reason) => {
+              stopReason = reason;
+            },
+          }
         );
 
+        if (stopReason) {
+          const error = stoppedTaskError(stopReason);
+          await this.taskService.completeRun(run.id, taskId, { error, output });
+          await this.taskService.setTaskStatus(taskId, "failed");
+          return { error, output };
+        }
         await this.taskService.completeRun(run.id, taskId, { output });
         await this.taskService.setTaskStatus(taskId, "done");
         return { output };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const original = error instanceof Error ? error.message : String(error);
+        const message = stopReason
+          ? stoppedTaskError(stopReason, original)
+          : original;
         await this.taskService.completeRun(run.id, taskId, { error: message });
         await this.taskService.setTaskStatus(taskId, "failed");
         return { error: message };
@@ -116,4 +132,16 @@ export class TaskRunner {
   getActiveTaskIds(): string[] {
     return [...this.running];
   }
+}
+
+function stoppedTaskError(
+  reason: ToolLoopStopReason,
+  originalError?: string
+): string {
+  const detail =
+    reason === "no_progress"
+      ? "Tool execution stopped after repeated outcomes without progress."
+      : "Tool execution stopped at the iteration limit.";
+  const summary = `[${reason}] ${detail}`;
+  return originalError === undefined ? summary : `${originalError}\n${summary}`;
 }

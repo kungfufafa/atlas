@@ -10,6 +10,8 @@ const WORKSPACE_WORKER_SESSION_MESSAGES_PATH =
 const WORKSPACE_WORKER_SESSION_COMPACT_PATH =
   /^\/v1\/sessions\/[^/]+\/compact$/;
 const WORKSPACE_WORKER_SESSION_PATH = /^\/v1\/sessions\/[^/]+$/;
+const WORKSPACE_WORKER_PUBLICATION_PATH =
+  /^\/v1\/sessions\/[^/]+\/artifact-publications(?:\/[^/]+\/content)?$/;
 const WORKSPACE_WORKER_ARTIFACT_LIST_PATH =
   /^\/v1\/profiles\/[^/]+\/artifacts$/;
 const WORKSPACE_WORKER_ARTIFACT_CONTENT_PATH =
@@ -41,6 +43,7 @@ function isWorkspaceWorkerAllowedRoute(method: string, path: string): boolean {
       path === "/v1/models" ||
       path === "/v1/profiles" ||
       WORKSPACE_WORKER_SESSION_MESSAGES_PATH.test(path) ||
+      WORKSPACE_WORKER_PUBLICATION_PATH.test(path) ||
       WORKSPACE_WORKER_ARTIFACT_LIST_PATH.test(path) ||
       WORKSPACE_WORKER_ARTIFACT_CONTENT_PATH.test(path)
     );
@@ -50,6 +53,15 @@ function isWorkspaceWorkerAllowedRoute(method: string, path: string): boolean {
     return (
       path === "/v1/audio/transcribe" ||
       path === "/v1/channel-principals" ||
+      path === "/v1/channel-principals/authorize" ||
+      path === "/v1/channel-principals/approvals/decide" ||
+      path === "/v1/channel-actions/context" ||
+      path === "/v1/channel-actions/claim" ||
+      path === "/v1/channel-actions/complete" ||
+      path === "/v1/channel-voice/capabilities" ||
+      path === "/v1/channel-voice/speech" ||
+      path === "/v1/channel-voice/transcribe" ||
+      path === "/v1/channels/discord/allowed-users" ||
       path === "/v1/sessions" ||
       WORKSPACE_WORKER_SESSION_MESSAGES_PATH.test(path) ||
       WORKSPACE_WORKER_SESSION_COMPACT_PATH.test(path) ||

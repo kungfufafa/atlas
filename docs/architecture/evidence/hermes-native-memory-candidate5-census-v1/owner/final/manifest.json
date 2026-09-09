@@ -1,0 +1,2676 @@
+{
+  "at": "2026-09-07T00:29:51.482214+00:00",
+  "root": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit",
+  "files": [
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 35272,
+      "sha256": "e13424af111df7ceaed97815aa2254cb1b1761f7d242cf4576fda9d5380b4c6e"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 36116,
+      "sha256": "1df3cdb77a1d449b98cc6958738b9022972697c50c0315b2fb69738b106077a0"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 24402,
+      "sha256": "3886fc3f21978f38b6509ce46e004ddb9689d9ba78a7e6eee70a6fd7f42001fb"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 32734,
+      "sha256": "7af6ec1794781afb26f6cb4034b791b8ef4a882baf11639f8182ec6b54aa8e8d"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 39889,
+      "sha256": "e5df933e9339adcf30d81d0454d29481568d19ff79f99ddc044ee1a40a11f6ae"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 39041,
+      "sha256": "2795020aedcb9a61ac09349d9108e8b49550a86e1c4d4b8f389d9c0918d4f99c"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 26979,
+      "sha256": "5a7da420a3750d19c28267a0f295b3b7628f0c8f778a50ced0935f52eac0d7b3"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 32336,
+      "sha256": "9000ec4f5e82886adc13c5522d607741b66422b15b6e8b682982c917cb26728c"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 26596,
+      "sha256": "8362d1b873b6dce359d106f180049ecacea32e5185d061d05167c799c5c38bf7"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 29605,
+      "sha256": "9821d8ef1f43f48a3d036dec840059ad3ccb36722f571958a65e8016fca655cc"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 22671,
+      "sha256": "aea3eb8173eff408c58739fc252bf3879de780b352d55582bf5f8f79b6b39e0d"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 41053,
+      "sha256": "c7590629896c12878e050fb4f20b9a7eb1bf8a2b3c7c36f4095fe4823b6100c4"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 26756,
+      "sha256": "a2daa78c00f851ae82204245e788a185d5e0a4fe6cf14b270cdb6f6fb187f236"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 29461,
+      "sha256": "f31f5b6d3ec060fbf76e4496ba84f37f8d7079090ea0fa8720f5581c9e42dc4e"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 24090,
+      "sha256": "e1258555baf25834cdfd4ee3895e4eda91dd1ff2c0f5d2804e05dd1ead5fa2c4"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 43154,
+      "sha256": "80a9f0d36bc179b12428bd6e758abe5d27dbbf35b081337f2b468c42d0d4378f"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 66111,
+      "sha256": "05baa807574c23b9cb807ffbaca234575b7543746ac17174936213140b46e9a8"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 62973,
+      "sha256": "bb9601d46019974c9f81aef68905b0c2d5db3f26aa822bc13c53ba77fed30f77"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 55490,
+      "sha256": "ace73f5cb535a76e8cdd05a83373a9d56e71a83ed2a839655311b3c7f477c310"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 64560,
+      "sha256": "a8345f20c115171d620ad3481798ed9df41c3cff8106bfadd6349bb38874e944"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 48118,
+      "sha256": "a0dfc57c900734d9e23a32fcacf5b1ea040702d5259dd5cb734a9088d9ddc39f"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 62239,
+      "sha256": "de66d33600ee8984f8672262be78008b3155b061b27f68db9840d1698f732a97"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 43951,
+      "sha256": "843364d61f344475b3e53cb65e046b6459d83c8c3bbb038a8f09992b99bbb2ab"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 52355,
+      "sha256": "b55bd38e009809d1569b4a82f4b9c19384bae8a7e5835c852b9236089682ec68"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 14558,
+      "sha256": "0c1424f6660f764cf576663f9f2ca0781a5411856d10f8979473edb39717dcbd"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 20110,
+      "sha256": "e7edc096e38a532ff71d2aba8e8297c524a16535a9ec86e55ec01c61bd003b99"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+      "bytes": 21085,
+      "sha256": "312755b0c7aeeeede5a3e8d652bd32340749bbf9c79c2ad571f77263b9249e70"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+      "bytes": 21126,
+      "sha256": "3e4b03d5af471fa08ba0c4ed22e4cbf4f5ac947f1e8400f59b67f42ee84ba5e7"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+      "bytes": 17925,
+      "sha256": "617697b86065a3864847c5c1c7430ea34193d74f7dade90bea99eaf15e9555f4"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+      "bytes": 20765,
+      "sha256": "7197a542be7cd6a8e551ed84bc8379fa71a8762c9f18e477f9d38ca7988661c6"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 23299,
+      "sha256": "e2e444048ff8215569413629239f4c933cfb639ad8d4f5b3bf68c04fb8c01069"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 29214,
+      "sha256": "103fb6a420e3660c7b32e4c3d5f991d9b60855bccdd6612ef255cde99c3b1267"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 15895,
+      "sha256": "666dfeb666c865874f31deba0c5e3eab6eb4c7723dd004853782147ff110fcb4"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 18679,
+      "sha256": "25a3164036b5e72fdecfed2bdbe2e68fb52face8ee6e7838936da405f306d65d"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+      "bytes": 16768,
+      "sha256": "07f59f04584780a2d476acd8c128cb8d69580eba18a3ed3f0eabbf74abf4614a"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+      "bytes": 18217,
+      "sha256": "aa5ee02dd4564a3ede053e216a3158f1cccaf35a66aaeeda7283a82da33e8e42"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+      "bytes": 19286,
+      "sha256": "22f7814a88cac0d2e4cc6071876e1b5f8b3ab16b471756f9c2ba419385b16fbc"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+      "bytes": 19312,
+      "sha256": "d1cc1cf173e2edd743476f9f5caf68a3804abed7718b9ca99d210eeb5adfbacf"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 29277,
+      "sha256": "cc03f1cabda3731f817cb8aba6a47f39f0a673a477d12673f114a126f3de47c5"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 38571,
+      "sha256": "037afdef02a5f8e902df9aed5dcbc0f961f1726e83ce11b367c451c54b9a9be0"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 15930,
+      "sha256": "7f12fcdae7d8e270c185804be2b2e09656ce77b06010b4538c0b86bf0cd9eb57"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 20109,
+      "sha256": "238e306c068e9695ead5160af4194a6a249042ff50d7f36255fd619dc5eed99c"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+      "bytes": 8301,
+      "sha256": "12ce08a67eccd37b54f5e4944bec3fac47d7648723eb65d34ce32988be1fc1c5"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+      "bytes": 21121,
+      "sha256": "03942ba15a951a4d24cea02fa3364de0997106b9308f687d6fc9d8fbbb642280"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+      "bytes": 19368,
+      "sha256": "da3fb43ee660044469947eca933ba8f114c11ef1ee7fd3029f8034040d856685"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+      "bytes": 19360,
+      "sha256": "839b9a5b0909b92104ae97fe91e45699b4d154581f49a5c58f0cd5446791ceea"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 28057,
+      "sha256": "c7030a8a3f3ee3a91cd3fb336b47ace1c26ad508fab65139b9f10b3e4592a15f"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 45106,
+      "sha256": "2861dbc87992c7cbe7d6fd4f5d539c66cc639d19e4f5ffa118122b8797cf4549"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 18646,
+      "sha256": "50ffab6aab05c8812f616581ab56657cb2d82060606ad70f68052b020e9cbe93"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 18680,
+      "sha256": "29f61343f66ddf833ffcfa49b1eecec600f7f63789d77dac8e22078708158b22"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+      "bytes": 15346,
+      "sha256": "6a2ea3f965b3ca5ac4f035969702ad9ed20b9695d45cc87dafe68f71fc1c28b5"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+      "bytes": 21073,
+      "sha256": "a28276a2459db9b57554f56afe7f75f8bf96c1502789a8b15932493cff0e7738"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+      "bytes": 13688,
+      "sha256": "ed2b75e7551f4614306b1fd218df8d8d69d85c5b86b1e0ed6f8b2eee7f49c6c7"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+      "bytes": 19314,
+      "sha256": "79ffcf22450148d4593637e2c43738b708632bce7a987705d9d4d4aaadc34795"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 26112,
+      "sha256": "f1f18c79c64724cd52d99ca3ae6bb2fce810c6846a5389d6c98a30f77fd522bb"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 39209,
+      "sha256": "a7b7b14751429b76241d2c5b03a30bd42016e36883bccc81c443afb5998f0062"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 29688,
+      "sha256": "c0bd6dbc23eabb992a03f227833499af877a17225d12d482016fcd0209791063"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 28949,
+      "sha256": "752c509406cd95ab82e7f59f7441d9e3bfc1c2aac5180be1b6e6d59fe49b0173"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 35389,
+      "sha256": "2b9402bfc328104296575a9345ac083721108b5bf6a047e1c51fdcf1a4989973"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 29528,
+      "sha256": "758a488bcb77069bbd0591bbd9ba68f7e492a43ec15244c062dbf83e57d17f64"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 33363,
+      "sha256": "24827a308d086e085f95b827a8c3e003c9220507b62017a194a7e879fe409bbb"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 28889,
+      "sha256": "8b12f250408bb55c0b5f00a1e2fee5b3f3afd5789f75d60c9885c6652301f778"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 32928,
+      "sha256": "08ec4e0100134324d6150a834c9dec75c94d2cc69f9bfc296a0c19cc2b7fab53"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 40763,
+      "sha256": "8e645a65814eae39195e68b6ef6df8b01f6f2f5d98b0a015bee1a40040779504"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 48829,
+      "sha256": "1df6b050ec5bcb2b54263b5d6770bf1526ae68ef4342d346807bceaffd4058c5"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 46505,
+      "sha256": "698813e4a2945d00fc9966d24e4ac33717a25f25a1dedf103824a54f858d78d5"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 13771,
+      "sha256": "4fb70a6545282ee614c993d14732d5afe2198594f5216f7e969fcafaeaf3a682"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 51663,
+      "sha256": "16681beea50a8052448059faccd4045e24f9240ae5fd4ce4a8e7d1e424d4580b"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 50962,
+      "sha256": "ae97a4d50709f2eb945dc12d97f8dcdc0f3c4565f19e6a2f759d1cf36b986131"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 38907,
+      "sha256": "fb5c5248ece5d169ac8b4a1351a17aa29457f178c4c343ffd899b67e04339ba1"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 44074,
+      "sha256": "2a4dd647a2846d6ddb1a8518730e76547ce76c89bb6c3aa3d69f91c8b3e5b8c4"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 63291,
+      "sha256": "9ab14a959a3a062ebcc79f58f3a7d60dfd6acfc64d7601d903d398f73d23c6bc"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 17582,
+      "sha256": "93de073e54e7e6be65b17f2c873f83331f5aa53fdf4732f933d897421a09d133"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 20419,
+      "sha256": "a6e7b39099675ad4376979d9ebc9dcfe76f5fc79241ae48dd01887be55cc6193"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 36257,
+      "sha256": "92b4fa0ea5cdf8a1077d432cb910518692b3c896693a9c434b9a7aa235e6b7e4"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 30405,
+      "sha256": "46588345d5622d5dbc9b26419baa52f27a1aedcd7d6750cbfe9b0763abcc0945"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 16146,
+      "sha256": "d147cdf8fefc56e1e9bbb545ad55c0d16323f74d99d71001f6d383f2c5a2a3c7"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 17577,
+      "sha256": "d370c1fde951d8b6c44d3a472b9a9dc2506d05dbfb13933efb2afc119b9616d4"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 29969,
+      "sha256": "e192ab1f54d6321c9443d956b93fa437f5c3e4ff1b55530568604a66e343ad45"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 49388,
+      "sha256": "41c3ed134b1cbca7d0b545310d51aeee9bf474936cf606d7f83bb120ac1fa77a"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 20383,
+      "sha256": "c5590fe3a299a9151eee71bfbe5ed43e8b90e24b2be9e4dfb3921fa14c8d8aa3"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 19016,
+      "sha256": "35e6f6cbae095db0cc4769623056c11225d810398cfdada0b5408f5db551a6ea"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 32815,
+      "sha256": "e8aecc1347403ac3af191fb6d6476abfcfdf3453f175ad14c6740ab65cefe815"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 32924,
+      "sha256": "3f5bd8b3f6c2d693cbbb1b87407304849378910b4a7f13418d8a2cdaa85ea412"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 18940,
+      "sha256": "89bbfab78b90d861c437ab5dd13fc51f209f651db5f266598a8ff9a8226b8169"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 18981,
+      "sha256": "4bb5215f567b7cb90055d404ea611759d0b1dbddd27460b2c9af74aa73f01a14"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 28840,
+      "sha256": "51c232fc3263d519a0644305b3256f436dccd3ab12ed60364003b2657f06ceb5"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 35399,
+      "sha256": "d3695c0c2e45d845dd8f2af138342c7dcd5c73cecd3a2c80d6cca36eb4020a6d"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 26894,
+      "sha256": "f0b843fe33db55c7b45736f94924158185385abe987a4268da91e51c03180b80"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 30806,
+      "sha256": "4b3978eacc2139261d65984f05be3cad531de7cc6fd363b560207e6ef7825b64"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 25065,
+      "sha256": "ca5f3e1a04d3e86fb95965b52d26e78ca20fe446d85780475c392c1e0a535c3c"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 33758,
+      "sha256": "9f88fddafca0925ca5e4eee337f59e5542dc690297f1c2849a77e0cc5202fd7a"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 27906,
+      "sha256": "6c90a8da7af52be8a7a3280a9d5e4a32ef71ccb8a9c6019be86bcc2e7f6954d6"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 28368,
+      "sha256": "a7997cd87bea8355988b14e6d795f97d792a938e77cefffb0b943dfd3c69541f"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 29628,
+      "sha256": "751de8f1e8c83d6ab958b2a96ca90c2f503b9465eb6fa77d3eb3043ad8bcb1ba"
+    },
+    {
+      "path": "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 33545,
+      "sha256": "218c41679d085f08755b46df650768ac8fbabf85304f13972ce671c25a96bf58"
+    },
+    {
+      "path": "audit-checkpoints/20260906T231643924797Z.json",
+      "bytes": 85493,
+      "sha256": "966338527d1bad7ae99c60d88449ad6efbc016dc98835430e6f90576db2373b7"
+    },
+    {
+      "path": "audit-checkpoints/20260906T232033390925Z.json",
+      "bytes": 99574,
+      "sha256": "4edd8a94ec95d49514bdf916f1ecd698a00425c03d5b9fd96bf89f65d9fcd236"
+    },
+    {
+      "path": "audit-checkpoints/20260906T234123918807Z.json",
+      "bytes": 119061,
+      "sha256": "698b48a5bf9f3ebfb2222d65310fb8c2655e775b3325cfe1a34990e488765680"
+    },
+    {
+      "path": "audit-checkpoints/20260906T234141570495Z.json",
+      "bytes": 122925,
+      "sha256": "f8a43d765051262aaadccb33739d5ca32a2d2acfdbd98b67990cb5be0faaf361"
+    },
+    {
+      "path": "audit-checkpoints/20260906T234327159483Z.json",
+      "bytes": 127347,
+      "sha256": "68cc8f5750b85351a08fd9c5eb43094c1ff00f78d65671fc0101bbae8e154ae0"
+    },
+    {
+      "path": "audit-checkpoints/20260906T234623432749Z.json",
+      "bytes": 132483,
+      "sha256": "036c445f072657f53a4eaa92d14c4231b4225c0ce7db080de17892860c7ccbd5"
+    },
+    {
+      "path": "audit-checkpoints/20260906T234759334227Z.json",
+      "bytes": 137484,
+      "sha256": "059053473bb6e7c0ac6cda4af490c868ba9cdb2db23c96113f1aeba77af1d28a"
+    },
+    {
+      "path": "audit-checkpoints/20260906T235121912144Z.json",
+      "bytes": 143834,
+      "sha256": "b8f77d0f9afe0c266fe5f65e39778a3ca762cc7e5019a0b16e5e03d5733c495e"
+    },
+    {
+      "path": "audit-checkpoints/20260906T235306043718Z.json",
+      "bytes": 147746,
+      "sha256": "1de0db351aa38c8b0bf2378ca632995ecf1d320a26f43437c2a122ec05aad66b"
+    },
+    {
+      "path": "audit-checkpoints/20260906T235545015252Z.json",
+      "bytes": 151089,
+      "sha256": "ffb20652a77f80fd103ae25b9a02cc0835be04d07ca12fac205b13557ffe89a3"
+    },
+    {
+      "path": "audit-checkpoints/20260906T235711822386Z.json",
+      "bytes": 154818,
+      "sha256": "174ec010ddd3b290918b92f100a0cf2f217903fa833c175a8e66c42bfb0eea18"
+    },
+    {
+      "path": "audit-checkpoints/20260907T000027693848Z.json",
+      "bytes": 157998,
+      "sha256": "03e2a219381d986caa31f1ecd150ac9c5f48b4843cb3812a861ce24066828f5d"
+    },
+    {
+      "path": "audit-checkpoints/20260907T000143356238Z.json",
+      "bytes": 161709,
+      "sha256": "9e891b01808394c06fe901bc53f6ad490c86da4c0211ebb897239580c6da5570"
+    },
+    {
+      "path": "audit-checkpoints/20260907T000555950785Z.json",
+      "bytes": 163101,
+      "sha256": "a55bb90991f5b16d34b0b71d68f06e31ab012355e549a4796a0c9469f139f627"
+    },
+    {
+      "path": "audit-checkpoints/20260907T000644159996Z.json",
+      "bytes": 165574,
+      "sha256": "7503a660515398059e4cf2d1c1512152a7c2f684cde0d3f21581ac9eb997751c"
+    },
+    {
+      "path": "audit-checkpoints/20260907T001010039360Z.json",
+      "bytes": 167500,
+      "sha256": "1fb228b8674b77211bbcfbc81825048f7b750e5a628896ffacef72285b43a9a4"
+    },
+    {
+      "path": "audit-checkpoints/20260907T001208689709Z.json",
+      "bytes": 170356,
+      "sha256": "643e117d96efa12e0e1e70aa5956a81228ed52ea954d8fffdc1b4a45b30ed421"
+    },
+    {
+      "path": "audit-checkpoints/20260907T001505033936Z.json",
+      "bytes": 172328,
+      "sha256": "e533e39cf1cf24cde283236282737ca8ad03fc0e8281bedcc4a28e00e3bb22d6"
+    },
+    {
+      "path": "audit-checkpoints/20260907T001630362515Z.json",
+      "bytes": 175630,
+      "sha256": "57c26080ca99cadd5628a9fdd8f5b237f3c24fdfbee8dc710362c102194ae918"
+    },
+    {
+      "path": "audit-checkpoints/20260907T002033246741Z.json",
+      "bytes": 180110,
+      "sha256": "a80d41ab854df6c7e5b5f93bd9a390f371a11dfa5dadaf5b1a3cf9cacfb55955"
+    },
+    {
+      "path": "audit-checkpoints/20260907T002611576754Z.json",
+      "bytes": 185428,
+      "sha256": "39fe422fedfb8cda462a7bc6e565bc5a0a07a04c52b70a43c8e068d13c7d3dd4"
+    },
+    {
+      "path": "audit-checkpoints/20260907T002628790281Z.json",
+      "bytes": 189930,
+      "sha256": "226bd2bb6676d09bc5715feb3c814a1583e456243a7d4aae30ded98a620ec205"
+    },
+    {
+      "path": "audit-checkpoints/20260907T002838553169Z.json",
+      "bytes": 194675,
+      "sha256": "6583c560b8f98fca74c18f0f89167024348ac780f73fa9361372cf37bdc68e13"
+    },
+    {
+      "path": "checkpoints/20260906T230952Z-ended.json",
+      "bytes": 62604,
+      "sha256": "5ecbe15d5ec3edcc8721d1b70975391c212f883f4b5b8a62f3bc57943fb74347"
+    },
+    {
+      "path": "checkpoints/20260906T230952Z.json",
+      "bytes": 2960,
+      "sha256": "f1fbeeeb140c3e4ecd3e7848711d2cd7714a516e2b6605fa6aab93d533b1caff"
+    },
+    {
+      "path": "checkpoints/20260906T231644Z-ended.json",
+      "bytes": 102406,
+      "sha256": "f7dff2384004a52e897b558986b7cad78c8ac7bb47aed5ca0da3e6412505d516"
+    },
+    {
+      "path": "checkpoints/20260906T231644Z.json",
+      "bytes": 4425,
+      "sha256": "aaefb8a98b53eda7ac77feb28abd54f3dbfa94ca62a2e7e0f9d321ad809e6c21"
+    },
+    {
+      "path": "checkpoints/20260906T233422Z-ended.json",
+      "bytes": 157574,
+      "sha256": "8ad7027f2fcf01fd3996d530758b9bf6d311dbcde2a41832e3e2501c35feafbd"
+    },
+    {
+      "path": "checkpoints/20260906T233422Z.json",
+      "bytes": 6409,
+      "sha256": "c9e0b38321cf573202a3350dde5e0571157c97c6202e6f84717acb47d566ff9a"
+    },
+    {
+      "path": "checkpoints/20260906T234141Z-ended.json",
+      "bytes": 184582,
+      "sha256": "7a7f9f1385554b4a8cd862a00fdd5279511e18f5ff6df536935fb0b307750ed2"
+    },
+    {
+      "path": "checkpoints/20260906T234141Z.json",
+      "bytes": 7254,
+      "sha256": "efdd0a890f4e03573283d9735b79f7c5ed65bcce677b9f5b0665c95996b1ac4c"
+    },
+    {
+      "path": "checkpoints/20260906T234623Z-ended.json",
+      "bytes": 215283,
+      "sha256": "79abe451622e2e5774d86885c84be53f716d5e666c7dd6c3e8ceafdc334ce186"
+    },
+    {
+      "path": "checkpoints/20260906T234623Z.json",
+      "bytes": 8376,
+      "sha256": "f8535c9c8e138c432cd009d02327a7e64c1f6c3fcea5a7a33f6695adffeef33d"
+    },
+    {
+      "path": "checkpoints/20260906T235121Z-ended.json",
+      "bytes": 250504,
+      "sha256": "97bd98bbf3b81da53a5820714cb488a8a0aed111f1e50ea2e71fc50deda7e956"
+    },
+    {
+      "path": "checkpoints/20260906T235121Z.json",
+      "bytes": 9749,
+      "sha256": "b46f13dc2e9cada5fe0cf51d8082cd56649bc651242669543efe6441c641cfea"
+    },
+    {
+      "path": "checkpoints/20260906T235544Z-ended.json",
+      "bytes": 271550,
+      "sha256": "6ce2288466ec666bf267620ea79b3731992b15dcac14befaf25d6cf4a03ed4b8"
+    },
+    {
+      "path": "checkpoints/20260906T235544Z.json",
+      "bytes": 10523,
+      "sha256": "993fcce0491afc43a7f3a3699a61693613689a4b3fed2dbc83d97d94d8089ba1"
+    },
+    {
+      "path": "checkpoints/20260907T000027Z-ended.json",
+      "bytes": 291943,
+      "sha256": "3659c60b94c1272eb745572dd08361efed5a35666195f5c58b7a9e9f3dc11c78"
+    },
+    {
+      "path": "checkpoints/20260907T000027Z.json",
+      "bytes": 11209,
+      "sha256": "cabd2b287f520f123eac4bfe1d012344f54b6ddcf764ba260287232e4f1329a0"
+    },
+    {
+      "path": "checkpoints/20260907T000555Z-ended.json",
+      "bytes": 299334,
+      "sha256": "2d9326eb8fe51be0509be9636687c489ae4f730f79b5ffb20d050a01f092875b"
+    },
+    {
+      "path": "checkpoints/20260907T000555Z.json",
+      "bytes": 11510,
+      "sha256": "74da9531105ab841156102acb4ff74cd0be11df76eee6ab55b911579f40c2d1a"
+    },
+    {
+      "path": "checkpoints/20260907T001009Z-ended.json",
+      "bytes": 309839,
+      "sha256": "b55aff74776a34638f415536b7b68dc82ec7e766554b1691432df7d819d093d6"
+    },
+    {
+      "path": "checkpoints/20260907T001009Z.json",
+      "bytes": 11929,
+      "sha256": "dcaf6a370213b6f8eea69d40d2e847b759e078c1f4c646fe44c9079de6ebedc8"
+    },
+    {
+      "path": "checkpoints/20260907T001504Z-ended.json",
+      "bytes": 320790,
+      "sha256": "862952d3ec154150318f46ed887bb700d2b9004e20356b8bfdb23016d4a8b43b"
+    },
+    {
+      "path": "checkpoints/20260907T001504Z.json",
+      "bytes": 12341,
+      "sha256": "022285f97ae765cc6d5dd150ddef81dd3bffd9639427fbdf140544d66b41f578"
+    },
+    {
+      "path": "checkpoints/20260907T002032Z-ended.json",
+      "bytes": 349602,
+      "sha256": "ba08e333cae8fee980c380ede3402cc3fb8312080e61d36fc2f2bacf1961b59e"
+    },
+    {
+      "path": "checkpoints/20260907T002032Z.json",
+      "bytes": 13314,
+      "sha256": "414087a9d0f1afb23cc079e04c4afb90345ddd44f37950ec484911e3c4a2f1dd"
+    },
+    {
+      "path": "checkpoints/20260907T002628Z-ended.json",
+      "bytes": 378439,
+      "sha256": "b63a64168dc44734d20ba0e68a64a6a4dc08713dbdff974f1df37554f61a1fb0"
+    },
+    {
+      "path": "checkpoints/20260907T002628Z.json",
+      "bytes": 14298,
+      "sha256": "e9f6672cc01303b36e98bdb55bf3589dff48a28f7eb149d04434a17da82754c0"
+    },
+    {
+      "path": "closure.md",
+      "bytes": 6510,
+      "sha256": "5c05a030adc9ddb56940a24a7220aa33d5094b8f91f06e21ab5cde381c598105"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 25064,
+      "sha256": "3b8c96642d2e1509ce28737599a75ac70e83d43df4a4bc4a04b167d82c458f50"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 45673,
+      "sha256": "1ffe3c487978bf397a20917f1cc68863a6d424f1d060e07ff054edce8af25904"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+      "bytes": 35455,
+      "sha256": "c8e3da46c35fc992cdfcfbad924552481aa8abe1ff9f52f334ac77be817df91a"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+      "bytes": 48277,
+      "sha256": "c3c43783951aa739e364540038f4c51e516246ff5586f3ebbc4626a11ab3a9ed"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+      "bytes": 35453,
+      "sha256": "757d3b97b67a0bece80f5611c63363fd06b8866635c260b6b27406973be09338"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+      "bytes": 44052,
+      "sha256": "3a38b627712b0f78d9607ed57c3c39a7cc34feb5b30f0f2258ef2665a6ddc788"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 27279,
+      "sha256": "10c1c3f321a7d9c405d9579477c0f0cde472ad23d1091a02d90444c86d08ab8d"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 43895,
+      "sha256": "d21ac8227704b980a133672655220007589c55d63cfc6aabef42669b9e3416e6"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+      "bytes": 29911,
+      "sha256": "d0c4ced7a7bf38d23527de7c0fc0cfa7a27da25da45886b79717f383e34e8fee"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+      "bytes": 36586,
+      "sha256": "dc496bdfa16259e3bb3c6dd7e0dbdae6021ada3e555af8be46e079435035bb33"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+      "bytes": 30857,
+      "sha256": "221c97f8a1ab221d8b7ea54f5f2285cc571dc647aedb97790c4a7cfe4dba8689"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+      "bytes": 40777,
+      "sha256": "dd0675fd5206628d96f041c4731e36b2375d32e6e24d176942940576d3d0ce8f"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 26574,
+      "sha256": "18481c763158b4795c76ea869995104285dabb85c40108906e049abaf518dea4"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 44396,
+      "sha256": "63d470e59411e75940fadbe36f5d7181f498aca8d540a8b199d3d51449ec8064"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+      "bytes": 12546,
+      "sha256": "e56670ee6469bf056709b16a9637025c8ae7bf296efd4c7ed2b3aeee8b49b887"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+      "bytes": 47111,
+      "sha256": "5bc46248138f754a2bc740a714a84e26479ecce37b75e66c7ff479a849c179fa"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+      "bytes": 30824,
+      "sha256": "ba61fb7d952fd5cedd9e95a5b50e5618e43b505b6f494986f839b06257836f7a"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+      "bytes": 40493,
+      "sha256": "9e4bfd1134e9503f57a2d52b8b7546c8fe9a80a3c3e2a2a9aa85d3c933babf2e"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 33418,
+      "sha256": "7b95b9443a91763dc5762b1634e99c68b26ecb1a2ab6473c070a0f991617402e"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 45082,
+      "sha256": "f81374fb5426d72d425c7c41d2f474b8ab5832e801d3fe6fbee3f224282f2655"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+      "bytes": 25145,
+      "sha256": "9c2d0c2d2448679aee7d9e08e0b94d471df3637476bce2b0bb256421a67c9c19"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+      "bytes": 42491,
+      "sha256": "ec4186bee86661b249271a6d5c533e35c8f5fd2e5e0c18b58b3892f512368e71"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+      "bytes": 21719,
+      "sha256": "db910c265e8b7fd1e6b2e70562006c72e26bf43f976a1b43db0ed569794ad5e6"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+      "bytes": 42950,
+      "sha256": "994e65badbfecd8f5baaca6878d555a658ccdcc6541c2d5e758338c5872e40db"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 28593,
+      "sha256": "110e00dcd921a08d81ae476f2c4b4f92e8bafb715f83966caa58eeb76806e210"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 48027,
+      "sha256": "2accc938af524b03e10aaffc5629f3d1a14efa54fdf1fd35faf66d030d5520c4"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 26492,
+      "sha256": "ccfd806743ab4e503cdde96b610870fcdb3e7abfe68029ecc4e967cc8a7223e6"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 43856,
+      "sha256": "b7d20a5ece94c110ec3c0a822e1dc59b00fae6cccbf5582f2c54345493dbe02b"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 35459,
+      "sha256": "0b5c4f2b007cb04c5e27894cf83f6c39b7d7aa316bd47c6655c86ee2b65c3110"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 43566,
+      "sha256": "6083266439e616a6ab1a45d735d0d6459880f160162bc3a3b97874f3f7ad4593"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 31828,
+      "sha256": "a1f8e55b53ac6cffcbb5e208fff980429f57a6127b79a019907244935a0527bf"
+    },
+    {
+      "path": "control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 44064,
+      "sha256": "1a6e8d7677ee729c593213cfeed6586846766a1fff443a2335631d6ee189aea7"
+    },
+    {
+      "path": "control-review/criteria.md",
+      "bytes": 2947,
+      "sha256": "b735bdd1985388e97ccabff213e34bd67b04e3ba13dc4a49415110c72f1f52d5"
+    },
+    {
+      "path": "control-review/inventory.json",
+      "bytes": 66147,
+      "sha256": "57edfc32511403dca38d8ab206c68ac61abb67204db7c2483cd8855f6d75b8d5"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 6471,
+      "sha256": "986acf94b411211e8f0908e65771d261bcf3e556a1adfbc666ee4e1bc6cd5402"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 7465,
+      "sha256": "1591faaebf4344fcc3c047a7a35d0d9ded83f412eb79b2bbf476fc2fe12a373a"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+      "bytes": 7426,
+      "sha256": "8e3c6a1998aceca4d043d95c9b21485d0c60c13db8e8b3512b24b40bdc24d99f"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+      "bytes": 8344,
+      "sha256": "bef50514cebac3b6b8c6c312986312708b60d4c248e03c53ba8c2f7f65b46784"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+      "bytes": 6854,
+      "sha256": "d6054ec553ade8020841ab4cf9c9617ac591664945d3a763419f36c8fe6b5ac0"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+      "bytes": 7396,
+      "sha256": "1cd1ef57f1068e7b6099c29caae84fed06f26c41225a820ff875291dcb894ea0"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 6175,
+      "sha256": "4fbe1dec8c5d8e9accea5a17d18a71a4f73042ce77bcd6340e5afa9feafad80f"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 7700,
+      "sha256": "421d2da356c93923cfbab7fa82c2e3a2d6b28cc2fe7ce620c961bf983db4a35e"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+      "bytes": 6871,
+      "sha256": "7e823e711eb2bce196ce0e41bb6b13b8c17a3e573847296d00533346c8f34b57"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+      "bytes": 6851,
+      "sha256": "d32775ed4f302799ca3dfe864bfe7c62ff48a7f40199e9f32f1a14a57878d7c2"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+      "bytes": 7216,
+      "sha256": "77729f72b60e2c9dbc13bc29210db591a1c89eeb1897048db0fcfa865cc21bfc"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+      "bytes": 7681,
+      "sha256": "28f70881cf80bd2e42a9644a11bb724d97b62f92d970a931c05834351ac84fab"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 6232,
+      "sha256": "12335fd405d80c177cf885344da9dc69b84e5b35b4ad41cdd0071ea3517cbca4"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 7977,
+      "sha256": "c832440afc19b528cd98ff9de58e00a43e101858bfc6c408569784a011d98fdf"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+      "bytes": 6013,
+      "sha256": "59b10eae46fe486bcc311daaedb6fc66fbc073831f9334f91eb27a45a98cee44"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+      "bytes": 8256,
+      "sha256": "088e129ba73d6cbb2b869736a1d9dbe07010855e893c5541ebbf6646856a3ee8"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+      "bytes": 7580,
+      "sha256": "82dd7a35f627181a70bc07a8a9831bd4bc7b07e7825ade348207911d86c0993a"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+      "bytes": 7499,
+      "sha256": "9ecc70521d735dac3c1e3e0f718dac0193fe641de84cea11780c6b9d6b031184"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 7798,
+      "sha256": "c1da84a3684fbaa96d87acdbb15dd080575c42f2e1969eb4e22212444e419988"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 6970,
+      "sha256": "22c3e8898a58552203567d947787e89883f88b31337083d8db1a4d8106138bb5"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+      "bytes": 6487,
+      "sha256": "26bc2874a118898b75971828e237b628b25261f46a01cecca455007abbd74500"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+      "bytes": 6989,
+      "sha256": "0ff968440b73fea3e53459146820bcec63382cc3ace959cde32b25901ca2c7a9"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+      "bytes": 5913,
+      "sha256": "511d8d2ed5d800ef951b2ba00eca3d27e176054f9bdc1421ebd1c99eddbba196"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+      "bytes": 7521,
+      "sha256": "97265fba40ed9f49b57d9bd90f21ab88b8ef9577f8db7037041ffda4f4ba18d7"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 6535,
+      "sha256": "8f982543d9d6a9e14b0b128f8b5929292b7a727f0c81f924150ac924ea0dbc33"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 7222,
+      "sha256": "8bd52fa53a1940f8f70a4f1b4ea4c2759724407d08b3025fdb8a3933fe073c26"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 6114,
+      "sha256": "85d3969fd5388168d7037223b535b254d0012f874e3b1f15ff7de764883a9d9c"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 6994,
+      "sha256": "65dad4487c17812823b7540807e0d140bf145a788d46d252d34f2d8cbcfa8fde"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 6907,
+      "sha256": "bffcaaf8bebae4ab04af9ff9ad91734df75910a2b9e0edd2995d450889bd19bb"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 7098,
+      "sha256": "853f5521313069b09788d89bbc219cca1c7b98aadf882ab0cbc1ea53861f42d7"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 6486,
+      "sha256": "75d50e99a1a7fc626c845e9942ed1d8f2b28402f2475c2e3518258b35d64aa7e"
+    },
+    {
+      "path": "control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 7189,
+      "sha256": "ae9c458900dbc2be24f3a5e2c0f624f158e3257fecc892deeed5ff82494be606"
+    },
+    {
+      "path": "control-view-registration.json",
+      "bytes": 558,
+      "sha256": "99def4c49c0789163a49cd5add80114a172247855f67786138d6976b8945b1de"
+    },
+    {
+      "path": "coverage.json",
+      "bytes": 107501,
+      "sha256": "20deea572ce10d55e05901ca777ffd332f424929b7c4a03ad4b768ae4622df98"
+    },
+    {
+      "path": "criteria.md",
+      "bytes": 5002,
+      "sha256": "c6216f23897c1f0dca93b0a408325184981a830f9a2d805f9fc03feda2d6f095"
+    },
+    {
+      "path": "final/completion.json",
+      "bytes": 1310,
+      "sha256": "2ce5873ccb41a45f9f5784936fd036c3e0c939bbe164f020eba97915bcb45338"
+    },
+    {
+      "path": "final/controls-dispositions.json",
+      "bytes": 238073,
+      "sha256": "5e3c905e63703adc6c9dc2cdc098cba56ab3e11ee9202d61dcd3a56e4c59eff1"
+    },
+    {
+      "path": "final/raw-evidence-bindings.json",
+      "bytes": 1320664,
+      "sha256": "da6837e3db5c4dfdf7da4da8eaff89f64cd8e314cbee98e19cbab8433d969ded"
+    },
+    {
+      "path": "final/warm-dispositions.json",
+      "bytes": 447137,
+      "sha256": "86f551153f4b82ff2480616f7e82f98b3282e097dca326f51352a6835b73c035"
+    },
+    {
+      "path": "independent-episodic-qualification-reference.json",
+      "bytes": 518,
+      "sha256": "b71b6edf759ede030cffd0b741910e226acb7cb2f6a7816c0b52e993522f5d29"
+    },
+    {
+      "path": "independent-review-reference.json",
+      "bytes": 879,
+      "sha256": "88776dd037566a63e304663557de185466056e6ed3cae5ebc5b08db0bbf53ceb"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6597,
+      "sha256": "5359170655819e8a8059977d88a0c21068976d08cbcff66421170b3200bcc2b5"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6544,
+      "sha256": "fb6d55ecc25260debb6ce4cafd833cc4cd203101dbc201dda5880053e3955821"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6336,
+      "sha256": "5dd8df069a3b97e3039d8319324410cd50096a29b48dad6a7d5e9664acdfe371"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 5969,
+      "sha256": "dd74e125f3d39e7b4669e43532c79146fa8b311c3e021b99c970876098d65a70"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 7052,
+      "sha256": "d250a45e4882aa7ac7995fe180381c9c4fe147bb21dd408afd58d55e5c7e1511"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 7295,
+      "sha256": "5a95adebbc8a8458aeed1456cdd21e433b6e706717ea7ed933b15c0aad4e699d"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 5986,
+      "sha256": "6864c36085733d2b5fb40e199f1f5f500c746716bb5e44f4b09e57a8d6a2e286"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6523,
+      "sha256": "11841e129b70b6665156299d1b2880c0e0a7655d0f01dc3db64d544f21ff8f8b"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 5967,
+      "sha256": "a8499c1e6e4740a6697eafd997dbf06c8cfd1d8a6108c6055a647583229e1cce"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 5443,
+      "sha256": "1430aa7f6e34815382eacb1a608bfffd38542385817d3559ba42a40374d4efbc"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 5616,
+      "sha256": "0d22e1487b2c3c868f43e31c05c2b9217c77a8f3d61d15f76288709cc103c720"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6187,
+      "sha256": "0641567d22f26a7e9b897e9b38854276121f148abdc8bf0486404823691d2667"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6011,
+      "sha256": "d4c5ebef8a599eb91cc51bc40d79949a52dead3ff203de71695446dd86c2c588"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 5442,
+      "sha256": "b236165684f4fab8efa927ade7b28e659543f9f7665a93ad585494061e0a6204"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6628,
+      "sha256": "da808dd8f18a0c617949898688dd6d07c2b4bbc5271db1480a01350566dbd312"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 8114,
+      "sha256": "d2d5a2e396c974513c1d2240c7a1b3fa5c581de352f6bbb4a2f60acd006900aa"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 7652,
+      "sha256": "7007ac5f5d99baf487d9004c2f16279bd3c41fe7bb81bdaa3cb1430aef774123"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 7317,
+      "sha256": "09ddd67ccb394ae249f0bcf31ef8734485738175a8d5cd8f517befd7710f8fd3"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 8521,
+      "sha256": "d95b568d462fba65f6bd45338c562c75e32a4dcfcfe6574c7afade0cdcce7a4c"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 7645,
+      "sha256": "78ed389db639c4ae7388606f6c0dc00ab6827cc036dab265385b6f85921cf2dc"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 7789,
+      "sha256": "8afc7769b6180427c0941151ceb5a860cfa976b7f6e4e03fb958e8f6c99956bc"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 8175,
+      "sha256": "a24513df82f47e3c6411e73c90ed057300bb445fd1733a8fa60b5f0586f299a8"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 7315,
+      "sha256": "efeedbf1e40efe26c4f893f9f21ecc6ed57fd449e7279ff0aa56bf1da3d6fe8c"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 7317,
+      "sha256": "379efd16c80fa60d2e3899a84e545fba3d9f7dec37e1b466feff7d1d5a70c20a"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas/0001.json",
+      "bytes": 6471,
+      "sha256": "986acf94b411211e8f0908e65771d261bcf3e556a1adfbc666ee4e1bc6cd5402"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes/0001.json",
+      "bytes": 7465,
+      "sha256": "1591faaebf4344fcc3c047a7a35d0d9ded83f412eb79b2bbf476fc2fe12a373a"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas/0001.json",
+      "bytes": 7426,
+      "sha256": "8e3c6a1998aceca4d043d95c9b21485d0c60c13db8e8b3512b24b40bdc24d99f"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes/0001.json",
+      "bytes": 8344,
+      "sha256": "bef50514cebac3b6b8c6c312986312708b60d4c248e03c53ba8c2f7f65b46784"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas/0001.json",
+      "bytes": 6854,
+      "sha256": "d6054ec553ade8020841ab4cf9c9617ac591664945d3a763419f36c8fe6b5ac0"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes/0001.json",
+      "bytes": 7396,
+      "sha256": "1cd1ef57f1068e7b6099c29caae84fed06f26c41225a820ff875291dcb894ea0"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 5711,
+      "sha256": "607c2388256d1eac2d2bdda1ca1133d7539cc661bf9be044d2f9661b952097af"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 5626,
+      "sha256": "cada25bb0da6db0f6e4c8af8bcfac0bfb415c31e5469cd782b986dac563d460e"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas/0001.json",
+      "bytes": 6175,
+      "sha256": "4fbe1dec8c5d8e9accea5a17d18a71a4f73042ce77bcd6340e5afa9feafad80f"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes/0001.json",
+      "bytes": 7700,
+      "sha256": "421d2da356c93923cfbab7fa82c2e3a2d6b28cc2fe7ce620c961bf983db4a35e"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas/0001.json",
+      "bytes": 6871,
+      "sha256": "7e823e711eb2bce196ce0e41bb6b13b8c17a3e573847296d00533346c8f34b57"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes/0001.json",
+      "bytes": 6851,
+      "sha256": "d32775ed4f302799ca3dfe864bfe7c62ff48a7f40199e9f32f1a14a57878d7c2"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas/0001.json",
+      "bytes": 7216,
+      "sha256": "77729f72b60e2c9dbc13bc29210db591a1c89eeb1897048db0fcfa865cc21bfc"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes/0001.json",
+      "bytes": 7681,
+      "sha256": "28f70881cf80bd2e42a9644a11bb724d97b62f92d970a931c05834351ac84fab"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6495,
+      "sha256": "5212aa3ed1a920a5c780984834004dfb8195f29f796e1a5db7b3e93efbf39c31"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6011,
+      "sha256": "7a7e2b236301b267dbd348e07a475edd21fc31c1de5b27e9f0dcc3811fdb8afa"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas/0001.json",
+      "bytes": 6232,
+      "sha256": "12335fd405d80c177cf885344da9dc69b84e5b35b4ad41cdd0071ea3517cbca4"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes/0001.json",
+      "bytes": 7977,
+      "sha256": "c832440afc19b528cd98ff9de58e00a43e101858bfc6c408569784a011d98fdf"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas/0001.json",
+      "bytes": 6013,
+      "sha256": "59b10eae46fe486bcc311daaedb6fc66fbc073831f9334f91eb27a45a98cee44"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes/0001.json",
+      "bytes": 8256,
+      "sha256": "088e129ba73d6cbb2b869736a1d9dbe07010855e893c5541ebbf6646856a3ee8"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas/0001.json",
+      "bytes": 7580,
+      "sha256": "82dd7a35f627181a70bc07a8a9831bd4bc7b07e7825ade348207911d86c0993a"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes/0001.json",
+      "bytes": 7499,
+      "sha256": "9ecc70521d735dac3c1e3e0f718dac0193fe641de84cea11780c6b9d6b031184"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6296,
+      "sha256": "d81c330e5928d989c5481bd0912c1208b109e2bdb8b9d5aff659fac54a23d59c"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6983,
+      "sha256": "000d37d811f09d61a8e7ed925a07bf2b88d20c1d68ce7cc857d40c506042ca2c"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas/0001.json",
+      "bytes": 7798,
+      "sha256": "c1da84a3684fbaa96d87acdbb15dd080575c42f2e1969eb4e22212444e419988"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes/0001.json",
+      "bytes": 6970,
+      "sha256": "22c3e8898a58552203567d947787e89883f88b31337083d8db1a4d8106138bb5"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas/0001.json",
+      "bytes": 6487,
+      "sha256": "26bc2874a118898b75971828e237b628b25261f46a01cecca455007abbd74500"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes/0001.json",
+      "bytes": 6989,
+      "sha256": "0ff968440b73fea3e53459146820bcec63382cc3ace959cde32b25901ca2c7a9"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas/0001.json",
+      "bytes": 5913,
+      "sha256": "511d8d2ed5d800ef951b2ba00eca3d27e176054f9bdc1421ebd1c99eddbba196"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes/0001.json",
+      "bytes": 7521,
+      "sha256": "97265fba40ed9f49b57d9bd90f21ab88b8ef9577f8db7037041ffda4f4ba18d7"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 5826,
+      "sha256": "f0e96fd3410187c3e6f8e70433a12406b1b2c328b597e09867cc7e626b182ec6"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6400,
+      "sha256": "784512a50209e2a95ef2052f09d7487092a40bf44fee7e285795a058db218f93"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 5985,
+      "sha256": "50b8ddeb96d7a2e894ef38a850691bf3aecc0e7c90eca73d7b9025854d90baea"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 5546,
+      "sha256": "cc2c237b1d59c19044451af790eb003252a20375967f43cc6d59a7243baa56d9"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 7599,
+      "sha256": "837eff990e62c0db97bbeb4f67b8d0e3a89f44531caabfd4b261c08ac1ec1850"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6139,
+      "sha256": "c2cd888381b8dd154391aa86489025c198585f8fbd0706e32d72ce3144a88bc6"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6218,
+      "sha256": "5ab63fc036dd4c662528b9ee95852d60773a1cca06b5c84199d1ca9ec7302fa8"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 5362,
+      "sha256": "f5a1a00a83eb15bb43601352a15400dde6f912dc18f7a4ddafe134d47521e349"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6197,
+      "sha256": "d293c7d16cd5d672595ac0f81b51a1f696fdf297a807215e3425de794eb40c49"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 7472,
+      "sha256": "9d3be2fef043b92ef3150cb7539904f24338d061f4af81fc32144e35f2bef346"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 7590,
+      "sha256": "05224adcdd119c9ed1c688dbe86c838d594262588a7a492eb9a89c0cdd52f000"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 7474,
+      "sha256": "862da510fb0a7bcafa8074c23a4118139dfaeb4a84570eccf3226852a1dd1dea"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 5916,
+      "sha256": "4d5313595b91e1edf631200980b67d1659977dbf299ad422c489acf58d5c0e7f"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 7988,
+      "sha256": "b2c7a51e2358fd215e36be5f660dc21172415160357102541df838015ba64ea4"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 7989,
+      "sha256": "ed0cef3a68fd782e8c0cf84e342cd787457d8766628efce25853a26e10f65570"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6974,
+      "sha256": "1038693c68bda2300ce8ee11f36553342e3ab74dd88b9678e98623de412b1ce5"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 7173,
+      "sha256": "c81df47cf679057f3b1e133c251985a565a47a8825c1a43a0b0a029779dec915"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 7936,
+      "sha256": "9d2cbb436b71afcace0a8f19cedf6c5bf40fc025739d50c6b383c066751abe3e"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas/0001.json",
+      "bytes": 6535,
+      "sha256": "8f982543d9d6a9e14b0b128f8b5929292b7a727f0c81f924150ac924ea0dbc33"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes/0001.json",
+      "bytes": 7222,
+      "sha256": "8bd52fa53a1940f8f70a4f1b4ea4c2759724407d08b3025fdb8a3933fe073c26"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6523,
+      "sha256": "8e75ed110f8cd27f4a9302e0679ea9443aad62b448503464edf68abcb383ff7b"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 5850,
+      "sha256": "2abf2c9df9b2731ac8a6db681ec1dbea386d3c1cf34af78bec6cbd3533d8aaf3"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas/0001.json",
+      "bytes": 6114,
+      "sha256": "85d3969fd5388168d7037223b535b254d0012f874e3b1f15ff7de764883a9d9c"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes/0001.json",
+      "bytes": 6994,
+      "sha256": "65dad4487c17812823b7540807e0d140bf145a788d46d252d34f2d8cbcfa8fde"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6229,
+      "sha256": "29095f673c0ece4c2e7433913d649e9ac3e08f19e56527ea76cbd6ea4d5dbe49"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6926,
+      "sha256": "833c40602aa52e3560143c6f17340762f282638ef147e493d753826295c0d4af"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/0001.json",
+      "bytes": 6907,
+      "sha256": "bffcaaf8bebae4ab04af9ff9ad91734df75910a2b9e0edd2995d450889bd19bb"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes/0001.json",
+      "bytes": 7098,
+      "sha256": "853f5521313069b09788d89bbc219cca1c7b98aadf882ab0cbc1ea53861f42d7"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6297,
+      "sha256": "ef9ccd41eb8b0eeb4c96e4c0b107cc998fd509a56d75a6fef13a892e5f6be2b7"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6348,
+      "sha256": "e1d4b36109a32edf23e900dd98c500ae00bfbf3c533a1092483ef38a67562242"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas/0001.json",
+      "bytes": 6486,
+      "sha256": "75d50e99a1a7fc626c845e9942ed1d8f2b28402f2475c2e3518258b35d64aa7e"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes/0001.json",
+      "bytes": 7189,
+      "sha256": "ae9c458900dbc2be24f3a5e2c0f624f158e3257fecc892deeed5ff82494be606"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6364,
+      "sha256": "f304d7fddc8a77f700f8175c7e0d45e159d98272da62aa5aea508d6b699a2f09"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6836,
+      "sha256": "d674c07885220584a7629230dc4c00cd05a982cf791e6e0b648775a7bf0ab813"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6037,
+      "sha256": "5e853d6a1992692b001c2c6a5011cdb3d01386d8d6b50a29b5a8fff4639e72c8"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 7555,
+      "sha256": "17a8576c9394da58de1555f961213f8fa1c8d2d7b3dc2e404a38a225a497fe47"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 5992,
+      "sha256": "dfd2538475631b32d4a77b4177dd3c2335502a5c8f8b03bc2611450fc26320c7"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6535,
+      "sha256": "1fce8354f0dee15b66134ae71265e8af533a6489546d501002a81a7473f44d49"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6755,
+      "sha256": "fe0b3dea40549028abb09fc1c0b1bc6719b9fa846025d12288a68f5fcb9a1ec7"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 6160,
+      "sha256": "276bf2ebb0187b5af11f8af270e35327a7741b1c4501a821dbc1f1f023492a10"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/0001.json",
+      "bytes": 6238,
+      "sha256": "4702d2a1d6a50d05292c8384c82e60010e0142d52c0196799e1a9915bbeab278"
+    },
+    {
+      "path": "judgment-revisions/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes/0001.json",
+      "bytes": 5886,
+      "sha256": "52876dafbf8dce577ae9055990d8f8b20f406b1e242c9974b7b9390cd63a4809"
+    },
+    {
+      "path": "judgments-eighth-five.json",
+      "bytes": 6199,
+      "sha256": "abfa26af2bc57aa5eb51b653cb38b44b18c451662e213cb40b2ab6f48002ab70"
+    },
+    {
+      "path": "judgments-eleventh-three.json",
+      "bytes": 5222,
+      "sha256": "1386b6da25cb5d5a9c7bbcb3fa5863ceb40c74a6c9493bfe83e1d9455a1ed378"
+    },
+    {
+      "path": "judgments-fifth-eight.json",
+      "bytes": 8746,
+      "sha256": "38a64ba8484696403e44f6b0b9a8990b6ddf2ea5bd3b734de2423f3709066d70"
+    },
+    {
+      "path": "judgments-first-controls.json",
+      "bytes": 6151,
+      "sha256": "7b95d68d38ccdcbfbfb7d36e06960f8b550f47eeeadf6455a8eea301f60e1330"
+    },
+    {
+      "path": "judgments-first-six.json",
+      "bytes": 6789,
+      "sha256": "851dc7178ef6f16c4fcea839477900193b6ebda3edae83a758d540b80a9a0c4a"
+    },
+    {
+      "path": "judgments-fourth-six.json",
+      "bytes": 7577,
+      "sha256": "ce49be58639f2f9d851d6d025961d7c7109c7fcc3533f42277f7e5cafdef3b17"
+    },
+    {
+      "path": "judgments-next-four-warm.json",
+      "bytes": 6041,
+      "sha256": "50718fb59fe5269fef516b89163b9b8ee4f902f66ab8935d660aaaf20c32302b"
+    },
+    {
+      "path": "judgments-next-six-controls.json",
+      "bytes": 8236,
+      "sha256": "b0a2f7a5c0b1e8d9d962cacdfd659c3528fc11a4089b27138073f485bfca0bdf"
+    },
+    {
+      "path": "judgments-next-six-warm.json",
+      "bytes": 7139,
+      "sha256": "d78980d1b397082aa19c1de4e5c1f6d0fc2796a4813468137f8aa2b151dabe1a"
+    },
+    {
+      "path": "judgments-ninth-two-controls.json",
+      "bytes": 3489,
+      "sha256": "7354c21f84ab37c3e69309b90b65fb2f3770ce75c792d56ab1c2c80a991c4b01"
+    },
+    {
+      "path": "judgments-second-six.json",
+      "bytes": 7215,
+      "sha256": "42341182100c1921859873d83d1bd19d10613e98ebc3c1fe7af4e33cdf8c413f"
+    },
+    {
+      "path": "judgments-seventh-five.json",
+      "bytes": 6237,
+      "sha256": "57a522214ba87089164b91477de096febfdf434745547347c356134d683651b5"
+    },
+    {
+      "path": "judgments-sixth-ten.json",
+      "bytes": 7814,
+      "sha256": "85e98f58b8f066e9f7a2923afc9a2b66a928cec60a5110cc7379b8695f71ba6c"
+    },
+    {
+      "path": "judgments-tenth-three.json",
+      "bytes": 4631,
+      "sha256": "63fa966a9821d2bba5bab938cc977339348d623d7e767d5166f1fa2fbe5ae604"
+    },
+    {
+      "path": "judgments-third-four-controls.json",
+      "bytes": 4668,
+      "sha256": "781a191ef6c50fa28cd84b0015d8fd0677b47a7495c40fc74c133f2690f8e163"
+    },
+    {
+      "path": "judgments-third-four-warm.json",
+      "bytes": 6434,
+      "sha256": "090b7ab5e39a5273e4973afb0cd2a6803873e9fb7a9047a336e06563ee5b56be"
+    },
+    {
+      "path": "judgments-thirteenth-final-seven.json",
+      "bytes": 9752,
+      "sha256": "74e972040f3a9c476d1b0a6dd19bdbe92db5b51f1dca3a1e7c061cd1b3223c09"
+    },
+    {
+      "path": "judgments-twelfth-seven-controls.json",
+      "bytes": 9698,
+      "sha256": "024c3e530407cea5f5458f8d5c76e678919f5394a5c665af52a1096971e4732f"
+    },
+    {
+      "path": "last-ledger-read.json",
+      "bytes": 77,
+      "sha256": "a0bbdd952ad6e9819ddc536579a01a5e82134967f39d70b309e441309dbdb192"
+    },
+    {
+      "path": "latest-checkpoint.json",
+      "bytes": 14298,
+      "sha256": "e9f6672cc01303b36e98bdb55bf3589dff48a28f7eb149d04434a17da82754c0"
+    },
+    {
+      "path": "latest-report.json",
+      "bytes": 457,
+      "sha256": "1427b6a61131ece232ad9e27be1f4aefec5c8a93ce1e6391902e352a2d45f961"
+    },
+    {
+      "path": "latest-review-checkpoint.json",
+      "bytes": 521,
+      "sha256": "d0cc4d5013724b56bbb3402a8373801bee2e530455dcc67f944e45a324136001"
+    },
+    {
+      "path": "main-retry-unsupported1907-hermes.json",
+      "bytes": 2414,
+      "sha256": "7a07bbb85a8d8844ad29c67883b8931ad8bd528b284c59e1b7d28a3d35b0ed34"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 6597,
+      "sha256": "5359170655819e8a8059977d88a0c21068976d08cbcff66421170b3200bcc2b5"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 6544,
+      "sha256": "fb6d55ecc25260debb6ce4cafd833cc4cd203101dbc201dda5880053e3955821"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 6336,
+      "sha256": "5dd8df069a3b97e3039d8319324410cd50096a29b48dad6a7d5e9664acdfe371"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 5969,
+      "sha256": "dd74e125f3d39e7b4669e43532c79146fa8b311c3e021b99c970876098d65a70"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 7052,
+      "sha256": "d250a45e4882aa7ac7995fe180381c9c4fe147bb21dd408afd58d55e5c7e1511"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 7295,
+      "sha256": "5a95adebbc8a8458aeed1456cdd21e433b6e706717ea7ed933b15c0aad4e699d"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 5986,
+      "sha256": "6864c36085733d2b5fb40e199f1f5f500c746716bb5e44f4b09e57a8d6a2e286"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6523,
+      "sha256": "11841e129b70b6665156299d1b2880c0e0a7655d0f01dc3db64d544f21ff8f8b"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 5967,
+      "sha256": "a8499c1e6e4740a6697eafd997dbf06c8cfd1d8a6108c6055a647583229e1cce"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 5443,
+      "sha256": "1430aa7f6e34815382eacb1a608bfffd38542385817d3559ba42a40374d4efbc"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 5616,
+      "sha256": "0d22e1487b2c3c868f43e31c05c2b9217c77a8f3d61d15f76288709cc103c720"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6187,
+      "sha256": "0641567d22f26a7e9b897e9b38854276121f148abdc8bf0486404823691d2667"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 6011,
+      "sha256": "d4c5ebef8a599eb91cc51bc40d79949a52dead3ff203de71695446dd86c2c588"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 5442,
+      "sha256": "b236165684f4fab8efa927ade7b28e659543f9f7665a93ad585494061e0a6204"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 6628,
+      "sha256": "da808dd8f18a0c617949898688dd6d07c2b4bbc5271db1480a01350566dbd312"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 8114,
+      "sha256": "d2d5a2e396c974513c1d2240c7a1b3fa5c581de352f6bbb4a2f60acd006900aa"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 7652,
+      "sha256": "7007ac5f5d99baf487d9004c2f16279bd3c41fe7bb81bdaa3cb1430aef774123"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 7317,
+      "sha256": "09ddd67ccb394ae249f0bcf31ef8734485738175a8d5cd8f517befd7710f8fd3"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 8521,
+      "sha256": "d95b568d462fba65f6bd45338c562c75e32a4dcfcfe6574c7afade0cdcce7a4c"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 7645,
+      "sha256": "78ed389db639c4ae7388606f6c0dc00ab6827cc036dab265385b6f85921cf2dc"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 7789,
+      "sha256": "8afc7769b6180427c0941151ceb5a860cfa976b7f6e4e03fb958e8f6c99956bc"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 8175,
+      "sha256": "a24513df82f47e3c6411e73c90ed057300bb445fd1733a8fa60b5f0586f299a8"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 7315,
+      "sha256": "efeedbf1e40efe26c4f893f9f21ecc6ed57fd449e7279ff0aa56bf1da3d6fe8c"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 7317,
+      "sha256": "379efd16c80fa60d2e3899a84e545fba3d9f7dec37e1b466feff7d1d5a70c20a"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 5711,
+      "sha256": "607c2388256d1eac2d2bdda1ca1133d7539cc661bf9be044d2f9661b952097af"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 5626,
+      "sha256": "cada25bb0da6db0f6e4c8af8bcfac0bfb415c31e5469cd782b986dac563d460e"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 6495,
+      "sha256": "5212aa3ed1a920a5c780984834004dfb8195f29f796e1a5db7b3e93efbf39c31"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6011,
+      "sha256": "7a7e2b236301b267dbd348e07a475edd21fc31c1de5b27e9f0dcc3811fdb8afa"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 6296,
+      "sha256": "d81c330e5928d989c5481bd0912c1208b109e2bdb8b9d5aff659fac54a23d59c"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 6983,
+      "sha256": "000d37d811f09d61a8e7ed925a07bf2b88d20c1d68ce7cc857d40c506042ca2c"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 5826,
+      "sha256": "f0e96fd3410187c3e6f8e70433a12406b1b2c328b597e09867cc7e626b182ec6"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6400,
+      "sha256": "784512a50209e2a95ef2052f09d7487092a40bf44fee7e285795a058db218f93"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 5985,
+      "sha256": "50b8ddeb96d7a2e894ef38a850691bf3aecc0e7c90eca73d7b9025854d90baea"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 5546,
+      "sha256": "cc2c237b1d59c19044451af790eb003252a20375967f43cc6d59a7243baa56d9"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 7599,
+      "sha256": "837eff990e62c0db97bbeb4f67b8d0e3a89f44531caabfd4b261c08ac1ec1850"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6139,
+      "sha256": "c2cd888381b8dd154391aa86489025c198585f8fbd0706e32d72ce3144a88bc6"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 6218,
+      "sha256": "5ab63fc036dd4c662528b9ee95852d60773a1cca06b5c84199d1ca9ec7302fa8"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 5362,
+      "sha256": "f5a1a00a83eb15bb43601352a15400dde6f912dc18f7a4ddafe134d47521e349"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 6197,
+      "sha256": "d293c7d16cd5d672595ac0f81b51a1f696fdf297a807215e3425de794eb40c49"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 7472,
+      "sha256": "9d3be2fef043b92ef3150cb7539904f24338d061f4af81fc32144e35f2bef346"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 7590,
+      "sha256": "05224adcdd119c9ed1c688dbe86c838d594262588a7a492eb9a89c0cdd52f000"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 7474,
+      "sha256": "862da510fb0a7bcafa8074c23a4118139dfaeb4a84570eccf3226852a1dd1dea"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 5916,
+      "sha256": "4d5313595b91e1edf631200980b67d1659977dbf299ad422c489acf58d5c0e7f"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 7988,
+      "sha256": "b2c7a51e2358fd215e36be5f660dc21172415160357102541df838015ba64ea4"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 7989,
+      "sha256": "ed0cef3a68fd782e8c0cf84e342cd787457d8766628efce25853a26e10f65570"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 6974,
+      "sha256": "1038693c68bda2300ce8ee11f36553342e3ab74dd88b9678e98623de412b1ce5"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 7173,
+      "sha256": "c81df47cf679057f3b1e133c251985a565a47a8825c1a43a0b0a029779dec915"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 7936,
+      "sha256": "9d2cbb436b71afcace0a8f19cedf6c5bf40fc025739d50c6b383c066751abe3e"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 6523,
+      "sha256": "8e75ed110f8cd27f4a9302e0679ea9443aad62b448503464edf68abcb383ff7b"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 5850,
+      "sha256": "2abf2c9df9b2731ac8a6db681ec1dbea386d3c1cf34af78bec6cbd3533d8aaf3"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 6229,
+      "sha256": "29095f673c0ece4c2e7433913d649e9ac3e08f19e56527ea76cbd6ea4d5dbe49"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6926,
+      "sha256": "833c40602aa52e3560143c6f17340762f282638ef147e493d753826295c0d4af"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 6297,
+      "sha256": "ef9ccd41eb8b0eeb4c96e4c0b107cc998fd509a56d75a6fef13a892e5f6be2b7"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 6348,
+      "sha256": "e1d4b36109a32edf23e900dd98c500ae00bfbf3c533a1092483ef38a67562242"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 6364,
+      "sha256": "f304d7fddc8a77f700f8175c7e0d45e159d98272da62aa5aea508d6b699a2f09"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6836,
+      "sha256": "d674c07885220584a7629230dc4c00cd05a982cf791e6e0b648775a7bf0ab813"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 6037,
+      "sha256": "5e853d6a1992692b001c2c6a5011cdb3d01386d8d6b50a29b5a8fff4639e72c8"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 7555,
+      "sha256": "17a8576c9394da58de1555f961213f8fa1c8d2d7b3dc2e404a38a225a497fe47"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 5992,
+      "sha256": "dfd2538475631b32d4a77b4177dd3c2335502a5c8f8b03bc2611450fc26320c7"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6535,
+      "sha256": "1fce8354f0dee15b66134ae71265e8af533a6489546d501002a81a7473f44d49"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 6755,
+      "sha256": "fe0b3dea40549028abb09fc1c0b1bc6719b9fa846025d12288a68f5fcb9a1ec7"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 6160,
+      "sha256": "276bf2ebb0187b5af11f8af270e35327a7741b1c4501a821dbc1f1f023492a10"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 6238,
+      "sha256": "4702d2a1d6a50d05292c8384c82e60010e0142d52c0196799e1a9915bbeab278"
+    },
+    {
+      "path": "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 5886,
+      "sha256": "52876dafbf8dce577ae9055990d8f8b20f406b1e242c9974b7b9390cd63a4809"
+    },
+    {
+      "path": "peer-review-inventory-64.json",
+      "bytes": 370136,
+      "sha256": "507fcde2369701f9bb7fe22040d08d4814ca2cd6834edb584e89de34a1dd8ebd"
+    },
+    {
+      "path": "projection-coverage-26.json",
+      "bytes": 26673,
+      "sha256": "0465ac437887cf802e28a554f3fc246114201be0ad204ffc3cb43c147feeaa3a"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 4778,
+      "sha256": "fc9e8e952ffeec8381edddf95126aae826b04d7b423d67014ab44354265e6834"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 5331,
+      "sha256": "16a2ae9c4b6e31d147febb4e0a63ea6d380b637649d234ddc2ca029fc3286e7e"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 3470,
+      "sha256": "bb242f2e4bc52aeb7ecb112e64e99daf2acf12e88bcb368d1a1b4d5511d3bcef"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 4890,
+      "sha256": "8768bbd464f95b386edc02bd9a94c4fd9ce2c8b2638a2d29209f2bf1f9c0492e"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 5160,
+      "sha256": "5380f976ca0dc6faeb2156bf89af491ace2daef46cac2226fdd573c6269e9edc"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 7851,
+      "sha256": "29f27698f377f3a033372dfe47669a545a462c6ab8123c750da3784f33e773ef"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 3992,
+      "sha256": "bf8bd6b91873d469d7147f05a1c2a9bb2e4b7a1228f9f8dc256ad1aff12af2c3"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 4400,
+      "sha256": "f22d520e8a4aa19e26b87bfc2bf1f749f884f9ebe419bd214559421e806974ad"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 4144,
+      "sha256": "f40fbf67cb356a6790d813df88db999b718114c61b620f0b4f9c9614dc0a80dc"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 4291,
+      "sha256": "397760d173728044e1035b6185ca2504b727d9959aadb4dde4c0f29cfc1c6fb8"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 4032,
+      "sha256": "830ed58712c80adc6df7f6117b63f31a30411f2c132434f18090bea83549cad9"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 5838,
+      "sha256": "48dec3b1ce61017adca93056a1d4d34704f5c38ecb0f5ecb4155cdbcdc34f32f"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 4609,
+      "sha256": "dfb98e545be29068a69c8a022519bee7d76f3150a14d4b9d7e3da7ced8850d72"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 4083,
+      "sha256": "3bd4db4083aaf1d5a6dbb6d62c18bdf04d89aa66aea544cd7b8f98adb0fc2c57"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 4509,
+      "sha256": "3323853fb4998bde30e18c31367fb90593ef85be514250c475545acbacfe8ca2"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6896,
+      "sha256": "4e508359bfc9cbcb5318f593ccf66363c82c299aa47e01cf02041956cd23f4f2"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 13306,
+      "sha256": "415210e7c09f2bbee7cad8b1e306de350e0283e10fffda023134e7e98f5c17d0"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 15382,
+      "sha256": "b34c1929cb393283545cc0c80a77aae6087a7a9d7ab6af14205cc650409351db"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 8792,
+      "sha256": "d1d92f573313aa9ba8d483f17f4071c4274ac3a4d32f98851849405656efdade"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 11542,
+      "sha256": "20ed290ec3ad3aba72712044881ab917da97556358984cfcfeb71a3c42de22ac"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 6739,
+      "sha256": "c6d22b747236f8ea4232f7640526722b8b439fde226152378b31b60b5cd162fc"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 12866,
+      "sha256": "db89c50aad3e87877b61d283746256988f2df46ecec1b23b147bef06747dafab"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 6259,
+      "sha256": "531c9e0baf27c730b4e3a0094dcd4aab3a64b47b2d9c49680bd0903bfb99f085"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 9083,
+      "sha256": "912453d794ff3037618906b570363b2edb73268222ccf399df533abf451d9b09"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 4887,
+      "sha256": "761ddc70e2f869f1afb7fd36dc7664d29f36e5ec8dadb55fd6aa0070888f74b9"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 6792,
+      "sha256": "9ab90ffb3e6175151f0e9375eac7e3a1e6ae1457741a6e39d33ad0207a0a8b0b"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+      "bytes": 5927,
+      "sha256": "ee424ec0f515dc7e079b20e314140fc8bd794fdfff6fabaa39221c252c8571d6"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+      "bytes": 6957,
+      "sha256": "ace0f1123acffe05e27f8910122b2372cedad91469bb9268b536aaddfc6da895"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+      "bytes": 6604,
+      "sha256": "6aeed5f5266a65460fc1f94afaf2d77f8eab89fe1a2bd543a22ca4a2f586efc9"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+      "bytes": 5793,
+      "sha256": "fe9fda00944c1fe14eafc66f0cc81bc9c7efafeb51ddd8b4f70dc9982c7d20fb"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 3775,
+      "sha256": "7a2e9ac85feba5795bade8178687c4a255d3b4fa7ecd76ed7f8fad5ea1bef4f4"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 3984,
+      "sha256": "9bbe0595b5adffe2b6163e06e997c2c51a8719a24fe71190d624634633825265"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 5750,
+      "sha256": "cd3303327ad83c54c6f4308879f6fbcccd4154c39fc7084a5d69ea5fc7ce06f9"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 6892,
+      "sha256": "700c26738619836bc153e5d2b2fe3648c4ad9c02401deeccb970cac5351c0763"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+      "bytes": 6040,
+      "sha256": "10ef0f606fd8908fb1a5eee286fa0491082175ac5e558dfa8e0a0d3c986eb272"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+      "bytes": 5544,
+      "sha256": "81238a87de6016b8257654f4cf209a800c9dcf83ad1379caaaffd42983d2ea91"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+      "bytes": 5460,
+      "sha256": "5792eda80a089b36d0f4d22d19b80edd762da8a8ecfeac04b2e697361b0a8405"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+      "bytes": 5785,
+      "sha256": "c23f0e91186f8fe7af1f6a55a7adc46b1417d86db763d18e1dea75ee810b281c"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 4478,
+      "sha256": "a9b7e03bb8b2bd94a525efbe97317f9d8a63f418dacf8d38cf4a0a753399e99e"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 4725,
+      "sha256": "c42ffad4e329de26715664b966ff5808c96639a4ef1e108895a1442ba702d83d"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 5006,
+      "sha256": "6dc4ceb3d079605d9e2168886d3600e34f7308de519a8bab58444922fe51bfb0"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 6634,
+      "sha256": "75117f5f1fd197517bfa34164396f174fd777042b9cd6cdb52538328a7e7b44c"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+      "bytes": 1686,
+      "sha256": "a3aa86ac3a548cb625a23c3f7bb7c6e64187d36220ea6f5d332b4f412a8a2f4a"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+      "bytes": 7198,
+      "sha256": "0a060853eebf471c26d3e09a65f3797594c411eff2caf3a9a7861f016b23229a"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+      "bytes": 5452,
+      "sha256": "954930108fea1dafb7622b2c29da65e9dd260707f5f9ca91343bc339b6adbbf2"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+      "bytes": 5948,
+      "sha256": "538b2cf0b4d76e99811f56537190757135852f7d391fbf72fd0170b690a10ddd"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 4915,
+      "sha256": "9505abee3d74b1bf3add61dff9796598c6e67ea0ac77216de08b998effc685bf"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 5579,
+      "sha256": "96bf6bfc322332e82a7485b10e59b4fa3542ecfc8c7e5aa62c82c5f8d5495b42"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 5820,
+      "sha256": "84439abae66ccf506eeea30b0bd810973631fcfa786aa56c91501a7824bc7e03"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 7059,
+      "sha256": "4860d5aa09cb9121e5529f5ab04dd0048e851f62ba2523e7387f932e7b5028f8"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+      "bytes": 5194,
+      "sha256": "3030bea31b7a3ff23eab171f751bff0e8f9cae776059a3abbc3c8a386a4ec352"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+      "bytes": 6055,
+      "sha256": "3817e45aaffe4fd717717c24ccb07047c42ea75f58e4e4f2bcd11a4f538c384f"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+      "bytes": 3964,
+      "sha256": "be338c2bd047da7f2f53d9eee01c86a5bd81c36ff3d6b1b957ab09b86109e065"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+      "bytes": 5764,
+      "sha256": "94d7c12a7d17b488ce9e81eb1821a180f1435f1f5ba77230e3f0d6eec8c7a6a1"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 4905,
+      "sha256": "ea51f9dd85464944e6beacba456ea3879514fdb904e238427478b05a1f61c4b1"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 5322,
+      "sha256": "84f9ea513bd2be4798c6ef575cd38594c3db2ab1032177306503a1cd4ff7b7ca"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 3893,
+      "sha256": "c07e494bc3845fef4da97ea19604746b0d028f0bb5ffeeea75eea599ff5ca27d"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 3479,
+      "sha256": "88384f19f6585b8942b496e6fc9710c45e9ae141d1b087668467642b158764b5"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 4533,
+      "sha256": "84837bc878de7fd7de5d95e2f697f771ba4b71360cec390c36dd80b405592325"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 3247,
+      "sha256": "416022fa7dfee0a230fa65c7504503883c5807d14adb0a8761c793d5541eb6d0"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 4466,
+      "sha256": "c9e1bfd97bdd66ee47cb2ec8899b39f5f15aec42af774bed5cb7da82802210f0"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 3075,
+      "sha256": "00b45685707e7558d8946efbe5f15fb47c87563e557308d431b68a2a3e82242c"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 4125,
+      "sha256": "aed5b4b44158724b3887d355cf5711b649ed9b155a43339dcafd290573e7b4f8"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 4621,
+      "sha256": "e17c808adb15f0883afcbc8ef6a5cb5dbf45d711c658b7e1d0fc2e2424df14a8"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 8784,
+      "sha256": "4849c8933d54cc1827259b97f13d4d1be7b9ba0121ad802b9880b1a6e7a72029"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 10952,
+      "sha256": "814c81e258e3167255ad04133ec08127bef4e0727a87a96a33de224c39b889e4"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 1965,
+      "sha256": "df4013cb257cf5ca3e99f76c40fff77cdd3f454d17bd2b5a8b0ae96ea67e83eb"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 8153,
+      "sha256": "6810a9a59fb3aa948ce5abef6ec35c26cd4950ad2ac1f8cbca9b59743b061998"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 7603,
+      "sha256": "7ea294bbae449092779467f4701b58956bc7b541a25dfba9b3d5c448428a612e"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 8006,
+      "sha256": "66fad60a518274f867316b1b100ba2a878a9fa9cc561fc122472e9cba06a9d9e"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 7457,
+      "sha256": "c343a862a4b34d81b63a45f1989491e8aa559300f3832b09dbf37b7f5d3f74b2"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 14340,
+      "sha256": "da42448f0835c630bb89b489b4cd8c61b9de99217f8ca753a55e6e8bc48ac427"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 4927,
+      "sha256": "6447988a1020f7c1aa357c6a955ec6d13b86eace8e7e65c88c1ecae22ba8ec24"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 6965,
+      "sha256": "529931fcc13f83cc2cd7161af57b9ecbd1423bf7877152c6e289537e1af3f7de"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 5570,
+      "sha256": "73b6cd542cc85550269443b53f3f03e6c543120e440838d5a4de3b0e1881350a"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 5268,
+      "sha256": "2c57005224a23540338e7ffc45936ba2e48b06aae9edd93bda7b544cb6a00eef"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 4667,
+      "sha256": "e0891be9144f48d9cf47e4154251bb5d017340bf5c8bef6e0450bc7a1107acdd"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 7511,
+      "sha256": "6fe8a60d9fc673bb73b57a96a0a44d787a98011d981ae097428fe6ba647276c4"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 4989,
+      "sha256": "41247471047098ccc5be21f0fa1552a31734f90db45c03ebb23efeec42a9e065"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 7442,
+      "sha256": "915931155883976587094627c5290ef7f7930bb1178d2ec560323603d5513efd"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "bytes": 6140,
+      "sha256": "efcf666352310eec2ba0fb6429bd33bdcca94d66ec24a26fde9a9f4a98a6e99f"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "bytes": 6380,
+      "sha256": "5563d50d1ab72105c39436219522e8549087513535163ea79449020ee4201340"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 5759,
+      "sha256": "9a81efb3d35e2749a9395a2f0df0dbc7e4a4b610e6b6efbad45e50bd4ffd2ef8"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 4751,
+      "sha256": "3f98a34e12bd07979ec6e1f1d8658888fb1f61ef7b32783236abe110e3637480"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+      "bytes": 5599,
+      "sha256": "ea7540df2f2c364c63e3290a2eea93a71650737612c5d927c0838ece0cc887a3"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+      "bytes": 6741,
+      "sha256": "799470ffb0310d7c1a1ffa1221b46fea89aedc5437c901962e465f413580cefa"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 5670,
+      "sha256": "bee4a22447db0027e3ecb6b8dc7b9416c0753213488a7ecc2cffbb3b01d2973c"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 6358,
+      "sha256": "c40ad72635338f406bd4277bc3b8f2a7a9b15710bc1bf037e136fbc53a0f850b"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 4273,
+      "sha256": "6d894561017cf20f9df05df0c194ea1d53d2566b7fc0e06a2b6a01635da1e558"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 3315,
+      "sha256": "bf765d86cbf7caaff66e34a7ad490e1c50e850157bf005f81cbbea1cb762bd55"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 4056,
+      "sha256": "a7e0ab7d6e8d1a5a7f455b1bb05acd5d8348732f3eee6789ad7fc0d67e52022c"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 3746,
+      "sha256": "b3bfca9c5d69620d32fb134079b91ca363abb95b5fbc4c989a6628611a1d1694"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "bytes": 4614,
+      "sha256": "9fc3d458b4abca546757118ff0449e8bd8ba96aecf0c02e0d40995a378e9cff3"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "bytes": 3300,
+      "sha256": "a43293f6964b1087646bf645c28ace7c5f84c85cf26e59421eec409265ddcbc8"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "bytes": 4523,
+      "sha256": "2492c6d04f947b5fd763c0a327d74cafc036b463cce8904f3cd8c894abeee8d8"
+    },
+    {
+      "path": "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "bytes": 3733,
+      "sha256": "ea5b2d6594f2db6be65c6adccd88269073aa32f53614c60313a7d1e87635df2b"
+    },
+    {
+      "path": "registration.json",
+      "bytes": 1799,
+      "sha256": "ab558e2435e161d51285e56af59caae177b5bc2221b2376206ca2dac6fc857ec"
+    },
+    {
+      "path": "report-script-v2-registration.json",
+      "bytes": 620,
+      "sha256": "613ff0b9298b0ceea34d7f65fbaeceaac371e11354f54a335d213c13dd83fefb"
+    },
+    {
+      "path": "reports/20260906T232657216835Z.md",
+      "bytes": 26794,
+      "sha256": "03d504398e20e09284e6ce47a2f87369c3a4d55e00a3689f852a1d92ab2ae7be"
+    },
+    {
+      "path": "reports/20260906T234123957429Z.md",
+      "bytes": 31910,
+      "sha256": "be2ba000ce7e290c581ba54c0a5626f94751bcdc534bde68e0ec9fadbc714538"
+    },
+    {
+      "path": "reports/20260906T234327191907Z.md",
+      "bytes": 34134,
+      "sha256": "b88e722facea6f51d721de48a6a6f9aaf467af8ce0aa01b17d38e3d4c0956c5c"
+    },
+    {
+      "path": "reports/20260906T234759368876Z.md",
+      "bytes": 36894,
+      "sha256": "dc6c0ffdf6f7b20e1d57c1671a41615d917c4284240593845f3ebadb00d499a0"
+    },
+    {
+      "path": "reports/20260906T235306080603Z.md",
+      "bytes": 40113,
+      "sha256": "f4e5092564d919676115b88205992aade4779f9ec03aec9f0b54245a7970bb5b"
+    },
+    {
+      "path": "reports/20260906T235711861205Z.md",
+      "bytes": 41894,
+      "sha256": "ca0dabdffdc67e83ef36df2400457923274ea46af6b9ea34edc71fbe24507b68"
+    },
+    {
+      "path": "reports/20260907T000143391825Z.md",
+      "bytes": 43668,
+      "sha256": "4fa00f557f010627a8850ede363fa9f3814e5cd3bc624f2a2ad1b33379990c98"
+    },
+    {
+      "path": "reports/20260907T000644197638Z.md",
+      "bytes": 44465,
+      "sha256": "f4ce0eb35d25ff8e75f4ba90591554d64d02b019d908355915c4552b6a06b5ca"
+    },
+    {
+      "path": "reports/20260907T001208726029Z.md",
+      "bytes": 45628,
+      "sha256": "7542e3233134b3103eb3463d3c14c039ab9aa21bf8f12ce4c629c2f02767c0f1"
+    },
+    {
+      "path": "reports/20260907T001630403469Z.md",
+      "bytes": 46706,
+      "sha256": "29399343d053d10acc68a8055d09b9f9abcecadf571bc7e74d3f988fdf517282"
+    },
+    {
+      "path": "reports/20260907T002611650811Z.md",
+      "bytes": 49320,
+      "sha256": "b90ba8178ece3c1cb57a5d4372474ac91539d379f194781d842140bbf20daef9"
+    },
+    {
+      "path": "reports/20260907T002838626697Z.md",
+      "bytes": 51922,
+      "sha256": "1ccf5878f3484e7fa3106a0ef06242e4cb5127090d3d26740a96267bab6e640d"
+    },
+    {
+      "path": "request005-crosslanguage2953-atlas.json",
+      "bytes": 1831,
+      "sha256": "06019c56f1b4eeb908af2d031780ec3d578db37b86eb7a96197d641e52c37dda"
+    },
+    {
+      "path": "scheduled-inventory.json",
+      "bytes": 58265,
+      "sha256": "2368ab963a8227489c0e010a10f2e51d0f0f9df361b2b623751c402bda26c013"
+    },
+    {
+      "path": "script-registration.json",
+      "bytes": 2086,
+      "sha256": "cc31f7be39583cb90072055a71cd12c616faaeb1b941b650c4210115039cff3c"
+    },
+    {
+      "path": "scripts/add_manual.py",
+      "bytes": 2793,
+      "sha256": "40822a08ffcbb1ab0023f03cb27f348aa0ac274f57648da3c3e6ff0c33251552"
+    },
+    {
+      "path": "scripts/checkpoint.py",
+      "bytes": 2753,
+      "sha256": "7edcb69e8a942a54d7936586562564954a22b0992aa92f34132be193660a4b68"
+    },
+    {
+      "path": "scripts/collect.py",
+      "bytes": 6363,
+      "sha256": "183063b0af92e578cef2bcd52507b7ac5ce76d9cfd3e202efb8b4937b8ce0e40"
+    },
+    {
+      "path": "scripts/project_controls.py",
+      "bytes": 4550,
+      "sha256": "a9bf2b63d509d4768ceae2d11c61741890d1a2096fe7d8624ba100efccd7772f"
+    },
+    {
+      "path": "scripts/project_public_chronology.py",
+      "bytes": 3386,
+      "sha256": "327086b047cb7bad8c338e3e7474b43d670c0b9db8120516ae99ba6179b1cf44"
+    },
+    {
+      "path": "scripts/render_report.py",
+      "bytes": 4287,
+      "sha256": "0babe6298bfd1b91cfb3317c55eb150f45fe91d9ae2b4e7a4a6188cc14bed52c"
+    },
+    {
+      "path": "scripts/seal_final.py",
+      "bytes": 4071,
+      "sha256": "19ce96ae68d039a946beb35384d30b14849d9fec7a65f0e7bf353c37d97038c0"
+    },
+    {
+      "path": "scripts/view-controls.py",
+      "bytes": 2187,
+      "sha256": "18290804e58d1e75184eb30cd5bd8e0a84f01457ee544303c2dd7d84da40a390"
+    },
+    {
+      "path": "scripts/view.py",
+      "bytes": 2170,
+      "sha256": "15730c17ed659d851d05187c3c6879c6ebde0ad6a61ea4fc2553158988313669"
+    },
+    {
+      "path": "scripts-original/collect.py",
+      "bytes": 6352,
+      "sha256": "1075b047177778b8beb19fc04a3171ef7e38fda6d73fcc83f5be51eb36c7ff31"
+    },
+    {
+      "path": "scripts-original/project_controls.py",
+      "bytes": 4539,
+      "sha256": "95b9ceef9beb0aeb28372f7cf260069252208252d57f06a922a1a936586ae253"
+    },
+    {
+      "path": "scripts-original/project_public_chronology.py",
+      "bytes": 3375,
+      "sha256": "1f9ca2dde7fde81584b2aa46250e7c15302b244122d7a97e4dc164c41673728c"
+    },
+    {
+      "path": "scripts-original/view.py",
+      "bytes": 2159,
+      "sha256": "112546c10da37fe7eaf8179baeb4e932785deb0b1ca92c338bc3d53f9904634c"
+    },
+    {
+      "path": "scripts-versions/render_report.v1.py",
+      "bytes": 4039,
+      "sha256": "c5ea495a1af35a3e9254a5434ff85e3f2a91c404461c197bd9b8150ccac4f404"
+    }
+  ],
+  "rawEvidenceReference": {
+    "path": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/final/raw-evidence-bindings.json",
+    "sha256": "da6837e3db5c4dfdf7da4da8eaff89f64cd8e314cbee98e19cbab8433d969ded"
+  },
+  "scope": "Every audit file present at sealing, including all original/mutated script versions, checkpoints, reports, exact copied criteria, original judgment revisions and latest judgments. Manifest excludes itself; original batch bytes remain at referenced paths."
+}

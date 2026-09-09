@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { orgIdFromSkillSourcePath } from "@atlas/core";
 import { isProtectedToolId } from "@atlas/core/tools/protected";
+import { normalizeMemoryText } from "./memory-search";
 export function migrateDatabase(db: Database): void {
   const schemaPath = resolveSchemaPath();
   const sql = readFileSync(schemaPath, "utf8");
@@ -40,6 +41,7 @@ export function migrateDatabase(db: Database): void {
   runAtomicMigration(db, migrateCodingDelegationSkillName);
   runAtomicMigration(db, migrateWorkspaceSettingsTable);
   runAtomicMigration(db, migrateLlmUsageModelStatsTable);
+  runAtomicMigration(db, migrateLlmUsageProvenance);
   runAtomicMigration(db, migrateToolOutputSavingsTable);
   runAtomicMigration(db, migrateLlmTurnUsageTable);
   runAtomicMigration(db, migrateLlmUsageDailyTable);
@@ -50,6 +52,60 @@ export function migrateDatabase(db: Database): void {
   runAtomicMigration(db, migrateComposioTables);
   runAtomicMigration(db, migrateComposioUserConnections);
   runAtomicMigration(db, migrateProfileChangeEventsTable);
+  runAtomicMigration(db, migrateMemorySearchColumns);
+}
+
+/** Leave existing requests unclassified; zero defaults never imply reported usage. */
+function migrateLlmUsageProvenance(db: Database): void {
+  for (const table of ["llm_usage_stats", "llm_usage_model_stats"]) {
+    const columns = db.prepare(`PRAGMA table_info(${table})`).all() as {
+      name: string;
+    }[];
+    const names = new Set(columns.map((column) => column.name));
+    for (const column of [
+      "reported_invocations",
+      "estimated_invocations",
+      "unknown_invocations",
+    ]) {
+      if (!names.has(column)) {
+        db.exec(
+          `ALTER TABLE ${table} ADD COLUMN ${column} INTEGER NOT NULL DEFAULT 0`
+        );
+      }
+    }
+  }
+}
+
+function migrateMemorySearchColumns(db: Database): void {
+  const columns = db.prepare("PRAGMA table_info(memories)").all() as Array<{
+    name: string;
+  }>;
+  const names = new Set(columns.map((column) => column.name));
+  for (const column of ["search_content", "search_subject"]) {
+    if (!names.has(column)) {
+      db.exec(
+        `ALTER TABLE memories ADD COLUMN ${column} TEXT NOT NULL DEFAULT ''`
+      );
+    }
+  }
+  const update = db.prepare(
+    "UPDATE memories SET search_content = ?, search_subject = ? WHERE id = ?"
+  );
+  const rows = db.prepare(
+    "SELECT id, content, subject FROM memories WHERE search_content = ''"
+  );
+  for (const value of rows.iterate()) {
+    const row = value as {
+      id: string;
+      content: string;
+      subject: string | null;
+    };
+    update.run(
+      normalizeMemoryText(row.content),
+      normalizeMemoryText(row.subject ?? ""),
+      row.id
+    );
+  }
 }
 
 function runAtomicMigration(

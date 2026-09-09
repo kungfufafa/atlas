@@ -1,0 +1,243 @@
+{
+  "policy": "Hash references only. Raw log contents remain outside the repository and were not copied into this evidence directory.",
+  "logs": [
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-build-and-check.log",
+      "bytes": 129768,
+      "sha256": "e4658a394af4bf0fa8e49aa2d82f8e8f22079384e444c6d5a6200514ed584a20",
+      "description": "Initial build failed from VM memory pressure; no image produced.",
+      "recordedExitCode": 102
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-first-memory.log",
+      "bytes": 3693,
+      "sha256": "6cbf604d66e8c004dccb2fd6ae34ecffb5132421c3e69dbb64a91c1c3d7f5d88",
+      "description": "Dedicated VM memory and kernel OOM diagnosis.",
+      "recordedExitCode": null
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-build-and-check-retry1.log",
+      "bytes": 54264,
+      "sha256": "d6956215147a8ffd0b590fbff15bf3470dabc7cb8cc5f16fc1fc3b22b6b27536",
+      "description": "Built image; actual sandbox launcher failed because libc linker files were missing.",
+      "recordedExitCode": 1
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-build-and-check-retry2.log",
+      "bytes": 178830,
+      "sha256": "18b2c6faccbbcc6bee539ceca77d91fa001ed9b2a7513611e92232a9117b5e79",
+      "description": "Own build cancelled to include the frozen runtime path fix.",
+      "recordedExitCode": 130
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-build-and-check-final.log",
+      "bytes": 60387,
+      "sha256": "8ce6d47679738b94cc62a5a88a5112850cf67c1bf6ee8481410202517fa50036",
+      "description": "Earlier image: 49 tests passed and 2 failed due verification tmpfs noexec.",
+      "recordedExitCode": 1
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/tmpfs-execution-diagnosis.log",
+      "bytes": 229,
+      "sha256": "0beeeedb7428b5652ada96365f3aae38201e083491f4698b2cf446039f54e219",
+      "description": "Direct helper execution reproduced exit 126 under default noexec tmpfs.",
+      "recordedExitCode": null
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-runtime-final.log",
+      "bytes": 5854,
+      "sha256": "1215bb3dfa6492400e8716b241a55910c7230adc7b8ee619eeab004e5c860603",
+      "description": "Earlier image: complete 51-test filesystem suite passed with executable workspace tmpfs.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-office-regressions.log",
+      "bytes": 3510,
+      "sha256": "2f52a5563c43876b70c086df091ce50985cb95da375e96e4ea407feaef8b4b8e",
+      "description": "Earlier image: 26 Office tests passed.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-large-font-final.log",
+      "bytes": 458,
+      "sha256": "dffe6232730ac2527a5bfcf0dd0175899547c2a852f86bffe46aac9fa9bd2190",
+      "description": "Earlier image: actual large multilingual font fixture passed.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-startup-final.log",
+      "bytes": 193,
+      "sha256": "aa58b6d8860310af5db30b9394445eabf552455dccdd89b8adaade23f28d2ac1",
+      "description": "Earlier image: initial startup probe failed.",
+      "recordedExitCode": null
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-startup-retry.log",
+      "bytes": 761,
+      "sha256": "c9bb7a49f2f64e246751c23c0c39659f277e73cd1b6cf67366074be381c0a1af",
+      "description": "Earlier image: default application startup failed on missing root tsconfig aliases.",
+      "recordedExitCode": null
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-packaging-final.log",
+      "bytes": 60169,
+      "sha256": "2177081136de4359071f2bf036dbcd235a77374f8da68d0dfa2a9e226a87d7c1",
+      "description": "Intermediate image: startup failed on missing production Playwright dependency.",
+      "recordedExitCode": 1
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/playwright-lockfile-update.log",
+      "bytes": 91,
+      "sha256": "9ad0104048006db31daa4a6d914d34fb36a7a237975784b87be91c6b05a831aa",
+      "description": "Lockfile-only install initially denied temporary directory access in sandbox.",
+      "recordedExitCode": 1
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/playwright-lockfile-update-approved.log",
+      "bytes": 151,
+      "sha256": "da7bfd6dddeb4a16b283a0f5e0d97951d735006f6720671b8130c8ab507de2fa",
+      "description": "Approved lockfile-only ignore-scripts dependency update succeeded.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-production-final.log",
+      "bytes": 63673,
+      "sha256": "0d9283f940c84b7d0a8806c54869d7601e40dd8e039168ff7f46bfa1aa7fe0a9",
+      "description": "Final image: full build, runtime checks, PDF checks, all 77 tests, and startup succeeded.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-production-startup-strict.log",
+      "bytes": 619,
+      "sha256": "5f50f5165cdc7d53b938bc147396bbf5d791bd3431b38e18f44fc0df93053001",
+      "description": "Final image: strict JSON health and static dashboard startup check succeeded.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-production-large-font.log",
+      "bytes": 458,
+      "sha256": "dffe6232730ac2527a5bfcf0dd0175899547c2a852f86bffe46aac9fa9bd2190",
+      "description": "Final image: 23,278,008-byte multilingual font PDF and OCR preservation fixture passed.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/production-telegram-entrypoint.log",
+      "bytes": 402,
+      "sha256": "74d93d4373362b22d832947410537a78bda241799e74bd8d439af0a0dba85126",
+      "description": "Final image: actual Telegram entrypoint reached expected empty-configuration rejection.",
+      "recordedExitCode": 1
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/production-discord-entrypoint.log",
+      "bytes": 379,
+      "sha256": "1ad6e35f4ee7c25601ce7a4a60f823bde73a5201673a070ce05a63c1f961e7a5",
+      "description": "Final image: actual Discord entrypoint reached expected empty-configuration rejection.",
+      "recordedExitCode": 1
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/production-whatsapp-entrypoint.log",
+      "bytes": 418,
+      "sha256": "882d6850bec4bfb2969b743db82a3e96b9a92d1d45e4212eb7fdc26de89fc3b2",
+      "description": "Final image: actual WhatsApp entrypoint reached expected empty-configuration rejection.",
+      "recordedExitCode": 1
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/production-image-source-hash-check.log",
+      "bytes": 1546,
+      "sha256": "f7011e545c09d150eccff6f2e1bfc9eef7674e58053652d99db9aaaafa416a8e",
+      "description": "All 36 allowlisted source hashes matched inside the final image.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/host-source-hash-check-final.log",
+      "bytes": 1546,
+      "sha256": "f7011e545c09d150eccff6f2e1bfc9eef7674e58053652d99db9aaaafa416a8e",
+      "description": "All 36 source hashes matched the final host source snapshot.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/production-container-environment.log",
+      "bytes": 667,
+      "sha256": "c4eace21e8e2736c875eb0f02902598bb6705824f69bb742af0d607ed4b26c67",
+      "description": "Actual Linux container environment and mount details.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/scripts-typecheck-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "description": "File-runtime scripts TypeScript check passed.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/final-containers.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "description": "Empty final dedicated Docker container inventory.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/final-volumes.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "description": "Empty final dedicated Docker volume inventory.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/images-after-cleanup.log",
+      "bytes": 320,
+      "sha256": "769e062ca25c821806dd222a6caa67fd056f0c2a58da794e67f5ec127e96ef77",
+      "description": "Only the final verification image remained after cleanup.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/final-vm-status.log",
+      "bytes": 173,
+      "sha256": "5f040f69d0f6b7fe25c295547fce4e77a84f65fe34cf450ed16ef77e095a7bca",
+      "description": "Dedicated verification VM stopped.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/default-context-after.log",
+      "bytes": 8,
+      "sha256": "01666ec060466c14b9fa06c613fbac449163f2a2017558fe16526209ab78c6b0",
+      "description": "User Docker context remained default.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/final-vm-resources.log",
+      "bytes": 350,
+      "sha256": "83f53975191f01bd2d733f46fd5530b49b7f2d41ce064504c3bbcf5e74dcdd35",
+      "description": "Dedicated VM disk and memory usage before stopping.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/final-host-disk.log",
+      "bytes": 301,
+      "sha256": "b8230758f335f0c09f72885c9e4a69d8aa1c943f8502c31021b25ea8a0cc7a9f",
+      "description": "Host disk usage after stopping the verification VM.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/final-docker-version.log",
+      "bytes": 773,
+      "sha256": "8e414a716da98059cde6a4a433b58eec54d5bcedcb4aa35342055d02e8cb7111",
+      "description": "Actual Docker client and server versions.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/final-vm-version.log",
+      "bytes": 97,
+      "sha256": "c08dc674ffe68fae589ef2d140a16e26bb6888ba8c3a03e59255b55904fbb2ce",
+      "description": "Actual Colima and Lima versions.",
+      "recordedExitCode": 0
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/stop-test-vm.log",
+      "bytes": 1673,
+      "sha256": "5855ec7809de2fc2604b01c5185699771755823b520d9b76501788a65434e024",
+      "description": "Dedicated verification VM stop command completed.",
+      "recordedExitCode": 0
+    }
+  ]
+}

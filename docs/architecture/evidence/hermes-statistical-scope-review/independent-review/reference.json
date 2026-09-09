@@ -1,0 +1,14 @@
+{
+  "createdAt": "2026-09-06T18:20:41.372718+00:00",
+  "scope": "Additive independent review; prior evidence manifest and frozen analyses unchanged",
+  "files": {
+    "independent-prospective-review.md": {
+      "sha256": "5686981a2211cb31ae41042974712edd9544c7db32b38dc41690432a963892c8",
+      "bytes": 9160
+    },
+    "independent-prospective-review.json": {
+      "sha256": "80a6380ed04cdc7229b02cd4a229dcd60d19a933bac08cc73362fb3c4c17bca1",
+      "bytes": 1573
+    }
+  }
+}

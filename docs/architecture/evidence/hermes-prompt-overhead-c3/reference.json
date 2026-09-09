@@ -1,0 +1,30 @@
+{
+  "at": "2026-09-06T23:02:31.302831+00:00",
+  "outputs": [
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/aggregate.json",
+      "sha256": "51ba5c36f50302aaf4987c5ae7c5be1f96906734c44eb7fe76b49eb8c7bb9b00"
+    },
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/requests.json",
+      "sha256": "f1e5dea62f52e71126aa1aa777eafb02503ebc488fb3e01945abc98576cca5b6"
+    },
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/arms.json",
+      "sha256": "0eb42edb183561979f7e3cdfff1603f922769ba7cf826daaeab2f406f6ec5e95"
+    },
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/sections.json",
+      "sha256": "adaf9cac6294d26a53fba3b54dffd4fa25d4ed267d4051ab80e546dfeb6d212a"
+    },
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/source-bindings.json",
+      "sha256": "cbfcf1d4cf8ecbaa0d4334bf2bb3f5ce8361f8d3a7ff643b289b11fe2f6a182f"
+    }
+  ],
+  "auditScript": {
+    "path": "/private/tmp/atlas-prompt-overhead-audit/audit.py",
+    "sha256": "575f6b80bb125da66882e0fbb2b90e26b86d2c600eb4dc38def6ef1b6c9d9152"
+  },
+  "scope": "All 96 arms, all recorded effective model requests and finalized usage ledgers from completed C3 batch. No response bodies, hidden response reasoning, holdout tasks, live C5 observations or credentials read."
+}

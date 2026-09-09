@@ -1,0 +1,13 @@
+{
+  "observedAt": "2026-09-07T10:05:38.320820+00:00",
+  "phase": "confirmatory",
+  "batch": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932",
+  "analysisPath": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/analysis-final.json",
+  "analysisSha256": "180ceb12182c8febc7c13f3290f2140ea787784b2ddab94f8fbbbb4639920064",
+  "originalAnalyzerSessionId": 27461,
+  "originalAnalyzerExitCode": 0,
+  "analysisRerun": false,
+  "sourceEdited": false,
+  "completedSha256": "8a7dded6ee49daa91e03994c95d98fb139e8bcef0480764026ae2a6048e5d45c",
+  "scope": "Original frozen analyzer completed once; independent full review pending."
+}

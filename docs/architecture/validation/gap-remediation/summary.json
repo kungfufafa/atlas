@@ -1,0 +1,201 @@
+{
+  "date": "2026-09-06",
+  "scope": "Python/Bash filesystem, Word/chart workbook fidelity, PDF/OCR/fonts, channel regressions and live/deployment prerequisites",
+  "fullTarget": {
+    "passed": 5129,
+    "failed": 0,
+    "assertions": 15731,
+    "tests": 5129,
+    "files": 639
+  },
+  "scriptsTarget": {
+    "passed": 46,
+    "failed": 0,
+    "assertions": 130,
+    "tests": 46,
+    "files": 11
+  },
+  "channelTarget": {
+    "passed": 503,
+    "failed": 0,
+    "assertions": 1770,
+    "tests": 503,
+    "files": 46
+  },
+  "corpus": {
+    "attempts": ["gap-remediation-20260906", "gap-remediation-final-20260906"],
+    "oracle": "v6",
+    "each": {
+      "supported": 21,
+      "unsupported": 0,
+      "failure": 0
+    },
+    "visualEvidenceSeparate": true
+  },
+  "filesystem": {
+    "macos": "actual enforcement passed",
+    "linux": "NOT_VERIFIED",
+    "fallback": "none",
+    "network": "allowed",
+    "escapedProcessSessions": "NOT_CONTAINED"
+  },
+  "liveClaude": {
+    "status": "BLOCKED",
+    "reason": "not_authenticated",
+    "inference": "NOT_RUN",
+    "runtimeVersion": "2.1.247 (Claude Code)"
+  },
+  "liveMessengers": {
+    "whatsapp": "NOT_RUN",
+    "telegram": "NOT_RUN",
+    "discord": "NOT_RUN",
+    "reason": "No authorized test recipients supplied",
+    "regressionEvidence": "mock external transports, actual handlers and file bytes"
+  },
+  "docker": {
+    "status": "BLOCKED",
+    "reason": "daemon unavailable",
+    "imageBuild": "NOT_RUN",
+    "linuxContainerChecks": "NOT_RUN",
+    "ciGateAdded": true,
+    "remoteCi": "NOT_RUN"
+  },
+  "static": {
+    "rootTypecheck": "passed",
+    "webTypecheck": "passed",
+    "serverBuild": "passed",
+    "bundledPdf": "passed",
+    "repositoryLint": "passed",
+    "verificationScriptsTypecheck": "passed"
+  },
+  "limitations": [
+    "Overlapping test counts must not be summed.",
+    "Historical D03 is structurally tested; an additional valid inline-run Word fixture provides visual evidence.",
+    "Chart caches need refresh on open; chart layout/recalculation remain guarded.",
+    "Complex PDF splitting, forms/signatures, conflicting destination names and CFF fonts remain guarded.",
+    "No live Word desktop or remote messenger receipt validation."
+  ],
+  "logs": {
+    "fullInitial": {
+      "path": "/private/tmp/atlas-gap-full-suite.log",
+      "sha256": "1e3291914b5142dccfb352d4b044baa6c39600429cc602deb19475fa9e897e23",
+      "counts": {
+        "passed": 5128,
+        "failed": 0,
+        "assertions": 15725,
+        "tests": 5128,
+        "files": 639
+      }
+    },
+    "fullFinal": {
+      "path": "/private/tmp/atlas-gap-final-suite.log",
+      "sha256": "6f1be6d292155d44e3d56665b1932967132506ffd23da53665b64b80a5c28f1a",
+      "counts": {
+        "passed": 5129,
+        "failed": 0,
+        "assertions": 15731,
+        "tests": 5129,
+        "files": 639
+      }
+    },
+    "channels": {
+      "path": "/private/tmp/atlas-gap-channel-localhost.log",
+      "sha256": "bb86d22b7e15497f6c64895f05c5d89088a5b61c2973ee7c9b6b4b8c1d6e8768",
+      "counts": {
+        "passed": 503,
+        "failed": 0,
+        "assertions": 1770,
+        "tests": 503,
+        "files": 46
+      }
+    },
+    "scripts": {
+      "path": "/private/tmp/atlas-gap-scripts.log",
+      "sha256": "8c52c5daa29cc581f9d0be6ec15046b2bdb196da0ab381c00f38bb98ff3584a0",
+      "counts": {
+        "passed": 46,
+        "failed": 0,
+        "assertions": 130,
+        "tests": 46,
+        "files": 11
+      }
+    },
+    "typecheck": {
+      "path": "/private/tmp/atlas-gap-typecheck-final.log",
+      "sha256": "1e7364545b505adc6ef70012ce70f69a90a7eb05ebb0a0886a63cceb701bcb27"
+    },
+    "webTypecheck": {
+      "path": "/private/tmp/atlas-gap-typecheck-web.log",
+      "sha256": "718853d1a74e77e2217373914b4cbbf0af84e2a869053bbd4beab38338b0f827"
+    },
+    "build": {
+      "path": "/private/tmp/atlas-gap-build-final.log",
+      "sha256": "36937fc452f071968837c7bc31fe150acb39ae1813fd214b8c13fb616c45e678"
+    },
+    "bundledPdf": {
+      "path": "/private/tmp/atlas-gap-built-pdf.log",
+      "sha256": "400c3bf2864fbee0233ef31d38e5d15a021342ebd0eea8522bfc7f11a303cf13"
+    },
+    "corpusInitial": {
+      "path": "/private/tmp/atlas-gap-corpus-oracle.log",
+      "sha256": "f9b9809b32e612a4e1062fc55482c7717ae6ce211b633f676c328ef2081888c0"
+    },
+    "corpusFinal": {
+      "path": "/private/tmp/atlas-gap-corpus-final-oracle.log",
+      "sha256": "a7229b872e3bda8633791faf8e43245d573b50317849d4cc46511e000b81782b"
+    },
+    "docker": {
+      "path": "/private/tmp/atlas-gap-docker.log",
+      "sha256": "56db9784ffb1f020da6e0ef4c25f99bf143abd797085bb2b759291c05c411fd3"
+    },
+    "liveClaude": {
+      "path": "/private/tmp/atlas-gap-live-claude.log",
+      "sha256": "9510b8fa2b9b5462acc8a163bc7d17098626e4bb9557d355c79ff6e79ed0d87f"
+    },
+    "channelSandboxAttempt": {
+      "path": "/private/tmp/atlas-gap-channel-baseline.log",
+      "sha256": "d74410207a20100b771c71604773db36b75bffc87ae21c963e08d413176a1edb",
+      "counts": {
+        "passed": 493,
+        "failed": 10,
+        "assertions": 1721,
+        "tests": 503,
+        "files": 46
+      }
+    },
+    "runtimeInstallSandboxAttempt": {
+      "path": "/private/tmp/atlas-gap-runtime-install.log",
+      "sha256": "2d13d2f48af96d5761472e43b82059d58ca32842a85359991cb5b279980f0bf3"
+    },
+    "runtimeInstall": {
+      "path": "/private/tmp/atlas-gap-runtime-install-network.log",
+      "sha256": "94d0fa0b84a0e7ab8cb6893d416a5752ef59ed4687462ad73b98a8e1b2e9bd92"
+    },
+    "repositoryLint": {
+      "path": "/private/tmp/atlas-gap-lint-complete.log",
+      "sha256": "f8ed41b318be0a5a0e1697d2ae4e7824a2b10952ea1831f1a3be8615fdead548"
+    },
+    "verificationScriptsTypecheck": {
+      "path": "/private/tmp/atlas-gap-script-typecheck-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "verificationScriptsTypecheckInitial": {
+      "path": "/private/tmp/atlas-gap-script-typecheck.log",
+      "sha256": "8cd13bb73a2e136f4b040c5266783aa72f687cb0f8a0dbd65ac8f84c679a8e61"
+    },
+    "lintFormattingAttempt": {
+      "path": "/private/tmp/atlas-gap-lint-final.log",
+      "sha256": "8a816302d5c429430ca6228b107ef33e0682ab5d3795a22928a5144f8e8775ec"
+    },
+    "liveClaudeFinal": {
+      "path": "/private/tmp/atlas-gap-live-claude-final.log",
+      "sha256": "9510b8fa2b9b5462acc8a163bc7d17098626e4bb9557d355c79ff6e79ed0d87f"
+    }
+  },
+  "verificationNotes": [
+    "Initial channel test had 10 localhost sandbox failures; identical target outside outer restriction passed all 503.",
+    "Initial runtime pip install could not access DNS; approved network install of pinned dependencies succeeded.",
+    "Repository lint found a new evidence JSON formatting error; corrected before final global pass.",
+    "Dedicated typecheck caught two live-gate script typing errors omitted by root typecheck; both corrected and the script tsconfig is now checked in CI."
+  ]
+}

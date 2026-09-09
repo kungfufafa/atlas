@@ -1,0 +1,9 @@
+{
+  "at": "2026-09-07T02:35:14.220075+00:00",
+  "reviewer": "/root/file_v2_finalize",
+  "scope": "Frozen source/hash/delta and owner-log independent review; guard/lifecycle API/native/send/stream, worker invoker/effect authorization and current DB checks. No activation approval. No rerun absent concrete evidence concern. Preserve fixture mistakes separately from product counterexamples.",
+  "source": "/private/tmp/atlas-publication-turn-principal-c5/source",
+  "expectedSourceHash": "11d216be15e24573602ddd0f198115e2da42b4bd00a59d4ffa355742a0490245",
+  "providerCalls": 0,
+  "sourceEdits": 0
+}

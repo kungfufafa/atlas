@@ -1,0 +1,62 @@
+{
+  "createdAt": "2026-09-07T02:49:56.324593+00:00",
+  "files": [
+    {
+      "byteIdentical": true,
+      "bytes": 20838,
+      "packPath": "design/activation-patch-plan.md",
+      "sha256": "20111353d09b10a87b92c0f86f74ca74168c63078e76a225845799476cd606c2",
+      "sourcePath": "/private/tmp/atlas-artifact-agent-service-activation-design-v1/activation-patch-plan.md"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 60746,
+      "packPath": "design/c5-excerpts.txt",
+      "sha256": "c6c24f72c3bfa54c014127b4a852935d9486c7c6fd98eb319bc8eeca25846c1a",
+      "sourcePath": "/private/tmp/atlas-artifact-agent-service-activation-design-v1/c5-excerpts.txt"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 1434,
+      "packPath": "design/inspection-errors.json",
+      "sha256": "484f05164639809849cedf465e1aed5189c27eb824ae1e095313bf57748a891d",
+      "sourcePath": "/private/tmp/atlas-artifact-agent-service-activation-design-v1/inspection-errors.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 1520,
+      "packPath": "design/manifest.json",
+      "sha256": "5caae9854ab1c2ca59a1a33b556c50f1cd53f6648612261f79f3d27665130ea2",
+      "sourcePath": "/private/tmp/atlas-artifact-agent-service-activation-design-v1/manifest.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 945,
+      "packPath": "design/parent-interface-reference.json",
+      "sha256": "830e549aa6a546c8f9f93ccb8331bec9fecaa071fbfa2bd167cf97bf658d4108",
+      "sourcePath": "/private/tmp/atlas-artifact-agent-service-activation-design-v1/parent-interface-reference.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 349,
+      "packPath": "design/registration.json",
+      "sha256": "881baec28439c4f0d72787e4003b261e793a95b2128a340355a211b45a007eba",
+      "sourcePath": "/private/tmp/atlas-artifact-agent-service-activation-design-v1/registration.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 898,
+      "packPath": "design/scope-before-analysis.md",
+      "sha256": "22c880ee1a8ee81deceb40f816e62e29965c125a4edbc6233e7b2cbeca3b24cb",
+      "sourcePath": "/private/tmp/atlas-artifact-agent-service-activation-design-v1/scope-before-analysis.md"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 6858,
+      "packPath": "design/source-bindings.json",
+      "sha256": "8a81df43455d05be069fb3ed7856f4f2fe0fb5db248e8ac2c4a48ea4f80a80b9",
+      "sourcePath": "/private/tmp/atlas-artifact-agent-service-activation-design-v1/source-bindings.json"
+    }
+  ],
+  "policy": "Selected exact bytes; absolute original private paths remain source references. No reconstruction of missing historical tests."
+}

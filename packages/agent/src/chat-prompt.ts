@@ -35,15 +35,18 @@ const MESSAGING_CHANNEL_PROMPT = {
       "When you save a file, the channel attaches it in WhatsApp. Do not put download links, sandbox: URLs, share URLs, or the filename in the chat reply — a short summary of what is in the file is enough.",
     ],
     label: "WhatsApp",
-    supportsGroupAudience: false,
+    supportsGroupAudience: true,
   },
 } as const satisfies Record<MessagingChannel, MessagingChannelPromptConfig>;
 
 const SHARED_MESSAGING_STYLE = [
+  "For a saved attachment, use its workspace path in this turn: spreadsheet for workbooks/CSV, extract_document_text for PDF/DOCX, read_file for TXT/MD, and the real attached image bytes for images. Do not paste or dump the source into chat. Finish the requested work and save deliverables under artifacts/ for channel delivery.",
+  "Continue the active file job across follow-up messages unless the user clearly switches tasks. In groups, unrelated chatter is not a request to abandon the current job.",
+  "Pasted file previews and [File: ...] text are not original attachments. If the original is needed and no saved path or real attachment is available, ask the user to attach it. Never claim to have inspected a missing image or file, and never fake a finished artifact.",
   "Write like texting a friend: short paragraphs and a conversational tone.",
   "Prefer one to three brief paragraphs unless the user asks for detail.",
   "If you must share code or commands, put them on their own line as plain text without backticks.",
-  "Do not mention tools, JSON, or internal steps in the user-visible reply.",
+  "Do not narrate internal tools or steps. If the user requests JSON, code, or another exact output format, honor that format instead of these conversational style defaults.",
 ] as const;
 
 function isMessagingChannel(
@@ -119,7 +122,9 @@ export function buildChatSystemPrompt(
     "If assigned tools would make the answer better, use them before you reply.",
     "Choose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.",
     "When follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.",
-    "Always focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics."
+    "Focus the final answer on the user's objective. Follow their requested output format exactly; conversational style and summary defaults apply only when compatible with that format.",
+    "Treat the requested file contents and the final chat response as separate deliverables. A field requested for the response does not belong in a file unless the file specification also requires it. Preserve specified schemas and requested titles, labels, identifiers, types, units, and supplied values exactly, including case and punctuation, except for changes the user requests. Do not add convenience fields.",
+    "Before claiming completion, compare the actual result with each independent requirement in the user's request. When a requirement says all or every, identify the relevant items from the available sources, check each within the requested scope, and identify any unresolved coverage. Check each requested section, field, location, or representation separately: content appearing elsewhere does not satisfy a placement requirement. Use assigned read or validation tools when the write result does not establish a required property. Reading back an output is evidence of its contents, not by itself proof that every requirement was checked. For computed results, check the complete relevant data and inclusion/exclusion rules rather than only a sample. If the user requires source or formatting preservation, compare the relevant properties before and after the edit; file existence or size alone does not establish preservation. When reporting verification, describe only checks actually performed and their coverage. Fix observed discrepancies within the authorized task, and state any unresolved gap."
   );
 
   const timezone = options.userTimezone?.trim() || "UTC";
@@ -153,7 +158,7 @@ export function buildChatSystemPrompt(
   if (options.enableToolLoop && tools.length > 0) {
     sections.push(
       "",
-      "You have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.",
+      "You have access to tools for this session. Use them when needed to finish the work, then reply in the user's requested format. Use natural language when no specific response format was requested.",
       "Atlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.",
       "If a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work."
     );
@@ -241,10 +246,10 @@ export function buildChatSystemPrompt(
     if (tools.some((tool) => tool.name === "write_file")) {
       sections.push(
         "Skills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.",
-        "When producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat.",
+        "When producing something the user can open, preview, or download, use the requested destination; otherwise write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat unless requested.",
         "That includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.",
-        "The chat reply is a short summary. The web UI opens a live preview for these files.",
-        "Durable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.",
+        "When the user has not specified a response format, give a short summary and the saved file location. The web UI opens a live preview for artifacts.",
+        "Use artifacts/ as the default destination for reports, slide decks, and exports when the user has not specified another path.",
         "Do not use artifacts/ for soul files or MEMORY.md."
       );
     }
@@ -296,11 +301,7 @@ export function buildChatSystemPrompt(
   }
 
   if (isMessagingChannel(options.channel)) {
-    appendMessagingChannelPrompt(
-      sections,
-      options.channel,
-      options.chatKind ?? "private"
-    );
+    appendMessagingChannelPrompt(sections, options.channel, options.chatKind);
   }
 
   return sections.join("\n");
@@ -309,13 +310,15 @@ export function buildChatSystemPrompt(
 function appendMessagingChannelPrompt(
   sections: string[],
   channel: MessagingChannel,
-  chatKind: "private" | "group"
+  chatKind?: "private" | "group"
 ): void {
   const config = MESSAGING_CHANNEL_PROMPT[channel];
   const audienceLine =
     chatKind === "group" && config.supportsGroupAudience
       ? `You are replying in a ${config.label} channel. Everyone in the channel can see your messages.`
-      : `You are replying in a private ${config.label} chat.`;
+      : chatKind === "private"
+        ? `You are replying in a private ${config.label} chat.`
+        : `You are replying on ${config.label}. Follow the private or group context supplied with each message; group replies are visible to everyone with access to that conversation.`;
 
   sections.push("", audienceLine, ...config.format, ...SHARED_MESSAGING_STYLE);
 }

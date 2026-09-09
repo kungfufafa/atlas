@@ -1,0 +1,80 @@
+{
+  "scope": "All integration edits and retained outputs are confined to the new assembly scratch.",
+  "attempts": [
+    {
+      "name": "initial input reads",
+      "result": "Combined output was truncated; targeted foundation/capture/DB reads followed. Unavailable text was not treated as evidence."
+    },
+    {
+      "name": "biome.json lookup",
+      "result": "No such file; actual root configuration is biome.jsonc. It and .gitignore were copied and hash-bound solely as validation inputs."
+    },
+    {
+      "name": "initial-selected-evidence.log",
+      "exitCode": 1,
+      "result": "Expected in-memory evidence rejection; separate SQLite fixture foreign-key failure retained."
+    },
+    {
+      "name": "initial-selected-evidence-fixture-fixed.log",
+      "exitCode": 1,
+      "result": "Both DB adapters rejected legitimate selected capture evidence before integration."
+    },
+    {
+      "name": "evidence-after-integration.log",
+      "exitCode": 0,
+      "result": "Both initial evidence regressions passed."
+    },
+    {
+      "name": "first-selected-suite.log",
+      "exitCode": 1,
+      "result": "Extra closing brace in expanded test source; corrected without dropping test cases."
+    },
+    {
+      "name": "second-selected-suite.log",
+      "exitCode": 0,
+      "result": "22 initial integration tests /129assertions passed."
+    },
+    {
+      "name": "initial-format.log",
+      "exitCode": 1,
+      "result": "Strict Biome configuration required an ignore file; missing setup was fixed with a hash-bound root copy."
+    },
+    {
+      "name": "second-format.log",
+      "exitCode": 0,
+      "result": "Strict format/fix checked7files and fixed3."
+    },
+    {
+      "name": "first-regression-union.log",
+      "exitCode": 0,
+      "result": "91tests /591assertions before added reentrancy counterexample."
+    },
+    {
+      "name": "first-typecheck.log",
+      "exitCode": 0,
+      "result": "Scoped graph passed before reentrancy test/fix."
+    },
+    {
+      "name": "reentrant test insertion first patch",
+      "result": "apply_patch expected pre-format text and failed without mutation; inserted using actual formatted context."
+    },
+    {
+      "name": "reentrant-before-fix.log",
+      "exitCode": 1,
+      "result": "Actual empty-set commit before ordinal reservation; source and binding retained."
+    },
+    {
+      "name": "reentrant-after-fix.log",
+      "exitCode": 0,
+      "result": "Focused counterexample passes after deferred capture work reserves first."
+    },
+    {
+      "name": "final gates",
+      "result": "Exact commands, exit codes, times and hashes in final-regressions.json, final-typecheck.json and final-lint.json."
+    }
+  ],
+  "paidCalls": 0,
+  "providerCalls": 0,
+  "productionEdits": 0,
+  "inputSourceEdits": 0
+}

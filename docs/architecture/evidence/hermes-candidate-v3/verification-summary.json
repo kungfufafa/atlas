@@ -1,0 +1,73 @@
+{
+  "candidate": "candidate-v3",
+  "sourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "productionFiles": 2072,
+  "changedFilesFromCandidate2": 33,
+  "offlineGates": {
+    "combined": {
+      "tests": 577,
+      "assertions": 2355,
+      "files": 70,
+      "typecheck": "passed",
+      "scopedLint": "passed"
+    },
+    "appliedRootIntegration": {
+      "tests": 91,
+      "assertions": 517,
+      "files": 6,
+      "typecheck": "passed"
+    },
+    "overlap": "The root integration tests overlap the combined suite; totals are not additive."
+  },
+  "claim": "Implemented changes and offline behavior only; no demonstrated comparative or causal model-quality gain from this evidence.",
+  "evidence": [
+    {
+      "path": "archive-reference.json",
+      "originalPath": "/private/tmp/atlas-hermes-evaluation/candidate-v3/archive.json",
+      "sha256": "5b18242b2c4848da900a1639df667f752539ed1cd4afe4aa73312ea7a31aa5c6",
+      "bytes": 218
+    },
+    {
+      "path": "applied-change-manifest.json",
+      "originalPath": "/private/tmp/atlas-hermes-evaluation/combined-export-candidate3-final/manifest.json",
+      "sha256": "35fda72989e099b59aad99aa94ed691a5a1cd5622396e848fbff5df069a4851e",
+      "bytes": 7707
+    },
+    {
+      "path": "root-application.json",
+      "originalPath": "/private/tmp/atlas-hermes-evaluation/combined-export-candidate3-final/applied.json",
+      "sha256": "dfc3b8416f607381402805ba0a6a41a68f90539c9af9a0ad6ee4946393ac25ab",
+      "bytes": 421
+    },
+    {
+      "path": "root-integration-tests.log",
+      "originalPath": "/private/tmp/atlas-hermes-evaluation/candidate-v3-root-tests.log",
+      "sha256": "034dd25279626ed8c5e610066823c62181b062c0dd23988714ce0f34a1653a80",
+      "bytes": 10802
+    },
+    {
+      "path": "root-typecheck.log",
+      "originalPath": "/private/tmp/atlas-hermes-evaluation/candidate-v3-root-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "candidate3-final-tests.log",
+      "originalPath": "/private/tmp/atlas-combined-candidate-o9AObL/candidate3-final-tests.log",
+      "sha256": "ba508672c094309ae186a6401f4ffe65b92b742b695d1c7e294b1774ee92a0a5",
+      "bytes": 64397
+    },
+    {
+      "path": "candidate3-final-typecheck.log",
+      "originalPath": "/private/tmp/atlas-combined-candidate-o9AObL/candidate3-final-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "candidate3-final-ultracite.log",
+      "originalPath": "/private/tmp/atlas-combined-candidate-o9AObL/candidate3-final-ultracite.log",
+      "sha256": "1eb7a2743c27d9e0245d99d4ee25730bc33de7578865711c4dd1456d50258f34",
+      "bytes": 45
+    }
+  ]
+}

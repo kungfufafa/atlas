@@ -104,7 +104,7 @@ export function normalizeSessionTitle(raw: string): string | null {
 
 export async function generateSessionTitleFromMessages(
   messages: readonly ChatMessage[],
-  options: { provider?: ProviderClient }
+  options: { provider?: ProviderClient; signal?: AbortSignal }
 ): Promise<string | null> {
   const prompt = buildSessionTitlePrompt(messages);
 
@@ -113,12 +113,15 @@ export async function generateSessionTitleFromMessages(
   }
 
   try {
+    options.signal?.throwIfAborted();
     const result = await options.provider.generateText({
       format: "text",
       prompt,
+      signal: options.signal,
       system: SESSION_TITLE_SYSTEM,
     });
 
+    options.signal?.throwIfAborted();
     return normalizeSessionTitle(result.content);
   } catch (error) {
     console.error("Failed to generate session title from provider:", error);

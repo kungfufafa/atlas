@@ -124,7 +124,10 @@ export function createTelegramDocumentProbe(options: {
         file_size: options.fileSize,
       }),
       sendDocument: async (_chatId: number, file: unknown) => {
-        documents.push({ filename: telegramFilename(file) });
+        documents.push({
+          bytes: attachmentBytes(file, "fileData"),
+          filename: telegramFilename(file),
+        });
         return { message_id: nextMessageId++ };
       },
       token: "channel-loop-token",
@@ -182,7 +185,10 @@ export function createDiscordDocumentProbe(options: {
 
       fileSendCalls += 1;
       for (const file of payload.files ?? []) {
-        documents.push({ filename: discordFilename(file) });
+        documents.push({
+          bytes: attachmentBytes(file, "attachment"),
+          filename: discordFilename(file),
+        });
       }
       return { id: String(sentMessages.length) };
     },
@@ -264,6 +270,14 @@ function telegramFilename(file: unknown): string {
   }
 
   return "unknown";
+}
+
+function attachmentBytes(file: unknown, key: string): Uint8Array | undefined {
+  if (!file || typeof file !== "object") {
+    return;
+  }
+  const bytes: unknown = Reflect.get(file, key);
+  return bytes instanceof Uint8Array ? new Uint8Array(bytes) : undefined;
 }
 
 function discordFilename(file: unknown): string {

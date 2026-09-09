@@ -1,0 +1,92 @@
+{
+  "analysisBinding": {
+    "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/analysis-final.json",
+    "sha256": "180ceb12182c8febc7c13f3290f2140ea787784b2ddab94f8fbbbb4639920064"
+  },
+  "instrumentationBinding": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/review.json",
+    "sha256": "402c0232b86b42c2490c39c5815053dece65dc91b55e9a93a58fb9ad4046cef0"
+  },
+  "rows": [
+    {
+      "ordinal": 52,
+      "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas",
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": true,
+        "bindingPass": true,
+        "oraclePass": true,
+        "oracleIntegrityFailure": false
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 1707,
+        "observedPromptTokens": 32630,
+        "promptTokens": null
+      },
+      "lastRequestIndex": 6,
+      "requestBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/wire/006-request.json",
+        "sha256": "43333e0ffd3f61907559d6d34338201d89128cc90d314a8745381385f5d36305"
+      },
+      "fixedTitleSystemMarkerFound": true,
+      "transportErrorBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/wire/006-transport-error.json",
+        "sha256": "6f12c048b3e2ce8025ce201d88b9a81877e0ad00dd76ed27cbef69858acbda40"
+      },
+      "originalTransportErrorElapsedMs": 95229,
+      "scope": "Only exact fixed title-system marker tested; message/task content and raw error text are omitted. Original result/usage fields quoted, no rescoring."
+    },
+    {
+      "ordinal": 73,
+      "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas",
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": true,
+        "bindingPass": true,
+        "oraclePass": true,
+        "oracleIntegrityFailure": false
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 1667,
+        "observedPromptTokens": 25525,
+        "promptTokens": null
+      },
+      "lastRequestIndex": 5,
+      "requestBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas/wire/005-request.json",
+        "sha256": "900e7033186f21481aa1bb7601fc7640f7bdbccd846862f1eac43486127fefaf"
+      },
+      "fixedTitleSystemMarkerFound": true,
+      "transportErrorBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas/wire/005-transport-error.json",
+        "sha256": "fa15e80717a38ad69e09b112364f357c24b535b0ab1c258ad38036870b49a505"
+      },
+      "originalTransportErrorElapsedMs": 90030,
+      "scope": "Only exact fixed title-system marker tested; message/task content and raw error text are omitted. Original result/usage fields quoted, no rescoring."
+    }
+  ]
+}

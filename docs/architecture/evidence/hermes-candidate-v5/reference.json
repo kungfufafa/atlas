@@ -1,0 +1,310 @@
+{
+  "createdAt": "2026-09-06T19:28:24.277407+00:00",
+  "status": "applied candidate5; no live improvement measurement yet",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "sourceArchive": "/private/tmp/atlas-hermes-evaluation/candidate-v5/atlas-source.tar.gz",
+  "sourceArchiveSha256": "6698a37ae5c4d793f7444857ac98cb0582ac2bc8f24a69b2297513bace4e6a30",
+  "knownCredentialLiteralScan": "passed selected files only",
+  "files": [
+    {
+      "file": "application/application.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/application.json",
+      "sha256": "ef97e5a2dba4ddafc269372d7c52a31e81b7eb0ce78b1b917559b4e2cd8a33b3",
+      "bytes": 1893
+    },
+    {
+      "file": "application/apply.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/apply.json",
+      "sha256": "cc369795a6f981ac5c4ca4a0932cf9e8081bf43169ec4a3684b30446945effe0",
+      "bytes": 171
+    },
+    {
+      "file": "application/apply.log",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/apply.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "application/archive.log",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/archive.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "application/check.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/check.json",
+      "sha256": "cf86b9fa8c704efad3b4df9bd5a01a80f7c75da9f2815cee6cbb144544c46b3a",
+      "bytes": 186
+    },
+    {
+      "file": "application/check.log",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "application/root-after.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/root-after.json",
+      "sha256": "2e88c012fb83968bd575dc17b8092517df97e01950ba30b5cda8a928686d631f",
+      "bytes": 253275
+    },
+    {
+      "file": "application/root-before.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/root-before.json",
+      "sha256": "0a962a23a9588d559a31d7f2abb949cb892c5aff2e2c9c99a2604f29c7f00cbd",
+      "bytes": 252536
+    },
+    {
+      "file": "integration/README-final.md",
+      "original": "/private/tmp/atlas-candidate5-integration/README-final.md",
+      "sha256": "86c2427121d0143cb4f866bd1ce68d6e80c2b9db0458e591b285384dc89bc21c",
+      "bytes": 734
+    },
+    {
+      "file": "integration/README.md",
+      "original": "/private/tmp/atlas-candidate5-integration/README.md",
+      "sha256": "4cd5a789e3113efb966c0db45a76f6ff35da79f683a39bb48178c13410507259",
+      "bytes": 2361
+    },
+    {
+      "file": "integration/aliases.json",
+      "original": "/private/tmp/atlas-candidate5-integration/aliases.json",
+      "sha256": "05f6d2912be092fc9571be09618b38f15c32a7307bbfb0abb90abd33d9dc1408",
+      "bytes": 1238
+    },
+    {
+      "file": "integration/combined.patch",
+      "original": "/private/tmp/atlas-candidate5-integration/combined.patch",
+      "sha256": "7d95cdbd7fb8f0d62d4319649fb072aa7c0d1af672080ce1363aaafa182154a3",
+      "bytes": 85413
+    },
+    {
+      "file": "integration/dependency-links.json",
+      "original": "/private/tmp/atlas-candidate5-integration/dependency-links.json",
+      "sha256": "ca767932c5c8b4b138ab6fc5da93e586abc9662ec7b0afceee83c01c1060e26c",
+      "bytes": 1778
+    },
+    {
+      "file": "integration/final-changed-source-and-tests-typecheck.json",
+      "original": "/private/tmp/atlas-candidate5-integration/final-changed-source-and-tests-typecheck.json",
+      "sha256": "f7e429a2411a9b88380667e007fc91c306dd4aaf0b5499d86d5347e3fa0c8e74",
+      "bytes": 571
+    },
+    {
+      "file": "integration/final-changed-source-and-tests-typecheck.log",
+      "original": "/private/tmp/atlas-candidate5-integration/final-changed-source-and-tests-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "integration/final-combined-regression-union.json",
+      "original": "/private/tmp/atlas-candidate5-integration/final-combined-regression-union.json",
+      "sha256": "15b94dcb8d757f272057a1abbf3a95748788c2e902610b9adc7ac9631f3b35f4",
+      "bytes": 1500
+    },
+    {
+      "file": "integration/final-combined-regression-union.log",
+      "original": "/private/tmp/atlas-candidate5-integration/final-combined-regression-union.log",
+      "sha256": "b25dd3452646d87f8289f6ea647df3e024e114887d1d3b86fe135c2a2393cc1c",
+      "bytes": 24305
+    },
+    {
+      "file": "integration/final-full-production-typecheck.json",
+      "original": "/private/tmp/atlas-candidate5-integration/final-full-production-typecheck.json",
+      "sha256": "4d77d813456e04e0b17ee7023794c5603b0f843af3b7514ffebdfa13ba78b397",
+      "bytes": 543
+    },
+    {
+      "file": "integration/final-full-production-typecheck.log",
+      "original": "/private/tmp/atlas-candidate5-integration/final-full-production-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "integration/final-gates-before-inventory.json",
+      "original": "/private/tmp/atlas-candidate5-integration/final-gates-before-inventory.json",
+      "sha256": "cb4be99b9ece24a6b5f38d10491a209eddfa10edda98496a6273da7aaab25152",
+      "bytes": 253266
+    },
+    {
+      "file": "integration/final-root-combined.patch.check.log",
+      "original": "/private/tmp/atlas-candidate5-integration/final-root-combined.patch.check.log",
+      "sha256": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+      "bytes": 11
+    },
+    {
+      "file": "integration/final-root-production.patch.check.log",
+      "original": "/private/tmp/atlas-candidate5-integration/final-root-production.patch.check.log",
+      "sha256": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+      "bytes": 11
+    },
+    {
+      "file": "integration/final-scoped-lint.json",
+      "original": "/private/tmp/atlas-candidate5-integration/final-scoped-lint.json",
+      "sha256": "feee81f470c85fac89afa46df5a40394272138e587ea63ecd46753bd2354acec",
+      "bytes": 1342
+    },
+    {
+      "file": "integration/final-scoped-lint.log",
+      "original": "/private/tmp/atlas-candidate5-integration/final-scoped-lint.log",
+      "sha256": "10928043bcf726c71880a4fb0a15e6f4020d3723aaa96816208908605e627655",
+      "bytes": 45
+    },
+    {
+      "file": "integration/final-source-verification.json",
+      "original": "/private/tmp/atlas-candidate5-integration/final-source-verification.json",
+      "sha256": "ad0945a4d48d787c445ea207605181a65772f77afdeea0609af9703bbb41c0e2",
+      "bytes": 613
+    },
+    {
+      "file": "integration/gate-plan-before-final-gates.json",
+      "original": "/private/tmp/atlas-candidate5-integration/gate-plan-before-final-gates.json",
+      "sha256": "c310418ce133402ec05c2aff9f4a42e882f5a5f1b3076806a4454996399c5b14",
+      "bytes": 3058
+    },
+    {
+      "file": "integration/gate-plan.json",
+      "original": "/private/tmp/atlas-candidate5-integration/gate-plan.json",
+      "sha256": "c310418ce133402ec05c2aff9f4a42e882f5a5f1b3076806a4454996399c5b14",
+      "bytes": 3058
+    },
+    {
+      "file": "integration/gate_runner.py",
+      "original": "/private/tmp/atlas-candidate5-integration/gate_runner.py",
+      "sha256": "7a30afc9d8c9790c067d28437805f9dd61ceb3ddc74e0921d0fa8e8d31d38452",
+      "bytes": 1062
+    },
+    {
+      "file": "integration/inputs/candidate3-inventory.json",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/candidate3-inventory.json",
+      "sha256": "0fe2faa230fa4341b8fd6c0f0a6f18ef2daf8b12c7f0b4a5fcb1cef10e9bf2b2",
+      "bytes": 252665
+    },
+    {
+      "file": "integration/inputs/candidate4-combined.patch",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/candidate4-combined.patch",
+      "sha256": "be636e2a9ffc9d6566d83adb663afdec0d26dc13f5a14f238d98fc48dd25eb95",
+      "bytes": 53056
+    },
+    {
+      "file": "integration/inputs/candidate4-inventory.json",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/candidate4-inventory.json",
+      "sha256": "ffd0f2bd9eed3a52ae48ee955903bc789c807c63dbad6338a5e8dcab042480b4",
+      "bytes": 253297
+    },
+    {
+      "file": "integration/inputs/candidate4-production.patch",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/candidate4-production.patch",
+      "sha256": "7c204d3a17e88981dd9c406d4f4f1d414a2397df81cb3e0975357222ce038a17",
+      "bytes": 19856
+    },
+    {
+      "file": "integration/inputs/candidate4-readiness.json",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/candidate4-readiness.json",
+      "sha256": "d32d5e3a05fc8432cd9a06007fdeb7ee34e48049c46ec5caf6f65b12f1f9acc1",
+      "bytes": 14492
+    },
+    {
+      "file": "integration/inputs/task-stop-combined.patch",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/task-stop-combined.patch",
+      "sha256": "ae4c9aaf242b0f1a11155403c47ee27df876a0cbedb58c51f5339b880e89a62b",
+      "bytes": 29561
+    },
+    {
+      "file": "integration/inputs/task-stop-independent-review.json",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/task-stop-independent-review.json",
+      "sha256": "de1e06406db6dd0f2bc6901e89fc0542ae34775eff5784eb5df58f3862448d3e",
+      "bytes": 2533
+    },
+    {
+      "file": "integration/inputs/task-stop-inventory.json",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/task-stop-inventory.json",
+      "sha256": "90fb3a692eb6e8382e9d50080db7ba097fe8d278dac9eeefaafc8ad6567f08ab",
+      "bytes": 253414
+    },
+    {
+      "file": "integration/inputs/task-stop-production.patch",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/task-stop-production.patch",
+      "sha256": "92c3eaa0dc52d3a02fc2406c3e4c9e0b37ee26dab91e6ed8c02b002db83657b8",
+      "bytes": 9232
+    },
+    {
+      "file": "integration/inputs/task-stop-readiness.json",
+      "original": "/private/tmp/atlas-candidate5-integration/inputs/task-stop-readiness.json",
+      "sha256": "1efbcb25471adc936ff25066e2f6aa15108deebcc9113296016b3a2a7204e7ab",
+      "bytes": 4204
+    },
+    {
+      "file": "integration/integration-amendment.json",
+      "original": "/private/tmp/atlas-candidate5-integration/integration-amendment.json",
+      "sha256": "219982139ddc78a417234cc17887f9422eab36bc4aef24a74f73f9ba6cd12c06",
+      "bytes": 804
+    },
+    {
+      "file": "integration/pre-apply-source-inventory.json",
+      "original": "/private/tmp/atlas-candidate5-integration/pre-apply-source-inventory.json",
+      "sha256": "7edf13d944e3b0c52f83ea252f2e9887de234d7c18365928d4cb327b8a43773a",
+      "bytes": 252993
+    },
+    {
+      "file": "integration/production.patch",
+      "original": "/private/tmp/atlas-candidate5-integration/production.patch",
+      "sha256": "c94d6ee4c54a6d29f57c4c4ee0fb083673e1bdb4ee31f4800daae96859ecf41b",
+      "bytes": 31089
+    },
+    {
+      "file": "integration/readiness-before-final-gates.json",
+      "original": "/private/tmp/atlas-candidate5-integration/readiness-before-final-gates.json",
+      "sha256": "5853b1fb4f808b4275769da8fe7c694ea179dac54c3bb424ca8b9b6c24f01389",
+      "bytes": 4411
+    },
+    {
+      "file": "integration/readiness-final.json",
+      "original": "/private/tmp/atlas-candidate5-integration/readiness-final.json",
+      "sha256": "2cab00e7c705b51d495e5b1af8d6bdd719dfcefe3a348cd773f59eb092d751a4",
+      "bytes": 11187
+    },
+    {
+      "file": "integration/readiness.json",
+      "original": "/private/tmp/atlas-candidate5-integration/readiness.json",
+      "sha256": "5853b1fb4f808b4275769da8fe7c694ea179dac54c3bb424ca8b9b6c24f01389",
+      "bytes": 4411
+    },
+    {
+      "file": "integration/root-combined.patch.check.log",
+      "original": "/private/tmp/atlas-candidate5-integration/root-combined.patch.check.log",
+      "sha256": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+      "bytes": 11
+    },
+    {
+      "file": "integration/root-production.patch.check.log",
+      "original": "/private/tmp/atlas-candidate5-integration/root-production.patch.check.log",
+      "sha256": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+      "bytes": 11
+    },
+    {
+      "file": "integration/source-inventory.json",
+      "original": "/private/tmp/atlas-candidate5-integration/source-inventory.json",
+      "sha256": "9b83697667ffee57e19f35738bd76d09dbb7ad3c8e74b060cb847a6ad4607f32",
+      "bytes": 253443
+    },
+    {
+      "file": "integration/source-verification.json",
+      "original": "/private/tmp/atlas-candidate5-integration/source-verification.json",
+      "sha256": "e4662a42c350e0cb86b11961e5e204134d32750d31d6018f440b79fdc5481212",
+      "bytes": 2981
+    },
+    {
+      "file": "integration/task-stop-apply.log",
+      "original": "/private/tmp/atlas-candidate5-integration/task-stop-apply.log",
+      "sha256": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+      "bytes": 11
+    },
+    {
+      "file": "integration/task-stop-check.log",
+      "original": "/private/tmp/atlas-candidate5-integration/task-stop-check.log",
+      "sha256": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+      "bytes": 11
+    }
+  ]
+}

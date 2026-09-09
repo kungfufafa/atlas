@@ -1,0 +1,213 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/artifact-publication-service.test.ts:
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:31:60)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:30:9)
+(fail) sqlite authoritative publication > overlapping sessions publish only their explicit captured bytes; workspace overwrite is harmless [33.31ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:44:20)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:41:9)
+(fail) sqlite authoritative publication > failed completed operations and cancellation never publish staged outputs or delete user files [22.67ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:52:44)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:51:9)
+(fail) sqlite authoritative publication > forged tool metadata cannot create, reassign or finalize publications [16.40ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:60:53)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:59:9)
+(fail) sqlite authoritative publication > exact retries across controllers are idempotent; differing bytes, metadata or output sets conflict atomically [21.60ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:72:54)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:71:9)
+(fail) sqlite authoritative publication > wrong scopes and guessed IDs fail; current authorization and revocation remain authoritative [15.69ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:82:70)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:80:9)
+(fail) sqlite authoritative publication > uncertain post-commit DB error retries persistence without replaying producer [20.26ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:88:50)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:87:9)
+(fail) sqlite authoritative publication > producer buffers are captured before await and private storage cannot overlap admitted roots [16.69ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:31:60)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:30:9)
+(fail) memory authoritative publication > overlapping sessions publish only their explicit captured bytes; workspace overwrite is harmless [5.36ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:44:20)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:41:9)
+(fail) memory authoritative publication > failed completed operations and cancellation never publish staged outputs or delete user files [1.30ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:52:44)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:51:9)
+(fail) memory authoritative publication > forged tool metadata cannot create, reassign or finalize publications [0.75ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:60:53)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:59:9)
+(fail) memory authoritative publication > exact retries across controllers are idempotent; differing bytes, metadata or output sets conflict atomically [0.72ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async stage (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:26:32)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:72:54)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:71:9)
+(fail) memory authoritative publication > wrong scopes and guessed IDs fail; current authorization and revocation remain authoritative [0.80ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:82:70)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:80:9)
+(fail) memory authoritative publication > uncertain post-commit DB error retries persistence without replaying producer [0.73ms]
+108 |   }
+109 |   async revoke(scope:Access,id:string):Promise<boolean>{const access=Object.freeze({...scope});await this.requireAccess(access,"revoke");return await this.db.revokeArtifactPublication(access,id,new Date().toISOString());}
+110 |   private async requireAccess(scope:Access,action:"publish"|"read"|"revoke"):Promise<void> {
+111 |     if(!scope.actorId?.trim())throw new Error("A canonical publication principal is required.");
+112 |     await this.authorize(scope,action);
+113 |     const [org,profile,session]=await Promise.all([this.db.getOrganization(scope.orgId),this.db.getProfile(scope.profileId),this.db.getSession(scope.sessionId)]);
+                                                                 ^
+TypeError: this.db.getOrganization is not a function. (In 'this.db.getOrganization(scope.orgId)', 'this.db.getOrganization' is undefined)
+      at requireAccess (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:113:60)
+      at async beginExecution (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.ts:37:41)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:88:50)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:87:9)
+(fail) memory authoritative publication > producer buffers are captured before await and private storage cannot overlap admitted roots [0.69ms]
+
+ 0 pass
+ 14 fail
+Ran 14 tests across 1 file. [1160.00ms]

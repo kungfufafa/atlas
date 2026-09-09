@@ -9,13 +9,17 @@ export function buildMcpToolDefinitions(
   servers: StoredMcpServerRecord[],
   manager: McpClientManager,
   orgId: string,
-  profileId: string
+  profileId: string,
+  loadCurrentServers?: () => Promise<StoredMcpServerRecord[]>
 ): ToolDefinition[] {
   const tools: ToolDefinition[] = [];
   const usedNames = new Set<string>();
 
   for (const server of servers) {
-    if (!shouldExposeMcpServerTools(server)) {
+    if (
+      !shouldExposeMcpServerTools(server) ||
+      (server.orgId != null && server.orgId !== orgId)
+    ) {
       continue;
     }
 
@@ -32,6 +36,31 @@ export function buildMcpToolDefinitions(
         parameters: toJsonSchema(cachedTool.inputSchema),
         async run(input) {
           try {
+            if (loadCurrentServers) {
+              const current = (await loadCurrentServers()).find(
+                (entry) => entry.id === server.id && entry.orgId === orgId
+              );
+              const currentTool = current?.cachedTools.find(
+                (entry) => entry.name === cachedTool.name
+              );
+              if (
+                !(
+                  current &&
+                  shouldExposeMcpServerTools(current) &&
+                  currentTool
+                ) ||
+                current.transport !== server.transport ||
+                JSON.stringify(current.config) !==
+                  JSON.stringify(server.config) ||
+                JSON.stringify(currentTool.inputSchema) !==
+                  JSON.stringify(cachedTool.inputSchema)
+              ) {
+                return {
+                  error: "MCP tool access changed. Retry the request.",
+                  errorCode: "PERMISSION_DENIED",
+                };
+              }
+            }
             if (server.transport === "stdio") {
               await manager.ensureConnected(server, orgId, profileId);
             } else if (!manager.isConnected(server.id, server.transport)) {

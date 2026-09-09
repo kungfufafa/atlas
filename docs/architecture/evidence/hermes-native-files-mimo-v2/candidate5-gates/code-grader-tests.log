@@ -1,0 +1,17 @@
+test_cli_enforces_admission_without_a_bypass_option (__main__.HiddenCodeTests.test_cli_enforces_admission_without_a_bypass_option) ... ok
+test_deadline_and_file_output_bound_are_enforced (__main__.HiddenCodeTests.test_deadline_and_file_output_bound_are_enforced) ... ok
+test_disclosed_contract_blocks_direct_and_public_module_chain_forgeries (__main__.HiddenCodeTests.test_disclosed_contract_blocks_direct_and_public_module_chain_forgeries) ... ok
+test_each_case_has_fresh_writable_state (__main__.HiddenCodeTests.test_each_case_has_fresh_writable_state) ... ok
+test_evidence_stays_with_attempt_and_receipt_cannot_be_overwritten (__main__.HiddenCodeTests.test_evidence_stays_with_attempt_and_receipt_cannot_be_overwritten) ... ok
+test_import_aliases_and_attribute_assignment_cannot_hide_forbidden_operations (__main__.HiddenCodeTests.test_import_aliases_and_attribute_assignment_cannot_hide_forbidden_operations) ... ok
+test_integer_type_and_unexpected_output_are_enforced (__main__.HiddenCodeTests.test_integer_type_and_unexpected_output_are_enforced) ... ok
+test_network_and_process_creation_are_denied (__main__.HiddenCodeTests.test_network_and_process_creation_are_denied) ... ok
+test_original_fails_and_decimal_fix_passes_real_suite (__main__.HiddenCodeTests.test_original_fails_and_decimal_fix_passes_real_suite) ... ok
+test_private_oracle_and_outside_canary_are_unreadable_and_unchanged (__main__.HiddenCodeTests.test_private_oracle_and_outside_canary_are_unreadable_and_unchanged) ... ok
+test_total_deadline_preserves_all_case_denominators (__main__.HiddenCodeTests.test_total_deadline_preserves_all_case_denominators) ... ok
+test_wrong_contract_or_suite_is_rejected_before_execution (__main__.HiddenCodeTests.test_wrong_contract_or_suite_is_rejected_before_execution) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 4.247s
+
+OK

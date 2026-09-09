@@ -1,0 +1,13 @@
+{
+  "at": "2026-09-06T22:54:51.886791+00:00",
+  "priorGoalTurn": "progress: candidate5 applied, native offlinegates and livepilot completed; no parityclaim",
+  "decision": "Proceed with full48pair96arm memorydevelopment under unchanged frozenMiMoprotocol and existing candidate5decision; no filtering/retry/rescore.",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "pilot": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c",
+  "pilotAnalysisSha256": "6c00d9419758d20b20ed88efab7ecfcaa2665746cfe599134e0cd8e0c9ec8f6b",
+  "pilotCompletedSha256": "90212b54acd5bed7e7702d923a7e49c970192a8303ae8209cb03e276a424e4fa",
+  "pilotGate": "4/4completed,validboundaries,knownusage; unscored",
+  "sourceRevalidation": "Root2078files matchesexactcandidate5 after continuation gap; no changes/removals",
+  "earlierProcessHandle": "91194missing aftercontinuation; completed.json and4terminalends establish terminalcompletion; no pilotrestart",
+  "confirmatory": "Unrun; no admission"
+}

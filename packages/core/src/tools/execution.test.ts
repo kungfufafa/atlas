@@ -232,6 +232,82 @@ describe("executeWithRetry", () => {
 });
 
 describe("executeProtectedTool", () => {
+  test("blocks a viewer even when no server callback is attached", async () => {
+    let effects = 0;
+    const result = await executeProtectedTool(
+      {
+        description: "Read tenant data",
+        name: "read_probe",
+        async run() {
+          effects += 1;
+          return { value: "private" };
+        },
+      },
+      {},
+      { orgId: "org_viewer", orgRole: "viewer", userId: "user_viewer" }
+    );
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("PERMISSION_DENIED");
+    expect(effects).toBe(0);
+  });
+  test("honors final authorization for direct protected calls before any tool effect", async () => {
+    let effects = 0;
+    const result = await executeProtectedTool(
+      {
+        description: "Probe authorization",
+        name: "read_probe",
+        async run() {
+          effects += 1;
+          return { ok: true };
+        },
+      },
+      {},
+      {
+        beforeToolCall: async () => {
+          throw Object.assign(new Error("Access revoked"), {
+            code: "PERMISSION_DENIED",
+            retryable: false,
+          });
+        },
+      }
+    );
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("PERMISSION_DENIED");
+    expect(effects).toBe(0);
+  });
+
+  test("revalidates authorization before a safe retry after access is revoked", async () => {
+    let revoked = false;
+    let effects = 0;
+    const result = await executeProtectedTool(
+      {
+        description: "Probe retry authorization",
+        name: "read_probe",
+        retryPolicy: { initialDelayMs: 1, maxRetries: 2 },
+        async run() {
+          effects += 1;
+          revoked = true;
+          throw Object.assign(new Error("Transient failure"), {
+            code: "NETWORK_ERROR",
+          });
+        },
+      },
+      {},
+      {
+        beforeToolCall: async () => {
+          if (revoked) {
+            throw Object.assign(new Error("Access revoked"), {
+              code: "PERMISSION_DENIED",
+              retryable: false,
+            });
+          }
+        },
+      }
+    );
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("PERMISSION_DENIED");
+    expect(effects).toBe(1);
+  });
   test("reports truncation only when output was actually shortened", async () => {
     const text = "a".repeat(40_000);
     const base = { description: "Large result", name: "large_output" };

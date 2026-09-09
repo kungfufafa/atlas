@@ -903,6 +903,23 @@ describe("resolveWhatsAppOutboundDestination", () => {
     });
   });
 
+  test("denylist overrides a blocked paired owner for explicit and default destinations", () => {
+    const config = {
+      ...base,
+      accessMode: "denylist" as const,
+      blockedNumbers: ["6281111111111"],
+    };
+    expect("error" in resolveWhatsAppOutboundDestination(config)).toBe(true);
+    expect(
+      "error" in resolveWhatsAppOutboundDestination(config, "6281111111111")
+    ).toBe(true);
+    expect(resolveWhatsAppOutboundDestination(config, "6282222222222")).toEqual(
+      {
+        jid: "6282222222222@s.whatsapp.net",
+      }
+    );
+  });
+
   test("blocks destinations outside an allowlist", () => {
     const result = resolveWhatsAppOutboundDestination(
       {
@@ -991,6 +1008,59 @@ describe("WhatsApp LID identity", () => {
 });
 
 describe("isWhatsAppUserAuthorized with access modes", () => {
+  test("denylist cannot authorize an owner LID whose phone is unknown", () => {
+    expect(
+      isWhatsAppUserAuthorized("236283431522503@lid", {
+        accessMode: "denylist",
+        blockedNumbers: ["6281111111111"],
+        pairedJid: null,
+        pairedLid: "236283431522503@lid",
+      })
+    ).toBe(false);
+  });
+
+  test("denylist blocks the paired PN and its LID even without a phone hint", () => {
+    const config = {
+      accessMode: "denylist" as const,
+      allowedNumbers: [],
+      blockedNumbers: ["6281111111111"],
+      pairedJid: "6281111111111@s.whatsapp.net",
+      pairedLid: "236283431522503@lid",
+    };
+    for (const jid of [config.pairedJid, config.pairedLid]) {
+      expect(isWhatsAppUserAuthorized(jid, config)).toBe(false);
+      expect(
+        isWhatsAppUserAuthorized(jid, { ...config, blockedNumbers: [] })
+      ).toBe(true);
+    }
+  });
+
+  for (const accessMode of [
+    "pairing",
+    "open",
+    "allowlist",
+    "denylist",
+  ] as const) {
+    test(`${accessMode} rejects conflicting trusted phone aliases`, () => {
+      expect(
+        isWhatsAppUserAuthorized(
+          {
+            jid: "236283431522503@lid",
+            mappedPhoneJid: "6282222222222@s.whatsapp.net",
+            senderPn: "6281111111111@s.whatsapp.net",
+          },
+          {
+            accessMode,
+            allowedNumbers: ["6281111111111"],
+            blockedNumbers: ["6282222222222"],
+            pairedJid: "6281111111111@s.whatsapp.net",
+            pairedLid: "236283431522503@lid",
+          }
+        )
+      ).toBe(false);
+    });
+  }
+
   test("open mode authorizes any caller", () => {
     expect(
       isWhatsAppUserAuthorized("999999999@s.whatsapp.net", {

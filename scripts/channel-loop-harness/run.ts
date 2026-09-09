@@ -9,10 +9,12 @@ import {
 } from "@atlas/core/channel-org";
 import { getDiscordConfigPath } from "@atlas/core/discord-config";
 import { writePrivateTextFile } from "@atlas/core/fs";
+import { isChannelGuestUserId } from "@atlas/core/identity/principal";
 import {
   createWorkspaceWorkerAuthToken,
   loadLocalAuthToken,
 } from "@atlas/core/local-auth";
+import { redactStringValue } from "@atlas/core/secret-redaction";
 import { getTelegramConfigPath } from "@atlas/core/telegram-config";
 import { getWhatsAppConfigPath } from "@atlas/core/whatsapp-config";
 import { DiscordAuthStore } from "../../apps/platform/discord/src/auth-store";
@@ -44,6 +46,7 @@ import { TestDatabaseHarness } from "../release-gate/test-database-harness";
 import { TestTenantFactory } from "../release-gate/test-factories";
 import { notesTxt, salesCsv, salesXlsx } from "./fixtures";
 import {
+  type ChannelLoopApiRequest,
   registerChannelLoopScenarios,
   runChannelLoopScenarios,
   type ScenarioResult,
@@ -143,11 +146,29 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
     resetTelegramLocks();
     resetDiscordLocks();
 
+    await writeFile(
+      join(env.configDir, ".channel-loop-mock-runtime.json"),
+      JSON.stringify({
+        configDir: env.configDir,
+        runtime: "CHANNEL_LOOP_SYNTHETIC",
+      })
+    );
+
     atlasServer = new AtlasServerHarness({
       env,
       preferredPort: serverPort,
+      preloadPath: join(import.meta.dir, "disable-worker-processes.ts"),
     });
     const { baseUrl } = await atlasServer.start(30_000);
+    if (
+      !atlasServer.logs.some((line) =>
+        line.includes("CHANNEL_LOOP_WORKER_PROCESSES_DISABLED")
+      )
+    ) {
+      throw new Error(
+        "The isolated server did not confirm its worker-process boundary."
+      );
+    }
     console.log(`[atlas] ${baseUrl}`);
 
     const authToken = await loadLocalAuthToken();
@@ -155,9 +176,39 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
       throw new Error("Failed to mint local auth token for the isolated env.");
     }
 
+    const apiRequests: ChannelLoopApiRequest[] = [];
+    const transportFetch = globalThis.fetch;
+    const tracedFetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit
+    ) => {
+      const request = input instanceof Request ? input : undefined;
+      const url = new URL(request?.url ?? String(input));
+      const entry: ChannelLoopApiRequest = {
+        method: init?.method ?? request?.method ?? "GET",
+        path: url.pathname,
+      };
+      apiRequests.push(entry);
+      try {
+        const response = await transportFetch(input, init);
+        entry.status = response.status;
+        if (!response.ok) {
+          entry.error = redactStringValue(
+            (await response.clone().text()).slice(0, 2048)
+          );
+        }
+        return response;
+      } catch (error) {
+        entry.error = redactStringValue(
+          error instanceof Error ? error.message : String(error)
+        );
+        throw error;
+      }
+    }) as typeof fetch;
     const client = createClient({
       authToken,
       baseUrl,
+      fetch: tracedFetch,
       orgId: tenant.orgId,
     });
 
@@ -170,6 +221,7 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
           orgId: tenant.orgId,
         }),
         baseUrl,
+        fetch: tracedFetch,
         orgId: tenant.orgId,
         tokenAuth: true,
       });
@@ -201,6 +253,10 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
         ],
         [
           `documents/${notes.filename}`,
+          { bytes: notes.bytes, contentType: notes.mediaType },
+        ],
+        [
+          `cdn.channel-loop.test/${notes.filename}`,
           { bytes: notes.bytes, contentType: notes.mediaType },
         ],
         [
@@ -268,6 +324,32 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
     });
 
     const results = await runChannelLoopScenarios({
+      apiRequests,
+      assertGuestSession: async (channel, channelUserId) => {
+        const principal = await dbAdapter.getChannelOrgMapping(
+          tenant.orgId,
+          channel,
+          channelUserId
+        );
+        if (!isChannelGuestUserId(principal?.userId)) {
+          throw new Error(
+            "Unpaired attachment sender did not resolve to a guest identity."
+          );
+        }
+        const sessions = await dbAdapter.listSessions();
+        if (
+          !sessions.some(
+            (session) =>
+              session.channel === channel &&
+              session.userId === principal?.userId &&
+              session.orgId === tenant.orgId
+          )
+        ) {
+          throw new Error(
+            "Guest file turn did not use its own authorized channel session."
+          );
+        }
+      },
       authStore,
       client,
       discordHandle: (message) => discordHandler.handleMessage(message),
@@ -286,10 +368,21 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
       },
     });
 
-    const reportPath = join(hostTmp, "atlas-channel-loop-report.json");
+    const reportPath = join(
+      hostTmp,
+      `atlas-channel-loop-report-${env.runId}.json`
+    );
     const passed = results.filter((item) => item.status === "pass").length;
     const failed = results.filter((item) => item.status === "fail").length;
     const report = {
+      evidence: {
+        atlasServer: "REAL_ISOLATED_LOCAL_SERVER",
+        channelTransport: "MOCKED_DOWNLOAD_AND_SEND",
+        modelTransport: "LOCAL_MOCK_HTTP",
+        scope:
+          "Handler/server/file integration, not live provider inference or external message delivery.",
+        workerProcesses: "DISABLED_BY_EXPLICIT_TEST_SUBPROCESS_PRELOAD",
+      },
       failed,
       passed,
       results,
@@ -303,6 +396,9 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
       console.log(`[${mark}] ${result.id} (${result.durationMs}ms)`);
       if (result.status === "fail") {
         console.log(`       ${result.message}`);
+        console.log(
+          `       diagnostics: ${JSON.stringify(result.diagnostics)}`
+        );
       }
       for (const line of result.evidence) {
         console.log(`       ${line}`);
@@ -356,6 +452,7 @@ async function writeChannelConfigs(): Promise<void> {
     getTelegramConfigPath(),
     [
       "# Atlas Telegram bridge",
+      "access_mode=open",
       "bot_token=1234567890:CHANNELLOOP",
       "profile_id=default",
       "paired_user_ids=4242,4243",
@@ -368,6 +465,7 @@ async function writeChannelConfigs(): Promise<void> {
     getDiscordConfigPath(),
     [
       "# Atlas Discord bridge",
+      "access_mode=open",
       "bot_token=discord-bot-token",
       "profile_id=default",
       "paired_user_ids=424242424242424242,424242424242424243",

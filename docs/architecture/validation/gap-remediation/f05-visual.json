@@ -1,0 +1,24 @@
+{
+  "case": "F05",
+  "attempt": "gap-remediation-20260906",
+  "inputFontBytes": 23278008,
+  "inputFontSha256": "876af2cd4854644e7f3e7feb2f688997fdb3343c6df6693611209c9dfb47ccec",
+  "outputSha256": "a2c0a2de686e2a048de5eebedc7499b4bcc9cab6bb097802864838e989e543a9",
+  "outputBytes": 21872,
+  "pageCount": 1,
+  "oracle": "pypdf 6.17.0",
+  "extractedText": "Révision approuvée — تمت المراجعة — 東京",
+  "exactUnicodeMatch": true,
+  "render": {
+    "tool": "Poppler pdftoppm",
+    "dpi": 130,
+    "fontconfig": "explicit host fonts and disposable /tmp cache",
+    "png": "f05-multilingual.png",
+    "sha256": "95a4b86a097ac1abbbc5afb498c19dbae46d6a913a8bb750a394efba0baff7b9"
+  },
+  "visualReview": {
+    "verdict": "pass",
+    "observations": "Latin accents and punctuation, connected Arabic glyphs in right-to-left order, and CJK 東京 are visible and readable. No missing glyph boxes, overlap, clipping or page overflow in this one-line fixture.",
+    "scope": "One-page corpus fixture only; does not establish all languages, bidirectional layouts or font formats."
+  }
+}

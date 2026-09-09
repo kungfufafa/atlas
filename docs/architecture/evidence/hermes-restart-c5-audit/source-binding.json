@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-06T23:01:43.608964+00:00",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "all2078SourceBytesStillMatch": true,
+  "inventorySha256": "2e88c012fb83968bd575dc17b8092517df97e01950ba30b5cda8a928686d631f",
+  "sourceFiles": {
+    "apps/server/src/services/chat-tool-approval-service.ts": "a02f7030940c181ec7b865ca47a111cb46964644a9bcac9fb54895f71f7667c9",
+    "apps/server/src/services/execution-plane-service.ts": "d436aaea0b4e81b4d6549dd543ad3358d3650111d756ec97e8bdae2d75c2acda",
+    "apps/server/src/services/session-turn-registry.ts": "1161af8162960922e8f6b81add194e98315f81521b8cb435de9d9780c7ba6673",
+    "apps/server/src/services/agent-service.ts": "0e328e4a2b6787ead5f1136a9b0b1902b4eb30f3b3dcbf599498ebbeab88f4b0",
+    "packages/core/src/tools/execution.ts": "67985f914b0c4c5a2acedc39546a3e66106f44e7eb490a579d7a9d58cbc58805",
+    "packages/core/src/approval-grant.ts": "9ee8a09071e4779113476c9dfe4108615c643190fb78b43f5ef4871a2c7d4c2a",
+    "packages/core/src/execution/run-state.ts": "e146ce308cb6ba7d3b995bf6d092cfdedb73353ff210839a1b1fa501ef366ad0",
+    "packages/db/src/adapters/sqlite.ts": "53c0c20e17f08fee99855edb609de5cc0c410804bec1728452558e39106c455c",
+    "packages/db/sql/schema.sql": "4ad94877e1483e9f156c896985cac6f12ef3b638ff7a77218ea3a6575273d598"
+  }
+}

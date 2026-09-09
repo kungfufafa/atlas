@@ -1,0 +1,67 @@
+{
+  "status": "posthoc-development-diagnostics-not-rescoring",
+  "scope": "All72 ended arms inventoried; all13 frozen strict failures reviewed. Thirty arms independently recomputed across five families, including passing controls. Does not certify every intermediate claim in all72 trajectories.",
+  "originalStrictSuccess": {
+    "atlas": {
+      "passed": 28,
+      "total": 36
+    },
+    "hermes": {
+      "passed": 31,
+      "total": 36
+    }
+  },
+  "failureClassification": {
+    "atlas": {
+      "extraFinalField": 3,
+      "vendorNameCase": 2,
+      "revisionRepresentation": 2,
+      "pendingRowIncluded": 1
+    },
+    "hermes": {
+      "extraFinalField": 1,
+      "revisionRepresentation": 2,
+      "surroundingFinalProse": 1,
+      "nativePostprocessorWarningOutsideJson": 1
+    }
+  },
+  "qualification": "Revision JSON type was not explicit; capitalized names conventionally imply the shown title case but exact casing was not enumerated. Representation mismatches remain original strict failures. No changed cutoff, replacement score, equivalence or universal quality claim.",
+  "evidence": [
+    {
+      "path": "root-census.json",
+      "source": "/private/tmp/atlas-controlled-candidate3-audit/root-census.json",
+      "sha256": "a826cb5bc4f20c00b7d9fd21a541ed88ad7b53bf3dd42787fb5e8af8a7beaa8b"
+    },
+    {
+      "path": "audit-selected.py",
+      "source": "/private/tmp/atlas-controlled-candidate3-audit/audit-selected.py",
+      "sha256": "e705e86bdf6be421d442a9d809c75b2a48ad99ab16b92ea2c5df0e09b40b447f"
+    },
+    {
+      "path": "source-grounding-audit.json",
+      "source": "/private/tmp/atlas-source-grounding-independent-review/source-grounding-audit.json",
+      "sha256": "9837a770ec425ed5aec8336cb680da873db367e3c7f2cd5fd1358c9b05a4eae4"
+    },
+    {
+      "path": "source-grounding-audit.md",
+      "source": "/private/tmp/atlas-source-grounding-independent-review/source-grounding-audit.md",
+      "sha256": "f08532a8401e5719b50cd4c3cf7875ddc6fdf2fd77c4125d680c2ad9a170b59b"
+    }
+  ],
+  "taskContractAudit": {
+    "scope": "All36 development tasks /45 turns /12 families; reviewer did not inspect outcomes or holdout. Per-field explicit/source-implied/conventional type and normalization assessment. Requested focus from root is recorded.",
+    "conclusion": "No hard contradiction; limited unspecified revision/type, label/case and normalized path/date representations. Strict labels remain unchanged.",
+    "evidence": [
+      {
+        "path": "task-contract-audit.json",
+        "source": "/private/tmp/atlas-controlled-v2-contract-audit/report.json",
+        "sha256": "2a1affb10dd54a2a9b4657651ed6895770d507c97939454dadc4c1b586bb1693"
+      },
+      {
+        "path": "task-contract-audit.md",
+        "source": "/private/tmp/atlas-controlled-v2-contract-audit/report.md",
+        "sha256": "c4c6e9a81dee1917a0da9a413892b3b730ea562d3ca50e1dd728a930c5acc6fa"
+      }
+    ]
+  }
+}

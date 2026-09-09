@@ -1,0 +1,18 @@
+{
+  "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-development-raw",
+  "archiverProviderCalls": 0,
+  "archiverRescores": 0,
+  "archiverTests": 0,
+  "at": "2026-09-07T07:12:34.020205+00:00",
+  "bytes": 122647462,
+  "copiedRuntimeRegularFiles": 485,
+  "files": 2237,
+  "manifestSha256": "1b6ea2632ad489265eccc009faecd9a47577f27221293c74f0e43fdbaba13dc0",
+  "missingNativeRoots": 0,
+  "nativeRoots": 36,
+  "postPromotionHashesModesCensusVerified": true,
+  "recordedSymlinks": 0,
+  "scannerBytes": 389716824,
+  "scannerStreams": 12852,
+  "sourceRetained": true
+}

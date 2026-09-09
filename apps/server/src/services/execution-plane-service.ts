@@ -30,12 +30,14 @@ export class ExecutionPlaneService {
   async startChatRun(input: {
     idempotencyKey?: string | null;
     principal: CanonicalPrincipal;
+    runId?: string;
     sessionId: string;
   }) {
     return this.startRun({
       idempotencyKey: input.idempotencyKey,
       kind: "chat",
       principal: input.principal,
+      runId: input.runId,
       sessionId: input.sessionId,
     });
   }
@@ -205,10 +207,11 @@ export class ExecutionPlaneService {
     idempotencyKey?: string | null;
     kind: DurableExecutionRun["kind"];
     principal: CanonicalPrincipal;
+    runId?: string;
     sessionId?: string | null;
   }) {
     const run = createQueuedRun({
-      id: nanoid(),
+      id: input.runId ?? nanoid(),
       idempotencyKey: input.idempotencyKey ?? null,
       kind: input.kind,
       orgId: input.principal.orgId,

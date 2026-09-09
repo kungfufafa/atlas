@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-06T23:06:02.720226+00:00",
+  "files": [
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/report.md",
+      "sha256": "88ece57125e28cd20e3f14805b73cc0c7447109ce8cc02f51977dc883a466d33"
+    },
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/reference.json",
+      "sha256": "3922a7c8e3a5b2aa2136da4a5408662834afe5ac7ce643e1f9b4f4bafb8d00bd"
+    },
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/audit.py",
+      "sha256": "575f6b80bb125da66882e0fbb2b90e26b86d2c600eb4dc38def6ef1b6c9d9152"
+    },
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/run.log",
+      "sha256": "bb5181cf831fc3a79b341eab8960dc588d60063afcad4a4efc9222ad09907183"
+    },
+    {
+      "path": "/private/tmp/atlas-prompt-overhead-audit/control-bindings.json",
+      "sha256": "8997d99f46bd4870564dde86a5a14990426ef46c6be9d18c2733a718805e81d0"
+    }
+  ],
+  "validation": "A separate arithmetic/hash pass reconciled all machine-output hashes, 855 request rows, 96 arm rows, per-harness prompt subtotals, 48 openings per harness and four missing prompt observations. This is not an independent-agent review."
+}

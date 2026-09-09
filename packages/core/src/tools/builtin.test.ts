@@ -38,6 +38,41 @@ describe("file builtin tools", () => {
   let tempDir = "";
   let configDir = "";
 
+  test("generic text tools cannot create or edit binary office/PDF containers", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-binary-guard-"));
+    const context = { ...PROFILE_CONTEXT, workspaceRoot: tempDir };
+    for (const extension of ["pdf", "pptx", "xlsx", "xls", "zip"]) {
+      await expect(
+        runWriteFile(
+          {
+            content: "This is plain text",
+            path: `artifacts/report.${extension}`,
+          },
+          context
+        )
+      ).rejects.toThrow();
+      await writeFile(
+        path.join(tempDir, `source.${extension}`),
+        "original binary placeholder"
+      );
+      await expect(
+        runEditFile(
+          {
+            edits: [{ newText: "changed", oldText: "original" }],
+            path: `source.${extension}`,
+          },
+          context
+        )
+      ).rejects.toThrow();
+      expect(
+        await readFile(path.join(tempDir, `source.${extension}`), "utf8")
+      ).toBe("original binary placeholder");
+      await expect(
+        runReadFile({ path: `source.${extension}` }, context)
+      ).rejects.toThrow();
+    }
+  });
+
   afterEach(async () => {
     if (tempDir) {
       await rm(tempDir, { force: true, recursive: true });

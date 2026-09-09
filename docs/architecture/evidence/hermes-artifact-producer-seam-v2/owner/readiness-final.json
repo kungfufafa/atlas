@@ -1,0 +1,55 @@
+{
+  "at": "2026-09-07T00:32:47.951454+00:00",
+  "status": "bounded owner gates and independent source review complete; unwired",
+  "componentReadyForIntegrationReview": true,
+  "productionActivationReady": false,
+  "baselineSourceHash": "17a262bf4fd5ab96f72fe4e7ca741cc0066542c321b037c70f713e35a621faeb",
+  "sourceHash": "387f0723afe934f8a8ee36b1d6e74d17fa98295d5456d9e2ee3667ae0ef961e0",
+  "sourceFiles": 2086,
+  "changedFiles": [
+    "apps/server/src/services/artifact-producer-seam.test.ts",
+    "packages/core/src/files/assets.ts",
+    "packages/core/src/tools/spreadsheet-io.ts"
+  ],
+  "publicSeamChanged": false,
+  "patches": {
+    "component.patch": "eb2a885a4e0d51ec9c285fee71f965895ba76769d1fb3271f63c124994536fa4",
+    "production.patch": "a04d5e77800210a29660ecc59d4e0c23de772b7a1795ed79b1fce1951bb581cd",
+    "source-inventory.json": "1711d5c7aa6507ad778f9521f40445ebe6278c453c7aedfe4ed897f194c8be72",
+    "gates.json": "4b8d4e8feee0836c1e097875450e7275a57dbf5db807471adf98aed3a7d5a23a",
+    "implementation-notes.md": "383a9ef175401c2c59ce0c74fff9b8175f79aac3ecfe636fa7183df431f90986"
+  },
+  "finalOwnerGates": {
+    "tests": 73,
+    "assertions": 343,
+    "files": 6,
+    "newV2Tests": 3,
+    "scopedTypecheckExitCode": 0,
+    "lintFiles": 3,
+    "lintExitCode": 0,
+    "patchCheckExitCode": 0,
+    "fullProductionTypecheckRun": false
+  },
+  "frozenSourcesUnchanged": {
+    "rootC5": 2078,
+    "foundation": 2085,
+    "producerV1": 2086
+  },
+  "producerV1EvidenceUnchanged": true,
+  "producerV1IndependentReview": {
+    "path": "/private/tmp/atlas-artifact-producer-seam-independent-review/review.json",
+    "sha256": "fc12e4ab0656d736d09210934fbefd6e19b97cb4cf44236587d9d4d691bcb8f4"
+  },
+  "independentReview": {
+    "path": "/private/tmp/atlas-artifact-producer-seam-v2-independent-review/review.json",
+    "sha256": "e2a1b9a59b31290bcae8ec41a7e0bb1c72a80ecbd9efcb1c35b39582a4252f07"
+  },
+  "rootEdits": 0,
+  "providerCalls": 0,
+  "limitations": [
+    "Explicit nested cwd document files are preserved but do not obtain canonical publication authority.",
+    "No public seam or destination eligibility expansion; no producer replay.",
+    "Unwired lifecycle and legacy consumers remain.",
+    "Prior foundation and v1 limitations still apply; no complete artifact race fix or parity claim."
+  ]
+}

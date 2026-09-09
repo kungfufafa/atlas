@@ -256,8 +256,10 @@ export async function run() {
       {}
     );
 
-    expect(result.errorCode).toBe("INTERNAL_ERROR");
-    expect(result.error).toContain("side effect attempt 1");
+    expect(result).toMatchObject({
+      error: expect.stringContaining("side effect attempt 1"),
+      errorCode: "INTERNAL_ERROR",
+    });
   });
 
   test("revokes retry opt-in immediately after a module reload", async () => {

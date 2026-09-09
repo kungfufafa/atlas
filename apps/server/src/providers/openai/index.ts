@@ -510,7 +510,8 @@ async function requestChatCompletion(
 
   assertChatCompletionFinishReason(
     payload.choices?.[0]?.finish_reason,
-    client.label
+    client.label,
+    payload
   );
   const message = payload.choices?.[0]?.message;
   const toolCalls = parseOpenAIToolCalls(message?.tool_calls);
@@ -611,7 +612,8 @@ async function requestCompletion(
 
   assertChatCompletionFinishReason(
     payload.choices?.[0]?.finish_reason,
-    client.label
+    client.label,
+    payload
   );
   const content = payload.choices?.[0]?.message?.content?.trim();
   const usage = extractOpenAITokenUsage(

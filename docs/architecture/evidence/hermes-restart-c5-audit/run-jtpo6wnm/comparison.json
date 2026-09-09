@@ -1,0 +1,59 @@
+{
+  "beforeEffectOperationalState": {
+    "runStatus": "running",
+    "checkpoint": {
+      "remainingToolCalls": [
+        {
+          "arguments": {
+            "path": "disposable-counter"
+          },
+          "id": "call-restart-approval",
+          "name": "delete_file"
+        }
+      ],
+      "resumeStepIndex": 0
+    },
+    "approvalStatus": "approved",
+    "actionHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+    "argsJson": "{\"path\":\"disposable-counter\"}",
+    "stepStatus": "running",
+    "resultJson": null,
+    "history": null,
+    "registry": {
+      "active": false
+    },
+    "oldGrantInProcess": null
+  },
+  "afterEffectOperationalState": {
+    "runStatus": "running",
+    "checkpoint": {
+      "remainingToolCalls": [
+        {
+          "arguments": {
+            "path": "disposable-counter"
+          },
+          "id": "call-restart-approval",
+          "name": "delete_file"
+        }
+      ],
+      "resumeStepIndex": 0
+    },
+    "approvalStatus": "approved",
+    "actionHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+    "argsJson": "{\"path\":\"disposable-counter\"}",
+    "stepStatus": "running",
+    "resultJson": null,
+    "history": null,
+    "registry": {
+      "active": false
+    },
+    "oldGrantInProcess": null
+  },
+  "operationalStateEqual": true,
+  "beforeEffectCounter": 0,
+  "afterEffectCounter": 1,
+  "observedDuplicateEffect": false,
+  "automaticResumeSupported": false,
+  "freshExplicitApprovalSupported": true,
+  "elapsedSeconds": 4.123464666001382
+}

@@ -1,0 +1,534 @@
+diff --git a/apps/server/src/tools/memory-tools.ts b/apps/server/src/tools/memory-tools.ts
+--- a/apps/server/src/tools/memory-tools.ts
++++ b/apps/server/src/tools/memory-tools.ts
+@@ -5,10 +5,16 @@
+ import { z } from "zod";
+ import type { MemoryService } from "../services/memory-service";
+ 
+-const memoryScopeSchema = z
++const memoryWriteScopeSchema = z
++  .enum(["user", "organization", "agent"])
++  .describe(
++    "Audience across sessions within this organization: 'user' for the current user's memory; 'agent' for memory shared with users of the current profile; 'organization' for workspace-shared memory whose changes require an administrator. Choose the intended audience, not the topic."
++  );
++
++const memoryReadScopeSchema = z
+   .enum(["user", "project", "organization", "agent"])
+   .describe(
+-    "Memory scope: 'user' for user preferences, 'project' for workspace/project facts, 'organization' for company facts, 'agent' for profile persona."
++    "Filter by current user, current profile ('agent'), or organization. 'project' is a legacy filter for records owned by the current session only; it does not provide shared project memory. Omitting scope searches the user, agent and organization audiences."
+   );
+ 
+ export const memorySearchInputSchema = z.object({
+@@ -16,7 +22,7 @@
+   query: z
+     .string()
+     .describe("Search keywords or natural language query for memories"),
+-  scope: memoryScopeSchema.optional().describe("Optional scope filter"),
++  scope: memoryReadScopeSchema.optional(),
+ });
+ 
+ export const memoryWriteInputSchema = z.object({
+@@ -33,11 +39,7 @@
+     .optional()
+     .default(1)
+     .describe("Importance from 1 (low) to 5 (critical)"),
+-  projectId: z
+-    .string()
+-    .optional()
+-    .describe("Project ID when scope is 'project'"),
+-  scope: memoryScopeSchema.optional().default("user"),
++  scope: memoryWriteScopeSchema.optional().default("user"),
+   subject: z
+     .string()
+     .optional()
+@@ -60,8 +62,19 @@
+ 
+ export const memoryListInputSchema = z.object({
+   limit: z.number().int().min(1).max(100).optional().default(20),
+-  scope: memoryScopeSchema.optional(),
+-});
++  scope: memoryReadScopeSchema.optional(),
++});
++
++function rejectUnboundProjectWrite(input: unknown): void {
++  if (typeof input !== "object" || input === null) {
++    return;
++  }
++  if (("scope" in input && input.scope === "project") || "projectId" in input) {
++    throw new Error(
++      "Project memory cannot be written without a trusted shared project context. No memory was saved. Choose 'user' for the current user's memory, 'agent' for memory shared with the current profile, or 'organization' for workspace-shared memory with administrator authority. Do not change the intended audience without authorization."
++    );
++  }
++}
+ 
+ function canWriteOrganizationMemory(context: ToolContext): boolean {
+   return context.orgRole === "admin" || context.isPlatformAdmin === true;
+@@ -75,11 +88,7 @@
+   return orgId;
+ }
+ 
+-function resolveOwnerId(
+-  scope: MemoryScope,
+-  context: ToolContext,
+-  projectId?: string
+-): string {
++function resolveOwnerId(scope: MemoryScope, context: ToolContext): string {
+   const principal = principalFromToolContext(context);
+   if (scope === "user") {
+     return principal.userId;
+@@ -92,9 +101,11 @@
+     return profileId;
+   }
+   if (scope === "project") {
+-    const owner = projectId?.trim() || context.sessionId?.trim();
++    const owner = context.sessionId?.trim();
+     if (!owner) {
+-      throw new Error("projectId or sessionId is required for project memory.");
++      throw new Error(
++        "sessionId is required to access legacy session-owned project memory."
++      );
+     }
+     return owner;
+   }
+@@ -132,7 +143,7 @@
+ ): ToolDefinition[] {
+   const memorySearchTool: ToolDefinition = {
+     description:
+-      "Search durable memories across user preferences, project knowledge, organization rules, or agent profile facts.",
++      "Search durable memories for the current user, profile, or organization. An explicit 'project' filter accesses only legacy records owned by the current session, not shared project knowledge.",
+     name: "memory_search",
+     parallelSafe: true,
+     parameters: jsonSchemaFromZod(memorySearchInputSchema),
+@@ -169,11 +180,14 @@
+ 
+   const memoryWriteTool: ToolDefinition = {
+     description:
+-      "Save an independent durable fact, preference, or operating guideline for the user, project, organization, or agent. Existing facts are preserved, even with the same subject; an exact repeated fact reuses its record. For a correction or withdrawal of an existing fact, use memory_update on its ID rather than adding another current version.",
++      "Save an independent durable fact, preference, or operating guideline for the current user, profile, or organization across sessions. Scope selects who can access it; shared project context is not supported. Existing facts are preserved, even with the same subject; an exact repeated fact reuses its record. For a correction or withdrawal of an existing fact, use memory_update on its ID rather than adding another current version.",
+     name: "memory_write",
+     parallelSafe: false,
+     parameters: jsonSchemaFromZod(memoryWriteInputSchema),
+     async run(input, context) {
++      // Reject legacy arguments before Zod can strip an unknown projectId and
++      // accidentally save the fact for a different audience.
++      rejectUnboundProjectWrite(input);
+       const parsed = memoryWriteInputSchema.parse(input);
+       const orgId = requireOrgId(context);
+       parsed.content = applyRedactionBoundary(parsed.content, "memory");
+@@ -185,7 +199,7 @@
+           "Workspace Admin access required to write organization memories."
+         );
+       }
+-      const ownerId = resolveOwnerId(parsed.scope, context, parsed.projectId);
++      const ownerId = resolveOwnerId(parsed.scope, context);
+ 
+       const saved = await memoryService.writeMemory(
+         orgId,
+@@ -264,7 +278,7 @@
+ 
+   const memoryListTool: ToolDefinition = {
+     description:
+-      "List durable memories for the current user, agent, or organization.",
++      "List durable memories for the current user, profile, or organization. An explicit 'project' filter lists only legacy records owned by the current session, not shared project knowledge.",
+     name: "memory_list",
+     parallelSafe: true,
+     parameters: jsonSchemaFromZod(memoryListInputSchema),
+--- a/apps/server/src/tools/conversation-tools.ts
++++ b/apps/server/src/tools/conversation-tools.ts
+@@ -19,7 +19,9 @@
+   query: z
+     .string()
+     .min(1)
+-    .describe("Search query to find in past conversations and sessions"),
++    .describe(
++      "Keywords or a natural-language query for past conversations. Distinctive names and terms improve lexical matching."
++    ),
+ });
+ 
+ export const getConversationInputSchema = z.object({
+@@ -69,6 +71,7 @@
+         before: parsed.before,
+         excludeSuperAgent,
+         limit: parsed.limit,
++        matchMode: "keywords",
+         profileId: parsed.profileId,
+         userId: principal.userId,
+       });
+--- a/packages/db/src/adapters/in-memory.ts
++++ b/packages/db/src/adapters/in-memory.ts
+@@ -5,6 +5,10 @@
+ } from "@atlas/core";
+ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+ import { LLM_USAGE_STATS_ID } from "../constants";
++import {
++  ConversationKeywordSearch,
++  readConversationMessagePayload,
++} from "../conversation-keyword-search";
+ import { isExactMemoryFact } from "../memory-identity";
+ import {
+   boundedMemoryTerms,
+@@ -143,27 +147,6 @@
+     currentConfig !== null &&
+     currentConfig === canonicalJson(expected.handlerConfig)
+   );
+-}
+-
+-function readConversationMessagePayload(payload: unknown): {
+-  role: string;
+-  text: string;
+-} {
+-  if (typeof payload === "string") {
+-    return { role: "user", text: payload };
+-  }
+-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+-    return { role: "user", text: JSON.stringify(payload ?? "") };
+-  }
+-
+-  const record = payload as Record<string, unknown>;
+-  return {
+-    role: typeof record.role === "string" ? record.role : "user",
+-    text:
+-      typeof record.content === "string"
+-        ? record.content
+-        : JSON.stringify(record.content ?? ""),
+-  };
+ }
+ 
+ const IN_MEMORY_ACTIVE_EXECUTION_STATUSES = new Set([
+@@ -2319,6 +2302,14 @@
+         return [];
+       }
+ 
++      const keywords =
++        options.matchMode === "keywords"
++          ? new ConversationKeywordSearch(clean, options.limit)
++          : undefined;
++      if (keywords?.empty) {
++        return [];
++      }
++
+       const needle = clean.toLowerCase();
+       const results = [];
+       for (const session of sessions.values()) {
+@@ -2353,6 +2344,15 @@
+           );
+         }
+         const seen = new Set<string>();
++        if (keywords) {
++          candidates.sort(
++            (left, right) =>
++              Number(Boolean(left.archiveId)) -
++                Number(Boolean(right.archiveId)) ||
++              right.createdAt.localeCompare(left.createdAt) ||
++              Buffer.compare(Buffer.from(right.id), Buffer.from(left.id))
++          );
++        }
+         for (const message of candidates) {
+           const serialized = JSON.stringify(message.payload);
+           if (seen.has(serialized)) {
+@@ -2366,6 +2366,26 @@
+             continue;
+           }
+           const parsed = readConversationMessagePayload(message.payload);
++          if (keywords) {
++            keywords.add(
++              {
++                ...(message.archiveId
++                  ? {
++                      archivedAt: message.createdAt,
++                      archiveId: message.archiveId,
++                    }
++                  : {}),
++                createdAt: message.createdAt,
++                messageId: message.id,
++                profileId: session.profileId,
++                role: parsed.role,
++                sessionId: session.id,
++                sessionTitle: session.title ?? null,
++              },
++              parsed.text
++            );
++            continue;
++          }
+           const matchIndex = parsed.text.toLowerCase().indexOf(needle);
+           if (matchIndex < 0) {
+             continue;
+@@ -2390,6 +2410,9 @@
+         }
+       }
+ 
++      if (keywords) {
++        return keywords.results();
++      }
+       results.sort((left, right) =>
+         right.createdAt.localeCompare(left.createdAt)
+       );
+--- a/packages/db/src/adapters/sqlite.ts
++++ b/packages/db/src/adapters/sqlite.ts
+@@ -8,6 +8,10 @@
+ } from "@atlas/core";
+ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+ import { LLM_USAGE_STATS_ID, WORKSPACE_SETTINGS_ID } from "../constants";
++import {
++  ConversationKeywordSearch,
++  readConversationMessagePayload,
++} from "../conversation-keyword-search";
+ import { ensureDatabaseDirectory, resolveDatabasePath } from "../database-url";
+ import { isExactMemoryFact } from "../memory-identity";
+ import {
+@@ -68,6 +72,11 @@
+   StoredUserRecord,
+   StoredWorkspaceSettingsRecord,
+ } from "../types";
++
++// json_each decodes scalar elements. Re-encode them so a single JSON parse
++// preserves string/object identity in both deduplication and transcript reads.
++const ARCHIVED_CONVERSATION_PAYLOAD_SQL =
++  "CASE WHEN j.type IN ('object', 'array') THEN j.value WHEN j.type IN ('true', 'false') THEN j.type ELSE json_quote(j.value) END";
+ 
+ export interface SqliteDatabase {
+   adapter: DatabaseAdapter;
+@@ -3100,7 +3109,7 @@
+         archive
+           ? db
+               .prepare(
+-                "SELECT a.id || ':' || j.key AS id, CAST(j.key AS INTEGER) AS seq, j.value AS payload, a.created_at FROM session_history_archives a, json_each(a.messages) j WHERE a.id = ? AND a.session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?"
++                `SELECT a.id || ':' || j.key AS id, CAST(j.key AS INTEGER) AS seq, ${ARCHIVED_CONVERSATION_PAYLOAD_SQL} AS payload, a.created_at FROM session_history_archives a, json_each(a.messages) j WHERE a.id = ? AND a.session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?`
+               )
+               .all(options.archiveId!, sessionId, limit, offset)
+           : db
+@@ -3116,18 +3125,13 @@
+       }>;
+ 
+       const messages: StoredConversationMessageItem[] = messageRows.map((m) => {
+-        let text = "";
+-        let role = "user";
++        let payload: unknown;
+         try {
+-          const parsed = JSON.parse(m.payload);
+-          role = parsed.role || "user";
+-          text =
+-            typeof parsed.content === "string"
+-              ? parsed.content
+-              : JSON.stringify(parsed.content || "");
++          payload = JSON.parse(m.payload);
+         } catch {
+-          text = m.payload;
++          payload = m.payload;
+         }
++        const { text, role } = readConversationMessagePayload(payload);
+         return {
+           createdAt: m.created_at,
+           id: m.id,
+@@ -4396,6 +4400,17 @@
+         return [];
+       }
+ 
++      const keywords =
++        options.matchMode === "keywords"
++          ? new ConversationKeywordSearch(clean, options.limit)
++          : undefined;
++      if (keywords?.empty) {
++        return [];
++      }
++
++      const archivedPayload = keywords
++        ? ARCHIVED_CONVERSATION_PAYLOAD_SQL
++        : "j.value";
+       let sql = `
+         WITH all_messages AS (
+           SELECT m.id AS message_id, m.session_id, m.payload, m.created_at, NULL AS archive_id
+@@ -4403,7 +4418,7 @@
+           INNER JOIN sessions owner ON owner.id = m.session_id
+           WHERE owner.org_id = ?
+           UNION ALL
+-          SELECT a.id || ':' || j.key AS message_id, a.session_id, j.value AS payload,
++          SELECT a.id || ':' || j.key AS message_id, a.session_id, ${archivedPayload} AS payload,
+             a.created_at, a.id AS archive_id
+           FROM session_history_archives a
+           INNER JOIN sessions owner ON owner.id = a.session_id
+@@ -4450,6 +4465,45 @@
+       if (options.before) {
+         sql += " AND m.created_at <= ?";
+         params.push(options.before);
++      }
++
++      if (keywords) {
++        // Keep all existing tenant/owner/profile/date/archive guards. Stream
++        // eligible rows into a bounded collector; recent weak matches must not
++        // hide older relevant messages through a premature SQL result limit.
++        const rows = db.prepare(sql).iterate(...params) as Iterable<{
++          archive_id: string | null;
++          created_at: string;
++          message_id: string;
++          payload: string;
++          profile_id: string;
++          session_id: string;
++          session_title: string | null;
++        }>;
++        for (const row of rows) {
++          let payload: unknown;
++          try {
++            payload = JSON.parse(row.payload);
++          } catch {
++            payload = row.payload;
++          }
++          const parsed = readConversationMessagePayload(payload);
++          keywords.add(
++            {
++              ...(row.archive_id
++                ? { archivedAt: row.created_at, archiveId: row.archive_id }
++                : {}),
++              createdAt: row.created_at,
++              messageId: row.message_id,
++              profileId: row.profile_id,
++              role: parsed.role,
++              sessionId: row.session_id,
++              sessionTitle: row.session_title,
++            },
++            parsed.text
++          );
++        }
++        return keywords.results();
+       }
+ 
+       sql += " AND m.payload LIKE ?";
+--- /dev/null
++++ b/packages/db/src/conversation-keyword-search.ts
+@@ -0,0 +1,114 @@
++import {
++  memoryResultLimit,
++  memoryTermWeight,
++  normalizeMemoryText,
++  tokenizeMemoryQuery,
++} from "./memory-search";
++import type { StoredConversationSearchResult } from "./types";
++
++type SearchIdentity = Omit<StoredConversationSearchResult, "matchedSnippet">;
++type RankedMatch = { result: StoredConversationSearchResult; score: number };
++
++export function readConversationMessagePayload(payload: unknown): {
++  role: string;
++  text: string;
++} {
++  if (typeof payload === "string") {
++    return { role: "user", text: payload };
++  }
++  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
++    return { role: "user", text: JSON.stringify(payload ?? "") };
++  }
++  const record = payload as Record<string, unknown>;
++  return {
++    role: typeof record.role === "string" ? record.role : "user",
++    text:
++      typeof record.content === "string"
++        ? record.content
++        : JSON.stringify(record.content ?? ""),
++  };
++}
++
++function compareMatches(left: RankedMatch, right: RankedMatch): number {
++  return (
++    right.score - left.score ||
++    right.result.createdAt.localeCompare(left.result.createdAt) ||
++    left.result.sessionId.localeCompare(right.result.sessionId) ||
++    left.result.messageId.localeCompare(right.result.messageId)
++  );
++}
++
++function snippet(text: string, terms: readonly string[]): string {
++  const lower = text.toLowerCase();
++  let index = -1;
++  for (const term of terms) {
++    const found = lower.indexOf(term);
++    if (found >= 0 && (index < 0 || found < index)) {
++      index = found;
++    }
++  }
++  // NFKC can change character offsets. Preserve the original text rather than
++  // invent a source offset when only its normalized spelling matched.
++  const start = index < 0 ? 0 : Math.max(0, index - 80);
++  const end = Math.min(text.length, start + 240);
++  return `${start ? "..." : ""}${text.slice(start, end)}${end < text.length ? "..." : ""}`;
++}
++
++/** Bounded query/results; callers supply only authorized, deduplicated rows.
++ * Ranking scans the eligible history before the result limit. It is lexical
++ * retrieval, not semantic search; full history scanning remains linear.
++ */
++export class ConversationKeywordSearch {
++  private readonly terms: string[];
++  private readonly limit: number;
++  private readonly matches: RankedMatch[] = [];
++
++  constructor(query: string, limit?: number) {
++    this.terms = tokenizeMemoryQuery(query);
++    this.limit = memoryResultLimit(limit, 20);
++  }
++
++  get empty(): boolean {
++    return this.terms.length === 0 || this.limit === 0;
++  }
++
++  add(identity: SearchIdentity, text: string): void {
++    if (this.empty) {
++      return;
++    }
++    const normalized = normalizeMemoryText(text);
++    let score = 0;
++    for (const term of this.terms) {
++      if (normalized.includes(term)) {
++        score += memoryTermWeight(term);
++      }
++    }
++    if (score === 0) {
++      return;
++    }
++    const match: RankedMatch = {
++      result: { ...identity, matchedSnippet: snippet(text, this.terms) },
++      score,
++    };
++    let low = 0;
++    let high = this.matches.length;
++    while (low < high) {
++      const middle = Math.floor((low + high) / 2);
++      if (compareMatches(match, this.matches[middle]!) < 0) {
++        high = middle;
++      } else {
++        low = middle + 1;
++      }
++    }
++    if (low < this.limit) {
++      this.matches.splice(low, 0, match);
++      if (this.matches.length > this.limit) {
++        this.matches.pop();
++      }
++    }
++  }
++
++  results(): StoredConversationSearchResult[] {
++    return this.matches.map(({ result }) => result);
++  }
++}
+--- a/packages/db/src/memory-search.ts
++++ b/packages/db/src/memory-search.ts
+@@ -39,7 +39,6 @@
+   for (const part of WORDS.segment(normalized)) {
+     const term = part.segment;
+     if (
+-      part.isWordLike &&
+       HAS_WORD.test(term) &&
+       term.length <= MAX_TERM_CHARS &&
+       !STOP_WORDS.has(term)
+--- a/packages/db/src/types.ts
++++ b/packages/db/src/types.ts
+@@ -1374,6 +1374,8 @@
+       before?: string;
+       excludeSuperAgent?: boolean;
+       limit?: number;
++      /** Native topic lookup opts into bounded lexical ranking; default stays literal. */
++      matchMode?: "literal" | "keywords";
+       profileId?: string;
+       userId?: string;
+     }

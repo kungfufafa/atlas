@@ -822,13 +822,14 @@ describe("session model route", () => {
     const decide = async (
       caller: Awaited<ReturnType<typeof loginUserSession>>,
       sessionId: string,
-      approvalId: string
+      approvalId: string,
+      decision = "approved"
     ): Promise<Response> =>
       app.fetch(
         new Request(
           `http://localhost:4310/v1/sessions/${sessionId}/approvals/${approvalId}`,
           {
-            body: JSON.stringify({ decision: "approved" }),
+            body: JSON.stringify({ decision }),
             headers: caller.headers({
               "Content-Type": "application/json",
               "X-CSRF-Token": caller.csrfToken,
@@ -854,10 +855,62 @@ describe("session model route", () => {
 
     expect(
       (await decide(owner, approvedSessionId, "approval-session-owner")).status
-    ).toBe(200);
+    ).toBe(409);
     expect((await db.getActionApproval("approval-session-owner"))?.status).toBe(
-      "approved"
+      "pending"
     );
+
+    for (const decision of ["approved", "denied"] as const) {
+      const approvalId = `approval-live-${decision}`;
+      const ready = Promise.withResolvers<void>();
+      const live = agent.chatToolApprovals.request(
+        {
+          approval: {
+            createdAt: now,
+            id: approvalId,
+            status: "pending",
+            title: "Delete artifact",
+            tool: "delete_file",
+            toolCallId: `call-${decision}`,
+          },
+          beforeDecision: () => Promise.resolve(),
+          call: {
+            arguments: { path: "artifacts/report.txt" },
+            id: `call-${decision}`,
+            name: "delete_file",
+          },
+          principal,
+          runId: "live-route-run",
+          sessionId: approvedSessionId,
+        },
+        ready.resolve
+      );
+      await ready.promise;
+      expect((await decide(member, approvedSessionId, approvalId)).status).toBe(
+        404
+      );
+      expect(
+        (await decide(owner, otherOwnerSessionId, approvalId)).status
+      ).toBe(404);
+      expect(
+        (await decide(owner, approvedSessionId, approvalId, "invalid")).status
+      ).toBe(400);
+      const response = await decide(
+        owner,
+        approvedSessionId,
+        approvalId,
+        decision
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        resumed: true,
+        status: decision,
+      });
+      expect((await live).decision).toBe(decision);
+      expect((await decide(owner, approvedSessionId, approvalId)).status).toBe(
+        409
+      );
+    }
   });
 
   test("scopes task chat messages and run output to the task session owner", async () => {

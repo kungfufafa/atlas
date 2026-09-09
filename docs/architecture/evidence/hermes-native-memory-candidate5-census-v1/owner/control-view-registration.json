@@ -1,0 +1,8 @@
+{
+  "at": "2026-09-06T23:14:24.284055+00:00",
+  "source": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/scripts/view.py",
+  "sourceSha256": "15730c17ed659d851d05187c3c6879c6ebde0ad6a61ea4fc2553158988313669",
+  "new": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/scripts/view-controls.py",
+  "newSha256": "18290804e58d1e75184eb30cd5bd8e0a84f01457ee544303c2dd7d84da40a390",
+  "changes": "Use separately cached control projection directory and invert stratum selection; existing native-event and state display unchanged."
+}

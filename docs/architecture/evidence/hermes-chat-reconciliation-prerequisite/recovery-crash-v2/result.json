@@ -1,0 +1,52 @@
+{
+  "event": "reopened-after-recovery-crash",
+  "retryClaim": false,
+  "run": {
+    "checkpoint": null,
+    "createdAt": "2026-09-06T22:58:48.857Z",
+    "currentStepIndex": 0,
+    "id": "restart-run",
+    "idempotencyKey": null,
+    "kind": "chat",
+    "leaseExpiresAt": null,
+    "leaseOwner": null,
+    "orgId": "restart-org",
+    "principalUserId": "restart-user",
+    "sessionId": "restart-session",
+    "status": "cancelled",
+    "updatedAt": "2026-09-06T23:12:33.190Z"
+  },
+  "steps": [
+    {
+      "approvalId": "restart-approval",
+      "argsHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+      "argsJson": "{\"path\":\"disposable-counter\"}",
+      "createdAt": "2026-09-06T22:58:48.858Z",
+      "id": "70tDxllu7k9ykD6z9uruQ",
+      "resultJson": null,
+      "runId": "restart-run",
+      "status": "running",
+      "stepIndex": 0,
+      "toolCallId": "call-restart-approval",
+      "toolName": "delete_file",
+      "updatedAt": "2026-09-06T22:58:48.859Z"
+    }
+  ],
+  "approval": {
+    "actionHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+    "argsJson": "{\"path\":\"disposable-counter\"}",
+    "createdAt": "2026-09-06T22:58:48.858Z",
+    "decidedAt": "2026-09-06T22:58:48.859Z",
+    "decidedByUserId": "restart-user",
+    "expiresAt": "2026-09-06T23:13:48.858Z",
+    "grantId": "grant_1788735528859_7blm8b",
+    "id": "restart-approval",
+    "orgId": "restart-org",
+    "principalUserId": "restart-user",
+    "runId": "restart-run",
+    "sessionId": "restart-session",
+    "status": "approved",
+    "stepId": "70tDxllu7k9ykD6z9uruQ",
+    "toolName": "delete_file"
+  }
+}

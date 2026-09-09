@@ -1,0 +1,12 @@
+bun test v1.3.1 (89fa0f34)
+
+scripts/harness-native-files-mimo-v2/file-atlas-runner.test.ts:
+(pass) actual AgentService Python creates and reopens XLSX while native boundaries block outside access [636.35ms]
+(pass) source symlinks and evaluator manifests fail before any inference [42.35ms]
+(pass) request validation refuses external transport, unprepared execution and answer injection [4.39ms]
+(pass) read-only originals produce equal writable workspace copies and allow a native in-place app edit [77.44ms]
+
+ 4 pass
+ 0 fail
+ 63 expect() calls
+Ran 4 tests across 1 file. [1.90s]

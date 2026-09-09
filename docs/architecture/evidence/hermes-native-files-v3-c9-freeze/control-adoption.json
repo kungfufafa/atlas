@@ -1,0 +1,350 @@
+{
+  "at": "2026-09-07T05:54:22.893364+00:00",
+  "started": "2026-09-07T05:54:22.725234+00:00",
+  "status": "Adopted exact locked V3 controls; no tests/provider calls or live admission",
+  "registrationSha256": "0d50bb386a05fbcc0fa17be6e14173ffcbfd77ed4fe8363a771db897a7e1d7cc",
+  "sealedInputs": {
+    "readiness-before-review.json": "df46b02e40877a1d424300c89deaf4dd94a1367febacd14bb136f65508a30e3d",
+    "manifest.json": "ce308e49824ed1605ab13490b6deb0de12dfa9c67f633d0f4075609dd0c9bac9",
+    "seal.json": "e376f07174e91fd1979ff2894974e55efc0ebd7e616bb1acb4ac5a4f723169fc",
+    "source-inventory.json": "4fd58df1a21194e3aec396d6f1946ab1a60da90081fedc03a96c346d895b55a5"
+  },
+  "lockedControlMapSha256": "b3673405fab43fdd268aa286d4f6f0164ea00c2332ba43d00e28abd3d538fde5",
+  "controlFiles": 53,
+  "addedFiles": 49,
+  "newScriptFiles": 46,
+  "newContributorDocs": 3,
+  "preexistingSharedBindingsUntouched": 4,
+  "entries": {
+    "docs/architecture/hermes-native-files-mimo-v2-preregistration.md": {
+      "sha256": "a816bef955933d9de351787fd6a9a826ed40003b24479c52c56cae08a8aa392e",
+      "bytes": 35955,
+      "mode": "0o644",
+      "action": "verified-existing-unmodified"
+    },
+    "docs/architecture/hermes-native-files-mimo-v3-diagnostic-amendment.md": {
+      "sha256": "42b77e727c21a778bdaa858bbe886fc1b578c0a85f3c0de508a41088c228302f",
+      "bytes": 1773,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "docs/architecture/hermes-native-files-mimo-v3-final-study.md": {
+      "sha256": "5706e9947b0044b8f2bddd4e7c5a83751ab01060aace8a117d28dd83ac03587c",
+      "bytes": 8177,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "docs/architecture/hermes-native-files-mimo-v3-preregistration.md": {
+      "sha256": "31a12ca8f3a5dfb57305babf72e0571ad7874c3e4583db5a6f3bf1fd5f721956",
+      "bytes": 5322,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-compare/provenance.ts": {
+      "sha256": "ac40b77f01a1b39e2fbf0c9d00ce3e4b8806b2fdcf4784d204125594187d22d3",
+      "bytes": 3576,
+      "mode": "0o644",
+      "action": "verified-existing-unmodified"
+    },
+    "scripts/harness-compare/tools.ts": {
+      "sha256": "d697eb0fb4bfc4147651745568d4705fa0ef77a1fc37ac6fd4276d183492e6dc",
+      "bytes": 8703,
+      "mode": "0o644",
+      "action": "verified-existing-unmodified"
+    },
+    "scripts/harness-compare/types.ts": {
+      "sha256": "31deb1a465fd635268b8384eab1ca30aa197b0ce4ea96464eb038659a32e2f22",
+      "bytes": 2012,
+      "mode": "0o644",
+      "action": "verified-existing-unmodified"
+    },
+    "scripts/harness-native-files-mimo-v3/file-atlas-runner.test.ts": {
+      "sha256": "ceab7db2881efec18e4aef07f2bbc36a5c2033a8a8856764d764bc8c224af834",
+      "bytes": 20110,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-atlas-runner.ts": {
+      "sha256": "1ee5cadfad88b2fdcb60bf18dadc8551f05a6404893da67f4fcdcc8318c710c3",
+      "bytes": 23577,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-code-check-test.py": {
+      "sha256": "72c2ea4618565562c3d89689543e7c26796880acfed3e1070ff8aa095e8c71b0",
+      "bytes": 12893,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-code-check.py": {
+      "sha256": "758235b97785e7b6351f0084d00697dca4d1ffe9ea1410f53385113782920c53",
+      "bytes": 11343,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-code-contract.py": {
+      "sha256": "dece0956900d5b51d942b26f11a55fbb3ddcea2838c66e411f6705d31368645a",
+      "bytes": 6765,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-control-fixture.py": {
+      "sha256": "9113142309062033a011bcc6232059f3aba7a386b84984736f343691c70cf7b4",
+      "bytes": 3079,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-delivery-cases.json": {
+      "sha256": "7243ccb0d369497ebfefaf34efa48a85ffbd5b0d62687ac6f3082c4fae322954",
+      "bytes": 2981,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-delivery-markdown.test.ts": {
+      "sha256": "13a4ad1b4708e6daef6ec67923d8a3b5bda0e5b5d1be48ea571ca2d5dc2fa4fd",
+      "bytes": 2448,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-delivery-markdown.ts": {
+      "sha256": "55cb1b7fd0d053907e14b89fe382be2a2802a3b6ed8355511ad4786ab32abcd0",
+      "bytes": 2990,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-fixtures.py": {
+      "sha256": "f888bd34c6cac99da6183c346cc885ec0d11e132d1a5e021302cc762186ea6f2",
+      "bytes": 16549,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-hermes-runner-test.py": {
+      "sha256": "18ca2031b16650a9d11eb6b38bd54d98d2d5b70127a488b50946bd65afbd25c6",
+      "bytes": 11946,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-invocation.test.ts": {
+      "sha256": "7f440db95453ca41d7b45e207ce36eec42311d1ce184015546c3833a4ff045f2",
+      "bytes": 11823,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-invocation.ts": {
+      "sha256": "03178cdd8665770ace1fae1e0e41c912a23ec4bfffecc2bc61a3daa0039c9114",
+      "bytes": 3879,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-markdown-dependency.json": {
+      "sha256": "45e4f65b0414b63908086c4c428d9f90891c160cbb850fb23438ea65386f57d8",
+      "bytes": 1338,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-markdown-dependency.ts": {
+      "sha256": "b0b63ac6b872cb0b42c935036a67d558e57150f622f719968e2f7f8a92160fc0",
+      "bytes": 703,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-markdown-license.txt": {
+      "sha256": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c",
+      "bytes": 2942,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-markdown-package.json": {
+      "sha256": "3f3cd44098f75b9ac509942be2d279350ba29f76ccab36a27be195665ff881fe",
+      "bytes": 3403,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-markdown-vendor.d.mts": {
+      "sha256": "951765f4db0f5a4fab97fd750625a6a27db1db7da44655bad300ce88805ab662",
+      "bytes": 26098,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-markdown-vendor.mjs": {
+      "sha256": "35398f546525d5e79a8f2f8738635d3ecbd277618cba2ada874e9d27dc9e88f0",
+      "bytes": 42130,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-oracles-test.py": {
+      "sha256": "f97efb5113409954c89c0c5fd30109747e8d858d4e12eeae75b720ac7560d646",
+      "bytes": 21455,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-oracles.py": {
+      "sha256": "b330f312c8d791918077be2f61110af611f2f531735b55989cb89ce8aaaa8e8e",
+      "bytes": 17174,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-parent-evidence-fixtures.ts": {
+      "sha256": "75caff21746d3d136cc455823bd4ad9171b4bc87f0d7bf8be6a2d260d9330603",
+      "bytes": 14573,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-parent-evidence.test.ts": {
+      "sha256": "78ace478ee05365a48b7ce13fdb0a4c5d85d6ce3455ff32602cda52428d42133",
+      "bytes": 11413,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-parent-evidence.ts": {
+      "sha256": "44ae734b9b23f24274c91e4d8380dbd56d04fb48cbecd94ff60f3e128e959e44",
+      "bytes": 27449,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-positive-scripted-pilot.ts": {
+      "sha256": "f3f548b3bf067166b03d217695bece59e23e523e9c010fed6f00098e1a574da4",
+      "bytes": 6612,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-process-outcome.ts": {
+      "sha256": "55ce11cc7d93299b3ca76571dd1c7334c4c4b1cd0e33625e6b134f83ac3f8b3f",
+      "bytes": 5688,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-process-runner.test.ts": {
+      "sha256": "736659cfac2aca48a97a9ef8b4213dbb15c0349c7b6efcc4567e6840aef0a7f9",
+      "bytes": 15871,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-process-runner.ts": {
+      "sha256": "bfcc21454651550684186dd787f12bd129038ec43791d86e83dd47e8b1910d21",
+      "bytes": 17307,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-run.test.ts": {
+      "sha256": "0b866f36c3308501522dbc370ac9a811069e7293a9c04c863196e1e219c5aee0",
+      "bytes": 12125,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-run.ts": {
+      "sha256": "632c1f6ac9e2e3db5fe137b9ff06e44fb22a2a87b62b7e31481f95631625ff4d",
+      "bytes": 50026,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file-scripted-pilot.ts": {
+      "sha256": "04a7cfd73439c0424cafb386d2f68b372b7d8926c958fac0c40af277bb0e2834",
+      "bytes": 2581,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/file_hermes_runner.py": {
+      "sha256": "7a358bb570d0a341d303539dddc03d157569b7aafbb1a767183a749ed174ec52",
+      "bytes": 21691,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-analysis.test.ts": {
+      "sha256": "87eaac80ae2e1afb1ae3ef65c5a6059e2bdda519dfe09c56ae58b66a31b9f7e7",
+      "bytes": 54258,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-analysis.ts": {
+      "sha256": "2330368001b9d0c94bff8bb53399189cce09bc15ecd52fdf5c4e7fad56dca287",
+      "bytes": 67451,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-identity.ts": {
+      "sha256": "ab2fd2fb011c972b5b6855a4f0b1f6d9c792d7282677fe52203c8d5b2442a0a3",
+      "bytes": 2232,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-model-parity.json": {
+      "sha256": "088adb9e7818e335c6c4f3f86dc52d790ab500378d9ce248f13f8827c35a9a05",
+      "bytes": 1188,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-model-probe-completed.json": {
+      "sha256": "3fdac17312d98760aeff0b12e080487c7b920eda5cb12251b0ce368549415a87",
+      "bytes": 3092,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-model-probe-tool-request.json": {
+      "sha256": "be8f079c130d3a80889a0719a32978261e8d9a321db79fcc709acd545038d266",
+      "bytes": 1251,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-model-probe-tool-response.json": {
+      "sha256": "2f08690013ac7a15e555f5e3fe98d65c3822dbce727ebb53ec5490ff9a57ef3c",
+      "bytes": 1035,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-model-profile.json": {
+      "sha256": "cdf6673db186ca05db06f2acb51fb48e82d02602bacbae30c93da14c47a3d053",
+      "bytes": 1166,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-model.test.ts": {
+      "sha256": "33e8bfb5dc9538cb71954d81a782368b911b8cb2802d78efe5edbe7b1f89979e",
+      "bytes": 1734,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-model.ts": {
+      "sha256": "727900d7845a902f2d2178cde547d404948a05902ca8e2e1c72349c19a536af3",
+      "bytes": 3673,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-proxy-broker.ts": {
+      "sha256": "ee2efdb702a17adfd65387c5738f1218f530ee1dd88fa44e1cf7597efc85374d",
+      "bytes": 11203,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-proxy-queue.test.ts": {
+      "sha256": "32d870b2f9cfc9c0c3a6beb776ac707260d511ef5de08852c479e2392b0e0c0a",
+      "bytes": 8843,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-proxy.test.ts": {
+      "sha256": "0c083a61b77b0dc56f59c837bc25c572232f4430662d1f7bb18116f8cecca941",
+      "bytes": 9288,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    },
+    "scripts/harness-native-files-mimo-v3/product-proxy.ts": {
+      "sha256": "92e8f4d3f8860d0f64403f292fa82694a33d1723cfe01df46d07ecf726523d30",
+      "bytes": 11626,
+      "mode": "0o644",
+      "action": "exclusive-create"
+    }
+  },
+  "sourceUnchanged": true,
+  "destinationScriptMembershipExact": true,
+  "providedCredentialPrivateScan": "pass; no literal/file copied",
+  "gitIndexSha256BeforeAndAfter": "30e844f9e0746a9284c9950fd9c7d5019bc15b7f56a15aa63da1ad9c7ffb2b1d",
+  "rootStatusSha256Before": "e67aa896fc355a56a5a9c834159bccbf49865b11d1c0ab460b8b04c3f4c09c06",
+  "rootStatusSha256After": "086d751fde6c0f02b2583bf1c3c058c06ab4ced66c91a3111207448e2d412029",
+  "unrelatedStatusChangesDuringWindow": {},
+  "executionScope": "Exclusive-create only the 49 registered absent paths. Existing shared bindings retain exact content, inode, mtime and mode; no apps/packages/history/index writes. Product source was not recursively revalidated by this copy task.",
+  "limits": [
+    "Opaque byte and mode adoption reuses owner/independent gate evidence; no new behavior test evidence.",
+    "C9 live study admission, invocation, and archive remain root responsibilities."
+  ]
+}

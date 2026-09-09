@@ -1,0 +1,1298 @@
+{
+  "batch": "/private/tmp/atlas-hermes-evaluation/controlled-v2-amended/batches/development-2026-09-06T16-19-34-043Z-3cfbd0d9",
+  "scope": "All 72 ended arms inventoried; all 18 arms in missing_evidence, paged_ledger and invalid_path_recovery independently recomputed from supplied inputs. Other families require separate review.",
+  "classification": "Post-hoc development diagnostic; original scores and criteria untouched; extracted facts never rescue primary failures.",
+  "attemptLedgerSha256": "98ae0a54ec9d974953a196c16b4153d31c19c17d6274e0f4be7ea5932c12b683",
+  "census": [
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-546662902-r0-atlas",
+      "family": "missing_evidence",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": ["final_contract"],
+      "observationSha256": "72249fc1c730469cf44862f739c2bca6aa20092978722c32ff379ca9c9e3ec74"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-546662902-r0-hermes",
+      "family": "missing_evidence",
+      "harness": "hermes",
+      "strictPass": false,
+      "failedChecks": ["final_contract"],
+      "observationSha256": "8e4da6a2f0562c15f95db599c366e79ca48b664bcee2019396933c7793c1ddb9"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_grounded_comparison-871586541-r0-hermes",
+      "family": "source_grounded_comparison",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "8a10549d0478ba89792bedbb329ef6e8a7051067bb6551845913f8008a81ae26"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_grounded_comparison-871586541-r0-atlas",
+      "family": "source_grounded_comparison",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "artifact:output/vendor-comparison.json"
+      ],
+      "observationSha256": "d406f56a3f4275f86b74358976ad2f78872698f93603f1f4557252df06200678"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-explicit_correction-1914013284-r0-atlas",
+      "family": "explicit_correction",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "8ce459476e1af1ac4de20a01dcddc6b809358da35259a5850cb66f3923e4e433"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-explicit_correction-1914013284-r0-hermes",
+      "family": "explicit_correction",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "8ce459476e1af1ac4de20a01dcddc6b809358da35259a5850cb66f3923e4e433"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-linked_workflow-1980997833-r0-hermes",
+      "family": "linked_workflow",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "c69448c91ee8574c7e92f3cf31e01d90da350c7224cb54cb5207cbab0c51041d"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-linked_workflow-1980997833-r0-atlas",
+      "family": "linked_workflow",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "005f618cf0051d4539b1ce67c0ad8c9f6debd8b1b96bb86b42e4a050fecfc4ce"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-configuration_migration-3715978068-r0-atlas",
+      "family": "configuration_migration",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "a15b96d95b02e585944bcf959b880ed0080826e158e89665661e7abaa25c4751"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-configuration_migration-3715978068-r0-hermes",
+      "family": "configuration_migration",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "88647e38f01e06343744176c46c1280ca9f6e0b05281daa976fcba40ea4cc09d"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-inventory_allocation-591675835-r0-hermes",
+      "family": "inventory_allocation",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "5dc3a19e244b03a56ca7b5a42735719b4d03465c8637d753302de6de615ff0d5"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-inventory_allocation-591675835-r0-atlas",
+      "family": "inventory_allocation",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "aee1cda2cfc269c41b05c33d41029ac263779b701debe692683ff2be09b38372"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-inventory_allocation-3369704853-r0-atlas",
+      "family": "inventory_allocation",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "fb14f1693dcab4f5ebe9e0b5e124af9afda5bf4ef22153057f4d8f14e832f5db"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-inventory_allocation-3369704853-r0-hermes",
+      "family": "inventory_allocation",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "57bab62d257172a4e8cd8b906f3bc95b4c347318224f92614290424429afc061"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-portable_memory_application-1621632161-r0-hermes",
+      "family": "portable_memory_application",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "6fbfeb7f073e6d21821aad72a8c7202ba8c8621801cd71b9042b1c5535ca6c44"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-portable_memory_application-1621632161-r0-atlas",
+      "family": "portable_memory_application",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "7f5a89ad37a540227e047cc97cf9e773007442fd4cff1de5e621e70067bd2ceb"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-linked_workflow-3464234387-r0-atlas",
+      "family": "linked_workflow",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "099bf529bbe23010c09e7a210c9ca6e6f703a1ab941439cc192dec7dc953ee55"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-linked_workflow-3464234387-r0-hermes",
+      "family": "linked_workflow",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "454a9081caf3131e1bb7be6a146e6e98d1438c21565ba050cd2297794c35577f"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-configuration_migration-1235117594-r0-hermes",
+      "family": "configuration_migration",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "9d30b8385aa255171b3231fed3b683167df4f32a501cdc000689cbe462fce8ba"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-configuration_migration-1235117594-r0-atlas",
+      "family": "configuration_migration",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "af8c52c9b7eded576a9326131c93398035014957f84a71c12ec09e0bdaa8f993"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invoice_reconciliation-1332426668-r0-atlas",
+      "family": "invoice_reconciliation",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "eb54767ae842a47eb5bbc40b0c8745afec3159078e0c1f72a09b5fcfb5e1319a"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invoice_reconciliation-1332426668-r0-hermes",
+      "family": "invoice_reconciliation",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "4a03fcff469771ff0dc6de9641c07cd2a313db8e47d2a617718468aff2f0435f"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-explicit_correction-4069361542-r0-hermes",
+      "family": "explicit_correction",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "27bdabe4740268f746cb91e4a517f50d9cf4214842dace203021f2f81fdb8453"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-explicit_correction-4069361542-r0-atlas",
+      "family": "explicit_correction",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "27bdabe4740268f746cb91e4a517f50d9cf4214842dace203021f2f81fdb8453"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-1616586718-r0-atlas",
+      "family": "invalid_path_recovery",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "f2afc99d3212130d1b8fb2b93e644435154964a3b8db96ba7608853f4ab00db0"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-1616586718-r0-hermes",
+      "family": "invalid_path_recovery",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "43232d685c18b477ed7abab63116da89e0beaff382e46ef1ac009e9f19f6f0a8"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_latest_policy-2961981636-r0-hermes",
+      "family": "source_latest_policy",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "29e92c90b4cc545baed20fd9249940f9769c929ca101a157973fddc1f442b1ce"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_latest_policy-2961981636-r0-atlas",
+      "family": "source_latest_policy",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "artifact:output/travel-policy.json"
+      ],
+      "observationSha256": "fbbb2bbea0268ec59a262f390fda94120823269a926e5f1d9abd92fe6d49f797"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-portable_memory_application-4189404159-r0-atlas",
+      "family": "portable_memory_application",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "522d3e95c72b7338e9c47d1e6a0febad8dd22a45fa9a3765170ff5f4d121a3fe"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-portable_memory_application-4189404159-r0-hermes",
+      "family": "portable_memory_application",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "8ee1185d896f4aae9df88bbe40e72ca503b55f3f12a0fc1d12e26dd5f7c80bd7"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-4046891331-r0-hermes",
+      "family": "invalid_path_recovery",
+      "harness": "hermes",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "final_contract_envelope"
+      ],
+      "observationSha256": "e3e9635e08627d9aae650e3967626c91be3c6635761a41f6be70687289628bc9"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-4046891331-r0-atlas",
+      "family": "invalid_path_recovery",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "c73e44b016d1a8a5537a1b48700be5a61c1f761aa59fff2f7a9c2474ca0d924a"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-configuration_migration-152420741-r0-atlas",
+      "family": "configuration_migration",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "0be1304369ca5282eec51f533ccfbaaabb2e8e3d39d18bc488dcaf678f6f5f78"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-configuration_migration-152420741-r0-hermes",
+      "family": "configuration_migration",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "e92c851b21fed9b6d08f5f584b9ec7a4575f9050a64c51d56c28c27ffd8de05a"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-2439048460-r0-hermes",
+      "family": "paged_ledger",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "60d3c954e1603f2c2c6a62e5e81e1134207c3bee3abdb048eb78950be7e81142"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-2439048460-r0-atlas",
+      "family": "paged_ledger",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "bde41dd21e4c8ea672edc5ee7994e532371c1396b8093e8605a1a0afd752e197"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-linked_workflow-1638304808-r0-atlas",
+      "family": "linked_workflow",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "2058520ebce898739f383c1993c7acc1f5f6985b6412baeac7badef4339cd5ec"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-linked_workflow-1638304808-r0-hermes",
+      "family": "linked_workflow",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "b6beed31011703d7c3948af21ae10f45f04c3144ff471916dfb05bd492779f5c"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-2624217565-r0-hermes",
+      "family": "invalid_path_recovery",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "b943402c967a598cd38bcf27c76c45c8c61b31bd0a1c1099d3585bf614604e1f"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-2624217565-r0-atlas",
+      "family": "invalid_path_recovery",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "db3018c215c07a57725a9aa6f56034d69cf105803ab7fc29a66e8ec6ae7d765a"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-portable_memory_application-3570121878-r0-atlas",
+      "family": "portable_memory_application",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "432c17f6f02792176138d43a8641fcc65460404a32f47216908edd47d3ab7dea"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-portable_memory_application-3570121878-r0-hermes",
+      "family": "portable_memory_application",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "eebb02361c14b1fd0c5cb0f0bc44725203635b257da1d4b6e63d110379042e30"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-customer_order_join-2738004762-r0-hermes",
+      "family": "customer_order_join",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "2cad6ec3c4fe6703324bbb11ba6a5ab1ca302f99665f96b4a8e24aa3923c65fc"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-customer_order_join-2738004762-r0-atlas",
+      "family": "customer_order_join",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "7dee0766b06986a35e6ef7e94bcff0e3be91469bf144cbf5076e250751439523"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_latest_policy-3284073652-r0-atlas",
+      "family": "source_latest_policy",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "1e756bec8b2805c63211baa08aaba7afda18836506446157776dff2c1f71efda"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_latest_policy-3284073652-r0-hermes",
+      "family": "source_latest_policy",
+      "harness": "hermes",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "artifact:output/travel-policy.json"
+      ],
+      "observationSha256": "41aba0f7b4a4c7c12e1a506a155346ae7e50894433a196369073c0197c34c160"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-customer_order_join-2466693481-r0-hermes",
+      "family": "customer_order_join",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "8b9d80ff6b6f244502a8e73e9644782a1946959dbd3cbfdb2a0683df03416a8d"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-customer_order_join-2466693481-r0-atlas",
+      "family": "customer_order_join",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "a8f71efa6cd1214ffba553538d21197b2ef6d35433abf16f476960d8f8e44b31"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_latest_policy-4229346297-r0-atlas",
+      "family": "source_latest_policy",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "artifact:output/travel-policy.json"
+      ],
+      "observationSha256": "0eda3e1c24ebca0aca3b08037a494bc01d0d62f022e522bc8a1adce9f6f6daed"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_latest_policy-4229346297-r0-hermes",
+      "family": "source_latest_policy",
+      "harness": "hermes",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "artifact:output/travel-policy.json"
+      ],
+      "observationSha256": "2ae4f4a32a83ab0e816273826b811e9d930df1d6bb70584f47c5a4a06b85a603"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-2537289397-r0-hermes",
+      "family": "missing_evidence",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "d3ccff1b1da5ac032e39a8dd2af510eade1496a015ba5a5f48e14d0874d34a3d"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-2537289397-r0-atlas",
+      "family": "missing_evidence",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": ["final_contract"],
+      "observationSha256": "6db5872660a1c78276d456b0279844c35e35367b36cb87cfb0c2598e97c20dff"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invoice_reconciliation-1174184127-r0-atlas",
+      "family": "invoice_reconciliation",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "a833e00a26ed0bddc7ba2a136967fccb69c43a916ae2846ae96244a5294a53b2"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invoice_reconciliation-1174184127-r0-hermes",
+      "family": "invoice_reconciliation",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "78a09ba537fc90de7de97040bdac0cec3c077b506ed0007c07f4f5c13c6c0f1f"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invoice_reconciliation-351806427-r0-hermes",
+      "family": "invoice_reconciliation",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "c66c5b46243572a41117119a556cfeac8998065981ea29b460ba474c4bf1d84e"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invoice_reconciliation-351806427-r0-atlas",
+      "family": "invoice_reconciliation",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "ce2df0bdc4de4e2f405f6148590c97a558d119f03df781b3c059769c2ab44e35"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-146322265-r0-atlas",
+      "family": "paged_ledger",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "artifact:output/ledger-summary.json"
+      ],
+      "observationSha256": "6fc34a708c96e0b233b37e3442d060e093b0033941a2bbec5999b4675f9d04f7"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-146322265-r0-hermes",
+      "family": "paged_ledger",
+      "harness": "hermes",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "final_contract_envelope"
+      ],
+      "observationSha256": "dc484ad0359f9b50118a32888e1fae3cf6c215c5ee9c0f5c1e0a0207539359ba"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-inventory_allocation-2705650855-r0-hermes",
+      "family": "inventory_allocation",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "87e4eff2d72cfe03b4c7afc763ff24ea7ac50941f65f1ac35221274f6871c7bb"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-inventory_allocation-2705650855-r0-atlas",
+      "family": "inventory_allocation",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "9ecd4d2725b4cc3a929800900e19a6af63e4c61adcb4512632a25889a3be6488"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-customer_order_join-164461544-r0-atlas",
+      "family": "customer_order_join",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "2621f5ba8643f317ab2e2efa43a9a5a8b3df1f29fc753955165d4269d5408e53"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-customer_order_join-164461544-r0-hermes",
+      "family": "customer_order_join",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "25f49360b0e5ea5e293f069a596af5a152e278fff39666e4040f3ad12de306fe"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-808116441-r0-hermes",
+      "family": "paged_ledger",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "dc76e7a939601e895c03a5428c6f6a15c86e50fa4720412215e33d623353f6c0"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-808116441-r0-atlas",
+      "family": "paged_ledger",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "7d5c89ea5f72750427bd150b89484a9da9736c69be9af3ac5463e11ca583ee18"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_grounded_comparison-110489693-r0-atlas",
+      "family": "source_grounded_comparison",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "bf02c039438e14c3cc65823dd34dce49444eb7d019f1f94d961aa4b8fb5a1cb4"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_grounded_comparison-110489693-r0-hermes",
+      "family": "source_grounded_comparison",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "79ae4946e53759cd8cc256613b7944838379b789f917953d28c2a8d7f035a64c"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_grounded_comparison-352047651-r0-hermes",
+      "family": "source_grounded_comparison",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "af90d47bb96ff20e8ed183420423237a315a25d17adc9aeade70d63fbc6cf783"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-source_grounded_comparison-352047651-r0-atlas",
+      "family": "source_grounded_comparison",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "artifact:output/vendor-comparison.json"
+      ],
+      "observationSha256": "5a6c3a286982518c513eb0ca3294d2458a4443847e26c322a1618164edf7ef82"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-explicit_correction-1167376992-r0-atlas",
+      "family": "explicit_correction",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "6c273fdea9ebff2a7d0fd7f72f3eb9ac959c81f65430f3afad08b0df53d62a22"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-explicit_correction-1167376992-r0-hermes",
+      "family": "explicit_correction",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "6c273fdea9ebff2a7d0fd7f72f3eb9ac959c81f65430f3afad08b0df53d62a22"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-4260275249-r0-hermes",
+      "family": "missing_evidence",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "f1f6024db8f7848ed536654ca50f1fbdd63c6ccd287334c6d8f2458ad0810e27"
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-4260275249-r0-atlas",
+      "family": "missing_evidence",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": ["final_contract"],
+      "observationSha256": "a421bd835232ab46dc195d0c48f2a2c9b815e29eb9f6827efebc20e4d5e98f1d"
+    }
+  ],
+  "selectedFamilies": [
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-546662902-r0-atlas",
+      "family": "missing_evidence",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": ["final_contract"],
+      "observationSha256": "72249fc1c730469cf44862f739c2bca6aa20092978722c32ff379ca9c9e3ec74",
+      "independentlyRecomputedFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 84620
+      },
+      "actualFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 84620
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "whole-json",
+      "diagnosticFinalObject": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 84620,
+        "inputMissing": true
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": ["inputMissing"],
+      "detail": {
+        "prohibitedPayrollAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-546662902-r0-hermes",
+      "family": "missing_evidence",
+      "harness": "hermes",
+      "strictPass": false,
+      "failedChecks": ["final_contract"],
+      "observationSha256": "8e4da6a2f0562c15f95db599c366e79ca48b664bcee2019396933c7793c1ddb9",
+      "independentlyRecomputedFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 84620
+      },
+      "actualFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 84620
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 84620,
+        "inputMissing": true
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": ["inputMissing"],
+      "detail": {
+        "prohibitedPayrollAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-1616586718-r0-atlas",
+      "family": "invalid_path_recovery",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "f2afc99d3212130d1b8fb2b93e644435154964a3b8db96ba7608853f4ab00db0",
+      "independentlyRecomputedFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 4647
+      },
+      "actualFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 4647
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 4647
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "missingPreferredSourceStillAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-1616586718-r0-hermes",
+      "family": "invalid_path_recovery",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "43232d685c18b477ed7abab63116da89e0beaff382e46ef1ac009e9f19f6f0a8",
+      "independentlyRecomputedFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 4647
+      },
+      "actualFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 4647
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "whole-json",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 4647
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "missingPreferredSourceStillAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-4046891331-r0-hermes",
+      "family": "invalid_path_recovery",
+      "harness": "hermes",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "final_contract_envelope"
+      ],
+      "observationSha256": "e3e9635e08627d9aae650e3967626c91be3c6635761a41f6be70687289628bc9",
+      "independentlyRecomputedFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 7557
+      },
+      "actualFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 7557
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 7557
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "missingPreferredSourceStillAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-4046891331-r0-atlas",
+      "family": "invalid_path_recovery",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "c73e44b016d1a8a5537a1b48700be5a61c1f761aa59fff2f7a9c2474ca0d924a",
+      "independentlyRecomputedFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 7557
+      },
+      "actualFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 7557
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 7557
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "missingPreferredSourceStillAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-2439048460-r0-hermes",
+      "family": "paged_ledger",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "60d3c954e1603f2c2c6a62e5e81e1134207c3bee3abdb048eb78950be7e81142",
+      "independentlyRecomputedFile": {
+        "netCents": 1538230,
+        "pageTotals": {
+          "input/ledger/page-1.json": 186729,
+          "input/ledger/page-2.json": 240516,
+          "input/ledger/page-3.json": 354885,
+          "input/ledger/page-4.json": 117164,
+          "input/ledger/page-5.json": 456594,
+          "input/ledger/page-6.json": 182342
+        },
+        "settledCount": 180
+      },
+      "actualFile": {
+        "netCents": 1538230,
+        "pageTotals": {
+          "input/ledger/page-1.json": 186729,
+          "input/ledger/page-2.json": 240516,
+          "input/ledger/page-3.json": 354885,
+          "input/ledger/page-4.json": 117164,
+          "input/ledger/page-5.json": 456594,
+          "input/ledger/page-6.json": 182342
+        },
+        "settledCount": 180
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "netCents": 1538230,
+        "pageCount": 6,
+        "settledCount": 180
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "allPageReadsObserved": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-2439048460-r0-atlas",
+      "family": "paged_ledger",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "bde41dd21e4c8ea672edc5ee7994e532371c1396b8093e8605a1a0afd752e197",
+      "independentlyRecomputedFile": {
+        "netCents": 1538230,
+        "pageTotals": {
+          "input/ledger/page-1.json": 186729,
+          "input/ledger/page-2.json": 240516,
+          "input/ledger/page-3.json": 354885,
+          "input/ledger/page-4.json": 117164,
+          "input/ledger/page-5.json": 456594,
+          "input/ledger/page-6.json": 182342
+        },
+        "settledCount": 180
+      },
+      "actualFile": {
+        "netCents": 1538230,
+        "pageTotals": {
+          "input/ledger/page-1.json": 186729,
+          "input/ledger/page-2.json": 240516,
+          "input/ledger/page-3.json": 354885,
+          "input/ledger/page-4.json": 117164,
+          "input/ledger/page-5.json": 456594,
+          "input/ledger/page-6.json": 182342
+        },
+        "settledCount": 180
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "netCents": 1538230,
+        "pageCount": 6,
+        "settledCount": 180
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "allPageReadsObserved": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-2624217565-r0-hermes",
+      "family": "invalid_path_recovery",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "b943402c967a598cd38bcf27c76c45c8c61b31bd0a1c1099d3585bf614604e1f",
+      "independentlyRecomputedFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 5022
+      },
+      "actualFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 5022
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "whole-json",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 5022
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "missingPreferredSourceStillAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-invalid_path_recovery-2624217565-r0-atlas",
+      "family": "invalid_path_recovery",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "db3018c215c07a57725a9aa6f56034d69cf105803ab7fc29a66e8ec6ae7d765a",
+      "independentlyRecomputedFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 5022
+      },
+      "actualFile": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 5022
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "source": "input/current-batch.json",
+        "count": 9,
+        "total": 5022
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "missingPreferredSourceStillAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-2537289397-r0-hermes",
+      "family": "missing_evidence",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "d3ccff1b1da5ac032e39a8dd2af510eade1496a015ba5a5f48e14d0874d34a3d",
+      "independentlyRecomputedFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 85370
+      },
+      "actualFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 85370
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 85370
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "prohibitedPayrollAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-2537289397-r0-atlas",
+      "family": "missing_evidence",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": ["final_contract"],
+      "observationSha256": "6db5872660a1c78276d456b0279844c35e35367b36cb87cfb0c2598e97c20dff",
+      "independentlyRecomputedFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 85370
+      },
+      "actualFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 85370
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 85370,
+        "inputMissing": true
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": ["inputMissing"],
+      "detail": {
+        "prohibitedPayrollAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-146322265-r0-atlas",
+      "family": "paged_ledger",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "artifact:output/ledger-summary.json"
+      ],
+      "observationSha256": "6fc34a708c96e0b233b37e3442d060e093b0033941a2bbec5999b4675f9d04f7",
+      "independentlyRecomputedFile": {
+        "netCents": 2044126,
+        "pageTotals": {
+          "input/ledger/page-1.json": 326006,
+          "input/ledger/page-2.json": 325087,
+          "input/ledger/page-3.json": 489629,
+          "input/ledger/page-4.json": 124459,
+          "input/ledger/page-5.json": 331744,
+          "input/ledger/page-6.json": 447201
+        },
+        "settledCount": 180
+      },
+      "actualFile": {
+        "netCents": 2064948,
+        "pageTotals": {
+          "input/ledger/page-1.json": 346828,
+          "input/ledger/page-2.json": 325087,
+          "input/ledger/page-3.json": 489629,
+          "input/ledger/page-4.json": 124459,
+          "input/ledger/page-5.json": 331744,
+          "input/ledger/page-6.json": 447201
+        },
+        "settledCount": 180
+      },
+      "fileExactlyCorrect": false,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "netCents": 2064948,
+        "pageCount": 6,
+        "settledCount": 180
+      },
+      "extractedFinalFactsCorrect": false,
+      "finalExtraKeys": [],
+      "detail": {
+        "allPageReadsObserved": true,
+        "confirmedExtraneousTerm": {
+          "page": "input/ledger/page-1.json",
+          "row": {
+            "amountCents": 20822,
+            "id": "P1-036",
+            "note": "Shipment 6268 checked; reference only, not an amount.",
+            "status": "pending"
+          },
+          "expectedPageSubtotal": 326006,
+          "observedPageSubtotal": 346828,
+          "difference": 20822
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-146322265-r0-hermes",
+      "family": "paged_ledger",
+      "harness": "hermes",
+      "strictPass": false,
+      "failedChecks": [
+        "final_contract",
+        "final_facts_correct",
+        "final_contract_envelope"
+      ],
+      "observationSha256": "dc484ad0359f9b50118a32888e1fae3cf6c215c5ee9c0f5c1e0a0207539359ba",
+      "independentlyRecomputedFile": {
+        "netCents": 2044126,
+        "pageTotals": {
+          "input/ledger/page-1.json": 326006,
+          "input/ledger/page-2.json": 325087,
+          "input/ledger/page-3.json": 489629,
+          "input/ledger/page-4.json": 124459,
+          "input/ledger/page-5.json": 331744,
+          "input/ledger/page-6.json": 447201
+        },
+        "settledCount": 180
+      },
+      "actualFile": {
+        "netCents": 2044126,
+        "pageTotals": {
+          "input/ledger/page-1.json": 326006,
+          "input/ledger/page-2.json": 325087,
+          "input/ledger/page-3.json": 489629,
+          "input/ledger/page-4.json": 124459,
+          "input/ledger/page-5.json": 331744,
+          "input/ledger/page-6.json": 447201
+        },
+        "settledCount": 180
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "leading-object-extracted-with-trailing-text",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "netCents": 2044126,
+        "pageCount": 6,
+        "settledCount": 180
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "allPageReadsObserved": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-808116441-r0-hermes",
+      "family": "paged_ledger",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "dc76e7a939601e895c03a5428c6f6a15c86e50fa4720412215e33d623353f6c0",
+      "independentlyRecomputedFile": {
+        "netCents": 1856553,
+        "pageTotals": {
+          "input/ledger/page-1.json": 384156,
+          "input/ledger/page-2.json": 304512,
+          "input/ledger/page-3.json": 318128,
+          "input/ledger/page-4.json": 373651,
+          "input/ledger/page-5.json": 173907,
+          "input/ledger/page-6.json": 302199
+        },
+        "settledCount": 180
+      },
+      "actualFile": {
+        "netCents": 1856553,
+        "pageTotals": {
+          "input/ledger/page-1.json": 384156,
+          "input/ledger/page-2.json": 304512,
+          "input/ledger/page-3.json": 318128,
+          "input/ledger/page-4.json": 373651,
+          "input/ledger/page-5.json": 173907,
+          "input/ledger/page-6.json": 302199
+        },
+        "settledCount": 180
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "netCents": 1856553,
+        "pageCount": 6,
+        "settledCount": 180
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "allPageReadsObserved": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-paged_ledger-808116441-r0-atlas",
+      "family": "paged_ledger",
+      "harness": "atlas",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "7d5c89ea5f72750427bd150b89484a9da9736c69be9af3ac5463e11ca583ee18",
+      "independentlyRecomputedFile": {
+        "netCents": 1856553,
+        "pageTotals": {
+          "input/ledger/page-1.json": 384156,
+          "input/ledger/page-2.json": 304512,
+          "input/ledger/page-3.json": 318128,
+          "input/ledger/page-4.json": 373651,
+          "input/ledger/page-5.json": 173907,
+          "input/ledger/page-6.json": 302199
+        },
+        "settledCount": 180
+      },
+      "actualFile": {
+        "netCents": 1856553,
+        "pageTotals": {
+          "input/ledger/page-1.json": 384156,
+          "input/ledger/page-2.json": 304512,
+          "input/ledger/page-3.json": 318128,
+          "input/ledger/page-4.json": 373651,
+          "input/ledger/page-5.json": 173907,
+          "input/ledger/page-6.json": 302199
+        },
+        "settledCount": 180
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "completed",
+        "netCents": 1856553,
+        "pageCount": 6,
+        "settledCount": 180
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "allPageReadsObserved": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-4260275249-r0-hermes",
+      "family": "missing_evidence",
+      "harness": "hermes",
+      "strictPass": true,
+      "failedChecks": [],
+      "observationSha256": "f1f6024db8f7848ed536654ca50f1fbdd63c6ccd287334c6d8f2458ad0810e27",
+      "independentlyRecomputedFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 51392
+      },
+      "actualFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 51392
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 51392
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": [],
+      "detail": {
+        "prohibitedPayrollAbsent": true
+      }
+    },
+    {
+      "id": "development-2026-09-06T16-19-34-043Z-3cfbd0d9-atlas-hermes-controlled-v2-development-missing_evidence-4260275249-r0-atlas",
+      "family": "missing_evidence",
+      "harness": "atlas",
+      "strictPass": false,
+      "failedChecks": ["final_contract"],
+      "observationSha256": "a421bd835232ab46dc195d0c48f2a2c9b815e29eb9f6827efebc20e4d5e98f1d",
+      "independentlyRecomputedFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 51392
+      },
+      "actualFile": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 51392
+      },
+      "fileExactlyCorrect": true,
+      "diagnosticFinalExtraction": "sole-fenced-object-extracted",
+      "diagnosticFinalObject": {
+        "status": "needs_input",
+        "missingEmployeeIds": ["EMP-17"],
+        "knownSubtotalCents": 51392,
+        "inputMissing": true
+      },
+      "extractedFinalFactsCorrect": true,
+      "finalExtraKeys": ["inputMissing"],
+      "detail": {
+        "prohibitedPayrollAbsent": true
+      }
+    }
+  ]
+}

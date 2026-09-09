@@ -1,0 +1,510 @@
+{
+  "date": "2026-09-06",
+  "status": "LOCAL_GATES_PASS_LIVE_PROOF_OPEN",
+  "gitHead": "92ce5e432609425e5cd9a701f1b77e7062ff7b21",
+  "workspaceNote": "Verification uses a dirty shared workspace containing earlier changes. The Git HEAD is not the verified source snapshot; the final image runtime manifest records that snapshot.",
+  "scope": "Native WhatsApp, Telegram and Discord controls, actions, layered per-tenant integration policies, file delivery, voice, portable provider tool declaration and atomic questionnaire/approval guards.",
+  "countsNote": "Targets overlap. Do not add channel, targeted, repository, scripts or Docker counts.",
+  "repository": {
+    "status": "PASS",
+    "command": "bun run test",
+    "logPath": "/private/tmp/atlas-native-full-repository-final3.log",
+    "sha256": "b0134fac0a3933e2db75aac4b86dea00cd7aa3c0a9cb1922ba48002ace2c920e",
+    "bytes": 749003,
+    "pass": 6734,
+    "fail": 0,
+    "unhandledErrorMarkers": 0,
+    "assertions": 23941,
+    "tests": 6734,
+    "files": 678,
+    "duration": "319.07s",
+    "providerMode": "LLM_VCR_MODE=replay",
+    "environment": "Disposable ATLAS_CONFIG_DIR; actual host Python/Office/Poppler runtime; no live messenger sends"
+  },
+  "scripts": {
+    "status": "PASS",
+    "command": "bun test scripts",
+    "logPath": "/private/tmp/atlas-native-full-scripts-final2.log",
+    "sha256": "f1c1c3369cf54132681148f56710ac27a2e34b3f36f69d00b9958887af6f6c21",
+    "bytes": 12775,
+    "pass": 116,
+    "fail": 0,
+    "unhandledErrorMarkers": 0,
+    "assertions": 385,
+    "tests": 116,
+    "files": 15,
+    "duration": "22.80s",
+    "providerMode": "LLM_VCR_MODE=replay"
+  },
+  "channels": {
+    "whatsapp": {
+      "logPath": "/private/tmp/atlas-whatsapp-late-delivery-session-full.log",
+      "sha256": "0a86452b760d81d4616d9c45a9939e3ed2b7105c348c0e41ffa9e9e719ecbb1c",
+      "bytes": 41073,
+      "pass": 345,
+      "fail": 0,
+      "assertions": 1280,
+      "unhandledErrorMarkers": 0,
+      "tests": 345,
+      "files": 21,
+      "duration": "22.08s",
+      "status": "PASS"
+    },
+    "telegram": {
+      "logPath": "/private/tmp/atlas-telegram-final-authority-full-final.log",
+      "sha256": "5d58264a8362351a1d52670da7b6accb702e598f107d65f7c8a6940c0bc09b4b",
+      "bytes": 61907,
+      "pass": 468,
+      "fail": 0,
+      "assertions": 2160,
+      "unhandledErrorMarkers": 0,
+      "tests": 468,
+      "files": 22,
+      "duration": "16.68s",
+      "status": "PASS"
+    },
+    "discord": {
+      "logPath": "/private/tmp/atlas-discord-final-boundaries-full-final.log",
+      "sha256": "3f27a6f3c5a26d300a11fb28c48cfb4ae191c8f407340faf121991c62acebf37",
+      "bytes": 72748,
+      "pass": 408,
+      "fail": 0,
+      "assertions": 2150,
+      "unhandledErrorMarkers": 0,
+      "tests": 408,
+      "files": 21,
+      "duration": "5.37s",
+      "status": "PASS"
+    }
+  },
+  "typeChecks": {
+    "productionTypeScript": {
+      "logPath": "/private/tmp/atlas-native-final-production-types.log",
+      "sha256": "1e7364545b505adc6ef70012ce70f69a90a7eb05ebb0a0886a63cceb701bcb27",
+      "bytes": 42,
+      "unhandledErrorMarkers": 0,
+      "status": "PASS_EXIT_0"
+    },
+    "webTypeScript": {
+      "logPath": "/private/tmp/atlas-native-final-web-types.log",
+      "sha256": "718853d1a74e77e2217373914b4cbbf0af84e2a869053bbd4beab38338b0f827",
+      "bytes": 41,
+      "unhandledErrorMarkers": 0,
+      "status": "PASS_EXIT_0"
+    },
+    "sharedNewTestTypeScript": {
+      "logPath": "/private/tmp/atlas-native-final-root-test-types-v2.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "unhandledErrorMarkers": 0,
+      "status": "PASS_EXIT_0"
+    },
+    "telegramAllSourceAndTestsTypeScript": {
+      "logPath": "/private/tmp/atlas-telegram-final-authority-test-types-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "unhandledErrorMarkers": 0,
+      "status": "PASS_EXIT_0"
+    },
+    "discordAllSourceAndTestsTypeScript": {
+      "logPath": "/private/tmp/atlas-discord-final-boundaries-typecheck-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "unhandledErrorMarkers": 0,
+      "status": "PASS_EXIT_0"
+    },
+    "whatsappFourNewTestFilesTypeScript": {
+      "logPath": "/private/tmp/atlas-whatsapp-late-delivery-session-test-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "unhandledErrorMarkers": 0,
+      "status": "PASS_EXIT_0"
+    }
+  },
+  "globalLint": {
+    "status": "PASS_EXIT_0",
+    "command": "bun x ultracite check",
+    "files": 2146,
+    "logPath": "/private/tmp/atlas-native-final-global-lint3.log",
+    "sha256": "39895b4d40a37b50444d9b358b0ce16d0c306ae05c9ad49e164adb0ba3528213",
+    "bytes": 44,
+    "note": "Includes final Docker evidence; only this log-reference metadata was written afterward and the report JSON was formatted and checked separately."
+  },
+  "docker": {
+    "status": "PASS",
+    "summaryPath": "docker/summary.json",
+    "summarySha256": "35dbc64b77f77cbadf531b6656b2e4ea5eee56c3e3a9ab8742eecf7a3539fb57",
+    "imageId": "sha256:8944c83b9e75d23c12006aebaf6458fa089eaf97acde9489a53214f4c6a96c8b",
+    "platform": "linux/arm64",
+    "pass": 515,
+    "fail": 0,
+    "assertions": 2952,
+    "files": 38,
+    "runtimeFileHashesInsideImage": 1219,
+    "additionalSkillAssetHashesInsideImage": 18,
+    "totalHashesInsideImage": 1237,
+    "hostBuildInputsUnchanged": 2045,
+    "largeFontBytes": 23278008,
+    "ocrScope": "Separate English scan; Arabic/Japanese OCR not tested",
+    "strictStartup": "PASS: health JSON API v1 and dashboard HTML HTTP 200",
+    "cleanup": "PASS: dedicated VM stopped; zero containers/volumes; image retained"
+  },
+  "browser": {
+    "status": "PASS",
+    "evidence": "browser/evidence.json",
+    "transport": "Real browser and Hono routes with disposable synthetic tenant data; no channel worker connections",
+    "finalScreenshots": [
+      "browser/after-telegram-current.png",
+      "browser/after-whatsapp-current.png",
+      "browser/after-discord-speech-current.png"
+    ]
+  },
+  "failedBeforeFix": {
+    "telegramNativeEffectAuthority": {
+      "logPath": "/private/tmp/atlas-telegram-final-authority-native-red.log",
+      "sha256": "d7d4851113b87f573791c9aec9d480a85141112dfcf07d6094027d2ffe3995c6",
+      "bytes": 6683,
+      "pass": 22,
+      "fail": 5,
+      "assertions": 110,
+      "unhandledErrorMarkers": 0,
+      "status": "EXPECTED_FAILURE_BEFORE_FIX"
+    },
+    "telegramArtifactDisclosure": {
+      "logPath": "/private/tmp/atlas-telegram-final-authority-artifacts-red.log",
+      "sha256": "8265345401ba4ac2319af77168bdefe8e0dbdef3a1439b15e330d4cfa9fa4190",
+      "bytes": 6240,
+      "pass": 4,
+      "fail": 8,
+      "assertions": 28,
+      "unhandledErrorMarkers": 0,
+      "status": "EXPECTED_FAILURE_BEFORE_FIX"
+    },
+    "telegramAttachSessionReplacement": {
+      "logPath": "/private/tmp/atlas-telegram-final-authority-session-red.log",
+      "sha256": "0704b9516cadda459308672d3424843553c3099ef3e395b176d9f71c3362d548",
+      "bytes": 727,
+      "pass": 0,
+      "fail": 1,
+      "assertions": 2,
+      "unhandledErrorMarkers": 0,
+      "status": "EXPECTED_FAILURE_BEFORE_FIX"
+    },
+    "whatsappArtifactDisclosure": {
+      "logPath": "/private/tmp/atlas-whatsapp-late-delivery-before.log",
+      "sha256": "252ee1156c2f1c31b8cd89a9947bb87ee07534d3a1606c04e20f495967f6128a",
+      "bytes": 17399,
+      "pass": 6,
+      "fail": 18,
+      "assertions": 54,
+      "unhandledErrorMarkers": 0,
+      "status": "EXPECTED_FAILURE_BEFORE_FIX"
+    },
+    "discordArtifactDisclosure": {
+      "logPath": "/private/tmp/atlas-discord-artifact-authorization-red.log",
+      "sha256": "e2b43b07843ec80d686bf50099265220a639a64928b92e8096e2c188059c6290",
+      "bytes": 9700,
+      "pass": 3,
+      "fail": 10,
+      "assertions": 25,
+      "unhandledErrorMarkers": 0,
+      "status": "EXPECTED_FAILURE_BEFORE_FIX"
+    },
+    "discordNativeEffectAuthority": {
+      "logPath": "/private/tmp/atlas-discord-native-action-final-boundaries-red.log",
+      "sha256": "4a0315528813f3570e52f0b92ce3c4c26c5f63ea01e4acfc1202add12a2ff6f4",
+      "bytes": 15894,
+      "pass": 25,
+      "fail": 14,
+      "assertions": 421,
+      "unhandledErrorMarkers": 0,
+      "status": "EXPECTED_FAILURE_BEFORE_FIX"
+    }
+  },
+  "earlierReviewedLogReferences": {
+    "initial_repository": {
+      "path": "/private/tmp/atlas-native-full-repository-final.log",
+      "sha256": "91341b7969e1a7803daf4b8ff0cacff1937fab6044ece3249aa164cb191fdbf9",
+      "bytes": 741009,
+      "summary": [
+        "\n 6615 pass",
+        " 6 fail",
+        " 4 errors",
+        " 23268 expect() calls",
+        "Ran 6621 tests across 674 files. [550.96s]"
+      ]
+    },
+    "portable_schema": {
+      "path": "/private/tmp/atlas-native-portable-schema-fix2.log",
+      "sha256": "db189c5daf3510a7b5d6ba6db7b5ac3d6c4b094d7ba891414d68f2b30c892015",
+      "bytes": 2429,
+      "summary": [
+        "\n 26 pass",
+        " 0 fail",
+        " 200 expect() calls",
+        "Ran 26 tests across 4 files. [5.07s]"
+      ]
+    },
+    "intermediate_repository": {
+      "path": "/private/tmp/atlas-native-full-repository-final2.log",
+      "sha256": "636c87e6ece6ed9f751215963f3fea30dda7bf9784e32814d0308022f75d20a4",
+      "bytes": 738093,
+      "summary": [
+        "\n 6649 pass",
+        " 0 fail",
+        " 23493 expect() calls",
+        "Ran 6649 tests across 676 files. [316.35s]"
+      ]
+    },
+    "scripts": {
+      "path": "/private/tmp/atlas-native-full-scripts-final.log",
+      "sha256": "d973abd1c9f98555bf493fe96b92ca9245a721bf77282c7d5a4e539a25e13c56",
+      "bytes": 12837,
+      "summary": [
+        "9 passed, 0 failed",
+        "\n 116 pass",
+        " 0 fail",
+        " 385 expect() calls",
+        "Ran 116 tests across 15 files. [22.89s]"
+      ]
+    },
+    "authorization_standalone": {
+      "path": "/private/tmp/atlas-channel-authorization-standalone-20260906.log",
+      "sha256": "1b7a99506d1d93583cc42d535219f65d34562a03510025a9f69d7d7c958a8112",
+      "bytes": 76098,
+      "summary": [
+        "\n 614 pass",
+        " 0 fail",
+        " 2851 expect() calls",
+        "Ran 614 tests across 1 file. [63.37s]"
+      ]
+    },
+    "cloudflare_audio": {
+      "path": "/private/tmp/atlas-cloudflare-audio-env-20260906-tests-final.log",
+      "sha256": "b957c7c4f21fbf30169f2642019b37e7dace19c88bceb39c6450cd7a9c426b99",
+      "bytes": 3797,
+      "summary": [
+        "\n 33 pass",
+        " 0 fail",
+        " 97 expect() calls",
+        "Ran 33 tests across 3 files. [3.65s]"
+      ]
+    },
+    "voice_bound_room": {
+      "path": "/private/tmp/atlas-native-voice-boundroom-fix.log",
+      "sha256": "a294568d57bfa9e0aed0d0726dca82b4fa451013f4fcfad593e7cb2cdc1d39d2",
+      "bytes": 1103,
+      "summary": [
+        "\n 10 pass",
+        " 0 fail",
+        " 54 expect() calls",
+        "Ran 10 tests across 1 file. [3.83s]"
+      ]
+    },
+    "adversarial_before": {
+      "path": "/private/tmp/atlas-shared-native-review.log",
+      "sha256": "a1afdfbca040c66f58fb4f5cd96fb6c0fc083bbae349c145b99d30ada6de6298",
+      "bytes": 684,
+      "summary": [
+        "\n 2 pass",
+        " 0 fail",
+        " 5 expect() calls",
+        "Ran 2 tests across 1 file. [9.21s]"
+      ]
+    },
+    "adversarial_after": {
+      "path": "/private/tmp/atlas-shared-native-review-fixed.log",
+      "sha256": "8a72cbe2695093d762d84df58c633678d851bf7b95702649b901e61b8e992f78",
+      "bytes": 591,
+      "summary": [
+        "\n 2 pass",
+        " 0 fail",
+        " 6 expect() calls",
+        "Ran 2 tests across 1 file. [1.90s]"
+      ]
+    },
+    "discord_multiple_before": {
+      "path": "/private/tmp/atlas-discord-multiple-before.log",
+      "sha256": "f8de78df157e067f95c12fa945bfc91c6a067c17829d227700d7808f3ea8e9ab",
+      "bytes": 20034,
+      "summary": [
+        "\n 4 pass",
+        " 9 fail",
+        " 30 expect() calls",
+        "Ran 13 tests across 1 file. [316.00ms]"
+      ]
+    },
+    "discord_multiple_after": {
+      "path": "/private/tmp/atlas-discord-multiple-full.log",
+      "sha256": "88c7a725ede1c8f7c3f0a39ca945b0fd57fe17b838098ff92689b1ec1a92b072",
+      "bytes": 69991,
+      "summary": [
+        "\n 376 pass",
+        " 0 fail",
+        " 1959 expect() calls",
+        "Ran 376 tests across 20 files. [3.58s]"
+      ]
+    },
+    "whatsapp_thumbnail_before": {
+      "path": "/private/tmp/atlas-whatsapp-native-baileys-thumbnail-before.log",
+      "sha256": "34ed9cd8da68eeb81506ef61d511af7be23b153aae1ba78e6e69568709dc7cf4",
+      "bytes": 971,
+      "summary": ["\n 0 pass", " 1 fail", " 3 expect() calls"]
+    },
+    "whatsapp_thumbnail_after": {
+      "path": "/private/tmp/atlas-whatsapp-native-baileys-thumbnail-after.log",
+      "sha256": "4a6cc83fbfc05db0d2246742ec122257710621b51d1f40a8300e0c05f56bf061",
+      "bytes": 1454,
+      "summary": [
+        "\n 8 pass",
+        " 0 fail",
+        " 41 expect() calls",
+        "Ran 8 tests across 1 file. [1441.00ms]"
+      ]
+    },
+    "discord_playback": {
+      "path": "/private/tmp/atlas-discord-native-20260906-playback-proof.log",
+      "sha256": "b9fb5d46bf1ac690e4ee977e4093d246c1949167b8af1525cf3957dc9ee4780b",
+      "bytes": 2135,
+      "summary": [
+        "\n 22 pass",
+        " 0 fail",
+        " 152 expect() calls",
+        "Ran 22 tests across 2 files. [1.58s]"
+      ]
+    },
+    "discord_artifact_revocation_before": {
+      "path": "/private/tmp/atlas-discord-artifact-authorization-red.log",
+      "sha256": "e2b43b07843ec80d686bf50099265220a639a64928b92e8096e2c188059c6290",
+      "bytes": 9700,
+      "summary": [
+        "3 pass",
+        "10 fail",
+        "25 expect() calls",
+        "Ran 13 tests across 1 file. [2.31s]"
+      ]
+    },
+    "discord_native_final_boundaries_before": {
+      "path": "/private/tmp/atlas-discord-native-action-final-boundaries-red.log",
+      "sha256": "4a0315528813f3570e52f0b92ce3c4c26c5f63ea01e4acfc1202add12a2ff6f4",
+      "bytes": 15894,
+      "summary": [
+        "25 pass",
+        "14 fail",
+        "421 expect() calls",
+        "Ran 39 tests across 1 file. [364.00ms]"
+      ]
+    },
+    "discord_final": {
+      "path": "/private/tmp/atlas-discord-final-boundaries-full-final.log",
+      "sha256": "3f27a6f3c5a26d300a11fb28c48cfb4ae191c8f407340faf121991c62acebf37",
+      "bytes": 72748,
+      "summary": [
+        "408 pass",
+        "0 fail",
+        "2150 expect() calls",
+        "Ran 408 tests across 21 files. [5.37s]"
+      ]
+    },
+    "telegram_native_final_boundaries_before": {
+      "path": "/private/tmp/atlas-telegram-final-authority-native-red.log",
+      "sha256": "d7d4851113b87f573791c9aec9d480a85141112dfcf07d6094027d2ffe3995c6",
+      "bytes": 6683,
+      "summary": [
+        "22 pass",
+        "5 fail",
+        "110 expect() calls",
+        "Ran 27 tests across 1 file. [1.65s]"
+      ]
+    },
+    "telegram_artifact_revocation_before": {
+      "path": "/private/tmp/atlas-telegram-final-authority-artifacts-red.log",
+      "sha256": "8265345401ba4ac2319af77168bdefe8e0dbdef3a1439b15e330d4cfa9fa4190",
+      "bytes": 6240,
+      "summary": [
+        "4 pass",
+        "8 fail",
+        "28 expect() calls",
+        "Ran 12 tests across 1 file. [3.05s]"
+      ]
+    },
+    "web_typecheck": {
+      "path": "/private/tmp/atlas-native-final-web-types.log",
+      "sha256": "718853d1a74e77e2217373914b4cbbf0af84e2a869053bbd4beab38338b0f827",
+      "bytes": 41,
+      "summary": []
+    }
+  },
+  "initialRepositoryFailure": {
+    "logPath": "/private/tmp/atlas-native-full-repository-final.log",
+    "sha256": "91341b7969e1a7803daf4b8ff0cacff1937fab6044ece3249aa164cb191fdbf9",
+    "bytes": 741009,
+    "pass": 6615,
+    "fail": 6,
+    "errors": 4,
+    "assertions": 23268,
+    "unhandledErrorMarkers": 4,
+    "tests": 6621,
+    "files": 674,
+    "duration": "550.96s",
+    "status": "FAILED_RETAINED",
+    "findings": [
+      "Questionnaire schema exceeded unchanged compactness budgets",
+      "channel_action declaration had a non-object root",
+      "Four HTTP tests exceeded their unchanged five-second deadlines; four late unhandled errors followed"
+    ],
+    "followup": "Both schemas were corrected; the entire 614-test authorization file passed standalone without deadline changes. The cause of the earlier delay is not established."
+  },
+  "intermediateRepository": {
+    "logPath": "/private/tmp/atlas-native-full-repository-final2.log",
+    "sha256": "636c87e6ece6ed9f751215963f3fea30dda7bf9784e32814d0308022f75d20a4",
+    "bytes": 738093,
+    "pass": 6649,
+    "fail": 0,
+    "assertions": 23493,
+    "unhandledErrorMarkers": 0,
+    "tests": 6649,
+    "files": 676,
+    "duration": "316.35s",
+    "status": "PASS",
+    "scopeNote": "Before the final ordinary-artifact and multi-effect authorization fixes; not their final regression result."
+  },
+  "proofBoundaries": {
+    "providers": "Six provider types traverse real Hono SSE, AtlasClient, claim/receipt and persistence with controlled generation. Actual OpenAI, Anthropic and Gemini schema serializers are exercised separately. This does not prove live support for every model or endpoint.",
+    "platforms": "Production channel handlers and real HTTP/SQLite/files, with controlled messenger transports. Zero live sends.",
+    "media": "Actual FFmpeg/FFprobe, PCM/Opus, thumbnail and file byte checks; handset rendering and actual Discord voice receive are not proven.",
+    "policyMatrix": "378 predefined layered-policy cases plus alias, missing-origin, malformed-policy and false/empty cases; existing A01-A14 audit retained. Not an exhaustive Cartesian product.",
+    "workerTrust": "Scoped workers attest platform identity and room; compromised worker credentials are not equivalent to independently verifiable platform signatures.",
+    "adversarialProbeNote": "The two passing before-fix independent probes assert that the bug exists; their PASS is vulnerability reproduction, not a security-gate pass."
+  },
+  "remainingProofOrCapabilityGaps": [
+    "No actual WhatsApp, Telegram or Discord delivery, controls, playback or reconnect tests against designated real accounts.",
+    "Direct Atlas Claude inference not proven; prior Atlas-owned authentication probe was unauthenticated.",
+    "Earlier live OpenCode credentials returned 401, and fusion failed its strict final-response gate; controlled bridge tests do not promote these to live passes.",
+    "Pending native actions and uncertain-delivery suppression are process-local; no durable exactly-once guarantee across restart.",
+    "An already-running transcription HTTP request can continue until its adapter timeout, up to 60 seconds after voice leave; later pipeline stages stop.",
+    "Each tenant retains one configuration/worker per channel; multiple separate bot/accounts inside one tenant are not implemented.",
+    "Linux ARM64 verification does not certify Linux AMD64 or remote CI deployment.",
+    "Full OpenClaw feature parity and production readiness are not inferred from local checks."
+  ],
+  "priorEvidence": [
+    "../../live-proof-2026-09-06.md",
+    "../../tenant-channel-authorization-audit.md"
+  ],
+  "logHandling": "Only reviewed scalar facts and SHA-256 references are copied here. Raw operational/test logs remain at their named local paths.",
+  "evidenceAudit": {
+    "status": "PASS",
+    "reviewedCompletedLogReferences": 37,
+    "resolvedRelativeLinks": 10,
+    "note": "Independent read-only audit before final repository/scripts/Docker entries; later entries are validated separately.",
+    "finalRootCheck": {
+      "hostLogReferences": 40,
+      "dockerLogReferences": 26,
+      "runtimeManifestFiles": 1219,
+      "additionalSkillAssets": 18,
+      "buildInputManifestFiles": 2045,
+      "status": "All referenced log sizes/hashes and all declared current host source hashes match; actual image comparison is recorded in Docker evidence."
+    }
+  },
+  "completedAtUTC": "2026-09-06T11:24:18.434342+00:00"
+}

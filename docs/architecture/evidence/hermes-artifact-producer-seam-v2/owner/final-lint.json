@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-07T00:17:48.321834+00:00",
+  "name": "final-lint",
+  "command": [
+    "bun",
+    "x",
+    "--no-install",
+    "ultracite",
+    "check",
+    "packages/core/src/files/assets.ts",
+    "packages/core/src/tools/spreadsheet-io.ts",
+    "apps/server/src/services/artifact-producer-seam.test.ts"
+  ],
+  "exitCode": 0,
+  "log": "final-lint.log"
+}

@@ -1,0 +1,12 @@
+{
+  "observedAt": "2026-09-07T10:05:06.778883+00:00",
+  "phase": "confirmatory",
+  "batch": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932",
+  "originalRunnerSessionId": 87603,
+  "originalRunnerExitCode": 0,
+  "runnerRestarted": false,
+  "completedSha256": "8a7dded6ee49daa91e03994c95d98fb139e8bcef0480764026ae2a6048e5d45c",
+  "analysisYetRun": false,
+  "allScheduledArmsEnded": 108,
+  "scope": "Original process completion receipt; not an analysis, score or instrumentation certification."
+}

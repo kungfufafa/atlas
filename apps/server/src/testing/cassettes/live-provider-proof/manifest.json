@@ -1,0 +1,104 @@
+{
+  "recordings": [
+    {
+      "id": "openai_compatible-beb54ef594aa",
+      "provider": "openai_compatible",
+      "model": "cx/gpt-5.4-mini",
+      "kind": "probe",
+      "cassette": "live-probe-openai_compatible-beb54ef594aa.json",
+      "trace": "openai_compatible-beb54ef594aa-probe-trace.json",
+      "cassetteSha256": "7e9c7611822cb454f330dddf91e767b9437447f900241952d2456b2f9aebec38",
+      "traceSha256": "f7f28a644e990c33749d22b093ec14f1dd3b63574a9a7990611aa533c24d3f29",
+      "fileSha256": "37897138c82dc668bbd4661c31399f82b87bf7b6e40c8c0f56607f3ee3f1dea9",
+      "cassetteArchive": "live-probe-openai_compatible-beb54ef594aa.json.gz",
+      "cassetteArchiveSha256": "0081f21e105af4d643ffc55e714a74b0d2d6af86ece85e0e8957041d2b1b34b9",
+      "cassetteFormattedSha256": "bac98a770b9c51c6e1efe8c5ff185b6f17eeed2574837b72f9bc4f11ee9880be",
+      "traceArchive": "openai_compatible-beb54ef594aa-probe-trace.json.gz",
+      "traceArchiveSha256": "710e34a033d38195dbe81c8d0d667b9cff5fec867fce812ed631d8e72071de48",
+      "traceFormattedSha256": "c5fef5c06df484a256f33767d622197c44c1836588657b28f7c21e41cac255fd"
+    },
+    {
+      "id": "openai_compatible-beb54ef594aa",
+      "provider": "openai_compatible",
+      "model": "cx/gpt-5.4-mini",
+      "kind": "service",
+      "cassette": "live-service-openai_compatible-beb54ef594aa.json",
+      "trace": "openai_compatible-beb54ef594aa-service-trace.json",
+      "cassetteSha256": "ead256e6a2fd493cb63a792f47e4aabeb24ce33f5212a6168d61560010550b17",
+      "traceSha256": "fb53d1a755415ecb04142e97a938eface45428f49628c6f6b50bb5840904676d",
+      "fileSha256": "75075106f9fc047b7e81f31d8e6dbda7f4da6c531269b0bcce9e6765cfa44a8e",
+      "cassetteArchive": "live-service-openai_compatible-beb54ef594aa.json.gz",
+      "cassetteArchiveSha256": "9476b16059433933e1253e32baf3726a7d5491622b685b6a065b6c072dee01fe",
+      "cassetteFormattedSha256": "1f2f24ab7938879ea9cd6a743281ef323bf3ad573aba422149d8ce862f2ff4d6",
+      "traceArchive": "openai_compatible-beb54ef594aa-service-trace.json.gz",
+      "traceArchiveSha256": "8aab083c81df2e40a7092de38a3076171d72f2d1a2853d60f2439d8e4fec93db",
+      "traceFormattedSha256": "17cb89fc233f4d345b61a73465e864969b7c238919728127e68ed6c9f829dee6"
+    },
+    {
+      "id": "gemini-f650b27152d5",
+      "provider": "gemini",
+      "model": "gemini-3-flash-preview",
+      "kind": "probe",
+      "cassette": "live-probe-gemini-f650b27152d5.json",
+      "trace": "gemini-f650b27152d5-probe-trace.json",
+      "cassetteSha256": "eaba42e18ab1fe7a68277cbb88b3133f8403847ebe53657f8f3abb3d1f4acd8c",
+      "traceSha256": "26b85e7ab602a5af614c06fcfb1c4fc28429479cdd36f0f1261114f9abd2fbf5",
+      "fileSha256": "d7b356681001e7826000e80688fff857b650d14c083c995277ce0a8e0fe707ef",
+      "cassetteArchive": "live-probe-gemini-f650b27152d5.json.gz",
+      "cassetteArchiveSha256": "975cd3ded43b26a2a6808967642a082f478bffd9710950805e3cddf04980c8e5",
+      "cassetteFormattedSha256": "d077759ee4bf649548580b3386774bccb7ea218898e84eb7615abf56c3a096ca",
+      "traceArchive": "gemini-f650b27152d5-probe-trace.json.gz",
+      "traceArchiveSha256": "fb5a7593ac52bf45468297de53dd95d906f761b5aa4ff998f3c34b2672eabe68",
+      "traceFormattedSha256": "838fb9b2460931ec9728ae09e8555e7adca69465e5a3d26980577cffd74da743"
+    },
+    {
+      "id": "gemini-f650b27152d5",
+      "provider": "gemini",
+      "model": "gemini-3-flash-preview",
+      "kind": "service",
+      "cassette": "live-service-gemini-f650b27152d5.json",
+      "trace": "gemini-f650b27152d5-service-trace.json",
+      "cassetteSha256": "559d462804db803cd31554e85c535bf9799adbc2b85294976804e7076e6a41e4",
+      "traceSha256": "340611ce4fbe6a30d686d3ca6461b7a09dad7b2da7d9369ede2dcaf6a583750a",
+      "fileSha256": "ae1b5fc7f6ad158b16bec022ad896775723a20d9478a0d8bb1aceb8b325e5006",
+      "cassetteArchive": "live-service-gemini-f650b27152d5.json.gz",
+      "cassetteArchiveSha256": "db9f888d55800da4b781c431ed904edd462c8aaa68ce164ad471633dbdd5bc90",
+      "cassetteFormattedSha256": "0f48d7d66d4aaf1581ad9ef36c705a85120a452643d5a60b728ca29c872b58c6",
+      "traceArchive": "gemini-f650b27152d5-service-trace.json.gz",
+      "traceArchiveSha256": "6703623bc7891d7c6169085221e24d066df9c11d0c4d32782d512b5d0898d8c9",
+      "traceFormattedSha256": "d3815ea66aae46569cd862eb5fb6d1733e682e184860fa388176ee33e3fe40ac"
+    }
+  ],
+  "scope": "Recorded HTTP transports plus current protected file tools; source service recordings also passed live AgentService/current-DB admission, which this adapter replay does not repeat.",
+  "notCovered": [
+    {
+      "id": "opencode_go-ef414504e6e5",
+      "model": "opencode-go/deepseek-v4-flash",
+      "status": "UPSTREAM_AUTHENTICATION_FAILED",
+      "reason": "Actual upstream HTTP 401; earlier MSW handler masked it as 500."
+    },
+    {
+      "id": "opencode_go-b267b19d13e2",
+      "model": "opencode-go/kimi-k2.7-code",
+      "status": "UPSTREAM_AUTHENTICATION_FAILED",
+      "reason": "Actual upstream HTTP 401; earlier MSW handler masked it as 500."
+    },
+    {
+      "id": "openai_compatible-c91ce6a3084e",
+      "model": "fusion",
+      "status": "FINAL_CONTENT_MISMATCH",
+      "reason": "Recorded tools and file bytes were correct, final response changed the nonce; overall live case failed."
+    },
+    {
+      "id": "chatgpt-c2099079f445",
+      "model": "gpt-5.6-sol",
+      "status": "NATIVE_TRACE_ONLY",
+      "reason": "Native ChatGPT is outside HTTP/MSW replay; separate actual runtime trace/hash evidence."
+    },
+    {
+      "provider": "claude",
+      "status": "AUTHENTICATION_PENDING",
+      "reason": "Official Atlas-isolated OAuth login awaiting user completion; no inference recording."
+    }
+  ]
+}

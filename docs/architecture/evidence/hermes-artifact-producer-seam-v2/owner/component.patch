@@ -1,0 +1,153 @@
+--- a/apps/server/src/services/artifact-producer-seam.test.ts
++++ b/apps/server/src/services/artifact-producer-seam.test.ts
+@@ -2,10 +2,12 @@
+ import {
+   mkdir,
+   mkdtemp,
++  readdir,
+   readFile,
+   realpath,
+   rm,
+   symlink,
++  writeFile,
+ } from "node:fs/promises";
+ import { tmpdir } from "node:os";
+ import path from "node:path";
+@@ -15,7 +17,11 @@
+   createToolArtifactPublisher,
+   stageToolArtifact,
+ } from "@atlas/core/artifact-publication";
+-import { fileAssetRevision, saveFileArtifact } from "@atlas/core/files/assets";
++import {
++  fileAssetRevision,
++  MAX_FILE_ASSET_BYTES,
++  saveFileArtifact,
++} from "@atlas/core/files/assets";
+ import { writeNewArtifactVersion } from "@atlas/core/files/versioned-write";
+ import {
+   runEditFile,
+@@ -28,6 +34,7 @@
+ import { pdfDocumentTool } from "@atlas/core/tools/pdf-document";
+ import { spreadsheetTool } from "@atlas/core/tools/spreadsheet";
+ import {
++  MAX_SPREADSHEET_BYTES,
+   publishSpreadsheet,
+   spreadsheetRevision,
+ } from "@atlas/core/tools/spreadsheet-io";
+@@ -129,6 +136,75 @@
+     ).toEqual(expected);
+   });
+ });
++
++test("oversized byte outputs reject before workspace mutation and preserve an existing spreadsheet", async () => {
++  await fixture(async (f) => {
++    const oversized = Buffer.alloc(
++      Math.max(MAX_FILE_ASSET_BYTES, MAX_SPREADSHEET_BYTES) + 1
++    );
++    const destination = path.join(f.workspaceRoot, "existing.csv");
++    const original = Buffer.from("value\noriginal\n");
++    await writeFile(destination, original);
++    await expect(
++      saveFileArtifact({
++        bytes: oversized,
++        context: f.context,
++        filename: "oversized.bin",
++      })
++    ).rejects.toThrow();
++    await expect(
++      publishSpreadsheet({
++        bytes: oversized,
++        expectedRevision: spreadsheetRevision(original),
++        path: destination,
++        writeMode: "inplace",
++      })
++    ).rejects.toThrow();
++    expect(await readFile(destination)).toEqual(original);
++    expect(await readdir(f.workspaceRoot)).toEqual(["existing.csv"]);
++    const publication = await f.execution.finalize({ success: false });
++    expect(publication.status).toBe("discarded");
++    expect(publication.publications).toHaveLength(0);
++  });
++});
++
++test.each(["docx", "pptx"] as const)(
++  "nested cwd %s retains its real file receipt when the canonical publication destination is unsupported",
++  async (format) => {
++    await fixture(async (f) => {
++      const cwd = path.join(f.workspaceRoot, "nested");
++      await mkdir(cwd);
++      const receipt =
++        format === "docx"
++          ? await runWriteDocx(
++              { cwd, markdown: "Nested report", path: "report.docx" },
++              f.context
++            )
++          : await runWritePptx(
++              {
++                cwd,
++                path: "report.pptx",
++                slides: [{ title: "Nested report" }],
++                title: "Report",
++              },
++              f.context
++            );
++      const bytes = await readFile(receipt.path);
++      expect(receipt.path).toBe(
++        path.join(cwd, "artifacts", `report.${format}`)
++      );
++      expect(receipt.bytesWritten).toBe(bytes.byteLength);
++      expect(bytes.subarray(0, 2).toString()).toBe("PK");
++      const publication = await f.execution.finalize({
++        data: receipt,
++        success: true,
++      });
++      expect(publication.status).toBe("failed");
++      expect(publication.publications).toHaveLength(0);
++      expect(await readFile(receipt.path)).toEqual(bytes);
++    });
++  }
++);
+ 
+ test("generic writes and edits publish only explicit deliverables and reject invalid destinations before mutation", async () => {
+   await fixture(async (f) => {
+--- a/packages/core/src/files/assets.ts
++++ b/packages/core/src/files/assets.ts
+@@ -105,7 +105,11 @@
+   path: string;
+   revision: string;
+ }> {
+-  const bytes = new Uint8Array(input.bytes);
++  const suppliedBytes = input.bytes;
++  if (suppliedBytes.byteLength > MAX_FILE_ASSET_BYTES) {
++    throw new Error(`Output exceeds the ${MAX_FILE_ASSET_BYTES} byte limit.`);
++  }
++  const bytes = new Uint8Array(suppliedBytes);
+   input.context.signal?.throwIfAborted();
+   const root = fileAssetWorkspace(input.context);
+   // Materialized input is a working source, not a new deliverable for channels.
+@@ -123,9 +127,6 @@
+     throw new Error(
+       "outputFilename must be a filename without directories (maximum 180 characters)."
+     );
+-  }
+-  if (bytes.length > MAX_FILE_ASSET_BYTES) {
+-    throw new Error(`Output exceeds the ${MAX_FILE_ASSET_BYTES} byte limit.`);
+   }
+   const directory = await guardFilePath(outputDirectory, null, undefined, {
+     allowedDirs: [root],
+--- a/packages/core/src/tools/spreadsheet-io.ts
++++ b/packages/core/src/tools/spreadsheet-io.ts
+@@ -106,10 +106,11 @@
+   signal?: AbortSignal;
+   writeMode: "inplace" | "versioned";
+ }): Promise<{ path: string; revision: string }> {
+-  const bytes = Buffer.from(input.bytes);
+-  if (bytes.length > MAX_SPREADSHEET_BYTES) {
++  const suppliedBytes = input.bytes;
++  if (suppliedBytes.byteLength > MAX_SPREADSHEET_BYTES) {
+     throw new Error("Generated spreadsheet exceeds the 25 MiB limit.");
+   }
++  const bytes = Buffer.from(suppliedBytes);
+   const directory = path.dirname(input.path);
+   await mkdir(directory, { recursive: true });
+   const temporary = path.join(

@@ -1,0 +1,3 @@
+# Addendum: title-timeout factual diagnostic wording
+
+The immutable report's phrase “three Hermes title-request timeouts ... despite correct factual recall in those arms” refers to semantic recall and needs this exact-oracle qualification: two of those arms satisfy frozen finalFactsCorrect; the third, implicit_preference/1907/explicit-memory/Hermes, returns the semantically equivalent string `Asia/Jakarta (WIB, UTC+07:00)` rather than the exact expected `Asia/Jakarta`, so frozen finalFactsCorrect is false. Its stored requested timezone is correct; both the representation mismatch and independent unknown-usage timeout are retained. No score or immutable report has been changed.

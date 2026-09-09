@@ -1,0 +1,428 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-06",
+  "scope": "Tenant, channel and tool authorization; no live delivery authorization",
+  "gitHead": "92ce5e432609425e5cd9a701f1b77e7062ff7b21",
+  "workingTree": "pre-existing changes preserved; not committed",
+  "finalChecks": {
+    "repository": {
+      "command": "LLM_VCR_MODE=replay bun run test",
+      "pass": 6340,
+      "fail": 0,
+      "assertions": 21530,
+      "files": 650,
+      "seconds": 279.9,
+      "log": "full-regression"
+    },
+    "scripts": {
+      "command": "LLM_VCR_MODE=replay bun test scripts",
+      "pass": 46,
+      "fail": 0,
+      "assertions": 130,
+      "files": 11,
+      "log": "scripts-final"
+    },
+    "rootTypecheck": "passed",
+    "webTypecheck": "passed",
+    "fileRuntimeTypecheck": "passed",
+    "lint": {
+      "status": "passed",
+      "files": 2061
+    },
+    "serverBuild": "passed",
+    "diffCheck": "passed",
+    "documentationBrowserQA": {
+      "status": "passed with explicit search-destination limit",
+      "origin": "http://127.0.0.1:3000",
+      "pages": ["/atlas/discord", "/atlas/whatsapp", "/atlas/telegram"],
+      "pageErrors": 0,
+      "beforeAfterSectionScreenshots": 8,
+      "navigation": "passed",
+      "search": "static index/results, open/Escape/reopen/selection close passed; separate destination transition not proved",
+      "report": "docs-browser/qa-report.md",
+      "temporaryServerStopped": true,
+      "generatedFilesRestored": true
+    }
+  },
+  "countsOverlap": true,
+  "httpProduct": {
+    "channels": 3,
+    "accessModes": 4,
+    "senderStates": 6,
+    "roles": 6,
+    "intents": 3,
+    "authorizationRequests": 1296,
+    "discordAdministrationCases": 144,
+    "additionalHttpProbesIncludedInFullRun": true
+  },
+  "coverageByTestFile": {
+    "apps/platform/discord/src/authorization-matrix.test.ts": {
+      "pass": 161,
+      "fail": 0
+    },
+    "apps/platform/telegram/src/authorization-matrix.test.ts": {
+      "pass": 116,
+      "fail": 0
+    },
+    "apps/platform/telegram/src/channel-authorization-integration.test.ts": {
+      "pass": 140,
+      "fail": 0
+    },
+    "apps/platform/whatsapp/src/authorization-integration.test.ts": {
+      "pass": 65,
+      "fail": 0
+    },
+    "apps/server/src/http/org-member-invalidation.test.ts": {
+      "pass": 6,
+      "fail": 0
+    },
+    "apps/server/src/services/channel-action-authorization.test.ts": {
+      "pass": 4,
+      "fail": 0
+    },
+    "apps/server/src/services/mcp-tool-bridge.test.ts": {
+      "pass": 6,
+      "fail": 0
+    },
+    "apps/server/src/services/composio-tool-bridge.test.ts": {
+      "pass": 13,
+      "fail": 0
+    },
+    "apps/server/src/services/channel-pairing-authorization.test.ts": {
+      "pass": 23,
+      "fail": 0
+    },
+    "apps/server/src/services/agent-service-tool-tenancy.test.ts": {
+      "pass": 29,
+      "fail": 0
+    },
+    "apps/server/src/services/chat-tool-approval-service.test.ts": {
+      "pass": 17,
+      "fail": 0
+    },
+    "apps/server/src/services/composio-tool-authorization.test.ts": {
+      "pass": 13,
+      "fail": 0
+    },
+    "packages/core/src/tools/execution.test.ts": {
+      "pass": 27,
+      "fail": 0
+    },
+    "apps/server/src/http/routes/sessions-channel-authorization.test.ts": {
+      "pass": 27,
+      "fail": 0
+    },
+    "apps/server/src/http/routes/channel-authorization.test.ts": {
+      "pass": 614,
+      "fail": 0
+    }
+  },
+  "sourceSha256": {
+    "apps/platform/discord/src/attachments.ts": "afd83ffeb290cf86b33f6dbf08a1824113a8a898efc50bc4f133a8685bbca032",
+    "apps/platform/discord/src/authorization-matrix.test.ts": "f3fb24c68ff3e2549125d83ac8c75b1a8df013075874ea4d7832044a7f12313e",
+    "apps/platform/discord/src/channel-artifact-flow.ts": "f2026d14158cbff68cf75216f9885b528087088ed2af2f8589e745c357e215ac",
+    "apps/platform/discord/src/chat-handler.ts": "81472455de5324caaeabb87877431bde0e28f9a10fdc4eae4a783d5a64d5cc43",
+    "apps/platform/telegram/src/attachments.ts": "875ee19f70feacd2e569f655e713f2bc8300d64ec75b74c471c0fdf8a91ccaf4",
+    "apps/platform/telegram/src/authorization-matrix.test.ts": "c983625a4446172f71739878d2786da243d5beda8edb8f8b588d555c0d1e501c",
+    "apps/platform/telegram/src/channel-artifact-flow.ts": "ee685dad82141a62c05538b6cd3bcf11a5cd5df277172eb18e8dd48519621154",
+    "apps/platform/telegram/src/channel-authorization-integration.test.ts": "6ed35ce3001963fe7ae101ed397ece5aa2cc6bb5f3f5de6d4485a9e3f0a88a2d",
+    "apps/platform/telegram/src/chat-handler.ts": "7deb4c93144bdb28794b04a6f2cf6d5489c6fbe749aa8a6ac555db251967e47e",
+    "apps/platform/whatsapp/src/attachments.ts": "11cdfa1fdd7b17d43db3f8e052226a47fc472362263174086e2b9f22451f976f",
+    "apps/platform/whatsapp/src/authorization-integration.test.ts": "44d811be0a54a05eb2c3ae97d4f861b630e780418e4129af276fb9f3f6a20d84",
+    "apps/platform/whatsapp/src/channel-artifact-flow.ts": "148ece6c4a9b20fd0aea90d2108df346f55b776d4b1628def381d3a6e72ad30c",
+    "apps/platform/whatsapp/src/chat-handler.ts": "92dc705a3766fb0d5e7247527f3981e2e56625b25320cbaf162a1a6db8ff6faa",
+    "apps/platform/whatsapp/src/outbound-server.ts": "05314f51512da1fb9c525f1ada65cdd979e44f6b2d0bc0aa5b492611f8b1735a",
+    "apps/platform/whatsapp/src/session-store.ts": "f4aaf0432b2685f6143e10de68d9eb0ef7594f13d5d04939bfe56db0493a7f1d",
+    "apps/server/src/http/auth-middleware.ts": "5b88f3b6caeec2f376e6ecec5aaf74d18785e16da4b9bbc0a7be04076933a209",
+    "apps/server/src/http/org-member-invalidation.test.ts": "cdeb1bb8bf10364c1a57737558b2cd2657caf83b9dd63ef3a07a0b56d6301a66",
+    "apps/server/src/http/org-middleware.ts": "3d88ebca99ec53282d95c9d7f3140329baa00d9c642ba0b20eccba01bc8f8f26",
+    "apps/server/src/http/routes/channel-authorization.test.ts": "d7337c82d748c622bc3c28ea82dd538b2db1213c19d5755eb151e2a5578af522",
+    "apps/server/src/http/routes/channel-authorization.ts": "91baff4aff3490fa2c831a930cd60782649957eb79e97056bcb63a3201c2a943",
+    "apps/server/src/http/routes/org-members.ts": "fdccd2db00b632d5df69327c1adb95af8c202118757aee201aeb3dd8ea3ab942",
+    "apps/server/src/http/routes/sessions-channel-authorization.test.ts": "e2ee719bda817d7b9e654ee96baa50f0d9f75233a3eb8c8ee058663748df981c",
+    "apps/server/src/http/routes/sessions.ts": "df382ee3b81b670c9ddc45148f03de7a04af4789dfdc80f88a3c403e3c70251a",
+    "apps/server/src/services/agent-service-tool-tenancy.test.ts": "6300d57d1a8f07b86ebd0076d6f9498f9ca043d91373943102424f1503e7bd28",
+    "apps/server/src/services/agent-service.ts": "fab55ad1428d050ea37a6d734ae23baeb3dda7a085508636f68d3102b541afd0",
+    "apps/server/src/services/channel-action-authorization.test.ts": "06f9cd80f7d875bb352620fd978133853ac072a2c81725c96417c8d299f5f40c",
+    "apps/server/src/services/channel-action-authorization.ts": "2ec1eabf55de387c7f3e9e35e020f45c29cb81f035285e5cf638e76ab9393fe4",
+    "apps/server/src/services/channel-guest-principal-service.ts": "31e164378fa96efbc2e20cb7d2a5bba7d9fb2e4297809c315b4098894714dce1",
+    "apps/server/src/services/channel-pairing-authorization.test.ts": "38fc789a7545cec62b0fae7927a5d8abe360276ec8c964fe1fbc6f8f08e831e3",
+    "apps/server/src/services/channel-pairing-authorization.ts": "140c73defd25bf6f10f191ee79d790d274e56913980abe6d3a00850ce7532760",
+    "apps/server/src/services/chat-tool-approval-service.test.ts": "816d7ebb096f2cc2c8ae0c9d5e35fc5368cb35fd11e9342ca0a9c50981e609bd",
+    "apps/server/src/services/composio-service.ts": "137e74fe502852ef4c893d223d1d29cdf9ab3a2890be08c8aa6f57ec3dafee78",
+    "apps/server/src/services/composio-tool-authorization.test.ts": "11da8ec477b19f8befad80bab072ba7a17784197662e580443f202a35e8529bb",
+    "apps/server/src/services/composio-tool-bridge.test.ts": "f61f0a005af907b381cc9a7ac80eae0739792617712fa6d54839491c4cc7ce89",
+    "apps/server/src/services/composio-tool-bridge.ts": "88ec945a28785dd70180153bb9c00fbc9ee302160dd8cfb4aecb1b08f2b8d398",
+    "apps/server/src/services/identity-service.ts": "9177cba834c8338451a87e0d5ecd94d5649364d743091a61481d67f51cfda767",
+    "apps/server/src/services/mcp-service.ts": "31bb7b021e4222b639fbc39e511d9d99fe4428ef1fb7792846aae27224792245",
+    "apps/server/src/services/mcp-tool-bridge.test.ts": "49b47f42feb65ad2786ecf6bd64510866efe5aa8f9f2a12e972e39de7f96db9c",
+    "apps/server/src/services/mcp-tool-bridge.ts": "cef965f3610985a198aa02677888806a5eacab8923d48d39d00048322aaa6b51",
+    "apps/server/src/services/tool-resolver.ts": "e4242e6a4f3f4da4194e21835449fae011e8564f3b202798530a391d956c9f90",
+    "bun.lock": "c19b8135dddb81b6c74d5ba43940d40bea7e078a0ad27a7cdb5a043ab7504dd8",
+    "packages/agent/src/tool-loop.ts": "f57337ddf14b4dbcc7a720d27b4e1570f16178773c61e68ac23eb68ce5e4c7c3",
+    "packages/client/src/client.ts": "035c8b6d80077b1f609d5ff794391ab86b2e46309182a46b6c9fef838bdfcaca",
+    "packages/core/src/discord-config.ts": "f3fca1a3dc4bfb0efeec0f49e069a2e6aed00fad6bb987882d576c47b31571e7",
+    "packages/core/src/identity/principal.ts": "6b0c5ec73653b74bf76e75b77d405579e469e89fb62119ac05771b9c08f55221",
+    "packages/core/src/telegram-config.ts": "eda829d5e753c141da640fd265a05e013b8ef7fa7d41b2d8a9c56ab30b29e9cf",
+    "packages/core/src/tools/execution.test.ts": "b9a5f96fc463be15b7288080f2b964e073e947c994e5ecb2b25a44cba25eb6c8",
+    "packages/core/src/tools/execution.ts": "00cd06c88895841b78e51aa45268913a82ccec656317732d6cb513a7ea8876df",
+    "packages/core/src/tools/permissions.ts": "05184e12c86fcf14e74a3c8707c128a4d27cf7d2dc190bfe175837953dff0f8b",
+    "packages/core/src/tools/protected.ts": "64013d8d501f47ac77319c9a306c35a472d5707facf85eb08cdaefc43ad189d3",
+    "packages/core/src/whatsapp-config.ts": "85c8641bf2a090622533552518baf98022de82bd01b7a83d18a6f5051df10a78",
+    "docs/website/content/docs/discord.mdx": "7b5e9ba45698d2e245e580b55b88c8c602e1c4e33b163c7bc372eb90828b40cd",
+    "docs/website/content/docs/whatsapp.mdx": "2381d172a724e0824641241bbff6de6939ea6a6fbc1c1f27177690128fc04b3b",
+    "docs/website/content/docs/telegram/index.mdx": "64307565686776c42b0c2b081151d113bfb40c556cfc47c776647e7e4781ffae"
+  },
+  "logs": {
+    "full-regression": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-full.log",
+      "archive": "full-regression.log.gz",
+      "rawBytes": 701761,
+      "rawSha256": "6bc1df6b1b1db38eed29c5f9d23bf43dc518c11d35b2a0ea4d61c85c49b08597",
+      "archiveSha256": "1cc7e9c30d86287cb170bed6c18e5846a30bc32fcd74e42d726d0d05dd0444fe",
+      "pass": 6340,
+      "fail": 0,
+      "assertions": 21530
+    },
+    "scripts-final": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-scripts-final.log",
+      "archive": "scripts-final.log.gz",
+      "rawBytes": 7378,
+      "rawSha256": "bad9c7e06a531aa06bdb363718203047e819cddd6f2f9890f000798b723823c1",
+      "archiveSha256": "dbf1ec17435870673c20a75a6127b2e2897b8c1bf95562f55c049c75bd727f8d",
+      "pass": 46,
+      "fail": 0,
+      "assertions": 130
+    },
+    "lint-final": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-lint-final.log",
+      "archive": "lint-final.log.gz",
+      "rawBytes": 44,
+      "rawSha256": "4de1536f9ddf8120156f06ac2112b563e9335cb0419b140143b3baa21d36117a",
+      "archiveSha256": "da15fe3a7c58e8cb8f410e63fe3dc2128323b193c5fe1c77fb8cb286e583ef09"
+    },
+    "typecheck-final": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-typecheck-final.log",
+      "archive": "typecheck-final.log.gz",
+      "rawBytes": 42,
+      "rawSha256": "1e7364545b505adc6ef70012ce70f69a90a7eb05ebb0a0886a63cceb701bcb27",
+      "archiveSha256": "d409e9b6959f77a0f2a63867de625947bfc3b114b05930b8f4213fce7f40dedc"
+    },
+    "web-typecheck": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-web-typecheck.log",
+      "archive": "web-typecheck.log.gz",
+      "rawBytes": 41,
+      "rawSha256": "718853d1a74e77e2217373914b4cbbf0af84e2a869053bbd4beab38338b0f827",
+      "archiveSha256": "de075ad18a624618e3f0a2feaef474fa5cefd4503525f9f30fd1e2d0b0798a52"
+    },
+    "file-runtime-typecheck": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-file-runtime-typecheck.log",
+      "archive": "file-runtime-typecheck.log.gz",
+      "rawBytes": 0,
+      "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "server-build": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-build-final.log",
+      "archive": "server-build.log.gz",
+      "rawBytes": 29,
+      "rawSha256": "3a1c50c023be5ff2f5859b9cb565de7d99263ec274fb22383c2e5e9badc222f3",
+      "archiveSha256": "d052178482e4e6b178b81c38148ab44e9c2d28322c350b21a827e70d7eb57a01"
+    },
+    "http-initial": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-http-initial.log",
+      "archive": "http-initial.log.gz",
+      "rawBytes": 78555,
+      "rawSha256": "42f410daee621d90c84aeb2c5c57636338489da8f207a450ebccdd4f9d660850",
+      "archiveSha256": "3e3b3b13c8610667d6db2ca0c567a1f101697ca9d7ec2fa1e9890cac6a254c9a",
+      "pass": 593,
+      "fail": 6,
+      "assertions": 2731
+    },
+    "http-targeted-correction": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-http-targeted.log",
+      "archive": "http-targeted-correction.log.gz",
+      "rawBytes": 1545,
+      "rawSha256": "4d26374cf6e2dec6f6f1b4798d4270cd534b2c5cef332b6dd4d0983588436eae",
+      "archiveSha256": "1325cad8d5bf8b339b3ce31e1c27c806b5bba36b816903235ca1f2ee5c377d06",
+      "pass": 15,
+      "fail": 0,
+      "assertions": 141
+    },
+    "http-platform-default": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-platform.log",
+      "archive": "http-platform-default.log.gz",
+      "rawBytes": 774,
+      "rawSha256": "46512dfb303039a7f90ae8ce51a2e76950e2093849cdd570b94ee58bd50d7797",
+      "archiveSha256": "586827e844d8c35d92d2c89155ae45c2658af137b20a61331e3d34b3a0f3ae9f",
+      "pass": 6,
+      "fail": 0,
+      "assertions": 63
+    },
+    "lint-initial": {
+      "available": true,
+      "originalPath": "/private/tmp/atlas-authorization-lint-initial.log",
+      "archive": "lint-initial.log.gz",
+      "rawBytes": 45654,
+      "rawSha256": "66e4e4b470b5d52005e8202d66500927ed1a4b8881d6d6120e9538f711e7eb21",
+      "archiveSha256": "b6d914a110984403eeee0fbeba641e32014b119bde4aa2b76a544b7818385450"
+    },
+    "whatsapp-initial": {
+      "available": true,
+      "originalPath": "/tmp/atlas-whatsapp-auth-red.log",
+      "archive": "whatsapp-initial.log.gz",
+      "rawBytes": 5329,
+      "rawSha256": "3b3534b4d01db6fc1c346d115da4bfe91af70db8374fdc77a997e948a655afad",
+      "archiveSha256": "15aa4697601684d1d2021f9ef75e2a29e5845e0584c7ae649741c14a9bd3124c",
+      "pass": 0,
+      "fail": 8,
+      "assertions": 12
+    },
+    "whatsapp-pairing-initial": {
+      "available": true,
+      "originalPath": "/tmp/atlas-whatsapp-pairing-red.log",
+      "archive": "whatsapp-pairing-initial.log.gz",
+      "rawBytes": 1582,
+      "rawSha256": "362e95131d39725cf72b512e1ba07446135f6adccb3324a8b37a0d2e61369101",
+      "archiveSha256": "f97a6209d1ed82d8d3e231a9a778a57766b08678b1175d1a69167583b0191c14",
+      "pass": 0,
+      "fail": 2,
+      "assertions": 2
+    },
+    "whatsapp-final-focused": {
+      "available": true,
+      "originalPath": "/tmp/atlas-whatsapp-final-suite.log",
+      "archive": "whatsapp-final-focused.log.gz",
+      "rawBytes": 33996,
+      "rawSha256": "33d3594db0494220618183bf3f5ee316b5e4531ff552f6c5ec748811f7ba9bf0",
+      "archiveSha256": "3923ad106ef15a833be810fcca49b7ca56256c9680e052f38ee8ec4715ae8606",
+      "pass": 330,
+      "fail": 0,
+      "assertions": 1008
+    },
+    "discord-initial": {
+      "available": true,
+      "originalPath": "/tmp/discord-auth-matrix-baseline.log",
+      "archive": "discord-initial.log.gz",
+      "rawBytes": 31423,
+      "rawSha256": "f706f22e84228e77f8e59c822882da5ae322b798427e52a125330a0424303e83",
+      "archiveSha256": "fd34e92f9dfb947a13ced99b352608646daefe90fc9e6dba98140880dba80f6a",
+      "pass": 151,
+      "fail": 2,
+      "assertions": 973
+    },
+    "channel-pairing-initial": {
+      "available": true,
+      "originalPath": "/tmp/channel-pairing-baseline.log",
+      "archive": "channel-pairing-initial.log.gz",
+      "rawBytes": 2481,
+      "rawSha256": "99d1279a686bfd759408e413ba7a31fd36efaf2c8748055c0ae64fa8221b57ff",
+      "archiveSha256": "5f4d593239638afd525b1be1ca89d54919f3ec141a501596876bbe21f2f5ee80",
+      "pass": 0,
+      "fail": 2,
+      "assertions": 2
+    },
+    "telegram-discord-final-focused": {
+      "available": true,
+      "originalPath": "/tmp/channel-final-focused.log",
+      "archive": "telegram-discord-final-focused.log.gz",
+      "rawBytes": 122656,
+      "rawSha256": "90e2f24a23d7820e872ee424ec0fee520f18b026e752a395870aaf8427a517a9",
+      "archiveSha256": "04563b494763572117ca0082b95f9a79b5efb445fe0aeba1fd8aaee9a8f0dda9",
+      "pass": 758,
+      "fail": 0,
+      "assertions": 3414
+    },
+    "session-admission-initial": {
+      "available": true,
+      "originalPath": "/tmp/atlas-session-admission-red.log",
+      "archive": "session-admission-initial.log.gz",
+      "rawBytes": 10855,
+      "rawSha256": "150c564dee54b961ca87d1a230930e126a07ad13502b4c4ad581d4e6674fc663",
+      "archiveSha256": "b5b479dff96ce3c5f0e415314817c2f0669cb11d13a46bbaa60c11859d18d315",
+      "pass": 18,
+      "fail": 9,
+      "assertions": 99
+    },
+    "session-admission-final-focused": {
+      "available": true,
+      "originalPath": "/tmp/atlas-admission-final-combined.log",
+      "archive": "session-admission-final-focused.log.gz",
+      "rawBytes": 16868,
+      "rawSha256": "ef35d2a6e76dc6812d0044821bc6d843a6542c8e92f0d83412a92c2b2ff51512",
+      "archiveSha256": "a09e4c54c65bc050085c4bb86a286667b5428c0438009f68eb4a156aac1c4c38",
+      "pass": 150,
+      "fail": 0,
+      "assertions": 535
+    }
+  },
+  "failureInterpretation": {
+    "http-initial": "593 pass, 6 fixture failures: SQLite upsert retains prior owner for null input, and archive cannot be reversed via upsert. Corrected fixture operations; original cases retained.",
+    "session-admission-initial": "18 pass, 9 failures: 6 actual ACL/foreign-profile bypasses across all channels, plus 3 pre-existing Super Agent denials with 403 vs the new consistent 404 expectation.",
+    "whatsapp-initial": "Recorded 8 regression failures; group cache and denylist/side-effect ordering corrections retained.",
+    "whatsapp-pairing-initial": "2 recorded pairing/unknown-LID denylist regressions.",
+    "discord-initial": "151 pass, 2 failures: paired non-admin allowlist mutation and unowned legacy artifact adoption.",
+    "channel-pairing-initial": "2 actual blocked-sender valid-code pairing failures.",
+    "shared-tools-initial": {
+      "rawLogAvailable": false,
+      "evidence": "tool transcript session 52429, output 3086e1",
+      "pass": 41,
+      "fail": 4,
+      "interpretation": "Execution was blocked but result was INTERNAL_ERROR instead of PERMISSION_DENIED. Fixed classification and non-retryability."
+    },
+    "asyncIdentityRaces": "Found by independent review; 4 post-fix deterministic tests. No pre-fix run claimed.",
+    "lint-initial": "Includes unfinished concurrently edited files; final global lint is separate."
+  },
+  "notProven": [
+    "Every provider x command x tool x role x channel x alias x retry/timing Cartesian product",
+    "Real messenger transport delivery/receipts",
+    "Live Claude inference (previous gate not authenticated)",
+    "Every live API provider/model",
+    "Remote OAuth/SaaS actions (integration transports mocked)",
+    "Docker build and real Linux Landlock execution (previous gate daemon unavailable)",
+    "Every live stream/status-bubble revocation interleaving",
+    "Compromised upstream messaging SDK/forged upstream identity"
+  ],
+  "legacyGlobalWorkers": "External session/binding operations using host local tokens remain deliberately denied; scoped per-workspace workers required.",
+  "docsBrowserFilesSha256": {
+    "after-discord-commands.png": "a592764cfd24c8d5b8ab0210f05d43e74e5afca10e0917690e4db7c59666d380",
+    "after-discord-permissions.png": "1b46687434684b595380ec2989d473b6caa60d17711e1087f74f0d07994788fd",
+    "after-results.json": "72f4b7c0025d85bde0de549c6cfa22ef9479a3022011b7f935e9cad733bf9515",
+    "after-search-results.png": "af67ddfbdd8e86d89e4ac0c8a1721bc3c247b79804e516e92d4f5c2144805914",
+    "after-telegram-permissions.png": "00ca0ef09be0658b14b42228d3bdb484cc6f8a22e3e9376993c9b7e8611d1ee5",
+    "after-whatsapp-permissions.png": "f773c3079f811769c4a3c490e8060e9bc7e79c0b14f8f916870d2a4923ec2f92",
+    "baseline-channel-pairing-failures.log": "99d1279a686bfd759408e413ba7a31fd36efaf2c8748055c0ae64fa8221b57ff",
+    "baseline-discord-auth-failures.log": "f706f22e84228e77f8e59c822882da5ae322b798427e52a125330a0424303e83",
+    "before-discord-commands.png": "15a552f8eeb8092fa709e421c3adfce18d06ed2167ad57afcb379d42240efd72",
+    "before-discord-initial.png": "a64d6c7a2eabef11d36a22de652a75e80e9cff71688b182d394b7a76f67a2e96",
+    "before-discord-permissions.png": "48546f6a6bbbb0a8cfb088b5a686485ef201214888b096ddee17456559263ac5",
+    "before-results.json": "93ff54d6087ca058ffd0f87295669dd479fb81b3e4f46be34e6656103689146e",
+    "before-telegram-permissions.png": "f003ab9444b508ad37fd30c66568d04c1670e9060f46f94f144ca80faf10dcba",
+    "before-whatsapp-permissions.png": "86f64f7428accd61c416bac424b72892912f53c2932dc2ceb88b4d3faf1cae9d",
+    "interactions-results.json": "d5031739efdeb4d120b7f01292a6f032878257ad4cc4fffe9d647762917e12a0",
+    "qa-report.md": "66ed213ec50cb9338af5ea3de20519b96341816e009b9640d70f97685ae459ba",
+    "search-click.png": "b721d3859c4b265682667a7d139e254d429e80b3ddbb43fc4bac855082cac5d2"
+  },
+  "docsBrowserOriginalCaptureArchives": {
+    "before-results.json": {
+      "originalSha256": "152145fd478359c81b013c933b578bf7c63ceb7f924491f637ceb8552d01b6e5",
+      "archive": "before-results.json.gz",
+      "archiveSha256": "5a5639a32956c20c15ae59ce2c4fd2cb8b447555c8535d7496e33a87fd5437df"
+    },
+    "after-results.json": {
+      "originalSha256": "ef4bd9846a2b0baa6308129ffc965f15e6d4b9a6673b18e9ca4740f939a2827b",
+      "archive": "after-results.json.gz",
+      "archiveSha256": "c5763808d8dcddb4cdda2d5705584d45cb42f77a83aefa4340d6c3fc5c8fb482"
+    }
+  }
+}

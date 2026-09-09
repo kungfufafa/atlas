@@ -1,0 +1,157 @@
+{
+  "designPath": "/private/tmp/atlas-artifact-attribution-audit/publication-design.md",
+  "designSha256": "1348b09332a5009d1895b634d86d10c1f7815126900a904e6bcacc7e37974292",
+  "readOnlySourceReview": true,
+  "testsRun": false,
+  "providerCalls": 0,
+  "nativeProcesses": 0,
+  "productionOrControlEdits": false,
+  "implementationApproved": false,
+  "sourceFiles": [
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/channel-artifact-authorization.test.ts",
+      "sha256": "dee937f8a53d5e1de3461e91abb1e6d0760755a290f2fd095495d2139e1ead62"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/channel-artifact-flow.ts",
+      "sha256": "84af803779605f9ffd53037af470fad0718112e53468277d2fc0caf4856f15b0"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/channel-artifact-flow.test.ts",
+      "sha256": "ea72b899f0e0af0670191dc50178a114504fac62e7f320e5df3b6336252ec615"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/channel-artifact-flow.ts",
+      "sha256": "1c0b40ac7e96bae0fbf5a3100dcc4137fadcca0866f44effd149a7cc404b9fd5"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/channel-artifact-flow.ts",
+      "sha256": "081e94912029be45a67251caf8ac2ec63bfc4ff6ffc93a9ddcbdd96c454afae6"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/http/org-middleware.ts",
+      "sha256": "3d88ebca99ec53282d95c9d7f3140329baa00d9c642ba0b20eccba01bc8f8f26"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/http/routes/artifact-shares.ts",
+      "sha256": "dbfac66b1cc8926c72d0b40853dadff17916186c97fd1d0e85a079e11fdd36d8"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/http/routes/profiles.ts",
+      "sha256": "972d37cd6dcd99684dce476896168c8cc4be4d485d0fdc16b91a0d58388e0c1d"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/http/workspace-worker-artifacts.ts",
+      "sha256": "b3597051fa56272e326fd1321ed1b985ce158a83ec89f8b0f59b294a044758a9"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/artifact-service.ts",
+      "sha256": "600710506bb9619b81ad013e7cc24bef8f576950e74cf5612b0387451e357b20"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/artifact-share-service.ts",
+      "sha256": "4bd5c69775a36bf8899467ea4f6bd5a03d579c197f1fe7376d09040ec2ff0469"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/attachment-service.ts",
+      "sha256": "58677c2dd61cd67f37457fb45f8be38509048a854f992b8ea3b7b9cf9c6b8275"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/browser-session-service.ts",
+      "sha256": "b0af4b3dcdad4552f16ddc0c83c36eca684d8506b0a6d937f7906c01eba9e24a"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/generate-image-tool.ts",
+      "sha256": "2261e1fcaaca006f56aed672eb64f5cac975c42ec1f65fec616c12816cb8e55b"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/python-execute-tool.ts",
+      "sha256": "c25b647c4bdad24bdee478f46956cdb7a725bca803429d5dd5ce11a0192a72f0"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/send-discord-artifact-tool.ts",
+      "sha256": "53d7521e44b54182f4c9db412cee93bc7fa0711c4278206c3b254d399ce75d5d"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/web/src/lib/chat-artifacts.ts",
+      "sha256": "f199f20d899653c2a311762050851bcb8abe7941c9baf7b2650187e503cd377d"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/web/src/lib/chat-stream-artifact.ts",
+      "sha256": "20a26557b1ff134f3042db34c6841d60affe269545a77412c376f3feeae6572b"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/chat.ts",
+      "sha256": "2e490dec43005a4d21756860c477f1097623ffb16b448183273775a420128eb5"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/tool-loop.ts",
+      "sha256": "f57337ddf14b4dbcc7a720d27b4e1570f16178773c61e68ac23eb68ce5e4c7c3"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/artifacts.test.ts",
+      "sha256": "3cfd2adc1c8a5041a2b86dcfc26a6b118dd226a0814e4e8c5a0a6c68b42245e0"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/attachments/store.ts",
+      "sha256": "3afb3bd12715b04ceffa534e956ad208b8ba22d095b777bb7341541842333563"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/channel-artifacts.test.ts",
+      "sha256": "d223bf488efbda4318762602e3313d9d604e9bee27291acd6f077d230318182b"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/channel-artifacts.ts",
+      "sha256": "f95e58c4e62693b8fcdfcd54c69049450064682aab3a9afbcbde4d1cb82f018d"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/files/assets.ts",
+      "sha256": "88f464ef434743095a50e39f583540420e5cbbbacff4e3907735b47e6b7d23a6"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/files/versioned-write.ts",
+      "sha256": "7422c7655406e6aa3b589ee35c5fac9a2ee06915b9007ebb6f1d5013cf3241b3"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/skills/bundled/save-artifact/SKILL.md",
+      "sha256": "de91b2d33520db503ed3b4de3884cadf0cc01481dc504eeb2eeceb4ee9a88774"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/builtin.ts",
+      "sha256": "86881215faa75720c32fb6578188c10b479a434a9a8f997902c3a8fa23b03ba2"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/execution-contract.ts",
+      "sha256": "20109915845ff2e835b7e6298ec7889e66b61bc843ac29f66780ebe3e270c8d6"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/execution.ts",
+      "sha256": "67985f914b0c4c5a2acedc39546a3e66106f44e7eb490a579d7a9d58cbc58805"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/failed-artifacts.test.ts",
+      "sha256": "4211b7098fe6ff7898984f8f214ca9a2f6ef6bb91c2e9dc6b6c33c2e0f473232"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/file-asset.ts",
+      "sha256": "10cec256288b21d8b027db5361b758d3f6c058b56e087c7f7b689457865d5c89"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/office-document.ts",
+      "sha256": "efd15ec421f562edaa8c7e885f4d1a9e668493a55ef696555b5df5b9c38a0084"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/pdf-document.test.ts",
+      "sha256": "0445fc12fb4e3e7fcb626e06b649344b4f184ba6828062c6a528aaa2faba287b"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/pdf-document.ts",
+      "sha256": "b80eff08b1f94a48eca68f4d44633bbdbb75bd21678f6b7024f6d384c5aec112"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/spreadsheet.ts",
+      "sha256": "4de74bdee0b20f922aa9ab97b5edeabc3ac1523a5b5759e909715d74f72f80c2"
+    }
+  ],
+  "scope": "Current producer/consumer paths and existing test source; no current model outcomes, holdouts, or API credentials."
+}

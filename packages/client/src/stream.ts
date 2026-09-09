@@ -181,6 +181,12 @@ export async function readStreamEvents(
       if (payload.type === "approval_requested") {
         handlers.onApprovalRequested?.(payload.approval);
       }
+      if (payload.type === "approval_resolved") {
+        handlers.onApprovalResolved?.(payload);
+      }
+      if (payload.type === "channel_action_requested") {
+        handlers.onChannelActionRequested?.(payload.request);
+      }
 
       if (payload.type === "memory_saved") {
         handlers.onMemorySaved?.(payload.summary);

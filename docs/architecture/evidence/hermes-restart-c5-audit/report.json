@@ -1,0 +1,22 @@
+{
+  "status": "completed-three-real-process-restart-boundaries",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "run": "/private/tmp/atlas-restart-reproduction/run-jtpo6wnm",
+  "phaseCount": 3,
+  "postLeaseExpiryReopens": 3,
+  "effectCounts": [0, 0, 1],
+  "oldApprovalDecisions": [409, 409, 409],
+  "freshExplicitApprovalsResolved": 3,
+  "automaticContinuationObserved": false,
+  "duplicateEffectsObserved": false,
+  "mutationReplaysAttempted": 0,
+  "modelProviderCalls": 0,
+  "rootOrControlEdits": false,
+  "scope": "Actual child SIGKILL, SQLite reopen, real services/executor, injected disposable tool and ACL callback; no HTTP/UI/native SDK",
+  "initialSidecarHashesNoLongerReproducible": 6,
+  "reportSha256": "b15565723876467989c1ff1bd8fe894d11c2c3e8a731e0c845251609d047849c",
+  "sourceBindingSha256": "fe942a12fd00b8348689874aa9e58eb1516ed52a323c0fed98ece0c4880010b4",
+  "initialCompletionSha256": "00f2ff3a7fa708e531495a4ca23495c1c8dd47f3120c4477bade9e10983d5366",
+  "comparisonSha256": "28364787da75a7775d238bf5fff6c2b13470bba9ae6318c5477381068d21154e",
+  "postLeaseReferenceSha256": "816c76495737e02f43bd0b3ca614a2a30f293d8662a70910f048e46b282cbd80"
+}

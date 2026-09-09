@@ -1,0 +1,19 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/selected-artifact-capture.test.ts:
+(pass) captures explicit existing bytes with bound identity, size and digest while preserving source [154.61ms]
+(pass) rejects noncanonical, hidden, sidecar, traversal and absolute selections [33.99ms]
+(pass) rejects root/parent/final symlinks and hardlinked foreign files [216.33ms]
+(pass) replacing the profile root cannot refresh the captured root authority [69.05ms]
+(pass) directory rename and foreign symlink replacement after open returns no usable bytes [34.77ms]
+(pass) directory rename and real foreign-directory replacement after open returns no usable bytes [36.18ms]
+(pass) root replacement after its descriptor is opened returns no usable bytes [37.42ms]
+(pass) an added hardlink after open fails the post-read identity check [34.52ms]
+(pass) same-size mutation during a bounded multichunk read returns no partial bytes [37.05ms]
+(pass) oversized files and cancelled requests never return captured bytes [72.75ms]
+(pass) captures empty and exactly maximum-size regular files [410.14ms]
+
+ 11 pass
+ 0 fail
+ 61 expect() calls
+Ran 11 tests across 1 file. [1.69s]

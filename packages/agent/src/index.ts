@@ -74,6 +74,7 @@ export type {
   ChatCapabilityPolicy,
   ChatCapabilityPolicyEntry,
   ResolvePromptContextInput,
+  ToolLoopStopReason,
 } from "./chat";
 export { ChatCapabilityError } from "./chat";
 export type { CompactionConfig } from "./history-compaction";
@@ -111,6 +112,10 @@ export {
 } from "./skill-post-turn-review";
 export type { DraftTaskPromptInput } from "./task-prompt";
 export { draftTaskPromptFromFields } from "./task-prompt";
+export type {
+  ToolExecutionLifecycle,
+  ToolInvocationLifecycle,
+} from "./tool-execution-lifecycle";
 export { canRunToolCallsInParallel, executeToolCall } from "./tool-loop";
 export {
   buildSuggestParamsUserPrompt,

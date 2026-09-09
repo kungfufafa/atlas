@@ -1,0 +1,605 @@
+{
+  "name": "live-probe-gemini-f650b27152d5",
+  "recordedAt": "2026-09-06T08:21:25.446Z",
+  "request": {
+    "body": {
+      "contents": [
+        {
+          "parts": [
+            {
+              "text": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions."
+            }
+          ],
+          "role": "user"
+        }
+      ],
+      "systemInstruction": {
+        "parts": [
+          {
+            "text": "You are this person's Atlas assistant. You work for them inside this organization — present, capable, and finishing their work. You are not a generic chatbot and not a public helpdesk.\nTalk like a capable personal assistant: direct, specific, no filler openers.\n\n# Presence\nYou are their assistant in this conversation now. This turn is live — do the work here rather than describing a plan to do it later.\nSkip empty openers such as \"Great question!\", \"I'd be happy to help!\", and \"Absolutely!\". Answer.\nBe concise in wording and complete in the work: finish the request in this turn with a ready-to-use answer, not a thin outline, a teaser, or a promise to do the work later.\nIf assigned tools would make the answer better, use them before you reply.\nChoose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.\nWhen follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.\nAlways focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics.\n\nThe user's timezone is UTC.\n\nYou have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.\nAtlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.\nIf a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work.\nSkills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.\nWhen producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat.\nThat includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.\nThe chat reply is a short summary. The web UI opens a live preview for these files.\nDurable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.\nDo not use artifacts/ for soul files or MEMORY.md.\n\nCurrent local time: Sunday, September 6, 2026 at 3:21 PM GMT+7."
+          }
+        ],
+        "role": "user"
+      },
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "description": "Write text content to a file in the active profile workspace. Creates parent directories if needed. Cannot produce Word documents — use write_docx for .docx.",
+              "name": "write_file",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "content": {
+                    "type": "STRING"
+                  },
+                  "cwd": {
+                    "type": "STRING"
+                  },
+                  "path": {
+                    "type": "STRING",
+                    "minLength": 1
+                  }
+                },
+                "required": ["content", "path"]
+              }
+            },
+            {
+              "description": "Read text from a file in the active profile workspace. Word .docx files are converted to Markdown. Use offset/limit for large files.",
+              "name": "read_file",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "cwd": {
+                    "type": "STRING"
+                  },
+                  "limit": {
+                    "minimum": 1,
+                    "type": "INTEGER",
+                    "maximum": 9007199254740991
+                  },
+                  "offset": {
+                    "minimum": 1,
+                    "type": "INTEGER",
+                    "maximum": 9007199254740991
+                  },
+                  "path": {
+                    "type": "STRING",
+                    "minLength": 1
+                  }
+                },
+                "required": ["path"]
+              }
+            }
+          ]
+        }
+      ],
+      "generationConfig": {}
+    },
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+  },
+  "response": {
+    "body": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "functionCall": {
+                  "name": "write_file",
+                  "args": {
+                    "path": "artifacts/provider-proof.txt",
+                    "content": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d"
+                  },
+                  "id": "call_3730524"
+                },
+                "thoughtSignature": "EmUKYwERTTIPauR5TcshQkdOzFxwptL/U4WAinGjIjlkO0eTAF/KmrzXtAvBK8AqXVeEIf8qjGlQFqwox2+KwziqIhldzRsQ4YbDPZz8/TQvfK3P8+G9LYH+CSsWPDsCEMX/RUtudw=="
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0,
+          "finishMessage": "Model generated function call(s)."
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 939,
+        "candidatesTokenCount": 64,
+        "totalTokenCount": 1003,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 939
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "modelVersion": "gemini-3-flash-preview",
+      "responseId": "gSKdat6aJc63g8UPm-XyyQg"
+    },
+    "encoding": "json",
+    "status": 200
+  },
+  "version": 2,
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "contents": [
+            {
+              "parts": [
+                {
+                  "text": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions."
+                }
+              ],
+              "role": "user"
+            }
+          ],
+          "systemInstruction": {
+            "parts": [
+              {
+                "text": "You are this person's Atlas assistant. You work for them inside this organization — present, capable, and finishing their work. You are not a generic chatbot and not a public helpdesk.\nTalk like a capable personal assistant: direct, specific, no filler openers.\n\n# Presence\nYou are their assistant in this conversation now. This turn is live — do the work here rather than describing a plan to do it later.\nSkip empty openers such as \"Great question!\", \"I'd be happy to help!\", and \"Absolutely!\". Answer.\nBe concise in wording and complete in the work: finish the request in this turn with a ready-to-use answer, not a thin outline, a teaser, or a promise to do the work later.\nIf assigned tools would make the answer better, use them before you reply.\nChoose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.\nWhen follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.\nAlways focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics.\n\nThe user's timezone is UTC.\n\nYou have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.\nAtlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.\nIf a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work.\nSkills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.\nWhen producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat.\nThat includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.\nThe chat reply is a short summary. The web UI opens a live preview for these files.\nDurable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.\nDo not use artifacts/ for soul files or MEMORY.md.\n\nCurrent local time: Sunday, September 6, 2026 at 3:21 PM GMT+7."
+              }
+            ],
+            "role": "user"
+          },
+          "tools": [
+            {
+              "functionDeclarations": [
+                {
+                  "description": "Write text content to a file in the active profile workspace. Creates parent directories if needed. Cannot produce Word documents — use write_docx for .docx.",
+                  "name": "write_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "content": {
+                        "type": "STRING"
+                      },
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["content", "path"]
+                  }
+                },
+                {
+                  "description": "Read text from a file in the active profile workspace. Word .docx files are converted to Markdown. Use offset/limit for large files.",
+                  "name": "read_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "limit": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "offset": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["path"]
+                  }
+                }
+              ]
+            }
+          ],
+          "generationConfig": {}
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+      },
+      "response": {
+        "body": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "functionCall": {
+                      "name": "write_file",
+                      "args": {
+                        "path": "artifacts/provider-proof.txt",
+                        "content": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d"
+                      },
+                      "id": "call_3730524"
+                    },
+                    "thoughtSignature": "EmUKYwERTTIPauR5TcshQkdOzFxwptL/U4WAinGjIjlkO0eTAF/KmrzXtAvBK8AqXVeEIf8qjGlQFqwox2+KwziqIhldzRsQ4YbDPZz8/TQvfK3P8+G9LYH+CSsWPDsCEMX/RUtudw=="
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0,
+              "finishMessage": "Model generated function call(s)."
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 939,
+            "candidatesTokenCount": 64,
+            "totalTokenCount": 1003,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 939
+              }
+            ],
+            "serviceTier": "standard"
+          },
+          "modelVersion": "gemini-3-flash-preview",
+          "responseId": "gSKdat6aJc63g8UPm-XyyQg"
+        },
+        "encoding": "json",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "body": {
+          "contents": [
+            {
+              "parts": [
+                {
+                  "text": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions."
+                }
+              ],
+              "role": "user"
+            },
+            {
+              "parts": [
+                {
+                  "functionCall": {
+                    "id": "call_3730524",
+                    "args": {
+                      "path": "artifacts/provider-proof.txt",
+                      "content": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d"
+                    },
+                    "name": "write_file"
+                  },
+                  "thoughtSignature": "EmUKYwERTTIPauR5TcshQkdOzFxwptL/U4WAinGjIjlkO0eTAF/KmrzXtAvBK8AqXVeEIf8qjGlQFqwox2+KwziqIhldzRsQ4YbDPZz8/TQvfK3P8+G9LYH+CSsWPDsCEMX/RUtudw=="
+                }
+              ],
+              "role": "model"
+            },
+            {
+              "parts": [
+                {
+                  "functionResponse": {
+                    "id": "call_3730524",
+                    "name": "write_file",
+                    "response": {
+                      "bytesWritten": 47,
+                      "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-jIEZ7O/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt",
+                      "artifacts": [
+                        {
+                          "createdAt": "2026-09-06T08:21:23.000Z",
+                          "filename": "provider-proof.txt",
+                          "id": "aUW56CjEvFCV",
+                          "mimeType": "text/plain",
+                          "path": "artifacts/provider-proof.txt",
+                          "sizeBytes": 47
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "role": "user"
+            }
+          ],
+          "systemInstruction": {
+            "parts": [
+              {
+                "text": "You are this person's Atlas assistant. You work for them inside this organization — present, capable, and finishing their work. You are not a generic chatbot and not a public helpdesk.\nTalk like a capable personal assistant: direct, specific, no filler openers.\n\n# Presence\nYou are their assistant in this conversation now. This turn is live — do the work here rather than describing a plan to do it later.\nSkip empty openers such as \"Great question!\", \"I'd be happy to help!\", and \"Absolutely!\". Answer.\nBe concise in wording and complete in the work: finish the request in this turn with a ready-to-use answer, not a thin outline, a teaser, or a promise to do the work later.\nIf assigned tools would make the answer better, use them before you reply.\nChoose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.\nWhen follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.\nAlways focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics.\n\nThe user's timezone is UTC.\n\nYou have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.\nAtlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.\nIf a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work.\nSkills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.\nWhen producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat.\nThat includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.\nThe chat reply is a short summary. The web UI opens a live preview for these files.\nDurable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.\nDo not use artifacts/ for soul files or MEMORY.md.\n\nCurrent local time: Sunday, September 6, 2026 at 3:21 PM GMT+7."
+              }
+            ],
+            "role": "user"
+          },
+          "tools": [
+            {
+              "functionDeclarations": [
+                {
+                  "description": "Write text content to a file in the active profile workspace. Creates parent directories if needed. Cannot produce Word documents — use write_docx for .docx.",
+                  "name": "write_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "content": {
+                        "type": "STRING"
+                      },
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["content", "path"]
+                  }
+                },
+                {
+                  "description": "Read text from a file in the active profile workspace. Word .docx files are converted to Markdown. Use offset/limit for large files.",
+                  "name": "read_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "limit": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "offset": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["path"]
+                  }
+                }
+              ]
+            }
+          ],
+          "generationConfig": {}
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+      },
+      "response": {
+        "body": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "functionCall": {
+                      "name": "read_file",
+                      "args": {
+                        "path": "artifacts/provider-proof.txt"
+                      },
+                      "id": "call_2653832"
+                    },
+                    "thoughtSignature": "EmUKYwERTTIPWzsXP8sEgpiIvs6lhzmmWNUXNQjWDEN3jSKzbOT2ndZu16AstlhU/Z532aK3dBOXJw+M5AmfZt1F8rTI4LvH2LcJUw+WUqErV32vxeFJT4yN4+zKZ5aiIHcHf1I5ZQ=="
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0,
+              "finishMessage": "Model generated function call(s)."
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 1192,
+            "candidatesTokenCount": 22,
+            "totalTokenCount": 1214,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 1192
+              }
+            ],
+            "serviceTier": "standard"
+          },
+          "modelVersion": "gemini-3-flash-preview",
+          "responseId": "gyKdaq_uCdrdg8UP6-GmoAc"
+        },
+        "encoding": "json",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "body": {
+          "contents": [
+            {
+              "parts": [
+                {
+                  "text": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions."
+                }
+              ],
+              "role": "user"
+            },
+            {
+              "parts": [
+                {
+                  "functionCall": {
+                    "id": "call_3730524",
+                    "args": {
+                      "path": "artifacts/provider-proof.txt",
+                      "content": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d"
+                    },
+                    "name": "write_file"
+                  },
+                  "thoughtSignature": "EmUKYwERTTIPauR5TcshQkdOzFxwptL/U4WAinGjIjlkO0eTAF/KmrzXtAvBK8AqXVeEIf8qjGlQFqwox2+KwziqIhldzRsQ4YbDPZz8/TQvfK3P8+G9LYH+CSsWPDsCEMX/RUtudw=="
+                }
+              ],
+              "role": "model"
+            },
+            {
+              "parts": [
+                {
+                  "functionResponse": {
+                    "id": "call_3730524",
+                    "name": "write_file",
+                    "response": {
+                      "bytesWritten": 47,
+                      "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-jIEZ7O/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt",
+                      "artifacts": [
+                        {
+                          "createdAt": "2026-09-06T08:21:23.000Z",
+                          "filename": "provider-proof.txt",
+                          "id": "aUW56CjEvFCV",
+                          "mimeType": "text/plain",
+                          "path": "artifacts/provider-proof.txt",
+                          "sizeBytes": 47
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "role": "user"
+            },
+            {
+              "parts": [
+                {
+                  "functionCall": {
+                    "id": "call_2653832",
+                    "args": {
+                      "path": "artifacts/provider-proof.txt"
+                    },
+                    "name": "read_file"
+                  },
+                  "thoughtSignature": "EmUKYwERTTIPWzsXP8sEgpiIvs6lhzmmWNUXNQjWDEN3jSKzbOT2ndZu16AstlhU/Z532aK3dBOXJw+M5AmfZt1F8rTI4LvH2LcJUw+WUqErV32vxeFJT4yN4+zKZ5aiIHcHf1I5ZQ=="
+                }
+              ],
+              "role": "model"
+            },
+            {
+              "parts": [
+                {
+                  "functionResponse": {
+                    "id": "call_2653832",
+                    "name": "read_file",
+                    "response": {
+                      "bytesRead": 47,
+                      "content": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d",
+                      "endLine": 1,
+                      "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-jIEZ7O/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt",
+                      "startLine": 1,
+                      "totalLines": 1,
+                      "truncated": false
+                    }
+                  }
+                }
+              ],
+              "role": "user"
+            }
+          ],
+          "systemInstruction": {
+            "parts": [
+              {
+                "text": "You are this person's Atlas assistant. You work for them inside this organization — present, capable, and finishing their work. You are not a generic chatbot and not a public helpdesk.\nTalk like a capable personal assistant: direct, specific, no filler openers.\n\n# Presence\nYou are their assistant in this conversation now. This turn is live — do the work here rather than describing a plan to do it later.\nSkip empty openers such as \"Great question!\", \"I'd be happy to help!\", and \"Absolutely!\". Answer.\nBe concise in wording and complete in the work: finish the request in this turn with a ready-to-use answer, not a thin outline, a teaser, or a promise to do the work later.\nIf assigned tools would make the answer better, use them before you reply.\nChoose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.\nWhen follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.\nAlways focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics.\n\nThe user's timezone is UTC.\n\nYou have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.\nAtlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.\nIf a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work.\nSkills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.\nWhen producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active). write_file already stamps .atlas-meta.json with the content file size — do not overwrite sizeBytes with the sidecar's own length. Do not paste the full file in chat.\nThat includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.\nThe chat reply is a short summary. The web UI opens a live preview for these files.\nDurable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.\nDo not use artifacts/ for soul files or MEMORY.md.\n\nCurrent local time: Sunday, September 6, 2026 at 3:21 PM GMT+7."
+              }
+            ],
+            "role": "user"
+          },
+          "tools": [
+            {
+              "functionDeclarations": [
+                {
+                  "description": "Write text content to a file in the active profile workspace. Creates parent directories if needed. Cannot produce Word documents — use write_docx for .docx.",
+                  "name": "write_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "content": {
+                        "type": "STRING"
+                      },
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["content", "path"]
+                  }
+                },
+                {
+                  "description": "Read text from a file in the active profile workspace. Word .docx files are converted to Markdown. Use offset/limit for large files.",
+                  "name": "read_file",
+                  "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "cwd": {
+                        "type": "STRING"
+                      },
+                      "limit": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "offset": {
+                        "minimum": 1,
+                        "type": "INTEGER",
+                        "maximum": 9007199254740991
+                      },
+                      "path": {
+                        "type": "STRING",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["path"]
+                  }
+                }
+              ]
+            }
+          ],
+          "generationConfig": {}
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+      },
+      "response": {
+        "body": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "text": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d",
+                    "thoughtSignature": "EmUKYwERTTIPkVgZKqEHU3v6F0ypsU0soo+xczIunpttpSnqOD5R0e8WEvHXCjmxO0+MGUjgCaaAVpmbgHXo13ZXqd6c8dVS1mGX11DOHCOZPgkEyRkT3J6UwL7EtIzoAsXmR1+pxA=="
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 1381,
+            "candidatesTokenCount": 37,
+            "totalTokenCount": 1418,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 1381
+              }
+            ],
+            "serviceTier": "standard"
+          },
+          "modelVersion": "gemini-3-flash-preview",
+          "responseId": "hCKdapaJE5azg8UPpbrMgQs"
+        },
+        "encoding": "json",
+        "status": 200
+      }
+    }
+  ]
+}

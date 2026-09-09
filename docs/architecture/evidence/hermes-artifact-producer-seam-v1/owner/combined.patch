@@ -1,0 +1,1266 @@
+--- a/apps/server/src/index.ts
++++ b/apps/server/src/index.ts
+@@ -138,6 +138,7 @@
+     : null;
+ registerBrowserHandler((input, context) =>
+   browserSessionService.executeBrowserAction(input, {
++    artifactPublisher: context.artifactPublisher,
+     orgId: context.orgId,
+     profileId: context.profileId,
+     runId: context.runId,
+--- /dev/null
++++ b/apps/server/src/services/artifact-producer-seam.test.ts
+@@ -0,0 +1,675 @@
++import { expect, test } from "bun:test";
++import {
++  mkdir,
++  mkdtemp,
++  readFile,
++  realpath,
++  rm,
++  symlink,
++} from "node:fs/promises";
++import { tmpdir } from "node:os";
++import path from "node:path";
++import { Readable } from "node:stream";
++import type { ToolContext } from "@atlas/core";
++import {
++  createToolArtifactPublisher,
++  stageToolArtifact,
++} from "@atlas/core/artifact-publication";
++import { fileAssetRevision, saveFileArtifact } from "@atlas/core/files/assets";
++import { writeNewArtifactVersion } from "@atlas/core/files/versioned-write";
++import {
++  runEditFile,
++  runWriteDocx,
++  runWriteFile,
++  runWritePptx,
++} from "@atlas/core/tools/builtin";
++import { fileAssetTool } from "@atlas/core/tools/file-asset";
++import { officeDocumentTool } from "@atlas/core/tools/office-document";
++import { pdfDocumentTool } from "@atlas/core/tools/pdf-document";
++import { spreadsheetTool } from "@atlas/core/tools/spreadsheet";
++import {
++  publishSpreadsheet,
++  spreadsheetRevision,
++} from "@atlas/core/tools/spreadsheet-io";
++import { createInMemoryDatabaseAdapter } from "@atlas/db";
++import { runGenerateImageTool } from "../tools/generate-image-tool";
++import { ArtifactPublicationService } from "./artifact-publication-service";
++import { ArtifactPublicationStore } from "./artifact-publication-store";
++import { ArtifactService } from "./artifact-service";
++import { BrowserSessionService } from "./browser-session-service";
++
++async function setup() {
++  const root = await realpath(
++    await mkdtemp(path.join(tmpdir(), "atlas-producer-seam-"))
++  );
++  const workspaceRoot = path.join(root, "workspace");
++  await mkdir(workspaceRoot);
++  const db = createInMemoryDatabaseAdapter();
++  const now = new Date().toISOString();
++  await db.upsertOrganization({
++    createdAt: now,
++    id: "org",
++    name: "Org",
++    slug: "org",
++    updatedAt: now,
++  });
++  await db.upsertProfile({
++    createdAt: now,
++    id: "profile",
++    isSuper: false,
++    model: null,
++    name: "Profile",
++    orgId: "org",
++    systemPrompt: "",
++    updatedAt: now,
++  });
++  await db.upsertSession({
++    agentQuestionnaire: null,
++    agentTodos: [],
++    channel: "web",
++    createdAt: now,
++    id: "session",
++    modelOverride: null,
++    orgId: "org",
++    profileId: "profile",
++    title: null,
++  });
++  const owner = {
++    actorId: "actor",
++    executionId: crypto.randomUUID(),
++    orgId: "org",
++    profileId: "profile",
++    runId: "run",
++    sessionId: "session",
++    toolCallId: "call",
++  };
++  await mkdir(path.join(root, "private"));
++  const store = await ArtifactPublicationStore.create(
++    path.join(root, "private")
++  );
++  const service = new ArtifactPublicationService(db, store, async () => {});
++  const execution = await service.beginExecution(owner, [workspaceRoot]);
++  const context: ToolContext = {
++    ...owner,
++    artifactPublisher: createToolArtifactPublisher(execution.producer),
++    workspaceRoot,
++  };
++  return { context, db, execution, owner, root, service, store, workspaceRoot };
++}
++async function fixture(
++  run: (f: Awaited<ReturnType<typeof setup>>) => Promise<void>
++) {
++  const f = await setup();
++  try {
++    await run(f);
++  } finally {
++    await rm(f.root, { force: true, recursive: true });
++  }
++}
++
++test("saveFileArtifact freezes caller bytes before awaits; disk, revision and private publication agree", async () => {
++  await fixture(async (f) => {
++    const bytes = Buffer.from("original report");
++    const expected = Buffer.from(bytes);
++    const saving = saveFileArtifact({
++      bytes,
++      context: f.context,
++      filename: "report.txt",
++    });
++    bytes.fill(90);
++    const saved = await saving;
++    const result = await f.execution.finalize({ data: saved, success: true });
++    expect(saved.revision).toBe(fileAssetRevision(expected));
++    expect(await readFile(path.join(f.workspaceRoot, saved.path))).toEqual(
++      expected
++    );
++    expect(result.publications).toHaveLength(1);
++    expect(
++      (await f.service.read(f.owner, result.publications[0]!.id))?.bytes
++    ).toEqual(expected);
++  });
++});
++
++test("generic writes and edits publish only explicit deliverables and reject invalid destinations before mutation", async () => {
++  await fixture(async (f) => {
++    for (const dest of [
++      "MEMORY.md",
++      "artifacts/work.txt",
++      "artifacts/report.txt.atlas-meta.json",
++      ".sources/input.txt",
++    ]) {
++      await runWriteFile({ content: "work", path: dest }, f.context);
++    }
++    for (const dest of [
++      "MEMORY.md",
++      ".sources/denied.txt",
++      "artifacts/.hidden.txt",
++      "artifacts/report.txt.atlas-meta.json",
++      "nested/artifacts/no.txt",
++    ]) {
++      await expect(
++        runWriteFile(
++          { content: "replace", deliverable: true, path: dest },
++          f.context
++        )
++      ).rejects.toThrow();
++    }
++    expect(
++      await readFile(path.join(f.workspaceRoot, "MEMORY.md"), "utf8")
++    ).toBe("work");
++    const main = await runWriteFile(
++      { content: "first", deliverable: true, path: "artifacts/report.txt" },
++      f.context
++    );
++    const edited = await runEditFile(
++      {
++        deliverable: true,
++        edits: [{ newText: "final", oldText: "first" }],
++        path: main.path,
++      },
++      f.context
++    );
++    await runEditFile(
++      { edits: [{ newText: "updated", oldText: "work" }], path: "MEMORY.md" },
++      f.context
++    );
++    const result = await f.execution.finalize({ data: edited, success: true });
++    expect(result.publications.map((p) => p.outputOrdinal)).toEqual([0, 1]);
++    expect(result.publications.map((p) => p.sourcePath)).toEqual([
++      "artifacts/report.txt",
++      "artifacts/report.txt",
++    ]);
++    expect(
++      (
++        await f.service.read(f.owner, result.publications[0]!.id)
++      )?.bytes.toString()
++    ).toBe("first");
++    expect(
++      (
++        await f.service.read(f.owner, result.publications[1]!.id)
++      )?.bytes.toString()
++    ).toBe("final");
++  });
++});
++
++test("nested document helpers assign distinct ordinals without publishing materialized sources or reads", async () => {
++  await fixture(async (f) => {
++    const doc = await runWriteDocx(
++      { markdown: "Original text", path: "report.docx" },
++      f.context
++    );
++    await runWritePptx(
++      { path: "report.pptx", slides: [{ title: "Overview" }], title: "Report" },
++      f.context
++    );
++    await officeDocumentTool.run(
++      {
++        documentRef: doc.path,
++        edits: [
++          {
++            expectedMatches: 1,
++            find: "Original",
++            kind: "replace_text",
++            replace: "Revised",
++          },
++        ],
++        operation: "edit",
++      },
++      f.context
++    );
++    const pdf = (await pdfDocumentTool.run(
++      {
++        operation: "create",
++        outputFilename: "report.pdf",
++        textPages: ["Page one", "Page two"],
++      },
++      f.context
++    )) as { path: string };
++    await pdfDocumentTool.run(
++      {
++        documentRef: pdf.path,
++        groups: [[1], [2]],
++        operation: "split",
++        outputFilename: "part.pdf",
++      },
++      f.context
++    );
++    await fileAssetTool.run(
++      { documentRef: doc.path, operation: "materialize" },
++      f.context
++    );
++    await officeDocumentTool.run(
++      { documentRef: doc.path, limit: 40, operation: "inspect", start: 1 },
++      f.context
++    );
++    const result = await f.execution.finalize({ success: true });
++    expect(result.publications).toHaveLength(6);
++    expect(result.publications.map((p) => p.outputOrdinal)).toEqual([
++      0, 1, 2, 3, 4, 5,
++    ]);
++    for (const publication of result.publications) {
++      expect((await f.service.read(f.owner, publication.id))?.bytes).toEqual(
++        await readFile(path.join(f.workspaceRoot, publication.sourcePath))
++      );
++    }
++  });
++});
++
++test("spreadsheet creates and exports stage exact complete bytes; reads do not stage", async () => {
++  await fixture(async (f) => {
++    const created = (await spreadsheetTool.run(
++      {
++        action: "create",
++        columns: ["Item", "Count"],
++        data: [["One", 1]],
++        path: "report.xlsx",
++      },
++      f.context
++    )) as { revision: string };
++    await spreadsheetTool.run(
++      { action: "inspect", path: "report.xlsx" },
++      f.context
++    );
++    await spreadsheetTool.run(
++      {
++        action: "export_csv",
++        path: "report.xlsx",
++        targetCsvPath: "report.csv",
++      },
++      f.context
++    );
++    const result = await f.execution.finalize({ success: true });
++    expect(result.publications).toHaveLength(2);
++    expect(result.publications[0]?.sha256).toBe(created.revision);
++    for (const publication of result.publications) {
++      expect((await f.service.read(f.owner, publication.id))?.bytes).toEqual(
++        await readFile(path.join(f.workspaceRoot, publication.sourcePath))
++      );
++    }
++  });
++});
++
++test("low-level versioned writers freeze mutable bytes before IO and revision calculation", async () => {
++  await fixture(async (f) => {
++    const bytes = Buffer.from("col\nvalue\n");
++    const expected = Buffer.from(bytes);
++    const plain = writeNewArtifactVersion(
++      path.join(f.workspaceRoot, "plain.txt"),
++      bytes
++    );
++    const sheet = publishSpreadsheet({
++      bytes,
++      path: path.join(f.workspaceRoot, "sheet.csv"),
++      writeMode: "versioned",
++    });
++    bytes.fill(88);
++    expect(await readFile(await plain)).toEqual(expected);
++    const saved = await sheet;
++    expect(await readFile(saved.path)).toEqual(expected);
++    expect(saved.revision).toBe(spreadsheetRevision(expected));
++  });
++});
++
++for (const failure of ["storage", "invalid-stage"] as const) {
++  test(`${failure} preserves original workspace receipts and blocks the complete publication set without producer replay`, async () => {
++    await fixture(async (f) => {
++      const first = await runWriteFile(
++        { content: "first", deliverable: true, path: "artifacts/first.txt" },
++        f.context
++      );
++      if (failure === "storage") {
++        Object.defineProperty(f.store, "stage", {
++          value: async () => {
++            throw new Error("storage unavailable");
++          },
++        });
++      } else {
++        await stageToolArtifact(f.context.artifactPublisher, {
++          bytes: Buffer.from("bad"),
++          sourcePath: "../outside",
++        });
++      }
++      const second = await saveFileArtifact({
++        bytes: Buffer.from("second"),
++        context: f.context,
++        filename: "second.txt",
++      });
++      expect(second.bytesWritten).toBe(6);
++      expect(await readFile(first.path, "utf8")).toBe("first");
++      expect(
++        await readFile(path.join(f.workspaceRoot, second.path), "utf8")
++      ).toBe("second");
++      const result = await f.execution.finalize({
++        data: second,
++        success: true,
++      });
++      expect(result.status).toBe("failed");
++      expect(result.publications).toEqual([]);
++    });
++  });
++}
++
++for (const property of ["bytes", "sourcePath"] as const) {
++  test(`throwing ${property} getter reaches trusted failure boundary and poisons earlier staged output`, async () => {
++    await fixture(async (f) => {
++      await saveFileArtifact({
++        bytes: Buffer.from("first"),
++        context: f.context,
++        filename: "first.txt",
++      });
++      const input = {
++        bytes: Buffer.from("bad"),
++        sourcePath: "artifacts/bad.txt",
++      };
++      Object.defineProperty(input, property, {
++        get() {
++          throw new Error("malformed tool input");
++        },
++      });
++      await stageToolArtifact(f.context.artifactPublisher, input);
++      expect((await f.execution.finalize({ success: true })).status).toBe(
++        "failed"
++      );
++      expect(
++        await readFile(
++          path.join(f.workspaceRoot, "artifacts/first.txt"),
++          "utf8"
++        )
++      ).toBe("first");
++    });
++  });
++}
++
++test("one invocation owns ordinals across overlapping nested saves; a second publisher starts independently", async () => {
++  await fixture(async (f) => {
++    await Promise.all(
++      ["one", "two", "three"].map((name) =>
++        saveFileArtifact({
++          bytes: Buffer.from(name),
++          context: f.context,
++          filename: `${name}.txt`,
++        })
++      )
++    );
++    const second = await f.service.beginExecution(
++      { ...f.owner, executionId: "second" },
++      [f.workspaceRoot]
++    );
++    await saveFileArtifact({
++      bytes: Buffer.from("other"),
++      context: {
++        ...f.context,
++        artifactPublisher: createToolArtifactPublisher(second.producer),
++      },
++      filename: "other.txt",
++    });
++    expect(
++      (await f.execution.finalize({ success: true })).publications.map(
++        (p) => p.outputOrdinal
++      )
++    ).toEqual([0, 1, 2]);
++    expect(
++      (await second.finalize({ success: true })).publications[0]?.outputOrdinal
++    ).toBe(0);
++  });
++});
++
++test("symlinked profile root produces canonical relative publication paths", async () => {
++  await fixture(async (f) => {
++    const alias = path.join(f.root, "alias");
++    await symlink(f.workspaceRoot, alias);
++    await runWriteDocx(
++      { markdown: "Report", path: "report.docx" },
++      { ...f.context, workspaceRoot: alias }
++    );
++    const result = await f.execution.finalize({ success: true });
++    expect(result.publications[0]?.sourcePath).toBe("artifacts/report.docx");
++  });
++});
++
++test("generated image stages the same bytes as its file and preserves success when staging rejects", async () => {
++  await fixture(async (f) => {
++    const generated = Buffer.from("image fixture bytes");
++    const original = Buffer.from(generated);
++    const result = await runGenerateImageTool(
++      { filename: "fixture.png", prompt: "fixture" },
++      f.context,
++      {
++        db: f.db,
++        ensureSettingsLoaded: async () => {},
++        generateImage: async () => ({
++          data: generated,
++          mediaType: "image/png",
++          model: "gpt-image-2",
++          size: "1024x1024",
++        }),
++        getUserConfig: () => ({
++          defaultProviderId: "fixture",
++          imageModel: "fixture::gpt-image-2",
++          providers: [
++            {
++              apiKey: "offline-fixture",
++              createdAt: "2026-01-01",
++              id: "fixture",
++              label: "Fixture",
++              type: "openai",
++            },
++          ],
++        }),
++        recordUsage: () => generated.fill(88),
++      }
++    );
++    const published = await f.execution.finalize({
++      data: result,
++      success: true,
++    });
++    expect(published.publications).toHaveLength(1);
++    expect(
++      (await f.service.read(f.owner, published.publications[0]!.id))?.bytes
++    ).toEqual(original);
++    expect(
++      await readFile(
++        path.join(f.workspaceRoot, published.publications[0]!.sourcePath)
++      )
++    ).toEqual(original);
++    const failedStage = await runGenerateImageTool(
++      { filename: "second.png", prompt: "fixture" },
++      {
++        ...f.context,
++        artifactPublisher: {
++          stageBytes: async () => {
++            throw new Error("failed");
++          },
++        },
++      },
++      {
++        db: f.db,
++        ensureSettingsLoaded: async () => {},
++        generateImage: async () => ({
++          data: original,
++          mediaType: "image/png",
++          model: "gpt-image-2",
++          size: "1024x1024",
++        }),
++        getUserConfig: () => ({
++          defaultProviderId: "fixture",
++          imageModel: "fixture::gpt-image-2",
++          providers: [
++            {
++              apiKey: "offline-fixture",
++              createdAt: "2026-01-01",
++              id: "fixture",
++              label: "Fixture",
++              type: "openai",
++            },
++          ],
++        }),
++      }
++    );
++    expect(failedStage).toMatchObject({
++      path: "artifacts/second.png",
++      sizeBytes: original.length,
++    });
++  });
++});
++
++test("ArtifactService captures buffer before awaits, and browser screenshot/download forward one capability per output", async () => {
++  await fixture(async (f) => {
++    const oldConfig = process.env.ATLAS_CONFIG_DIR;
++    process.env.ATLAS_CONFIG_DIR = path.join(f.root, "browser-config");
++    try {
++      const service = new ArtifactService();
++      const input = Buffer.from("original");
++      const writing = service.saveArtifact(
++        "org",
++        "profile",
++        "direct.txt",
++        input,
++        { artifactPublisher: f.context.artifactPublisher }
++      );
++      input.fill(88);
++      const saved = await writing;
++      expect(
++        (
++          await service.getArtifact("org", "profile", saved.path)
++        ).content.toString()
++      ).toBe("original");
++      const browser = new BrowserSessionService();
++      Object.defineProperty(browser, "getOrCreateSession", {
++        value: async () => ({
++          page: {
++            screenshot: async () => Buffer.from("screenshot"),
++            waitForEvent: async () => ({
++              createReadStream: async () =>
++                Readable.from([Buffer.from("download")]),
++              suggestedFilename: () => "download.txt",
++            }),
++          },
++        }),
++      });
++      Object.defineProperty(browser, "extractPageSnapshot", {
++        value: async () => ({}),
++      });
++      const options = {
++        artifactPublisher: f.context.artifactPublisher,
++        orgId: "org",
++        profileId: "profile",
++        sessionId: "session",
++      };
++      expect(
++        (await browser.executeBrowserAction({ action: "screenshot" }, options))
++          .artifacts
++      ).toHaveLength(1);
++      expect(
++        (await browser.executeBrowserAction({ action: "download" }, options))
++          .artifacts
++      ).toHaveLength(1);
++      const result = await f.execution.finalize({ success: true });
++      expect(result.publications.map((p) => p.outputOrdinal)).toEqual([
++        0, 1, 2,
++      ]);
++      const contents = await Promise.all(
++        result.publications.map(async (p) =>
++          (await f.service.read(f.owner, p.id))?.bytes.toString()
++        )
++      );
++      expect(contents).toEqual(["original", "screenshot", "download"]);
++    } finally {
++      if (oldConfig === undefined) {
++        delete process.env.ATLAS_CONFIG_DIR;
++      } else {
++        process.env.ATLAS_CONFIG_DIR = oldConfig;
++      }
++    }
++  });
++});
++
++test("all direct core producers retain successful effect receipts when publication storage fails", async () => {
++  await fixture(async (f) => {
++    Object.defineProperty(f.store, "stage", {
++      value: async () => {
++        throw new Error("storage unavailable");
++      },
++    });
++    const text = await runWriteFile(
++      { content: "first", deliverable: true, path: "artifacts/text.txt" },
++      f.context
++    );
++    const edited = await runEditFile(
++      {
++        deliverable: true,
++        edits: [{ newText: "edited", oldText: "first" }],
++        path: text.path,
++      },
++      f.context
++    );
++    const doc = await runWriteDocx(
++      { markdown: "Report", path: "report.docx" },
++      f.context
++    );
++    const slides = await runWritePptx(
++      { path: "report.pptx", slides: [{ title: "Report" }], title: "Report" },
++      f.context
++    );
++    const sheet = (await spreadsheetTool.run(
++      {
++        action: "create",
++        columns: ["Label"],
++        data: [["Report"]],
++        path: "report.csv",
++      },
++      f.context
++    )) as { path: string; bytesWritten: number };
++    for (const saved of [edited, doc, slides, sheet]) {
++      const absolute = path.isAbsolute(saved.path)
++        ? saved.path
++        : path.join(f.workspaceRoot, saved.path);
++      expect((await readFile(absolute)).length).toBe(saved.bytesWritten);
++    }
++    expect(edited.replacements).toBe(1);
++    expect(
++      (await f.execution.finalize({ data: sheet, success: true })).status
++    ).toBe("failed");
++  });
++});
++
++test("generic explicit edit rejects outside artifacts before changing the file", async () => {
++  await fixture(async (f) => {
++    await runWriteFile({ content: "keep", path: "MEMORY.md" }, f.context);
++    await expect(
++      runEditFile(
++        {
++          deliverable: true,
++          edits: [{ newText: "changed", oldText: "keep" }],
++          path: "MEMORY.md",
++        },
++        f.context
++      )
++    ).rejects.toThrow();
++    expect(
++      await readFile(path.join(f.workspaceRoot, "MEMORY.md"), "utf8")
++    ).toBe("keep");
++    expect(
++      (await f.execution.finalize({ success: true })).publications
++    ).toEqual([]);
++  });
++});
++
++test("tool input cannot choose output ordinal or publication ownership", async () => {
++  await fixture(async (f) => {
++    const input = {
++      bytes: Buffer.from("content"),
++      executionId: "forged",
++      orgId: "foreign",
++      outputOrdinal: 31,
++      sourcePath: "artifacts/report.txt",
++    };
++    await f.context.artifactPublisher!.stageBytes(input);
++    const result = await f.execution.finalize({ success: true });
++    expect(result.publications[0]).toMatchObject({
++      executionId: f.owner.executionId,
++      orgId: "org",
++      outputOrdinal: 0,
++    });
++  });
++});
+--- a/apps/server/src/services/artifact-service.ts
++++ b/apps/server/src/services/artifact-service.ts
+@@ -13,6 +13,10 @@
+   nanoid,
+   type ToolArtifact,
+ } from "@atlas/core";
++import {
++  stageToolArtifact,
++  type ToolArtifactPublisher,
++} from "@atlas/core/artifact-publication";
+ import {
+   type Artifact,
+   type ArtifactType,
+@@ -78,11 +82,13 @@
+     filename: string,
+     content: Buffer | string,
+     options: {
++      artifactPublisher?: ToolArtifactPublisher;
+       metadata?: Record<string, unknown>;
+       mimeType?: string;
+       sessionId?: string;
+     } = {}
+   ): Promise<ToolArtifact> {
++    const bytes = Buffer.from(content);
+     const soulDir = getProfileSoulDir(orgId, profileId);
+     const artifactsDir = path.join(soulDir, "artifacts");
+     await mkdir(artifactsDir, { recursive: true });
+@@ -94,13 +100,11 @@
+       cwd: soulDir,
+     });
+ 
+-    if (typeof content === "string") {
+-      await writeFile(guarded.resolved, content, "utf8");
+-    } else {
+-      await writeFile(guarded.resolved, content);
+-    }
+-
+-    const fileStat = await stat(guarded.resolved);
++    await writeFile(guarded.resolved, bytes);
++    await stageToolArtifact(options.artifactPublisher, {
++      bytes,
++      sourcePath: `artifacts/${safeFilename}`,
++    });
+     const mimeType = options.mimeType ?? detectArtifactMimeType(safeFilename);
+     const id = nanoid(12);
+ 
+@@ -113,7 +117,7 @@
+       // remains relative to the logical profile, never between lexical/real roots.
+       path: `artifacts/${safeFilename}`,
+       sessionId: options.sessionId,
+-      sizeBytes: fileStat.size,
++      sizeBytes: bytes.length,
+     };
+   }
+ 
+@@ -123,6 +127,7 @@
+     filename: string,
+     content: Buffer | string,
+     options: {
++      artifactPublisher?: ToolArtifactPublisher;
+       metadata?: Record<string, unknown>;
+       mimeType?: string;
+       sessionId?: string;
+--- a/apps/server/src/services/browser-session-service.ts
++++ b/apps/server/src/services/browser-session-service.ts
+@@ -1,6 +1,7 @@
+ import { lookup as dnsLookup } from "node:dns/promises";
+ import { isIP } from "node:net";
+ import { nanoid, type ToolArtifact } from "@atlas/core";
++import type { ToolArtifactPublisher } from "@atlas/core/artifact-publication";
+ import type {
+   BrowserInput,
+   BrowserPageSnapshot,
+@@ -581,6 +582,7 @@
+   async executeBrowserAction(
+     input: BrowserInput,
+     options: {
++      artifactPublisher?: ToolArtifactPublisher;
+       orgId?: string;
+       profileId?: string;
+       runId?: string;
+@@ -761,7 +763,11 @@
+             options.profileId,
+             filename,
+             buffer,
+-            { mimeType: "image/png", sessionId: options.sessionId }
++            {
++              artifactPublisher: options.artifactPublisher,
++              mimeType: "image/png",
++              sessionId: options.sessionId,
++            }
+           );
+           artifacts.push(artifact);
+         }
+@@ -809,7 +815,10 @@
+               options.profileId,
+               downloadFilename,
+               buffer,
+-              { sessionId: options.sessionId }
++              {
++                artifactPublisher: options.artifactPublisher,
++                sessionId: options.sessionId,
++              }
+             );
+             artifacts.push(artifact);
+           }
+--- a/apps/server/src/tools/generate-image-tool.ts
++++ b/apps/server/src/tools/generate-image-tool.ts
+@@ -10,6 +10,7 @@
+   type ToolDefinition,
+   type UserConfig,
+ } from "@atlas/core";
++import { stageToolArtifact } from "@atlas/core/artifact-publication";
+ import type { DatabaseAdapter } from "@atlas/db";
+ import { createAttachmentSaver } from "../services/attachment-service";
+ import {
+@@ -169,6 +170,7 @@
+     };
+   }
+ 
++  const bytes = Buffer.from(result.data);
+   const workspaceRoot =
+     context.workspaceRoot?.trim() || getProfileSoulDir(orgId, profileId);
+   if (!path.isAbsolute(workspaceRoot)) {
+@@ -186,12 +188,12 @@
+   );
+   const metaPath = `${targetPath}${ARTIFACT_META_SUFFIX}`;
+   const savedAt = new Date().toISOString();
+-  const sizeBytes = result.data.byteLength;
++  const sizeBytes = bytes.byteLength;
+ 
+   await mkdir(artifactsDir, { recursive: true });
+ 
+   try {
+-    await writeFile(targetPath, result.data);
++    await writeFile(targetPath, bytes);
+     await writeFile(
+       metaPath,
+       JSON.stringify(
+@@ -223,7 +225,7 @@
+         sessionId,
+       });
+       const saved = await save({
+-        bytes: Buffer.from(result.data),
++        bytes: Buffer.from(bytes),
+         filename: path.basename(targetPath),
+         kind: "image",
+         mediaType: result.mediaType,
+@@ -250,6 +252,10 @@
+     }
+   );
+ 
++  await stageToolArtifact(context.artifactPublisher, {
++    bytes,
++    sourcePath: relativePath,
++  });
+   return {
+     attachmentId,
+     mimeType: result.mediaType,
+--- a/packages/core/src/artifact-publication.ts
++++ b/packages/core/src/artifact-publication.ts
+@@ -25,6 +25,8 @@
+ /** Byte producers receive only this capability, never the execution finalizer. */
+ export interface ArtifactPublicationProducer {
+   /**
++   * Capture input properties/bytes synchronously before any await, inside the
++   * producer failure boundary. Every rejected stage must poison the whole set.
+    * Storage failure is retained for the trusted finalizer and does not reject.
+    * Invalid input, conflicting output ordinal, cancellation or closed execution
+    * rejects; callers must still preserve any previously created workspace receipt.
+@@ -36,3 +38,68 @@
+     outputOrdinal: number;
+   }): Promise<void>;
+ }
++
++/** Invocation-local byte capability. No ownership, output ordinal or finalizer is exposed. */
++export interface ToolArtifactPublisher {
++  stageBytes(input: { bytes: Uint8Array; sourcePath: string }): Promise<void>;
++}
++
++/** Trusted execution code must create a fresh publisher for each actual invocation. */
++export function createToolArtifactPublisher(
++  producer: ArtifactPublicationProducer
++): ToolArtifactPublisher {
++  let nextOrdinal = 0;
++  return Object.freeze({
++    stageBytes(input: {
++      bytes: Uint8Array;
++      sourcePath: string;
++    }): Promise<void> {
++      const outputOrdinal = nextOrdinal++;
++      // The trusted producer captures synchronously inside its failure boundary.
++      // Defer even property access there so a throwing tool getter poisons the set.
++      let sourcePath: string | undefined;
++      let bytes: Uint8Array | undefined;
++      return producer.stageBytes({
++        get bytes() {
++          bytes ??= input.bytes;
++          return bytes;
++        },
++        outputOrdinal,
++        get sourcePath() {
++          sourcePath ??= input.sourcePath;
++          return sourcePath;
++        },
++      });
++    },
++  });
++}
++
++/** Preserve the original successful workspace effect even when staging rejects.
++ * The trusted producer retains the rejection and poisons its complete output set.
++ * This helper never retries the file producer or grants publication success.
++ */
++export async function stageToolArtifact(
++  publisher: ToolArtifactPublisher | undefined,
++  input: { bytes: Uint8Array; sourcePath: string }
++): Promise<void> {
++  if (!publisher) {
++    return;
++  }
++  try {
++    await publisher.stageBytes(input);
++  } catch {
++    // Publication failure is reported separately by the trusted finalizer.
++  }
++}
++
++/** Explicit deliverables live under artifacts/, excluding hidden/support metadata paths. */
++export function isArtifactPublicationPath(sourcePath: string): boolean {
++  const parts = sourcePath.split("/");
++  return (
++    parts.length >= 2 &&
++    parts[0] === "artifacts" &&
++    parts.every((part) => part.length > 0 && !part.startsWith(".")) &&
++    !/[\\\x00-\x1f\x7f]/.test(sourcePath) &&
++    !sourcePath.endsWith(".atlas-meta.json")
++  );
++}
+--- a/packages/core/src/contract.ts
++++ b/packages/core/src/contract.ts
+@@ -1,3 +1,4 @@
++import type { ToolArtifactPublisher } from "./artifact-publication";
+ import type { LoadAttachmentBytes } from "./attachments/content";
+ import type {
+   CapabilityBindingV1,
+@@ -2834,6 +2835,8 @@
+   agentDepth?: number;
+   /** Single-use approval grant consumed at the execution boundary. */
+   approvalGrantId?: string;
++  /** Fresh invocation-local byte staging capability, installed by trusted execution code. */
++  artifactPublisher?: ToolArtifactPublisher;
+   automationId?: string;
+   automationRunId?: string;
+   /** Revalidates tenant liveness at the final boundary before a tool runs. */
+--- a/packages/core/src/files/assets.ts
++++ b/packages/core/src/files/assets.ts
+@@ -3,6 +3,7 @@
+ import { link, mkdir, open, unlink } from "node:fs/promises";
+ import path from "node:path";
+ import { inferArtifactMimeType } from "../artifact-mime";
++import { stageToolArtifact } from "../artifact-publication";
+ import type { ToolArtifact, ToolContext } from "../contract";
+ import { buildToolExecutionContext } from "../tools/context";
+ import { guardFilePath } from "../tools/paths";
+@@ -104,6 +105,7 @@
+   path: string;
+   revision: string;
+ }> {
++  const bytes = new Uint8Array(input.bytes);
+   input.context.signal?.throwIfAborted();
+   const root = fileAssetWorkspace(input.context);
+   // Materialized input is a working source, not a new deliverable for channels.
+@@ -122,7 +124,7 @@
+       "outputFilename must be a filename without directories (maximum 180 characters)."
+     );
+   }
+-  if (input.bytes.length > MAX_FILE_ASSET_BYTES) {
++  if (bytes.length > MAX_FILE_ASSET_BYTES) {
+     throw new Error(`Output exceeds the ${MAX_FILE_ASSET_BYTES} byte limit.`);
+   }
+   const directory = await guardFilePath(outputDirectory, null, undefined, {
+@@ -140,7 +142,7 @@
+   const handle = await open(temporary, "wx", 0o600);
+   try {
+     try {
+-      await handle.writeFile(input.bytes);
++      await handle.writeFile(bytes);
+       await handle.sync();
+     } finally {
+       await handle.close();
+@@ -160,6 +162,12 @@
+         }
+         throw error;
+       }
++      if (input.deliverable !== false) {
++        await stageToolArtifact(input.context.artifactPublisher, {
++          bytes,
++          sourcePath: `${outputDirectory}/${candidate}`,
++        });
++      }
+       return {
+         artifacts:
+           input.deliverable === false
+@@ -172,12 +180,12 @@
+                   mimeType: inferArtifactMimeType(candidate),
+                   path: `${outputDirectory}/${candidate}`,
+                   sessionId: input.context.sessionId,
+-                  sizeBytes: input.bytes.length,
++                  sizeBytes: bytes.length,
+                 },
+               ],
+-        bytesWritten: input.bytes.length,
++        bytesWritten: bytes.length,
+         path: `${outputDirectory}/${candidate}`,
+-        revision: fileAssetRevision(input.bytes),
++        revision: fileAssetRevision(bytes),
+       };
+     }
+     throw new Error(
+--- a/packages/core/src/files/versioned-write.ts
++++ b/packages/core/src/files/versioned-write.ts
+@@ -8,6 +8,8 @@
+   bytes: string | Uint8Array,
+   signal?: AbortSignal
+ ): Promise<string> {
++  const capturedBytes =
++    typeof bytes === "string" ? bytes : new Uint8Array(bytes);
+   signal?.throwIfAborted();
+   const directory = path.dirname(destination);
+   await mkdir(directory, { recursive: true });
+@@ -15,7 +17,7 @@
+   const handle = await open(temporary, "wx", 0o600);
+   try {
+     try {
+-      await handle.writeFile(bytes);
++      await handle.writeFile(capturedBytes);
+       await handle.sync();
+     } finally {
+       await handle.close();
+--- a/packages/core/src/skills/bundled/save-artifact/SKILL.md
++++ b/packages/core/src/skills/bundled/save-artifact/SKILL.md
+@@ -44,8 +44,10 @@
+ ## Workflow
+ 
+ 1. Choose a short, descriptive filename under `artifacts/` (use subdirectories when grouping related files, e.g. `artifacts/weekly/report.md`).
+-2. `write_file` the artifact content to `artifacts/{filename}`. If that name already exists, a date suffix is added automatically (e.g. `report-2026-07-14.md`). For Word / slides / Excel, use `write_docx` / `write_pptx` / `spreadsheet` instead of `write_file`.
+-3. For `write_file` outputs, also `write_file` the metadata sidecar to `artifacts/{filename}.atlas-meta.json` using the same base filename from step 2.
++2. `write_file` the artifact content with `deliverable: true` to `artifacts/{filename}`. If that name already exists, a date suffix is added automatically (e.g. `report-2026-07-14.md`). For Word / slides / Excel, use `write_docx` / `write_pptx` / `spreadsheet` instead of `write_file`.
++3. For `write_file` outputs, also `write_file` the metadata sidecar with `deliverable: false` to `artifacts/{filename}.atlas-meta.json` using the same base filename from step 2.
++Intermediate and support files use `deliverable: false` (or omit it). Editing a completed text deliverable with `edit_file` also requires `deliverable: true`.
++
+ 4. Confirm the path in a short reply. On web chat, saved artifacts appear as chips with a live preview in addition to the profile **Artifacts** tab.
+ 
+ ## MIME type guidance
+--- a/packages/core/src/tools/builtin.ts
++++ b/packages/core/src/tools/builtin.ts
+@@ -3,6 +3,10 @@
+ import { z } from "zod";
+ import { isDocxFile, isLegacyDocFile } from "../artifact-mime";
+ import { coerceDeliverableArtifactPath } from "../artifact-path";
++import {
++  isArtifactPublicationPath,
++  stageToolArtifact,
++} from "../artifact-publication";
+ import type { ToolContext, ToolDefinition } from "../contract";
+ import { convertDocxToMarkdown } from "../docx-text";
+ import { markdownToDocx } from "../docx-write";
+@@ -50,6 +54,12 @@
+   .object({
+     content: z.string({ error: "content is required." }),
+     cwd: trimmedOptionalString,
++    deliverable: z
++      .boolean()
++      .optional()
++      .describe(
++        "Publish this completed user deliverable under artifacts/. Omit for intermediate or support files."
++      ),
+     path: requiredTrimmedString("path"),
+   })
+   .strict();
+@@ -74,6 +84,12 @@
+ export const editFileInputSchema = z
+   .object({
+     cwd: trimmedOptionalString,
++    deliverable: z
++      .boolean()
++      .optional()
++      .describe(
++        "Publish this completed user deliverable under artifacts/. Omit for intermediate or support files."
++      ),
+     edits: z
+       .array(
+         z
+@@ -139,6 +155,22 @@
+ const BLOCKED_READ_BASENAMES = ["config.ini"];
+ const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
+ const artifactRemap = new Map<string, string>();
++
++async function publicationRoot(options: PathGuardOptions): Promise<string> {
++  return (await guardFilePath(".", null, undefined, options)).resolved;
++}
++
++function requireDeliverableDestination(filePath: string, root: string): void {
++  if (
++    !isArtifactPublicationPath(
++      path.relative(root, filePath).split(path.sep).join("/")
++    )
++  ) {
++    throw new Error(
++      "deliverable requires a visible content file under artifacts/ in the profile workspace."
++    );
++  }
++}
+ 
+ async function isArtifactDestination(
+   resolvedPath: string,
+@@ -347,6 +379,10 @@
+   );
+   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
+   refuseSkillLocalToolFileWrite(guarded.resolved);
++  const publishRoot = await publicationRoot(guardOptions);
++  if (parsed.deliverable) {
++    requireDeliverableDestination(guarded.resolved, publishRoot);
++  }
+   let filePath = guarded.resolved;
+   const isSidecar = filePath.endsWith(ARTIFACT_META_SUFFIX);
+   const originalContentPath = isSidecar
+@@ -435,6 +471,15 @@
+     });
+   }
+ 
++  if (parsed.deliverable && !isSidecar) {
++    await stageToolArtifact(context.artifactPublisher, {
++      bytes: Buffer.from(contentToWrite, "utf8"),
++      sourcePath: path
++        .relative(publishRoot, filePath)
++        .split(path.sep)
++        .join("/"),
++    });
++  }
+   return { bytesWritten: contentBytes, path: filePath };
+ }
+ 
+@@ -487,6 +532,7 @@
+   );
+   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
+   refuseSkillLocalToolFileWrite(guarded.resolved);
++  const publishRoot = await publicationRoot(guardOptions);
+   // Same rule as write_file: never silently overwrite an existing artifact.
+   await mkdir(path.dirname(guarded.resolved), { recursive: true });
+   const artifact = await isArtifactDestination(guarded.resolved, guardOptions);
+@@ -507,6 +553,10 @@
+     });
+   }
+ 
++  await stageToolArtifact(context.artifactPublisher, {
++    bytes,
++    sourcePath: path.relative(publishRoot, filePath).split(path.sep).join("/"),
++  });
+   return { bytesWritten: bytes.length, path: filePath };
+ }
+ 
+@@ -552,6 +602,7 @@
+   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
+   refuseSkillLocalToolFileWrite(guarded.resolved);
+ 
++  const publishRoot = await publicationRoot(guardOptions);
+   await mkdir(path.dirname(guarded.resolved), { recursive: true });
+   const artifact = await isArtifactDestination(guarded.resolved, guardOptions);
+   const filePath = artifact
+@@ -572,6 +623,10 @@
+     });
+   }
+ 
++  await stageToolArtifact(context.artifactPublisher, {
++    bytes,
++    sourcePath: path.relative(publishRoot, filePath).split(path.sep).join("/"),
++  });
+   return {
+     bytesWritten: bytes.length,
+     path: filePath,
+@@ -689,6 +744,10 @@
+     );
+   }
+ 
++  const publishRoot = await publicationRoot(guardOptions);
++  if (parsed.deliverable) {
++    requireDeliverableDestination(filePath, publishRoot);
++  }
+   const rawBuffer = await readFile(filePath);
+   const hasBom =
+     rawBuffer.length >= 3 &&
+@@ -711,6 +770,15 @@
+     guardOptions
+   );
+   await writeFile(filePath, outputContent, "utf8");
++  if (parsed.deliverable) {
++    await stageToolArtifact(context.artifactPublisher, {
++      bytes: Buffer.from(outputContent, "utf8"),
++      sourcePath: path
++        .relative(publishRoot, filePath)
++        .split(path.sep)
++        .join("/"),
++    });
++  }
+ 
+   return {
+     bytesWritten,
+--- a/packages/core/src/tools/spreadsheet-io.ts
++++ b/packages/core/src/tools/spreadsheet-io.ts
+@@ -106,7 +106,8 @@
+   signal?: AbortSignal;
+   writeMode: "inplace" | "versioned";
+ }): Promise<{ path: string; revision: string }> {
+-  if (input.bytes.length > MAX_SPREADSHEET_BYTES) {
++  const bytes = Buffer.from(input.bytes);
++  if (bytes.length > MAX_SPREADSHEET_BYTES) {
+     throw new Error("Generated spreadsheet exceeds the 25 MiB limit.");
+   }
+   const directory = path.dirname(input.path);
+@@ -118,7 +119,7 @@
+   try {
+     const file = await open(temporary, "wx", 0o600);
+     try {
+-      await file.writeFile(input.bytes);
++      await file.writeFile(bytes);
+       await file.sync();
+     } finally {
+       await file.close();
+@@ -138,7 +139,7 @@
+       }
+       input.signal?.throwIfAborted();
+       await rename(temporary, input.path);
+-      return { path: input.path, revision: spreadsheetRevision(input.bytes) };
++      return { path: input.path, revision: spreadsheetRevision(bytes) };
+     }
+     const parsed = path.parse(input.path);
+     for (let version = 1; version <= 10_000; version += 1) {
+@@ -152,7 +153,7 @@
+         await link(temporary, destination);
+         return {
+           path: destination,
+-          revision: spreadsheetRevision(input.bytes),
++          revision: spreadsheetRevision(bytes),
+         };
+       } catch (error) {
+         if (!isCode(error, "EEXIST")) {
+--- a/packages/core/src/tools/spreadsheet.ts
++++ b/packages/core/src/tools/spreadsheet.ts
+@@ -4,6 +4,10 @@
+ import { z } from "zod";
+ import { stampArtifactLineage } from "../artifact-lineage";
+ import { coerceDeliverableArtifactPath } from "../artifact-path";
++import {
++  isArtifactPublicationPath,
++  stageToolArtifact,
++} from "../artifact-publication";
+ import type { ToolContext, ToolDefinition } from "../contract";
+ import { getProfileSoulDir } from "../soul/resolve";
+ import { guardFilePath, type PathGuardOptions } from "./paths";
+@@ -924,6 +928,16 @@
+       ) {
+         await recordSpreadsheetCalculation(published.path, published.revision);
+       }
++      const publicationPath = path
++        .relative(workspaceRoot, published.path)
++        .split(path.sep)
++        .join("/");
++      if (isArtifactPublicationPath(publicationPath)) {
++        await stageToolArtifact(context.artifactPublisher, {
++          bytes,
++          sourcePath: publicationPath,
++        });
++      }
+       return boundedSpreadsheetResponse({
+         ...report,
+         bytesWritten: bytes.length,

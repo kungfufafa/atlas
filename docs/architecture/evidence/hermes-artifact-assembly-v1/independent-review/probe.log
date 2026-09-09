@@ -1,0 +1,17 @@
+bun test v1.3.1 (89fa0f34)
+
+probe.test.ts:
+(pass) memory: pending duplicate selection reserves once, concurrent finalize is one complete set [87.77ms]
+(pass) memory: failed capture during reentrant finalize never commits an empty or partial set [67.63ms]
+(pass) memory: an actual committed receipt survives lost acknowledgment and retry after source deletion [65.89ms]
+(pass) memory: evidence rejects nested extra keys, wrong versions and nonfinite sizes atomically [69.15ms]
+(pass) sqlite: pending duplicate selection reserves once, concurrent finalize is one complete set [95.49ms]
+(pass) sqlite: failed capture during reentrant finalize never commits an empty or partial set [86.91ms]
+(pass) sqlite: an actual committed receipt survives lost acknowledgment and retry after source deletion [78.10ms]
+(pass) sqlite: evidence rejects nested extra keys, wrong versions and nonfinite sizes atomically [81.98ms]
+(pass) SQLite second connection preserves selected private JSON, public redaction and original bytes [86.85ms]
+
+ 9 pass
+ 0 fail
+ 54 expect() calls
+Ran 9 tests across 1 file. [1.83s]

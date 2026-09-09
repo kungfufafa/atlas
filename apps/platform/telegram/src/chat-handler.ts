@@ -1,9 +1,18 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+import { isDeepStrictEqual } from "node:util";
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
   type ChannelArtifactRef,
   channelArtifactRefFromArtifact,
   formatMissingAttachArtifactMessage,
 } from "@atlas/core";
+import { formatAgentQuestionnaireAnswersMessage } from "@atlas/core/agent-questionnaire";
+import type { SaveInboundDocument } from "@atlas/core/attachments/inbound-document";
+import { toArtifactsRelativePath } from "@atlas/core/channel-artifacts";
+import {
+  effectiveChannelRules,
+  loadChannelIntegrationPolicy,
+} from "@atlas/core/channel-integration-policy";
 import {
   type ChannelOrgStore,
   findOrgBySelectionInput,
@@ -13,7 +22,11 @@ import {
 } from "@atlas/core/channel-org";
 import { ChannelRateLimiter } from "@atlas/core/channel-rate-limiter";
 import type { SendMessageInput } from "@atlas/core/contract";
-import { waitForAbortable } from "@atlas/core/download-deadline";
+import {
+  throwIfSignalAborted,
+  waitForAbortable,
+} from "@atlas/core/download-deadline";
+import { saveInboundWorkspaceDocument } from "@atlas/core/inbound-document";
 import {
   filterProfilesForChatAccess,
   formatProfileSelectionPrompt,
@@ -52,6 +65,8 @@ import type { TelegramBridgeConfig } from "./config";
 import { formatError, formatHelpText, splitTelegramMessage } from "./format";
 import {
   explainGroupMessageHandling,
+  formatIgnoredTelegramFileMessage,
+  hasTelegramFileAttachment,
   isTelegramGroupChat,
   isTelegramTopicMessage,
   parseTelegramSlashCommand,
@@ -61,7 +76,12 @@ import {
   stripBotMention,
   type TelegramBotInfo,
 } from "./group-message";
-import { buildTelegramImageInput } from "./images";
+import { buildTelegramImageInput, hasTelegramImage } from "./images";
+import { TelegramNativeActions } from "./native-actions";
+import {
+  type TelegramControlBinding,
+  TelegramNativeControls,
+} from "./native-controls";
 import { replyAsChat } from "./reply";
 import {
   createTelegramRichMessenger,
@@ -70,6 +90,7 @@ import {
 import type { SessionStore } from "./session-store";
 import { TelegramTodoStatusMessage } from "./todo-status-message";
 import { createTypingLoop } from "./typing-indicator";
+import { buildTelegramVideoInput, hasTelegramVideo } from "./video";
 
 const chatLocks = new Map<string, Promise<void>>();
 const rateLimiter = new ChannelRateLimiter();
@@ -121,13 +142,123 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   const helpText = formatHelpText({
     workspaceLocked: Boolean(fixedWorkspaceId),
   });
+  const nativeActions = new TelegramNativeActions();
+  const roomContext = new AsyncLocalStorage<{
+    channelChatId: string;
+    channelThreadId?: string;
+    channelIsGroup: boolean;
+    channelAddressed: boolean;
+  }>();
+  const nativeControls = new TelegramNativeControls(
+    async (binding, kind, questionnaire) => {
+      await authStore.reload();
+      const selectedOrgId =
+        fixedWorkspaceId ??
+        getOrgSelection(orgStore, binding.channelOrgKey)?.orgId;
+      const stored = sessionStore.get(binding.sessionKey);
+      if (
+        !authStore.isAuthorized(Number(binding.channelUserId)) ||
+        selectedOrgId !== binding.orgId ||
+        stored?.sessionId !== binding.sessionId ||
+        stored.profileId !== binding.profileId ||
+        stored.channelUserId !== binding.channelUserId
+      ) {
+        throw new Error(
+          "This control no longer belongs to the current conversation."
+        );
+      }
+      client.setOrgId(binding.orgId);
+      await client.authorizeChannelPrincipal({
+        ...roomContext.getStore(),
+        channel: "telegram",
+        channelAddressed: true,
+        channelChatId: String(binding.chatId),
+        channelIsGroup: binding.isGroup,
+        channelThreadId:
+          binding.threadId === undefined ? undefined : String(binding.threadId),
+        channelUserId: binding.channelUserId,
+        intent: "invoke",
+        profileId: binding.profileId,
+        sessionId: binding.sessionId,
+      });
+      if (kind === "questionnaire") {
+        const current = await client.getSessionMessages(binding.sessionId);
+        if (!isDeepStrictEqual(current.questionnaire, questionnaire)) {
+          throw new Error("This questionnaire has been replaced or resolved.");
+        }
+      }
+    }
+  );
+
+  function controlBinding(
+    ctx: Context,
+    sessionKey: string,
+    sessionId: string,
+    profileId: string
+  ): TelegramControlBinding {
+    const userId = ctx.from?.id;
+    const chatId = ctx.chat?.id;
+    if (userId === undefined || chatId === undefined) {
+      throw new Error("Telegram control sender is missing.");
+    }
+    const channelOrgKey = resolveChannelOrgKey(
+      String(chatId),
+      userId,
+      isTelegramGroupChat(ctx)
+    );
+    const orgId =
+      fixedWorkspaceId ?? getOrgSelection(orgStore, channelOrgKey)?.orgId;
+    if (!orgId) {
+      throw new Error("Telegram control workspace is missing.");
+    }
+    return {
+      addressed: roomContext.getStore()?.channelAddressed ?? false,
+      channelOrgKey,
+      channelUserId: String(userId),
+      chatId,
+      isGroup: isTelegramGroupChat(ctx),
+      orgId,
+      profileId,
+      sessionId,
+      sessionKey,
+      threadId: ctx.message?.message_thread_id,
+    };
+  }
 
   async function handleMessage(ctx: Context): Promise<void> {
     if (!ctx.chat) {
       return;
     }
 
-    const telegram = createTelegramRichMessenger(ctx);
+    const telegram = createTelegramRichMessenger(ctx, (messageId) => {
+      const userId = ctx.from?.id;
+      if (userId === undefined || !ctx.chat) {
+        return;
+      }
+      const isGroup = isTelegramGroupChat(ctx);
+      const sessionKey = resolveTelegramSessionKey(
+        resolveConversationKey(ctx, String(ctx.chat.id), isGroup),
+        String(userId),
+        isGroup
+      );
+      const stored = sessionStore.get(sessionKey);
+      if (!stored?.profileId) {
+        return;
+      }
+      const orgId =
+        fixedWorkspaceId ??
+        getOrgSelection(
+          orgStore,
+          resolveChannelOrgKey(String(ctx.chat.id), userId, isGroup)
+        )?.orgId;
+      if (!orgId) {
+        return;
+      }
+      nativeActions.recordMessage(
+        { orgId, profileId: stored.profileId, sessionId: stored.sessionId },
+        String(messageId)
+      );
+    });
     const chatId = String(ctx.chat.id);
     const userId = ctx.from?.id;
 
@@ -137,12 +268,19 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     const text = ctx.message?.text?.trim();
     const isGroup = isTelegramGroupChat(ctx);
+    const channelOrgKey = resolveChannelOrgKey(chatId, userId, isGroup);
     const botInfo = resolveBotInfo(ctx, getBotInfo());
     const groupDecision = isGroup
       ? explainGroupMessageHandling(ctx, botInfo)
       : null;
 
-    if (groupDecision && !groupDecision.shouldHandle) {
+    const allowUnaddressed =
+      groupDecision &&
+      (groupDecision.reason === "no-trigger" ||
+        groupDecision.reason === "no-text")
+        ? await permitsUnaddressedGroup(channelOrgKey, String(userId))
+        : false;
+    if (groupDecision && !groupDecision.shouldHandle && !allowUnaddressed) {
       const parts = [
         "Ignored Telegram group message",
         `reason=${groupDecision.reason}`,
@@ -159,11 +297,21 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           `userId=${userId}`
         );
       }
-      console.log(parts.join(" "));
+      console.debug(parts.join(" "));
+      if (hasTelegramFileAttachment(ctx)) {
+        await authStore.reload();
+        if (authStore.isAuthorized(userId)) {
+          await telegram.send(
+            formatIgnoredTelegramFileMessage(
+              groupDecision.reason,
+              botInfo?.username
+            )
+          );
+        }
+      }
       return;
     }
 
-    const channelOrgKey = resolveChannelOrgKey(chatId, userId, isGroup);
     const conversationKey = resolveConversationKey(ctx, chatId, isGroup);
     const channelUserId = String(userId);
     const sessionKey = resolveTelegramSessionKey(
@@ -307,7 +455,42 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       const signal = registerActiveStream(sessionKey);
       try {
-        const imageInput = await tryBuildImageInput(ctx, telegram, signal);
+        if (hasTelegramVideo(ctx)) {
+          const session = await resolveSession(sessionKey, channelUserId);
+          const profileId = sessionStore.get(sessionKey)?.profileId;
+          if (!profileId) {
+            throw new Error("Video conversation profile is missing.");
+          }
+          const authorizeVideo = () =>
+            client.authorizeChannelPrincipal({
+              ...roomContext.getStore(),
+              channel: "telegram",
+              channelUserId,
+              intent: "files",
+              profileId,
+              sessionId: session.id,
+            });
+          await authorizeVideo();
+          const input = await buildTelegramVideoInput(ctx, signal);
+          await authorizeVideo();
+          await handleChatMessage(
+            ctx,
+            withGroupContext(input, isGroup),
+            sessionKey,
+            telegram,
+            "",
+            signal,
+            session
+          );
+          return;
+        }
+        const imageInput = await tryBuildImageInput(
+          ctx,
+          telegram,
+          sessionKey,
+          channelOrgKey,
+          signal
+        );
 
         if (imageInput === "reject") {
           return;
@@ -328,6 +511,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         const documentInput = await tryBuildDocumentInput(
           ctx,
           telegram,
+          sessionKey,
+          channelOrgKey,
           signal
         );
 
@@ -352,6 +537,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           telegram,
           sessionKey,
           channelUserId,
+          channelOrgKey,
           signal
         );
 
@@ -403,6 +589,29 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         clearActiveStream(sessionKey, signal);
       }
     });
+  }
+
+  async function permitsUnaddressedGroup(
+    channelOrgKey: string,
+    channelUserId: string
+  ): Promise<boolean> {
+    const orgId =
+      fixedWorkspaceId ?? getOrgSelection(orgStore, channelOrgKey)?.orgId;
+    if (!orgId) {
+      return false;
+    }
+    const policy = await loadChannelIntegrationPolicy(orgId, "telegram");
+    const rules = effectiveChannelRules(policy, "telegram", {
+      ...roomContext.getStore(),
+      channelUserId,
+    });
+    return (
+      policy.enabled !== false &&
+      rules.some((rule) => rule.requireMention === false) &&
+      !rules.some(
+        (rule) => rule.requireMention === true || rule.enabled === false
+      )
+    );
   }
 
   async function handlePairing(
@@ -602,15 +811,34 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   async function tryBuildImageInput(
     ctx: Context,
     telegram: TelegramRichMessenger,
+    sessionKey: string,
+    channelOrgKey: string,
     signal: AbortSignal
   ): Promise<SendMessageInput | "reject" | null> {
+    if (!hasTelegramImage(ctx)) {
+      return null;
+    }
     try {
-      return await buildTelegramImageInput(ctx, { signal });
+      const saveInboundDocument = await prepareInboundFileSaver(
+        ctx,
+        sessionKey,
+        channelOrgKey,
+        signal
+      );
+      const result = await buildTelegramImageInput(ctx, {
+        saveInboundDocument,
+        signal,
+      });
+      if (result?.kind === "reject") {
+        await telegram.send(result.message);
+        return "reject";
+      }
+      return result?.input ?? null;
     } catch (error) {
       if (isAbortError(error)) {
         throw error;
       }
-      await telegram.send(formatError(error));
+      await telegram.send(DOWNLOAD_FAILED_REPLY);
       return "reject";
     }
   }
@@ -618,10 +846,24 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   async function tryBuildDocumentInput(
     ctx: Context,
     telegram: TelegramRichMessenger,
+    sessionKey: string,
+    channelOrgKey: string,
     signal: AbortSignal
   ): Promise<SendMessageInput | "reject" | null> {
+    if (!hasTelegramDocument(ctx)) {
+      return null;
+    }
     try {
-      const result = await buildTelegramDocumentInput(ctx, { signal });
+      const saveInboundDocument = await prepareInboundFileSaver(
+        ctx,
+        sessionKey,
+        channelOrgKey,
+        signal
+      );
+      const result = await buildTelegramDocumentInput(ctx, {
+        saveInboundDocument,
+        signal,
+      });
 
       if (!result) {
         return null;
@@ -642,11 +884,57 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
   }
 
+  async function prepareInboundFileSaver(
+    ctx: Context,
+    sessionKey: string,
+    channelOrgKey: string,
+    signal: AbortSignal
+  ): Promise<SaveInboundDocument> {
+    const orgId =
+      fixedWorkspaceId ?? getOrgSelection(orgStore, channelOrgKey)?.orgId;
+    const userId = ctx.from?.id;
+    if (!orgId || userId === undefined) {
+      throw new Error("Select a workspace before saving a file.");
+    }
+    const session = await waitForAbortable(
+      resolveSession(sessionKey, String(userId)),
+      signal
+    );
+    const profileId = sessionStore.get(sessionKey)?.profileId;
+    if (!profileId) {
+      throw new Error("Select a profile before saving a file.");
+    }
+    const authorize = () =>
+      waitForAbortable(
+        client.authorizeChannelPrincipal({
+          ...roomContext.getStore(),
+          channel: "telegram",
+          channelUserId: String(userId),
+          intent: "files",
+          profileId,
+          sessionId: session.id,
+        }),
+        signal
+      );
+    await authorize();
+    return async (file) => {
+      await authorize();
+      throwIfSignalAborted(signal);
+      return saveInboundWorkspaceDocument({
+        bytes: file.bytes,
+        filename: file.filename,
+        orgId,
+        profileId,
+      });
+    };
+  }
+
   async function tryBuildAudioInput(
     ctx: Context,
     telegram: TelegramRichMessenger,
     sessionKey: string,
     channelUserId: string,
+    channelOrgKey: string,
     signal: AbortSignal
   ): Promise<
     | {
@@ -661,11 +949,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     try {
+      const saveInboundDocument = await prepareInboundFileSaver(
+        ctx,
+        sessionKey,
+        channelOrgKey,
+        signal
+      );
       const session = await waitForAbortable(
         resolveSession(sessionKey, channelUserId),
         signal
       );
       const input = await buildTelegramAudioInput(ctx, client, session.id, {
+        saveInboundDocument,
         signal,
       });
       return input ? { input, session } : null;
@@ -695,6 +990,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     let profileId: string | undefined;
     let session: RemoteChatSession | undefined;
     const streamedArtifacts = new Map<string, ChannelArtifactRef>();
+    const nativeMediaPaths = new Set<string>();
+    let controlsPending = Promise.resolve();
+    const enqueueControl = (operation: () => Promise<void>) => {
+      controlsPending = controlsPending.then(operation).catch(async (error) => {
+        try {
+          await telegram.send(formatError(error));
+        } catch {
+          /* Best-effort notice; the action is never retried. */
+        }
+      });
+    };
+    nativeControls.invalidate(sessionKey, "questionnaire");
 
     try {
       session =
@@ -722,18 +1029,145 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       typingLoop.start();
 
+      if (!profileId) {
+        throw new Error("Telegram session profile is missing.");
+      }
+      const actionBinding = controlBinding(
+        ctx,
+        sessionKey,
+        session.id,
+        profileId
+      );
+      await client.bindChannelActionContext({
+        channel: "telegram",
+        channelAddressed: actionBinding.addressed,
+        channelChatId: String(actionBinding.chatId),
+        channelIsGroup: actionBinding.isGroup,
+        channelThreadId:
+          actionBinding.threadId === undefined
+            ? undefined
+            : String(actionBinding.threadId),
+        channelUserId: actionBinding.channelUserId,
+        sessionId: session.id,
+      });
+
       reply = await session.sendStream(
         input,
         {
+          onApprovalRequested: (approval) => {
+            if (!(session && profileId)) {
+              return;
+            }
+            const binding = controlBinding(
+              ctx,
+              sessionKey,
+              session.id,
+              profileId
+            );
+            enqueueControl(() =>
+              nativeControls.approval({
+                approval,
+                binding,
+                ctx,
+                decide: async (decision) => {
+                  await client.decideChannelApproval({
+                    approvalId: approval.id,
+                    channel: "telegram",
+                    channelAddressed: true,
+                    channelChatId: String(binding.chatId),
+                    channelIsGroup: binding.isGroup,
+                    channelThreadId:
+                      binding.threadId === undefined
+                        ? undefined
+                        : String(binding.threadId),
+                    channelUserId: binding.channelUserId,
+                    decision,
+                    profileId: binding.profileId,
+                    sessionId: binding.sessionId,
+                  });
+                },
+              })
+            );
+          },
+          onApprovalResolved: (event) => {
+            enqueueControl(() =>
+              nativeControls.resolveApproval(ctx, sessionKey, event.approvalId)
+            );
+          },
           onArtifactCreated: (artifact) => {
             const ref = channelArtifactRefFromArtifact(artifact);
             if (ref) {
               streamedArtifacts.set(ref.path, ref);
             }
           },
+          onChannelActionRequested: (request) => {
+            enqueueControl(() =>
+              nativeActions.dispatch({
+                binding: actionBinding,
+                client,
+                ctx,
+                onMediaReceipt: (path, receipt) => {
+                  if (receipt.status !== "failed") {
+                    nativeMediaPaths.add(toArtifactsRelativePath(path) ?? path);
+                  }
+                },
+                request,
+                signal,
+              })
+            );
+          },
           onChunk: (delta) => {
             reply += delta;
             liveReply.updateFromReply(reply);
+          },
+          onQuestionnaireUpdated: (questionnaire) => {
+            if (!questionnaire?.questions.length) {
+              enqueueControl(async () => {
+                nativeControls.invalidate(sessionKey, "questionnaire");
+              });
+              return;
+            }
+            if (!(session && profileId)) {
+              return;
+            }
+            const binding = controlBinding(
+              ctx,
+              sessionKey,
+              session.id,
+              profileId
+            );
+            enqueueControl(() =>
+              nativeControls.questionnaire({
+                binding,
+                ctx,
+                questionnaire,
+                submit: async (answers) => {
+                  await withChatLock(sessionKey, async () => {
+                    const signal = registerActiveStream(sessionKey);
+                    try {
+                      await handleChatMessage(
+                        ctx,
+                        withGroupContext(
+                          {
+                            expectedQuestionnaire:
+                              structuredClone(questionnaire),
+                            message:
+                              formatAgentQuestionnaireAnswersMessage(answers),
+                          },
+                          isTelegramGroupChat(ctx)
+                        ),
+                        sessionKey,
+                        telegram,
+                        "",
+                        signal
+                      );
+                    } finally {
+                      clearActiveStream(sessionKey, signal);
+                    }
+                  });
+                },
+              })
+            );
           },
           onThinking: () => {
             typingLoop.ping();
@@ -764,6 +1198,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         },
         { signal }
       );
+
+      await controlsPending;
 
       await todoStatus.complete();
 
@@ -800,6 +1236,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
       return;
     } finally {
+      await controlsPending;
+      if (signal.aborted) {
+        nativeControls.invalidate(sessionKey);
+      }
       typingLoop.stop();
     }
 
@@ -822,6 +1262,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         conversationKey: sessionKey,
         ctx,
         messenger: telegram,
+        nativeMediaPaths,
         profileId,
         session,
         sessionStore,
@@ -1092,7 +1533,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         ? resolveProfileInput(currentOrgProfiles, arg)
         : undefined;
     const currentOrgProfilePick =
-      currentOrgId && isTopic
+      currentOrgId && (isTopic || workspaceLocked)
         ? resolveProfileInput(currentOrgProfiles, arg)
         : undefined;
     const resolved =
@@ -1261,7 +1702,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       throw new Error("Telegram channel user identity is required.");
     }
     const session = await client.createSession("telegram", {
-      externalPrincipal: { channelUserId: principalUserId },
+      externalPrincipal: {
+        channelUserId: principalUserId,
+        ...roomContext.getStore(),
+      },
       profileId: resolvedProfileId,
     });
 
@@ -1309,18 +1753,37 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     await sessionStore.save();
   }
 
-  return (ctx: Context) =>
-    client.isolateOrgId(async () => {
-      try {
-        await handleMessage(ctx);
-      } catch (error) {
-        if (!ctx.chat) {
-          return;
+  const dispatchMessage = (ctx: Context) =>
+    client.isolateOrgId(() =>
+      roomContext.run(
+        {
+          channelAddressed:
+            !isTelegramGroupChat(ctx) ||
+            explainGroupMessageHandling(ctx, getBotInfo()).shouldHandle,
+          channelChatId: String(ctx.chat?.id ?? ""),
+          channelIsGroup: isTelegramGroupChat(ctx),
+          channelThreadId:
+            ctx.message?.message_thread_id === undefined
+              ? undefined
+              : String(ctx.message.message_thread_id),
+        },
+        async () => {
+          try {
+            await handleMessage(ctx);
+          } catch (error) {
+            if (!ctx.chat) {
+              return;
+            }
+            const telegram = createTelegramRichMessenger(ctx);
+            await telegram.send(formatError(error)).catch(() => undefined);
+          }
         }
-        const telegram = createTelegramRichMessenger(ctx);
-        await telegram.send(formatError(error)).catch(() => undefined);
-      }
-    });
+      )
+    );
+  return Object.assign(dispatchMessage, {
+    handleCallback: (ctx: Context) =>
+      client.isolateOrgId(() => nativeControls.handleCallback(ctx)),
+  });
 }
 
 export function resolveTelegramSessionKey(

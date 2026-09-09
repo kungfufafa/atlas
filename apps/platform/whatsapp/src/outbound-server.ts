@@ -433,6 +433,39 @@ export async function startWhatsAppOutboundServer(
           }
 
           for (const [index, chunk] of chunks.entries()) {
+            // Queued requests and later chunks must honor policy or credential
+            // revocation that happened while an earlier send was in flight.
+            const currentConfig = await loadWhatsAppConfigFile(options.orgId);
+            if (
+              !(
+                currentConfig?.outboundToken &&
+                tokenMatches(
+                  request.headers.get(WHATSAPP_OUTBOUND_TOKEN_HEADER),
+                  currentConfig.outboundToken
+                )
+              )
+            ) {
+              return Response.json({ error: "Unauthorized." }, { status: 401 });
+            }
+            if (currentConfig.pairedJid?.trim() !== pairedJid) {
+              return Response.json(
+                { error: "WhatsApp pairing changed before delivery." },
+                { status: 409 }
+              );
+            }
+            const currentDestination = resolveWhatsAppOutboundDestination(
+              currentConfig,
+              body.to
+            );
+            if (
+              "error" in currentDestination ||
+              currentDestination.jid !== destination.jid
+            ) {
+              return Response.json(
+                { error: "WhatsApp destination is no longer authorized." },
+                { status: 403 }
+              );
+            }
             const result = await sendMessageWithDeadline(
               handle,
               destination.jid,

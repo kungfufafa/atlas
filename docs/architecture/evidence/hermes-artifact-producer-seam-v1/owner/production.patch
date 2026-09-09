@@ -1,0 +1,588 @@
+--- a/apps/server/src/index.ts
++++ b/apps/server/src/index.ts
+@@ -138,6 +138,7 @@
+     : null;
+ registerBrowserHandler((input, context) =>
+   browserSessionService.executeBrowserAction(input, {
++    artifactPublisher: context.artifactPublisher,
+     orgId: context.orgId,
+     profileId: context.profileId,
+     runId: context.runId,
+--- a/apps/server/src/services/artifact-service.ts
++++ b/apps/server/src/services/artifact-service.ts
+@@ -13,6 +13,10 @@
+   nanoid,
+   type ToolArtifact,
+ } from "@atlas/core";
++import {
++  stageToolArtifact,
++  type ToolArtifactPublisher,
++} from "@atlas/core/artifact-publication";
+ import {
+   type Artifact,
+   type ArtifactType,
+@@ -78,11 +82,13 @@
+     filename: string,
+     content: Buffer | string,
+     options: {
++      artifactPublisher?: ToolArtifactPublisher;
+       metadata?: Record<string, unknown>;
+       mimeType?: string;
+       sessionId?: string;
+     } = {}
+   ): Promise<ToolArtifact> {
++    const bytes = Buffer.from(content);
+     const soulDir = getProfileSoulDir(orgId, profileId);
+     const artifactsDir = path.join(soulDir, "artifacts");
+     await mkdir(artifactsDir, { recursive: true });
+@@ -94,13 +100,11 @@
+       cwd: soulDir,
+     });
+ 
+-    if (typeof content === "string") {
+-      await writeFile(guarded.resolved, content, "utf8");
+-    } else {
+-      await writeFile(guarded.resolved, content);
+-    }
+-
+-    const fileStat = await stat(guarded.resolved);
++    await writeFile(guarded.resolved, bytes);
++    await stageToolArtifact(options.artifactPublisher, {
++      bytes,
++      sourcePath: `artifacts/${safeFilename}`,
++    });
+     const mimeType = options.mimeType ?? detectArtifactMimeType(safeFilename);
+     const id = nanoid(12);
+ 
+@@ -113,7 +117,7 @@
+       // remains relative to the logical profile, never between lexical/real roots.
+       path: `artifacts/${safeFilename}`,
+       sessionId: options.sessionId,
+-      sizeBytes: fileStat.size,
++      sizeBytes: bytes.length,
+     };
+   }
+ 
+@@ -123,6 +127,7 @@
+     filename: string,
+     content: Buffer | string,
+     options: {
++      artifactPublisher?: ToolArtifactPublisher;
+       metadata?: Record<string, unknown>;
+       mimeType?: string;
+       sessionId?: string;
+--- a/apps/server/src/services/browser-session-service.ts
++++ b/apps/server/src/services/browser-session-service.ts
+@@ -1,6 +1,7 @@
+ import { lookup as dnsLookup } from "node:dns/promises";
+ import { isIP } from "node:net";
+ import { nanoid, type ToolArtifact } from "@atlas/core";
++import type { ToolArtifactPublisher } from "@atlas/core/artifact-publication";
+ import type {
+   BrowserInput,
+   BrowserPageSnapshot,
+@@ -581,6 +582,7 @@
+   async executeBrowserAction(
+     input: BrowserInput,
+     options: {
++      artifactPublisher?: ToolArtifactPublisher;
+       orgId?: string;
+       profileId?: string;
+       runId?: string;
+@@ -761,7 +763,11 @@
+             options.profileId,
+             filename,
+             buffer,
+-            { mimeType: "image/png", sessionId: options.sessionId }
++            {
++              artifactPublisher: options.artifactPublisher,
++              mimeType: "image/png",
++              sessionId: options.sessionId,
++            }
+           );
+           artifacts.push(artifact);
+         }
+@@ -809,7 +815,10 @@
+               options.profileId,
+               downloadFilename,
+               buffer,
+-              { sessionId: options.sessionId }
++              {
++                artifactPublisher: options.artifactPublisher,
++                sessionId: options.sessionId,
++              }
+             );
+             artifacts.push(artifact);
+           }
+--- a/apps/server/src/tools/generate-image-tool.ts
++++ b/apps/server/src/tools/generate-image-tool.ts
+@@ -10,6 +10,7 @@
+   type ToolDefinition,
+   type UserConfig,
+ } from "@atlas/core";
++import { stageToolArtifact } from "@atlas/core/artifact-publication";
+ import type { DatabaseAdapter } from "@atlas/db";
+ import { createAttachmentSaver } from "../services/attachment-service";
+ import {
+@@ -169,6 +170,7 @@
+     };
+   }
+ 
++  const bytes = Buffer.from(result.data);
+   const workspaceRoot =
+     context.workspaceRoot?.trim() || getProfileSoulDir(orgId, profileId);
+   if (!path.isAbsolute(workspaceRoot)) {
+@@ -186,12 +188,12 @@
+   );
+   const metaPath = `${targetPath}${ARTIFACT_META_SUFFIX}`;
+   const savedAt = new Date().toISOString();
+-  const sizeBytes = result.data.byteLength;
++  const sizeBytes = bytes.byteLength;
+ 
+   await mkdir(artifactsDir, { recursive: true });
+ 
+   try {
+-    await writeFile(targetPath, result.data);
++    await writeFile(targetPath, bytes);
+     await writeFile(
+       metaPath,
+       JSON.stringify(
+@@ -223,7 +225,7 @@
+         sessionId,
+       });
+       const saved = await save({
+-        bytes: Buffer.from(result.data),
++        bytes: Buffer.from(bytes),
+         filename: path.basename(targetPath),
+         kind: "image",
+         mediaType: result.mediaType,
+@@ -250,6 +252,10 @@
+     }
+   );
+ 
++  await stageToolArtifact(context.artifactPublisher, {
++    bytes,
++    sourcePath: relativePath,
++  });
+   return {
+     attachmentId,
+     mimeType: result.mediaType,
+--- a/packages/core/src/artifact-publication.ts
++++ b/packages/core/src/artifact-publication.ts
+@@ -25,6 +25,8 @@
+ /** Byte producers receive only this capability, never the execution finalizer. */
+ export interface ArtifactPublicationProducer {
+   /**
++   * Capture input properties/bytes synchronously before any await, inside the
++   * producer failure boundary. Every rejected stage must poison the whole set.
+    * Storage failure is retained for the trusted finalizer and does not reject.
+    * Invalid input, conflicting output ordinal, cancellation or closed execution
+    * rejects; callers must still preserve any previously created workspace receipt.
+@@ -36,3 +38,68 @@
+     outputOrdinal: number;
+   }): Promise<void>;
+ }
++
++/** Invocation-local byte capability. No ownership, output ordinal or finalizer is exposed. */
++export interface ToolArtifactPublisher {
++  stageBytes(input: { bytes: Uint8Array; sourcePath: string }): Promise<void>;
++}
++
++/** Trusted execution code must create a fresh publisher for each actual invocation. */
++export function createToolArtifactPublisher(
++  producer: ArtifactPublicationProducer
++): ToolArtifactPublisher {
++  let nextOrdinal = 0;
++  return Object.freeze({
++    stageBytes(input: {
++      bytes: Uint8Array;
++      sourcePath: string;
++    }): Promise<void> {
++      const outputOrdinal = nextOrdinal++;
++      // The trusted producer captures synchronously inside its failure boundary.
++      // Defer even property access there so a throwing tool getter poisons the set.
++      let sourcePath: string | undefined;
++      let bytes: Uint8Array | undefined;
++      return producer.stageBytes({
++        get bytes() {
++          bytes ??= input.bytes;
++          return bytes;
++        },
++        outputOrdinal,
++        get sourcePath() {
++          sourcePath ??= input.sourcePath;
++          return sourcePath;
++        },
++      });
++    },
++  });
++}
++
++/** Preserve the original successful workspace effect even when staging rejects.
++ * The trusted producer retains the rejection and poisons its complete output set.
++ * This helper never retries the file producer or grants publication success.
++ */
++export async function stageToolArtifact(
++  publisher: ToolArtifactPublisher | undefined,
++  input: { bytes: Uint8Array; sourcePath: string }
++): Promise<void> {
++  if (!publisher) {
++    return;
++  }
++  try {
++    await publisher.stageBytes(input);
++  } catch {
++    // Publication failure is reported separately by the trusted finalizer.
++  }
++}
++
++/** Explicit deliverables live under artifacts/, excluding hidden/support metadata paths. */
++export function isArtifactPublicationPath(sourcePath: string): boolean {
++  const parts = sourcePath.split("/");
++  return (
++    parts.length >= 2 &&
++    parts[0] === "artifacts" &&
++    parts.every((part) => part.length > 0 && !part.startsWith(".")) &&
++    !/[\\\x00-\x1f\x7f]/.test(sourcePath) &&
++    !sourcePath.endsWith(".atlas-meta.json")
++  );
++}
+--- a/packages/core/src/contract.ts
++++ b/packages/core/src/contract.ts
+@@ -1,3 +1,4 @@
++import type { ToolArtifactPublisher } from "./artifact-publication";
+ import type { LoadAttachmentBytes } from "./attachments/content";
+ import type {
+   CapabilityBindingV1,
+@@ -2834,6 +2835,8 @@
+   agentDepth?: number;
+   /** Single-use approval grant consumed at the execution boundary. */
+   approvalGrantId?: string;
++  /** Fresh invocation-local byte staging capability, installed by trusted execution code. */
++  artifactPublisher?: ToolArtifactPublisher;
+   automationId?: string;
+   automationRunId?: string;
+   /** Revalidates tenant liveness at the final boundary before a tool runs. */
+--- a/packages/core/src/files/assets.ts
++++ b/packages/core/src/files/assets.ts
+@@ -3,6 +3,7 @@
+ import { link, mkdir, open, unlink } from "node:fs/promises";
+ import path from "node:path";
+ import { inferArtifactMimeType } from "../artifact-mime";
++import { stageToolArtifact } from "../artifact-publication";
+ import type { ToolArtifact, ToolContext } from "../contract";
+ import { buildToolExecutionContext } from "../tools/context";
+ import { guardFilePath } from "../tools/paths";
+@@ -104,6 +105,7 @@
+   path: string;
+   revision: string;
+ }> {
++  const bytes = new Uint8Array(input.bytes);
+   input.context.signal?.throwIfAborted();
+   const root = fileAssetWorkspace(input.context);
+   // Materialized input is a working source, not a new deliverable for channels.
+@@ -122,7 +124,7 @@
+       "outputFilename must be a filename without directories (maximum 180 characters)."
+     );
+   }
+-  if (input.bytes.length > MAX_FILE_ASSET_BYTES) {
++  if (bytes.length > MAX_FILE_ASSET_BYTES) {
+     throw new Error(`Output exceeds the ${MAX_FILE_ASSET_BYTES} byte limit.`);
+   }
+   const directory = await guardFilePath(outputDirectory, null, undefined, {
+@@ -140,7 +142,7 @@
+   const handle = await open(temporary, "wx", 0o600);
+   try {
+     try {
+-      await handle.writeFile(input.bytes);
++      await handle.writeFile(bytes);
+       await handle.sync();
+     } finally {
+       await handle.close();
+@@ -160,6 +162,12 @@
+         }
+         throw error;
+       }
++      if (input.deliverable !== false) {
++        await stageToolArtifact(input.context.artifactPublisher, {
++          bytes,
++          sourcePath: `${outputDirectory}/${candidate}`,
++        });
++      }
+       return {
+         artifacts:
+           input.deliverable === false
+@@ -172,12 +180,12 @@
+                   mimeType: inferArtifactMimeType(candidate),
+                   path: `${outputDirectory}/${candidate}`,
+                   sessionId: input.context.sessionId,
+-                  sizeBytes: input.bytes.length,
++                  sizeBytes: bytes.length,
+                 },
+               ],
+-        bytesWritten: input.bytes.length,
++        bytesWritten: bytes.length,
+         path: `${outputDirectory}/${candidate}`,
+-        revision: fileAssetRevision(input.bytes),
++        revision: fileAssetRevision(bytes),
+       };
+     }
+     throw new Error(
+--- a/packages/core/src/files/versioned-write.ts
++++ b/packages/core/src/files/versioned-write.ts
+@@ -8,6 +8,8 @@
+   bytes: string | Uint8Array,
+   signal?: AbortSignal
+ ): Promise<string> {
++  const capturedBytes =
++    typeof bytes === "string" ? bytes : new Uint8Array(bytes);
+   signal?.throwIfAborted();
+   const directory = path.dirname(destination);
+   await mkdir(directory, { recursive: true });
+@@ -15,7 +17,7 @@
+   const handle = await open(temporary, "wx", 0o600);
+   try {
+     try {
+-      await handle.writeFile(bytes);
++      await handle.writeFile(capturedBytes);
+       await handle.sync();
+     } finally {
+       await handle.close();
+--- a/packages/core/src/skills/bundled/save-artifact/SKILL.md
++++ b/packages/core/src/skills/bundled/save-artifact/SKILL.md
+@@ -44,8 +44,10 @@
+ ## Workflow
+ 
+ 1. Choose a short, descriptive filename under `artifacts/` (use subdirectories when grouping related files, e.g. `artifacts/weekly/report.md`).
+-2. `write_file` the artifact content to `artifacts/{filename}`. If that name already exists, a date suffix is added automatically (e.g. `report-2026-07-14.md`). For Word / slides / Excel, use `write_docx` / `write_pptx` / `spreadsheet` instead of `write_file`.
+-3. For `write_file` outputs, also `write_file` the metadata sidecar to `artifacts/{filename}.atlas-meta.json` using the same base filename from step 2.
++2. `write_file` the artifact content with `deliverable: true` to `artifacts/{filename}`. If that name already exists, a date suffix is added automatically (e.g. `report-2026-07-14.md`). For Word / slides / Excel, use `write_docx` / `write_pptx` / `spreadsheet` instead of `write_file`.
++3. For `write_file` outputs, also `write_file` the metadata sidecar with `deliverable: false` to `artifacts/{filename}.atlas-meta.json` using the same base filename from step 2.
++Intermediate and support files use `deliverable: false` (or omit it). Editing a completed text deliverable with `edit_file` also requires `deliverable: true`.
++
+ 4. Confirm the path in a short reply. On web chat, saved artifacts appear as chips with a live preview in addition to the profile **Artifacts** tab.
+ 
+ ## MIME type guidance
+--- a/packages/core/src/tools/builtin.ts
++++ b/packages/core/src/tools/builtin.ts
+@@ -3,6 +3,10 @@
+ import { z } from "zod";
+ import { isDocxFile, isLegacyDocFile } from "../artifact-mime";
+ import { coerceDeliverableArtifactPath } from "../artifact-path";
++import {
++  isArtifactPublicationPath,
++  stageToolArtifact,
++} from "../artifact-publication";
+ import type { ToolContext, ToolDefinition } from "../contract";
+ import { convertDocxToMarkdown } from "../docx-text";
+ import { markdownToDocx } from "../docx-write";
+@@ -50,6 +54,12 @@
+   .object({
+     content: z.string({ error: "content is required." }),
+     cwd: trimmedOptionalString,
++    deliverable: z
++      .boolean()
++      .optional()
++      .describe(
++        "Publish this completed user deliverable under artifacts/. Omit for intermediate or support files."
++      ),
+     path: requiredTrimmedString("path"),
+   })
+   .strict();
+@@ -74,6 +84,12 @@
+ export const editFileInputSchema = z
+   .object({
+     cwd: trimmedOptionalString,
++    deliverable: z
++      .boolean()
++      .optional()
++      .describe(
++        "Publish this completed user deliverable under artifacts/. Omit for intermediate or support files."
++      ),
+     edits: z
+       .array(
+         z
+@@ -139,6 +155,22 @@
+ const BLOCKED_READ_BASENAMES = ["config.ini"];
+ const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
+ const artifactRemap = new Map<string, string>();
++
++async function publicationRoot(options: PathGuardOptions): Promise<string> {
++  return (await guardFilePath(".", null, undefined, options)).resolved;
++}
++
++function requireDeliverableDestination(filePath: string, root: string): void {
++  if (
++    !isArtifactPublicationPath(
++      path.relative(root, filePath).split(path.sep).join("/")
++    )
++  ) {
++    throw new Error(
++      "deliverable requires a visible content file under artifacts/ in the profile workspace."
++    );
++  }
++}
+ 
+ async function isArtifactDestination(
+   resolvedPath: string,
+@@ -347,6 +379,10 @@
+   );
+   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
+   refuseSkillLocalToolFileWrite(guarded.resolved);
++  const publishRoot = await publicationRoot(guardOptions);
++  if (parsed.deliverable) {
++    requireDeliverableDestination(guarded.resolved, publishRoot);
++  }
+   let filePath = guarded.resolved;
+   const isSidecar = filePath.endsWith(ARTIFACT_META_SUFFIX);
+   const originalContentPath = isSidecar
+@@ -435,6 +471,15 @@
+     });
+   }
+ 
++  if (parsed.deliverable && !isSidecar) {
++    await stageToolArtifact(context.artifactPublisher, {
++      bytes: Buffer.from(contentToWrite, "utf8"),
++      sourcePath: path
++        .relative(publishRoot, filePath)
++        .split(path.sep)
++        .join("/"),
++    });
++  }
+   return { bytesWritten: contentBytes, path: filePath };
+ }
+ 
+@@ -487,6 +532,7 @@
+   );
+   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
+   refuseSkillLocalToolFileWrite(guarded.resolved);
++  const publishRoot = await publicationRoot(guardOptions);
+   // Same rule as write_file: never silently overwrite an existing artifact.
+   await mkdir(path.dirname(guarded.resolved), { recursive: true });
+   const artifact = await isArtifactDestination(guarded.resolved, guardOptions);
+@@ -507,6 +553,10 @@
+     });
+   }
+ 
++  await stageToolArtifact(context.artifactPublisher, {
++    bytes,
++    sourcePath: path.relative(publishRoot, filePath).split(path.sep).join("/"),
++  });
+   return { bytesWritten: bytes.length, path: filePath };
+ }
+ 
+@@ -552,6 +602,7 @@
+   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
+   refuseSkillLocalToolFileWrite(guarded.resolved);
+ 
++  const publishRoot = await publicationRoot(guardOptions);
+   await mkdir(path.dirname(guarded.resolved), { recursive: true });
+   const artifact = await isArtifactDestination(guarded.resolved, guardOptions);
+   const filePath = artifact
+@@ -572,6 +623,10 @@
+     });
+   }
+ 
++  await stageToolArtifact(context.artifactPublisher, {
++    bytes,
++    sourcePath: path.relative(publishRoot, filePath).split(path.sep).join("/"),
++  });
+   return {
+     bytesWritten: bytes.length,
+     path: filePath,
+@@ -689,6 +744,10 @@
+     );
+   }
+ 
++  const publishRoot = await publicationRoot(guardOptions);
++  if (parsed.deliverable) {
++    requireDeliverableDestination(filePath, publishRoot);
++  }
+   const rawBuffer = await readFile(filePath);
+   const hasBom =
+     rawBuffer.length >= 3 &&
+@@ -711,6 +770,15 @@
+     guardOptions
+   );
+   await writeFile(filePath, outputContent, "utf8");
++  if (parsed.deliverable) {
++    await stageToolArtifact(context.artifactPublisher, {
++      bytes: Buffer.from(outputContent, "utf8"),
++      sourcePath: path
++        .relative(publishRoot, filePath)
++        .split(path.sep)
++        .join("/"),
++    });
++  }
+ 
+   return {
+     bytesWritten,
+--- a/packages/core/src/tools/spreadsheet-io.ts
++++ b/packages/core/src/tools/spreadsheet-io.ts
+@@ -106,7 +106,8 @@
+   signal?: AbortSignal;
+   writeMode: "inplace" | "versioned";
+ }): Promise<{ path: string; revision: string }> {
+-  if (input.bytes.length > MAX_SPREADSHEET_BYTES) {
++  const bytes = Buffer.from(input.bytes);
++  if (bytes.length > MAX_SPREADSHEET_BYTES) {
+     throw new Error("Generated spreadsheet exceeds the 25 MiB limit.");
+   }
+   const directory = path.dirname(input.path);
+@@ -118,7 +119,7 @@
+   try {
+     const file = await open(temporary, "wx", 0o600);
+     try {
+-      await file.writeFile(input.bytes);
++      await file.writeFile(bytes);
+       await file.sync();
+     } finally {
+       await file.close();
+@@ -138,7 +139,7 @@
+       }
+       input.signal?.throwIfAborted();
+       await rename(temporary, input.path);
+-      return { path: input.path, revision: spreadsheetRevision(input.bytes) };
++      return { path: input.path, revision: spreadsheetRevision(bytes) };
+     }
+     const parsed = path.parse(input.path);
+     for (let version = 1; version <= 10_000; version += 1) {
+@@ -152,7 +153,7 @@
+         await link(temporary, destination);
+         return {
+           path: destination,
+-          revision: spreadsheetRevision(input.bytes),
++          revision: spreadsheetRevision(bytes),
+         };
+       } catch (error) {
+         if (!isCode(error, "EEXIST")) {
+--- a/packages/core/src/tools/spreadsheet.ts
++++ b/packages/core/src/tools/spreadsheet.ts
+@@ -4,6 +4,10 @@
+ import { z } from "zod";
+ import { stampArtifactLineage } from "../artifact-lineage";
+ import { coerceDeliverableArtifactPath } from "../artifact-path";
++import {
++  isArtifactPublicationPath,
++  stageToolArtifact,
++} from "../artifact-publication";
+ import type { ToolContext, ToolDefinition } from "../contract";
+ import { getProfileSoulDir } from "../soul/resolve";
+ import { guardFilePath, type PathGuardOptions } from "./paths";
+@@ -924,6 +928,16 @@
+       ) {
+         await recordSpreadsheetCalculation(published.path, published.revision);
+       }
++      const publicationPath = path
++        .relative(workspaceRoot, published.path)
++        .split(path.sep)
++        .join("/");
++      if (isArtifactPublicationPath(publicationPath)) {
++        await stageToolArtifact(context.artifactPublisher, {
++          bytes,
++          sourcePath: publicationPath,
++        });
++      }
+       return boundedSpreadsheetResponse({
+         ...report,
+         bytesWritten: bytes.length,

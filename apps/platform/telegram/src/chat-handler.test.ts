@@ -7,9 +7,13 @@ import {
   spyOn,
   test,
 } from "bun:test";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { saveChannelIntegrationPolicy } from "@atlas/core/channel-integration-policy";
 import type { ChatMessage } from "@atlas/core/contract";
 import {
+  DOWNLOAD_FAILED_REPLY,
+  TELEGRAM_HOSTED_DOCUMENT_MAX_BYTES,
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
   UNSUPPORTED_MEDIA_REPLY,
 } from "./attachments";
@@ -137,6 +141,10 @@ describe("createChatHandler group chats", () => {
 
       expect(calls.createSession).toBe(1);
       expect(getLastCreateSessionExternalPrincipal()).toEqual({
+        channelAddressed: true,
+        channelChatId: "-100123",
+        channelIsGroup: true,
+        channelThreadId: undefined,
         channelUserId: "42",
       });
       expect(calls.sendStream).toBe(1);
@@ -2439,22 +2447,287 @@ describe("createChatHandler document attachments", () => {
     caption?: string;
   }) {
     const base = createMessageContext({ userId: options.userId });
-    (base.ctx as { message: Record<string, unknown> }).message = {
+    Object.assign(base.ctx.message!, {
       caption: options.caption,
       document: {
         file_id: "doc-1",
         file_name: options.fileName,
         mime_type: options.mimeType,
       },
-    };
-    (base.ctx as { api: Record<string, unknown> }).api = {
-      ...((base.ctx as { api?: Record<string, unknown> }).api ?? {}),
-      getFile: async () => ({ file_path: `documents/${options.fileName}` }),
-      token: "test-token",
-    };
+    });
+    base.ctx.api.getFile = async () => ({
+      file_id: "doc-1",
+      file_path: `documents/${options.fileName}`,
+      file_unique_id: "unique-doc-1",
+    });
+    Object.assign(base.ctx.api, { token: "test-token" });
 
     return base;
   }
+
+  async function createFileHandler(homeDir: string) {
+    await writeTelegramConfigIni(homeDir, {
+      accessMode: "allowlist",
+      allowedUserIds: [4242],
+      botToken: "test-token",
+    });
+    const mock = createMockClient();
+    const handle = createChatHandler({
+      authStore: new TelegramAuthStore(),
+      client: mock.client,
+      config: { botToken: "test-token", profileId: "default" },
+      fixedWorkspaceId: "org_test",
+      getBotInfo: () => TEST_BOT_INFO,
+      orgStore: createTestOrgStore(homeDir),
+      sessionStore: new SessionStore(path.join(homeDir, "sessions.json")),
+    });
+    const artifactsDir = path.join(
+      homeDir,
+      ".atlas/orgs/org_test/profiles/default/artifacts"
+    );
+    return { artifactsDir, handle, ...mock };
+  }
+
+  const pngBytes = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aRZkAAAAASUVORK5CYII=",
+    "base64"
+  );
+  const workFiles = [
+    ["xlsx", "spreadsheet"],
+    ["xls", "spreadsheet"],
+    ["xlsm", "spreadsheet"],
+    ["xlsb", "spreadsheet"],
+    ["csv", "spreadsheet"],
+    ["pdf", "extract_document_text"],
+    ["docx", "extract_document_text"],
+    ["txt", "read_file"],
+    ["md", "read_file"],
+    ["png", "image"],
+  ] as const;
+
+  for (const [extension, tool] of workFiles) {
+    test(`authorized unpaired ${extension} source is saved with its matching tool input`, async () => {
+      await withTempHome(async (homeDir) => {
+        const fixture = await createFileHandler(homeDir);
+        const bytes =
+          extension === "png" ? pngBytes : Buffer.from("private source bytes");
+        fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+          new Response(bytes)
+        );
+        const message = createDocumentContext({
+          caption: "Process this file and return the finished result",
+          fileName: `source.${extension}`,
+          mimeType: "application/octet-stream",
+          userId: 4242,
+        });
+        await fixture.handle(message.ctx);
+        expect(fixture.calls.sendStream).toBe(1);
+        const input = fixture.getLastStreamInput();
+        expect(input?.message).toContain(`artifacts/source.${extension}`);
+        expect(input?.message).toContain(tool);
+        expect(input?.message).not.toContain("[File:");
+        expect(input?.message).not.toContain("private source bytes");
+        expect(input?.documents).toBeUndefined();
+        expect(
+          await readFile(path.join(fixture.artifactsDir, `source.${extension}`))
+        ).toEqual(bytes);
+        if (extension === "png") {
+          expect(input?.images).toHaveLength(1);
+          expect(input?.images?.[0]?.mediaType).toBe("image/png");
+          expect(Buffer.from(input?.images?.[0]?.data ?? "", "base64")).toEqual(
+            pngBytes
+          );
+        }
+      });
+    });
+  }
+
+  for (const extension of ["xlsx", "png"] as const) {
+    test(`unauthorized ${extension} source never downloads, persists, or invokes the model`, async () => {
+      await withTempHome(async (homeDir) => {
+        const fixture = await createFileHandler(homeDir);
+        const message = createDocumentContext({
+          fileName: `source.${extension}`,
+          mimeType: "application/octet-stream",
+          userId: 9999,
+        });
+        const metadata = spyOn(message.ctx.api, "getFile");
+        await fixture.handle(message.ctx);
+        expect(metadata).not.toHaveBeenCalled();
+        expect(fixture.calls.sendStream).toBe(0);
+        expect(await readdir(fixture.artifactsDir).catch(() => [])).toEqual([]);
+        metadata.mockRestore();
+      });
+    });
+
+    test(`current files policy denies unpaired ${extension} before download`, async () => {
+      await withTempHome(async (homeDir) => {
+        const fixture = await createFileHandler(homeDir);
+        fixture.client.authorizeChannelPrincipal = async () => {
+          throw new Error("File access denied");
+        };
+        const message = createDocumentContext({
+          fileName: `source.${extension}`,
+          mimeType: "application/octet-stream",
+          userId: 4242,
+        });
+        const metadata = spyOn(message.ctx.api, "getFile");
+        await fixture.handle(message.ctx);
+        expect(metadata).not.toHaveBeenCalled();
+        expect(fixture.calls.sendStream).toBe(0);
+        expect(await readdir(fixture.artifactsDir).catch(() => [])).toEqual([]);
+        metadata.mockRestore();
+      });
+    });
+
+    test(`over-limit ${extension} source is rejected before download and model dispatch`, async () => {
+      await withTempHome(async (homeDir) => {
+        const fixture = await createFileHandler(homeDir);
+        const message = createDocumentContext({
+          fileName: `source.${extension}`,
+          mimeType: "application/octet-stream",
+          userId: 4242,
+        });
+        Object.assign(message.ctx.message!.document!, {
+          file_size:
+            extension === "png"
+              ? 5 * 1024 * 1024 + 1
+              : TELEGRAM_HOSTED_DOCUMENT_MAX_BYTES + 1,
+        });
+        const metadata = spyOn(message.ctx.api, "getFile");
+        await fixture.handle(message.ctx);
+        expect(metadata).not.toHaveBeenCalled();
+        expect(fixture.calls.sendStream).toBe(0);
+        expect(message.replies).toHaveLength(1);
+        expect(await readdir(fixture.artifactsDir).catch(() => [])).toEqual([]);
+        metadata.mockRestore();
+      });
+    });
+
+    for (const failure of ["download", "save"] as const) {
+      test(`${extension} ${failure} failure rejects instead of guessing`, async () => {
+        await withTempHome(async (homeDir) => {
+          const fixture = await createFileHandler(homeDir);
+          fetchSpy = spyOn(globalThis, "fetch");
+          if (failure === "download") {
+            fetchSpy.mockRejectedValue(new Error("Transport unavailable"));
+          } else {
+            fetchSpy.mockResolvedValue(
+              new Response(extension === "png" ? pngBytes : "workbook bytes")
+            );
+            await mkdir(path.dirname(fixture.artifactsDir), {
+              recursive: true,
+            });
+            await writeFile(fixture.artifactsDir, "A file cannot be a folder");
+          }
+          const message = createDocumentContext({
+            caption: "What is in this file?",
+            fileName: `source.${extension}`,
+            mimeType: "application/octet-stream",
+            userId: 4242,
+          });
+          await fixture.handle(message.ctx);
+          expect(fixture.calls.sendStream).toBe(0);
+          expect(message.replies).toHaveLength(1);
+          if (failure === "download") {
+            expect(message.replies).toEqual([DOWNLOAD_FAILED_REPLY]);
+          }
+        });
+      });
+    }
+  }
+
+  for (const requireMention of [true, false]) {
+    test(`group file without mention has an explicit outcome when requireMention=${requireMention}`, async () => {
+      await withTempHome(async (homeDir) => {
+        const fixture = await createFileHandler(homeDir);
+        await saveChannelIntegrationPolicy("org_test", "telegram", {
+          groups: { requireMention },
+          version: 1,
+        });
+        fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+          new Response("workbook bytes")
+        );
+        const message = createDocumentContext({
+          caption: "Finish the workbook",
+          fileName: "source.xlsx",
+          mimeType: "application/octet-stream",
+          userId: 4242,
+        });
+        Object.assign(message.ctx.chat!, { id: -100, type: "supergroup" });
+        await fixture.handle(message.ctx);
+        if (requireMention) {
+          expect(fixture.calls.sendStream).toBe(0);
+          expect(fetchSpy).not.toHaveBeenCalled();
+          expect(message.replies).toHaveLength(1);
+          expect(message.replies[0]).toContain("ignored");
+          expect(message.replies[0]).toContain("@mybot");
+        } else {
+          expect(fixture.calls.sendStream).toBe(1);
+          expect(fixture.getLastStreamInput()?.message).toContain(
+            "Telegram group"
+          );
+          expect(fixture.getLastStreamInput()?.message).toContain(
+            "artifacts/source.xlsx"
+          );
+          expect(
+            await readFile(path.join(fixture.artifactsDir, "source.xlsx"))
+          ).toEqual(Buffer.from("workbook bytes"));
+        }
+      });
+    });
+  }
+
+  test("saves medium sources for authorized senders with or without pairing", async () => {
+    for (const paired of [true, false]) {
+      await withTempHome(async (homeDir) => {
+        await writeTelegramConfigIni(homeDir, {
+          allowedUserIds: [4242],
+          botToken: "1234567890:TEST",
+          pairedUserIds: paired ? [4242] : [],
+        });
+        const bytes = Buffer.alloc(6 * 1024 * 1024, 32);
+        bytes.write("source notes");
+        fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+          new Response(bytes)
+        );
+        const authStore = new TelegramAuthStore();
+        await authStore.reload();
+        const { client, getLastStreamInput } = createMockClient();
+        const sessionStore = new SessionStore(
+          path.join(homeDir, ".atlas/telegram/chat-sessions.json")
+        );
+        const orgStore = createTestOrgStore(homeDir);
+        await orgStore.load();
+        const handleMessage = createChatHandler({
+          authStore,
+          client,
+          config: { botToken: "1234567890:TEST", profileId: "default" },
+          orgStore,
+          sessionStore,
+        });
+        const { ctx } = createDocumentContext({
+          caption: "Analyze the complete source",
+          fileName: "notes.txt",
+          mimeType: "text/plain",
+          userId: 4242,
+        });
+        await handleMessage(ctx);
+        const input = getLastStreamInput();
+        expect(input?.documents).toBeUndefined();
+        expect(input?.message).toContain("Analyze the complete source");
+        const originalPath = path.join(
+          homeDir,
+          ".atlas/orgs/org_test/profiles/default/artifacts/notes.txt"
+        );
+        expect(input?.message).toContain("artifacts/notes.txt");
+        expect(input?.message).toContain("read_file");
+        expect(input?.message).not.toContain("source notes");
+        expect(await readFile(originalPath)).toEqual(bytes);
+        fetchSpy.mockRestore();
+      });
+    }
+  });
 
   test("forwards supported pdf documents to sendStream", async () => {
     await withTempHome(async (homeDir) => {
@@ -2495,15 +2768,10 @@ describe("createChatHandler document attachments", () => {
       await handleMessage(ctx);
 
       expect(calls.sendStream).toBe(1);
-      expect(getLastStreamInput()).toEqual({
-        documents: [
-          expect.objectContaining({
-            filename: "report.pdf",
-            mediaType: "application/pdf",
-          }),
-        ],
-        message: "Summarize",
-      });
+      expect(getLastStreamInput()?.documents).toBeUndefined();
+      expect(getLastStreamInput()?.message).toContain("Summarize");
+      expect(getLastStreamInput()?.message).toContain("artifacts/report.pdf");
+      expect(getLastStreamInput()?.message).toContain("extract_document_text");
       expect(replies.at(-1)).toBe("Agent reply");
     });
   });
@@ -2546,15 +2814,9 @@ describe("createChatHandler document attachments", () => {
       await handleMessage(ctx);
 
       expect(calls.sendStream).toBe(1);
-      expect(getLastStreamInput()).toEqual({
-        documents: [
-          expect.objectContaining({
-            filename: "report.pdf",
-            mediaType: "application/pdf",
-          }),
-        ],
-        message: "",
-      });
+      expect(getLastStreamInput()?.documents).toBeUndefined();
+      expect(getLastStreamInput()?.message).toContain("artifacts/report.pdf");
+      expect(getLastStreamInput()?.message).toContain("extract_document_text");
     });
   });
 
@@ -2601,16 +2863,10 @@ describe("createChatHandler document attachments", () => {
       await handleMessage(ctx);
 
       expect(calls.sendStream).toBe(1);
-      expect(getLastStreamInput()).toEqual({
-        documents: [
-          expect.objectContaining({
-            filename: "sales.xlsx",
-            mediaType:
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          }),
-        ],
-        message: "Analyze",
-      });
+      expect(getLastStreamInput()?.documents).toBeUndefined();
+      expect(getLastStreamInput()?.message).toContain("Analyze");
+      expect(getLastStreamInput()?.message).toContain("artifacts/sales.xlsx");
+      expect(getLastStreamInput()?.message).toContain("spreadsheet");
     });
   });
 
@@ -2653,60 +2909,123 @@ describe("createChatHandler document attachments", () => {
     });
   });
 
-  test("transcribes voice messages and forwards text to the agent", async () => {
-    await withTempHome(async (homeDir) => {
-      await writeTelegramConfigIni(homeDir, {
-        allowedUserIds: [4242],
-        botToken: "1234567890:TEST",
+  for (const outcome of [
+    "paired",
+    "unpaired",
+    "save-failed",
+    "unauthorized",
+    "files-denied",
+    "revoked",
+  ]) {
+    test(`voice originals use authorized persistence before transcription: ${outcome}`, async () => {
+      await withTempHome(async (homeDir) => {
+        await writeTelegramConfigIni(homeDir, {
+          accessMode: "allowlist",
+          allowedUserIds: outcome === "unauthorized" ? [] : [4242],
+          botToken: "1234567890:TEST",
+          pairedUserIds: outcome === "paired" ? [4242] : [],
+        });
+        const authStore = new TelegramAuthStore();
+        await authStore.reload();
+        const fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+          new Response(Buffer.from("voice-bytes"), {
+            headers: { "content-type": "audio/ogg" },
+          })
+        );
+        const {
+          client,
+          calls,
+          getLastStreamInput,
+          getLastTranscribeAudioInput,
+        } = createMockClient();
+        const originalPath = path.join(
+          homeDir,
+          ".atlas/orgs/org_test/profiles/default/artifacts/audio.ogg"
+        );
+        if (outcome === "save-failed") {
+          await mkdir(path.dirname(path.dirname(originalPath)), {
+            recursive: true,
+          });
+          await writeFile(path.dirname(originalPath), "not a directory");
+        }
+        let fileChecks = 0;
+        const originalAuthorize = client.authorizeChannelPrincipal.bind(client);
+        const authorize = spyOn(
+          client,
+          "authorizeChannelPrincipal"
+        ).mockImplementation(async (input) => {
+          if (input.intent === "files") {
+            fileChecks++;
+            if (
+              outcome === "files-denied" ||
+              (outcome === "revoked" && fileChecks > 1)
+            ) {
+              throw new Error("Current sender cannot save files");
+            }
+          }
+          return originalAuthorize(input);
+        });
+        const originalTranscribe = client.transcribeAudio.bind(client);
+        const transcribe = spyOn(client, "transcribeAudio").mockImplementation(
+          async (input) => {
+            expect(await readFile(originalPath)).toEqual(
+              Buffer.from("voice-bytes")
+            );
+            return originalTranscribe(input);
+          }
+        );
+        try {
+          const sessionStore = new SessionStore(
+            path.join(homeDir, ".atlas/telegram/chat-sessions.json")
+          );
+          const orgStore = createTestOrgStore(homeDir);
+          await orgStore.load();
+          const handleMessage = createChatHandler({
+            authStore,
+            client,
+            config: { botToken: "1234567890:TEST", profileId: "default" },
+            orgStore,
+            sessionStore,
+          });
+          const { ctx, replies } = createMessageContext({ userId: 4242 });
+          Object.assign(ctx.message!, { voice: { file_id: "voice-1" } });
+          ctx.api.getFile = async () => ({
+            file_id: "voice-1",
+            file_path: "voice/file.ogg",
+            file_unique_id: "unique-voice-1",
+          });
+          Object.assign(ctx.api, { token: "test-token" });
+          await handleMessage(ctx);
+          if (outcome === "paired" || outcome === "unpaired") {
+            expect(calls.transcribeAudio).toBe(1);
+            expect(getLastTranscribeAudioInput()).toEqual(
+              expect.objectContaining({ sessionId: "session_test" })
+            );
+            expect(calls.sendStream).toBe(1);
+            expect(getLastStreamInput()).toEqual({
+              message: expect.stringContaining("Transcribed voice message"),
+            });
+            expect(
+              (getLastStreamInput() as { message: string }).message
+            ).toContain("artifacts/audio.ogg");
+            expect(replies.at(-1)).toBe("Agent reply");
+          } else {
+            expect(calls.transcribeAudio).toBe(0);
+            expect(calls.sendStream).toBe(0);
+            await expect(readFile(originalPath)).rejects.toThrow();
+            expect(replies.length).toBeGreaterThan(0);
+            if (outcome === "unauthorized" || outcome === "files-denied") {
+              expect(fetchSpy).not.toHaveBeenCalled();
+            }
+          }
+        } finally {
+          fetchSpy.mockRestore();
+          authorize.mockRestore();
+          transcribe.mockRestore();
+        }
       });
-
-      const authStore = new TelegramAuthStore();
-      await authStore.reload();
-      const fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(Buffer.from("voice-bytes"), {
-          headers: { "content-type": "audio/ogg" },
-          status: 200,
-        })
-      );
-      const { client, calls, getLastStreamInput, getLastTranscribeAudioInput } =
-        createMockClient();
-      const sessionStore = new SessionStore(
-        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
-      );
-      const orgStore = createTestOrgStore(homeDir);
-      await orgStore.load();
-      const handleMessage = createChatHandler({
-        authStore,
-        client,
-        config: { botToken: "1234567890:TEST", profileId: "default" },
-        orgStore,
-        sessionStore,
-      });
-
-      const { ctx, replies } = createMessageContext({ userId: 4242 });
-      (ctx as { message: Record<string, unknown> }).message = {
-        voice: { file_id: "voice-1" },
-      };
-      (ctx as { api: Record<string, unknown> }).api = {
-        ...((ctx as { api?: Record<string, unknown> }).api ?? {}),
-        getFile: async () => ({ file_path: "voice/file.ogg" }),
-        token: "test-token",
-      };
-
-      await handleMessage(ctx);
-
-      expect(calls.transcribeAudio).toBe(1);
-      expect(getLastTranscribeAudioInput()).toEqual(
-        expect.objectContaining({ sessionId: "session_test" })
-      );
-      expect(calls.sendStream).toBe(1);
-      expect(getLastStreamInput()).toEqual({
-        message: "Transcribed voice message",
-      });
-      expect(replies.at(-1)).toBe("Agent reply");
-      fetchSpy.mockRestore();
     });
-  });
+  }
 
   test("replies with supported media guidance for other non-text messages", async () => {
     await withTempHome(async (homeDir) => {
@@ -2732,9 +3051,9 @@ describe("createChatHandler document attachments", () => {
       });
 
       const { ctx, replies } = createMessageContext({ userId: 4242 });
-      (ctx as { message: Record<string, unknown> }).message = {
-        sticker: { file_id: "sticker-1" },
-      };
+      Object.assign(ctx.message!, {
+        location: { latitude: 1, longitude: 1 },
+      });
 
       await handleMessage(ctx);
 
@@ -2770,15 +3089,14 @@ describe("createChatHandler document attachments", () => {
         text: "/help",
         userId: 4242,
       });
-      (ctx as { message: Record<string, unknown> }).message = {
-        ...(ctx.message as Record<string, unknown>),
+      Object.assign(ctx.message!, {
         document: {
           file_id: "doc-1",
           file_name: "report.pdf",
           mime_type: "application/pdf",
         },
         text: "/help",
-      };
+      });
 
       await handleMessage(ctx);
 
@@ -3181,11 +3499,11 @@ describe("createChatHandler artifact delivery", () => {
         text: "send me the file",
         userId: 4242,
       });
-      (ctx.api as { sendDocument: typeof ctx.api.sendMessage }).sendDocument =
-        async () => {
-          sendDocumentCalls += 1;
-          return { message_id: 99 };
-        };
+      const sendDocument = ctx.api.sendDocument.bind(ctx.api);
+      ctx.api.sendDocument = async (...args) => {
+        sendDocumentCalls += 1;
+        return sendDocument(...args);
+      };
 
       await handleMessage(ctx);
 
@@ -3241,11 +3559,10 @@ describe("createChatHandler artifact delivery", () => {
         text: "/attach",
         userId: 4242,
       });
-      (
-        mock.ctx.api as { sendDocument: typeof mock.ctx.api.sendMessage }
-      ).sendDocument = async () => {
+      const sendDocument = mock.ctx.api.sendDocument.bind(mock.ctx.api);
+      mock.ctx.api.sendDocument = async (...args) => {
         sendDocumentCalls += 1;
-        return { message_id: 99 };
+        return sendDocument(...args);
       };
 
       await handleMessage(mock.ctx);
@@ -3395,7 +3712,7 @@ describe("createChatHandler artifact delivery", () => {
           },
           {
             content: JSON.stringify({
-              bytesWritten: 6 * 1024 * 1024,
+              bytesWritten: 26 * 1024 * 1024,
               path: "/home/.atlas/orgs/org/profiles/default/artifacts/huge.bin",
             }),
             name: "write_file",
@@ -3434,8 +3751,10 @@ describe("createChatHandler artifact delivery", () => {
       expect(calls.readProfileArtifactContent).toBe(0);
       expect(mock.documentSends).toBe(0);
       expect(
-        mock.replies.some((reply) =>
-          reply.includes("File is too large for Telegram")
+        mock.replies.some(
+          (reply) =>
+            reply.includes("File is too large for Atlas Telegram delivery") &&
+            reply.includes("artifacts/huge.bin")
         )
       ).toBe(true);
     });

@@ -1,6 +1,7 @@
 import { inferArtifactMimeType } from "./artifact-mime";
 import type { Artifact } from "./artifact-types";
 import type { ChatMessage } from "./contract";
+import { isFailedToolResult } from "./tools/result-status";
 
 const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
 const ARTIFACTS_SEGMENT = "/artifacts/";
@@ -59,7 +60,11 @@ function getWriteFileResult(
 ): WriteFileResult | null {
   const parsed = parseToolResult(message.content);
 
-  if (typeof parsed !== "object" || parsed === null) {
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    isFailedToolResult(parsed)
+  ) {
     return null;
   }
 
@@ -272,7 +277,11 @@ function getGenerateImageResult(
 ): GenerateImageResult | null {
   const parsed = parseToolResult(message.content);
 
-  if (typeof parsed !== "object" || parsed === null) {
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    isFailedToolResult(parsed)
+  ) {
     return null;
   }
 
@@ -283,7 +292,11 @@ function artifactRefsFromEmbeddedToolArtifacts(
   message: Extract<ChatMessage, { role: "tool" }>
 ): ChannelArtifactRef[] {
   const parsed = parseToolResult(message.content);
-  if (typeof parsed !== "object" || parsed === null) {
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    isFailedToolResult(parsed)
+  ) {
     return [];
   }
 
@@ -548,8 +561,14 @@ export function extractTurnDeliverableArtifacts(
     paired.map((artifact) => [artifact.path, artifact])
   );
   const toolInputs = buildToolInputMap(messages);
+  const turnMessages = extractLatestTurnMessages(messages);
+  const hasFailedResult = turnMessages.some(
+    (message) =>
+      message.role === "tool" &&
+      isFailedToolResult(parseToolResult(message.content))
+  );
 
-  for (const message of extractLatestTurnMessages(messages)) {
+  for (const message of turnMessages) {
     if (message.role !== "tool") {
       continue;
     }
@@ -567,7 +586,9 @@ export function extractTurnDeliverableArtifacts(
   }
 
   for (const artifact of streamedArtifacts) {
-    if (!artifactsByPath.has(artifact.path)) {
+    // Detached progress events have no tool-call provenance. After a failed
+    // result, only canonical successful history can establish a deliverable.
+    if (!(hasFailedResult || artifactsByPath.has(artifact.path))) {
       artifactsByPath.set(artifact.path, artifact);
     }
   }

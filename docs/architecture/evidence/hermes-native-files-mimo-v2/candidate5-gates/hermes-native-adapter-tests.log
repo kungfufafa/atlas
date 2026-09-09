@@ -1,0 +1,11 @@
+test_rejects_arbitrary_runtime_and_runtime_alias_cannot_widen_policy (__main__.RunnerTests.test_rejects_arbitrary_runtime_and_runtime_alias_cannot_widen_policy) ... ok
+test_request_blocks_expectations_remote_endpoint_and_nonpositive_budget (__main__.RunnerTests.test_request_blocks_expectations_remote_endpoint_and_nonpositive_budget) ... ok
+test_shared_deadline_preserves_receipts_and_stops_stock_background_terminal (__main__.RunnerTests.test_shared_deadline_preserves_receipts_and_stops_stock_background_terminal) ... ok
+test_source_copy_refuses_symlink_and_evaluator_file (__main__.RunnerTests.test_source_copy_refuses_symlink_and_evaluator_file) ... ok
+test_stock_terminal_writes_xlsx_with_host_and_network_canaries_blocked (__main__.RunnerTests.test_stock_terminal_writes_xlsx_with_host_and_network_canaries_blocked) ... ok
+test_worker_shutdown_stops_stock_background_terminal_before_inspection (__main__.RunnerTests.test_worker_shutdown_stops_stock_background_terminal_before_inspection) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 15.923s
+
+OK

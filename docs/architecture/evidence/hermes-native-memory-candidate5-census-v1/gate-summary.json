@@ -1,0 +1,21 @@
+{
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "batch": "development-2026-09-06T22-55-00-233Z-d062ca06",
+  "ownerDispositions": {
+    "warm": 64,
+    "controls": 32,
+    "total": 96
+  },
+  "independentSelectedDispositions": {
+    "warm": 16,
+    "controls": 4,
+    "total": 20,
+    "postOutcome": true
+  },
+  "independentReviewSha256": "2258db74b0e45464990c249d266ff679519e643b1022d1fc71de287226efd649",
+  "scoreChanges": false,
+  "newProviderCalls": 0,
+  "packagingTestsRun": false,
+  "fullRawArchiveCopied": false,
+  "claim": "Descriptive all96 public-process census, with a separate post-outcome independent20 review; no new score or parity claim."
+}

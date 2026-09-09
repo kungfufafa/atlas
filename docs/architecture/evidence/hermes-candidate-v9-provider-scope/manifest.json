@@ -1,0 +1,37 @@
+{
+  "entries": [
+    {
+      "path": "closed-evidence-bindings.json",
+      "bytes": 2981,
+      "sha256": "74156b1075e864e8387c894f882a94ba88f66d8609ec25cf37134724a380947f"
+    },
+    {
+      "path": "memo.md",
+      "bytes": 8435,
+      "sha256": "0170bdbe3a5e4f84c657090c446faca57971eba95dd3b0ff16508a8c8af5120a"
+    },
+    {
+      "path": "registration.json",
+      "bytes": 919,
+      "sha256": "1052d0153c276235c7b9c2a88eb3d184f0daf24c5c90a38d87d3fb15ce32d47e"
+    },
+    {
+      "path": "review.json",
+      "bytes": 1184,
+      "sha256": "c3b999e39336158fd843c4bf3152cd71be864e5702deaf24a5865e6107002b42"
+    },
+    {
+      "path": "seal_memo.py",
+      "bytes": 13744,
+      "sha256": "ef1f99b93a7274b77f74d4886479004f3bf75084216d830ef136cd78ad65498f"
+    },
+    {
+      "path": "source-bindings.json",
+      "bytes": 15540,
+      "sha256": "32eececb308ac28823d6cc6cc1c6f2a0c602633af8935e8376e721e8582b6cb6"
+    }
+  ],
+  "fileCount": 6,
+  "totalBytes": 42803,
+  "scope": "All closure files excluding manifest/seal themselves."
+}

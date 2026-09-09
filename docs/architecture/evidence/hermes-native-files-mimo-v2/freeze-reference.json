@@ -1,0 +1,21 @@
+{
+  "recordedAt": "2026-09-06T23:04:43.821125+00:00",
+  "manifest": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/frozen/manifest.json",
+  "manifestSha256": "71ac77b982fa22b1c8dd6537c45cf4d2cce6081fb262f50986fcf09e1c50be0c",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "model": "mimo-v2.5",
+  "endpoint": "https://opencode.ai/zen/go/v1",
+  "controlFiles": 39,
+  "archives": {
+    "atlas-source.tar.gz": "3ac9b5e7878c0a6a2da4eb9512eb83ea5d16777a8b8c9dbe346ab5ed20a39961",
+    "file-protocol-source.tar.gz": "3db7e085f50f273a1ab6c324125e8451f4d48828e10b0bb012a128d40f6c1030",
+    "hermes-source.tar.gz": "22cc6e2a23059a04199a67d941740244b269045c6834411112eb1b6cd2c431e3"
+  },
+  "scheduleObjectSha256": "c8e10e2f9db7a86125db2c4510a5e869b27e90e6bd30ffad5e04bc00bd433144",
+  "developmentPairs": 18,
+  "confirmatoryPairs": 54,
+  "status": "frozen; no live fileV2pilot/development/confirmation admitted",
+  "priorFileV1Pilot": "retained unchanged; no retrospective rescoring",
+  "readinessSha256": "381d960e289ecdec9f26460ceb508432e42763f3375240d2d36ef07d85d39ff7",
+  "limits": "Scriptednativepilot and95tests verify instrumentation. Statisticalcoverage/power, broadsecurity, visualquality and cross-provider parity remain unproven."
+}

@@ -1,0 +1,30 @@
+{
+  "at": "2026-09-07T06:56:51.190367+00:00",
+  "status": "CLOSED concise Indonesian product-status memo; source-only preparation",
+  "softwareSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "files": {
+    "registration.json": {
+      "sha256": "3866366f20c8a5a5e9566d2855bae1d31dd2b82d0555489d7230ad5167ad06c3",
+      "bytes": 848
+    },
+    "memo-id.md": {
+      "sha256": "541fdfc9e7d0d866493a6c4fe3311a0e933a5daffc6e1659c7ada861b69ee2d2",
+      "bytes": 4055
+    },
+    "source-references.json": {
+      "sha256": "51febffdbaf04869c166eb4d02fcdac45e1ba25c5081054fa2ba818a318e3e40",
+      "bytes": 13904
+    }
+  },
+  "sourceReferencesVerifiedBeforeAndAfter": 23,
+  "selectedProductPathsMatchFrozenAndRoot": 18,
+  "memoWordCount": 518,
+  "rootOrProgressFilesWritten": 0,
+  "providerCalls": 0,
+  "tests": 0,
+  "activeDevelopmentConfirmationEvidenceRead": false,
+  "runtimeOrScheduleOrFixtureRead": false,
+  "qualityRescore": false,
+  "knownCredentialLiteralScan": "Passed for newly written memo/reference bytes; no credential value copied",
+  "limits": "Evidence memo only, not a behavior retest, all-provider/subscription guarantee, deployment or comparative-quality result."
+}

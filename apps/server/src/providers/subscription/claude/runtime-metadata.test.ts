@@ -136,7 +136,7 @@ describe("Claude metadata discovery and native context", () => {
           }
           return resultHandle({
             close: () => {
-              events.push("close");
+              events.push(options?.model ? "close" : "discovery-close");
             },
             getContextUsage: async () => {
               events.push("context");
@@ -163,7 +163,7 @@ describe("Claude metadata discovery and native context", () => {
 
     expect(capturedModel).toBe("exact-requested-model");
     expect((await firstInput)?.done).toBe(false);
-    expect(events).toEqual(["context", "close"]);
+    expect(events).toEqual(["discovery-close", "context", "close"]);
     expect(result.content).toBe("Hello");
     expect(result.contextUsage).toEqual({
       contextWindow: 180_000,

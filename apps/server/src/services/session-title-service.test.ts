@@ -1,10 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 import type { ProviderClient, ProviderInstance, UserConfig } from "@atlas/core";
 import { createInMemoryDatabaseAdapter, type DatabaseAdapter } from "@atlas/db";
-import {
-  SESSION_TITLE_FALLBACK,
-  SessionTitleService,
-} from "./session-title-service";
+import { SessionTitleService } from "./session-title-service";
 
 const NOW = "2026-08-26T00:00:00.000Z";
 const ARCHIVED_AT = "2026-08-26T00:01:00.000Z";
@@ -277,15 +274,13 @@ describe("SessionTitleService organization guards", () => {
     expect((await db.getSession(SESSION_ID))?.title).toBe("Manual Title");
   });
 
-  test("commits the fallback while the organization remains active", async () => {
+  test("commits the first-user fallback while the organization remains active", async () => {
     const db = createInMemoryDatabaseAdapter();
     await seedEligibleSession(db);
     const service = new SessionTitleService(db, () => null);
 
     await generateSessionTitle(service);
 
-    expect((await db.getSession(SESSION_ID))?.title).toBe(
-      SESSION_TITLE_FALLBACK
-    );
+    expect((await db.getSession(SESSION_ID))?.title).toBe("Plan the launch");
   });
 });

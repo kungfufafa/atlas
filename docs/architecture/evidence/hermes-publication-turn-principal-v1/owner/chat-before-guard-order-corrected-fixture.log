@@ -1,0 +1,37 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/agent/src/chat-turn-admission.test.ts:
+60 |           throw new Error("Fixture authorization revoked");
+61 |         }
+62 |       },
+63 |     });
+64 |     expect(allowed).toBe(false);
+65 |     expect(effects).toBe(0);
+                         ^
+error: expect(received).toBe(expected)
+
+Expected: 0
+Received: 1
+
+      at <anonymous> (/private/tmp/atlas-publication-turn-principal-c5/source/packages/agent/src/chat-turn-admission.test.ts:65:21)
+(fail) API admission observes revocation during an existing awaited guard [95.71ms]
+60 |           throw new Error("Fixture authorization revoked");
+61 |         }
+62 |       },
+63 |     });
+64 |     expect(allowed).toBe(false);
+65 |     expect(effects).toBe(0);
+                         ^
+error: expect(received).toBe(expected)
+
+Expected: 0
+Received: 1
+
+      at <anonymous> (/private/tmp/atlas-publication-turn-principal-c5/source/packages/agent/src/chat-turn-admission.test.ts:65:21)
+(fail) native admission observes revocation during an existing awaited guard [3.60ms]
+
+ 0 pass
+ 4 filtered out
+ 2 fail
+ 4 expect() calls
+Ran 2 tests across 1 file. [1.59s]

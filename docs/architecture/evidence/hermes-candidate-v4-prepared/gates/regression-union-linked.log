@@ -1,0 +1,127 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/db/src/memory-search.test.ts:
+(pass) numeric identifiers remain searchable alongside natural words [0.66ms]
+(pass) numeric support retains stop-word, literal punctuation and query bounds [0.41ms]
+
+packages/db/src/conversation-history.test.ts:
+(pass) SQLite conversation history authorization > direct history applies optional caller ownership without narrowing trusted org reads [1.40ms]
+(pass) SQLite conversation history authorization > search and direct history share user and Super Agent filters [0.91ms]
+(pass) SQLite conversation history authorization > retrieves compacted evidence without adding archives to active model history [1.36ms]
+(pass) SQLite conversation history authorization > archive retrieval and search enforce tenant, owner, and Super Agent boundaries [1.72ms]
+(pass) SQLite conversation history authorization > archive replacement is atomic and rejects changes to an immutable snapshot [2.13ms]
+(pass) SQLite conversation history authorization > clear removes archived history as well as active messages [0.58ms]
+(pass) SQLite conversation history authorization > delete removes archived history as well as active messages [0.38ms]
+(pass) in-memory conversation history authorization > direct history applies optional caller ownership without narrowing trusted org reads [0.18ms]
+(pass) in-memory conversation history authorization > search and direct history share user and Super Agent filters [2.41ms]
+(pass) in-memory conversation history authorization > retrieves compacted evidence without adding archives to active model history [1.08ms]
+(pass) in-memory conversation history authorization > archive retrieval and search enforce tenant, owner, and Super Agent boundaries [0.30ms]
+(pass) in-memory conversation history authorization > archive replacement is atomic and rejects changes to an immutable snapshot [0.06ms]
+(pass) in-memory conversation history authorization > clear removes archived history as well as active messages [0.20ms]
+(pass) in-memory conversation history authorization > delete removes archived history as well as active messages [0.13ms]
+
+packages/db/src/memory-preservation.test.ts:
+(pass) in-memory preserving memory creation > reuses an exact fact without replacing its ID or metadata [0.40ms]
+(pass) in-memory preserving memory creation > preserves changed content even when the subject is the same
+(pass) in-memory preserving memory creation > keeps content case and internal whitespace significant [0.33ms]
+(pass) in-memory preserving memory creation > compares normalized subject identity but preserves the original representation [3.52ms]
+(pass) in-memory preserving memory creation > treats absent and empty subjects as the same identity
+(pass) in-memory preserving memory creation > isolates exact fact reuse by organization, owner, and scope [0.71ms]
+(pass) in-memory preserving memory creation > finds an identical retry beyond fifty more recent unrelated facts [3.26ms]
+(pass) in-memory preserving memory creation > coalesces simultaneous identical creations with distinct candidate IDs [0.40ms]
+(pass) in-memory preserving memory creation > rejects a colliding candidate ID without replacing another fact or tenant [0.30ms]
+(pass) sqlite preserving memory creation > reuses an exact fact without replacing its ID or metadata [11.59ms]
+(pass) sqlite preserving memory creation > preserves changed content even when the subject is the same [10.76ms]
+(pass) sqlite preserving memory creation > keeps content case and internal whitespace significant [10.67ms]
+(pass) sqlite preserving memory creation > compares normalized subject identity but preserves the original representation [11.69ms]
+(pass) sqlite preserving memory creation > treats absent and empty subjects as the same identity [10.64ms]
+(pass) sqlite preserving memory creation > isolates exact fact reuse by organization, owner, and scope [9.46ms]
+(pass) sqlite preserving memory creation > finds an identical retry beyond fifty more recent unrelated facts [15.84ms]
+(pass) sqlite preserving memory creation > coalesces simultaneous identical creations with distinct candidate IDs [14.68ms]
+(pass) sqlite preserving memory creation > rejects a colliding candidate ID without replacing another fact or tenant [17.97ms]
+(pass) SQLite preserves exact-reuse identity and independent facts after close and reopen [43.84ms]
+
+packages/db/src/conversation-keyword-search.test.ts:
+(pass) conversation keywords: in-memory > preserves legacy scalar message text and type across search and transcript retrieval [1.44ms]
+(pass) conversation keywords: in-memory > uses identical binary ID ordering for equal-date duplicate messages [0.16ms]
+(pass) conversation keywords: in-memory > native topic lookup finds separated terms and ranks before limiting older history [4.42ms]
+(pass) conversation keywords: in-memory > keeps tenant, caller, profile and Super Agent filters before ranking [0.82ms]
+(pass) conversation keywords: in-memory > archives remain searchable after reopen with stable active duplicate preference and date bounds [1.32ms]
+(pass) conversation keywords: in-memory > normalizes lexical spelling, keeps punctuation literal and excludes metadata-only matches [0.88ms]
+(pass) conversation keywords: in-memory > chooses the newest identical current message before applying date filters [0.17ms]
+(pass) conversation keywords: sqlite > preserves legacy scalar message text and type across search and transcript retrieval [45.63ms]
+(pass) conversation keywords: sqlite > uses identical binary ID ordering for equal-date duplicate messages [24.67ms]
+(pass) conversation keywords: sqlite > native topic lookup finds separated terms and ranks before limiting older history [31.74ms]
+(pass) conversation keywords: sqlite > keeps tenant, caller, profile and Super Agent filters before ranking [25.84ms]
+(pass) conversation keywords: sqlite > archives remain searchable after reopen with stable active duplicate preference and date bounds [47.51ms]
+(pass) conversation keywords: sqlite > normalizes lexical spelling, keeps punctuation literal and excludes metadata-only matches [32.31ms]
+(pass) conversation keywords: sqlite > chooses the newest identical current message before applying date filters [36.68ms]
+
+packages/db/src/profile-atomic.test.ts:
+(pass) SQLite atomic profile creation > does not overwrite or cross-delete a profile owned by another org [10.05ms]
+(pass) profile import publication > keeps reservations hidden and prevents normal writers from publishing them [11.32ms]
+(pass) profile import publication > rejects malformed publication graphs without exposing partial state [8.50ms]
+
+apps/server/src/tools/memory-tools.test.ts:
+(pass) memory tools fail closed > memory_search without principal throws [0.96ms]
+(pass) memory tools ownership > member cannot update another user's memory [1.93ms]
+(pass) memory tools ownership > member cannot write organization-scope memory [0.95ms]
+(pass) memory tools ownership > platform admin can write organization-scope memory [0.50ms]
+
+apps/server/src/tools/memory-scope-contract.test.ts:
+(pass) in-memory native memory scope contract > supported audiences persist across sessions without widening user, profile or organization access [8.08ms]
+(pass) in-memory native memory scope contract > unbound project writes and any supplied projectId fail without inserting or changing records [1.81ms]
+(pass) in-memory native memory scope contract > organization writes, corrections and erasure preserve administrator authority [2.81ms]
+(pass) in-memory native memory scope contract > legacy session-owned project rows remain explicitly accessible only in their original session [4.22ms]
+(pass) sqlite native memory scope contract > supported audiences persist across sessions without widening user, profile or organization access [63.46ms]
+(pass) sqlite native memory scope contract > unbound project writes and any supplied projectId fail without inserting or changing records [42.90ms]
+(pass) sqlite native memory scope contract > organization writes, corrections and erasure preserve administrator authority [50.25ms]
+(pass) sqlite native memory scope contract > legacy session-owned project rows remain explicitly accessible only in their original session [46.80ms]
+
+apps/server/src/tools/memory-tools-dedup.test.ts:
+(pass) sqlite explicit-subject memory identity > native saves preserve separate entities with highly similar fact templates after reopen and recall [31.04ms]
+(pass) sqlite explicit-subject memory identity > even identical text cannot replace a genuinely different explicit subject [19.86ms]
+(pass) sqlite explicit-subject memory identity > equivalent Unicode subjects reuse an exact fact and corrections update by ID [32.42ms]
+(pass) sqlite explicit-subject memory identity > different Unicode subjects remain separate even when their content is identical [32.92ms]
+(pass) sqlite explicit-subject memory identity > explicit corrections and unlabelled exact duplicate saves retain one ID [22.55ms]
+(pass) sqlite explicit-subject memory identity > native saves preserve independent same-subject facts after reopen and recall [45.00ms]
+(pass) sqlite explicit-subject memory identity > deduplication does not cross organization, user or agent ownership [25.84ms]
+(pass) in-memory explicit-subject memory identity > native saves preserve separate entities with highly similar fact templates after reopen and recall [1.48ms]
+(pass) in-memory explicit-subject memory identity > even identical text cannot replace a genuinely different explicit subject [2.45ms]
+(pass) in-memory explicit-subject memory identity > equivalent Unicode subjects reuse an exact fact and corrections update by ID [3.47ms]
+(pass) in-memory explicit-subject memory identity > different Unicode subjects remain separate even when their content is identical [0.50ms]
+(pass) in-memory explicit-subject memory identity > explicit corrections and unlabelled exact duplicate saves retain one ID [1.17ms]
+(pass) in-memory explicit-subject memory identity > native saves preserve independent same-subject facts after reopen and recall [1.99ms]
+(pass) in-memory explicit-subject memory identity > deduplication does not cross organization, user or agent ownership [1.72ms]
+
+apps/server/src/tools/conversation-tools.test.ts:
+(pass) conversation retrieval tools > finds and reads never-persisted tool evidence captured before successful compaction [5.78ms]
+(pass) conversation retrieval tools > searches and retrieves the caller's own regular conversation [0.63ms]
+(pass) conversation retrieval tools > direct retrieval cannot read another user's session in the same org [1.13ms]
+(pass) conversation retrieval tools > org admin remains user-scoped at the tool boundary [0.25ms]
+(pass) conversation retrieval tools > member cannot search or retrieve Super Agent history [0.60ms]
+(pass) conversation retrieval tools > org and platform admins can retrieve their own Super Agent history [0.22ms]
+(pass) conversation retrieval tools > cannot search or retrieve conversation history across orgs [0.90ms]
+
+apps/server/src/tools/memory-tools-update.test.ts:
+(pass) sqlite partial native memory updates > importance-only preserves content and uncertain metadata [41.99ms]
+(pass) sqlite partial native memory updates > content-only preserves metadata and updates native search [38.27ms]
+(pass) sqlite partial native memory updates > explicit null clears subject without resetting other fields [35.29ms]
+(pass) sqlite partial native memory updates > omitted subject preserves an already-cleared subject [35.89ms]
+(pass) sqlite partial native memory updates > explicit zero confidence persists through a later partial update [29.31ms]
+(pass) sqlite partial native memory updates > explicit undefined optional tool fields leave their stored values intact [28.22ms]
+(pass) sqlite partial native memory updates > service callers can omit fields using undefined [33.00ms]
+(pass) sqlite partial native memory updates > adapter updates ignore inherited and undefined properties but preserve zero and null [22.27ms]
+(pass) in-memory partial native memory updates > importance-only preserves content and uncertain metadata [0.98ms]
+(pass) in-memory partial native memory updates > content-only preserves metadata and updates native search [0.36ms]
+(pass) in-memory partial native memory updates > explicit null clears subject without resetting other fields [0.64ms]
+(pass) in-memory partial native memory updates > omitted subject preserves an already-cleared subject [0.38ms]
+(pass) in-memory partial native memory updates > explicit zero confidence persists through a later partial update [0.62ms]
+(pass) in-memory partial native memory updates > explicit undefined optional tool fields leave their stored values intact [0.32ms]
+(pass) in-memory partial native memory updates > service callers can omit fields using undefined [0.18ms]
+(pass) in-memory partial native memory updates > adapter updates ignore inherited and undefined properties but preserve zero and null [0.93ms]
+
+ 101 pass
+ 0 fail
+ 562 expect() calls
+Ran 101 tests across 10 files. [2.66s]

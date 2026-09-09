@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-09-06T22:58:57.094562+00:00",
+  "reviewer": "/root/file_v2_finalize",
+  "status": "offline-gates-complete-ready-for-root-freeze-review",
+  "freezeReady": true,
+  "meaningOfFreezeReady": "The previously deferred offline source, control, regression and actual-native scripted-pilot gates are satisfied for this exact current candidate and control map. Root must separately decide and perform prospective freeze/admission before any live file V2 run. This is not a live-quality, confirmatory-statistical, security-completeness or parity certificate.",
+  "priorReadiness": {
+    "path": "/private/tmp/atlas-native-file-delivery-audit/v2-readiness.json",
+    "sha256": "d86f5398f46a64771f7a0ce65e7a37dec9f92b923d952120e0f8ca4f42dd42b6",
+    "bytes": 9383
+  },
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "sourceCurrent": {
+    "path": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/source-current.json",
+    "sha256": "641ad7deb15c0205ea52ae3fb6aa99608607816a16142906276e6f796036aab5",
+    "bytes": 1167848
+  },
+  "sourceWindow": {
+    "before": "2026-09-06T19:27:49.005959+00:00",
+    "after": "2026-09-06T19:32:50.305792+00:00",
+    "current": "2026-09-06T22:55:23.676Z",
+    "productionFiles": 2078,
+    "controls": 35,
+    "fullControlMap": 39,
+    "hermesFiles": 7481
+  },
+  "sourceFilesAggregateSha256": "44f5b9eab70ca2dc65b6775575f535c36f02f73d36a4a6d5001b9b3b87ab8c2c",
+  "preregistration": {
+    "path": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/hermes-native-files-mimo-v2-preregistration.md",
+    "sha256": "a816bef955933d9de351787fd6a9a826ed40003b24479c52c56cae08a8aa392e",
+    "bytes": 35955
+  },
+  "completedGates": [
+    {
+      "name": "control-tests",
+      "command": [
+        "bun",
+        "test",
+        "scripts/harness-native-files-mimo-v2/file-delivery-markdown.test.ts",
+        "scripts/harness-native-files-mimo-v2/file-run.test.ts",
+        "scripts/harness-native-files-mimo-v2/product-analysis.test.ts",
+        "scripts/harness-native-files-mimo-v2/product-model.test.ts",
+        "scripts/harness-native-files-mimo-v2/product-proxy-queue.test.ts",
+        "scripts/harness-native-files-mimo-v2/product-proxy.test.ts"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 16.671867250013747,
+      "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/control-tests.log",
+      "logBinding": {
+        "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/control-tests.log",
+        "sha256": "640cb2a4540afa5ad789af9a77d94ecdd396e3671f8bd7979c02c20930b59b18",
+        "bytes": 5549
+      },
+      "tests": 54,
+      "assertions": 423
+    },
+    {
+      "name": "oracle-tests",
+      "command": [
+        "/Users/apriansyahrs/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-files-mimo-v2/file-oracles-test.py"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 1.5992997499997728,
+      "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/oracle-tests.log",
+      "logBinding": {
+        "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/oracle-tests.log",
+        "sha256": "3c48fce29203f4c853418fc493ebc40d41c82c1c22388ba9c34efde442d8549f",
+        "bytes": 3191
+      },
+      "tests": 19,
+      "assertions": null
+    },
+    {
+      "name": "code-grader-tests",
+      "command": [
+        "/Users/apriansyahrs/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-files-mimo-v2/file-code-check-test.py"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 4.502999499993166,
+      "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/code-grader-tests.log",
+      "logBinding": {
+        "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/code-grader-tests.log",
+        "sha256": "263333ad48368093cd87dfa59e99b4f3530cc2387891d74f19f887f543b3e77c",
+        "bytes": 1883
+      },
+      "tests": 12,
+      "assertions": null
+    },
+    {
+      "name": "typecheck",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "tsc",
+        "-p",
+        "/private/tmp/atlas-native-file-delivery-audit/tsconfig-focused-v2.json",
+        "--pretty",
+        "false"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 4.812593041002401,
+      "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/typecheck.log",
+      "logBinding": {
+        "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/typecheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "name": "lint",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "ultracite",
+        "check",
+        "scripts/harness-native-files-mimo-v2/file-atlas-runner.test.ts",
+        "scripts/harness-native-files-mimo-v2/file-atlas-runner.ts",
+        "scripts/harness-native-files-mimo-v2/file-delivery-markdown.test.ts",
+        "scripts/harness-native-files-mimo-v2/file-delivery-markdown.ts",
+        "scripts/harness-native-files-mimo-v2/file-markdown-dependency.ts",
+        "scripts/harness-native-files-mimo-v2/file-run.test.ts",
+        "scripts/harness-native-files-mimo-v2/file-run.ts",
+        "scripts/harness-native-files-mimo-v2/product-analysis.test.ts",
+        "scripts/harness-native-files-mimo-v2/product-analysis.ts",
+        "scripts/harness-native-files-mimo-v2/product-identity.ts",
+        "scripts/harness-native-files-mimo-v2/product-model.test.ts",
+        "scripts/harness-native-files-mimo-v2/product-model.ts",
+        "scripts/harness-native-files-mimo-v2/product-proxy-broker.ts",
+        "scripts/harness-native-files-mimo-v2/product-proxy-queue.test.ts",
+        "scripts/harness-native-files-mimo-v2/product-proxy.test.ts",
+        "scripts/harness-native-files-mimo-v2/product-proxy.ts"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 1.5677010829967912,
+      "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/lint.log",
+      "logBinding": {
+        "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/lint.log",
+        "sha256": "ab95c9c67485312989b0d7f5587e8298c8d99df526a4676a8307e296dd46c802",
+        "bytes": 45
+      }
+    },
+    {
+      "name": "atlas-native-adapter-tests",
+      "command": [
+        "bun",
+        "test",
+        "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-files-mimo-v2/file-atlas-runner.test.ts"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 1.981537624989869,
+      "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/atlas-native-adapter-tests.log",
+      "logBinding": {
+        "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/atlas-native-adapter-tests.log",
+        "sha256": "e07e3e9b39dde111e08f8e161765b3b9a647c8f3b222707d969f1e841468dc82",
+        "bytes": 580
+      },
+      "tests": 4,
+      "assertions": 63
+    },
+    {
+      "name": "hermes-native-adapter-tests",
+      "command": [
+        "/private/tmp/atlas-hermes-evaluation/venv/bin/python",
+        "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-files-mimo-v2/file-hermes-runner-test.py"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 16.074331750001875,
+      "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/hermes-native-adapter-tests.log",
+      "logBinding": {
+        "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/hermes-native-adapter-tests.log",
+        "sha256": "2d2e7c964a5086f99962efa11030f2bd742b512efe087a3734a085c169212c90",
+        "bytes": 1101
+      },
+      "tests": 6,
+      "assertions": null
+    },
+    {
+      "name": "full-native-scripted-pilot",
+      "command": [
+        "bun",
+        "/private/tmp/atlas-native-file-delivery-audit/v2-file-full-pilot-candidate5.ts"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 16.25997975000064,
+      "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/full-native-scripted-pilot.log",
+      "logBinding": {
+        "path": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/full-native-scripted-pilot.log",
+        "sha256": "3a0e5c3342dea3a0aa438175f9727adfa20032b65f2e89d257cd2099d59fde56",
+        "bytes": 11537
+      }
+    }
+  ],
+  "counts": {
+    "bunTests": 58,
+    "bunAssertions": 486,
+    "pythonTests": 37,
+    "totalTests": 95,
+    "scriptedNativePilotArms": 4,
+    "scriptedNativePilotPairs": 2,
+    "fakeProviderCalls": 12,
+    "qualification": "Counts cover these completed full gates only. Earlier focused and independent overlapping tests are not added; fake calls and asserted synthetic usage are not real provider usage or quality evidence."
+  },
+  "nativePilot": {
+    "directory": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076",
+    "completed": {
+      "at": "2026-09-06T19:31:05.014Z",
+      "pairedTasks": 2,
+      "runtimeIdentitiesSha256": "ff219d67116160e89163383c0bf1447b03ea064750b3f5aac395929af50d75df",
+      "scheduledAttempts": 4,
+      "sourceUnchanged": true
+    },
+    "arms": [
+      {
+        "id": "pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas",
+        "harness": "atlas",
+        "family": "xlsx_reconciliation",
+        "status": "completed",
+        "success": true,
+        "fakeProviderRequests": 3,
+        "delivery": {
+          "candidates": ["artifacts/reconciliation.xlsx"],
+          "evidence": "final-text",
+          "invalidCandidates": [],
+          "path": "artifacts/reconciliation.xlsx"
+        },
+        "binding": {
+          "actualSha256": "0fea1c8c14661822c654501dbe31628aef0cadf8c772d7d681c215ef134523f9",
+          "bytes": 5450,
+          "nativeEffectObserved": true,
+          "pass": true,
+          "snapshotMatches": true
+        },
+        "cleanup": null
+      },
+      {
+        "id": "pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+        "harness": "hermes",
+        "family": "xlsx_reconciliation",
+        "status": "completed",
+        "success": true,
+        "fakeProviderRequests": 3,
+        "delivery": {
+          "candidates": ["artifacts/reconciliation.xlsx"],
+          "evidence": "final-text",
+          "invalidCandidates": [],
+          "path": "artifacts/reconciliation.xlsx"
+        },
+        "binding": {
+          "actualSha256": "55ca6e7450085cb2874fa777d730fe8bc453e8be511a34de034dec95f2a4fbc6",
+          "bytes": 5451,
+          "nativeEffectObserved": true,
+          "pass": true,
+          "snapshotMatches": true
+        },
+        "cleanup": {
+          "nativeCleanup": {
+            "completed": true,
+            "afterAgentClose": [],
+            "isolatedRegistryKilled": 0,
+            "sessions": []
+          },
+          "supervisorCleanup": {
+            "completed": true,
+            "observedPids": [38605, 38606, 38607, 38622, 38623],
+            "terminatedPids": [],
+            "remainingPids": [],
+            "errors": [],
+            "scope": "Native close plus sampled descendants; not a hostile double-fork containment proof."
+          },
+          "workerExitCode": 0,
+          "workerHardKilled": false,
+          "artifactInspectionAllowed": true
+        }
+      },
+      {
+        "id": "pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+        "harness": "hermes",
+        "family": "csv_join",
+        "status": "completed",
+        "success": true,
+        "fakeProviderRequests": 3,
+        "delivery": {
+          "candidates": ["artifacts/joined.csv"],
+          "evidence": "final-text",
+          "invalidCandidates": [],
+          "path": "artifacts/joined.csv"
+        },
+        "binding": {
+          "actualSha256": "1d77f49fb9d7eb7bdc9f3092bc20df9f2d76540b0d0b0e7f1b001c979211694f",
+          "bytes": 292,
+          "nativeEffectObserved": true,
+          "pass": true,
+          "snapshotMatches": true
+        },
+        "cleanup": {
+          "nativeCleanup": {
+            "completed": true,
+            "afterAgentClose": [],
+            "isolatedRegistryKilled": 0,
+            "sessions": []
+          },
+          "supervisorCleanup": {
+            "completed": true,
+            "observedPids": [38636, 38637, 38638, 38643, 38653],
+            "terminatedPids": [],
+            "remainingPids": [],
+            "errors": [],
+            "scope": "Native close plus sampled descendants; not a hostile double-fork containment proof."
+          },
+          "workerExitCode": 0,
+          "workerHardKilled": false,
+          "artifactInspectionAllowed": true
+        }
+      },
+      {
+        "id": "pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+        "harness": "atlas",
+        "family": "csv_join",
+        "status": "completed",
+        "success": true,
+        "fakeProviderRequests": 3,
+        "delivery": {
+          "candidates": ["artifacts/joined.csv"],
+          "evidence": "final-text",
+          "invalidCandidates": [],
+          "path": "artifacts/joined.csv"
+        },
+        "binding": {
+          "actualSha256": "1d77f49fb9d7eb7bdc9f3092bc20df9f2d76540b0d0b0e7f1b001c979211694f",
+          "bytes": 292,
+          "nativeEffectObserved": true,
+          "pass": true,
+          "snapshotMatches": true
+        },
+        "cleanup": null
+      }
+    ],
+    "analysisValidity": {
+      "issues": [],
+      "valid": true
+    },
+    "coverage": {
+      "batchErrors": 0,
+      "duplicateLifecycleRecords": 0,
+      "endsWithoutStart": 0,
+      "identifiableAttempts": 4,
+      "pairPreparationErrors": 0,
+      "rawEndRecords": 4,
+      "rawErrorRecords": 0,
+      "rawStartRecords": 4,
+      "scheduledArms": 4,
+      "scheduledArmsMissingOrAmbiguous": 0,
+      "scheduledPairs": 2,
+      "startsWithoutEnd": 0
+    },
+    "archives": [
+      {
+        "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/atlas-source.tar.gz",
+        "sha256": "9affeb4d249dd60bca072caa88d163a18a43c4b04cf0bd15942d30a3969f7658",
+        "bytes": 11099746,
+        "members": 2078,
+        "mismatches": [],
+        "duplicates": [],
+        "nonfiles": [],
+        "pass": true
+      },
+      {
+        "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/file-protocol-source.tar.gz",
+        "sha256": "6b1e30a8a4c1769d83b59d654caf699afc08ffe53e0ce600e23ffcefde5bad08",
+        "bytes": 137746,
+        "members": 39,
+        "mismatches": [],
+        "duplicates": [],
+        "nonfiles": [],
+        "pass": true
+      },
+      {
+        "path": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076/hermes-source.tar.gz",
+        "sha256": "96974b71a4e6747ac59e83d32896de54fcb3e14b1b8b1da84df7d0303f83ddd7",
+        "bytes": 26490578,
+        "members": 7481,
+        "mismatches": [],
+        "duplicates": [],
+        "nonfiles": [],
+        "pass": true
+      }
+    ]
+  },
+  "independentReview": {
+    "original": {
+      "path": "/private/tmp/atlas-native-file-v2-independent-review/review.json",
+      "sha256": "9e9e141180c1c31266b666d8bb5e392134ee7cd4c002498e7f20e483c67c6a0a",
+      "bytes": 18595
+    },
+    "finalSourceAddendum": {
+      "path": "/private/tmp/atlas-native-file-v2-independent-review/review-addendum-archive-tests.json",
+      "sha256": "defc0848c45badd9284a2cea79d0ec6008fdcf33d5f9df2b66fd9febee0ea2a5",
+      "bytes": 1785
+    },
+    "scope": "Historical bounded source review plus additive exact-source refresh. Their pending full-gate/pilot items are now discharged by the subsequently completed logs inspected here; no new independent test execution is claimed."
+  },
+  "verification": {
+    "path": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/verification.json",
+    "sha256": "d87af0b34d3ac6555550d2204e3d7b58444d0e255d3f2fa403ed027d5d507df3",
+    "bytes": 47201
+  },
+  "failedChecks": [],
+  "remainingActions": [
+    "Root prospective freeze/admission decision; no freeze or paid inference performed by this work.",
+    "Any future live comparison retains all attempts and the declared statistical limitations; offline success supplies no parity claim."
+  ],
+  "limitations": [
+    "Only local injected scripted model responses drove the completed four-arm pilot. Actual Atlas AgentService, pinned Hermes terminal runtime, native file writes and semantic oracles were exercised.",
+    "The pilot covers XLSX reconciliation and CSV joining, including repeated inline paths surrounding fenced CSV and a repeated link; it does not establish all nine task families work live.",
+    "The structural/content oracles do not certify visual layout, accessibility, OCR, general software correctness or every public factual statement.",
+    "The known shared-workspace artifact-attribution race is outside these isolated workspaces and remains unresolved by this evaluator amendment. No concurrent multi-session artifact isolation claim is made.",
+    "Cleanup evidence is native close plus sampled descendants and the recorded canary/deadline regressions, not hostile double-fork or universal process-containment proof. Atlas successful process behavior and direct sandbox canaries are covered by its adapter test; no separate Atlas supervisor receipt is invented.",
+    "The inherited family-percentile bootstrap has no demonstrated nominal coverage or power for the five-percentage-point noninferiority claim with nine families; observed floors and informationAdequate are not population guarantees. Root must keep any future conclusion within its actual evidentiary scope.",
+    "MiMo and User-Agent differ from prior DeepSeek conditions; no pooling or model-only causal claim. The old MiMo file V1 pilot score remains unchanged.",
+    "Current source refresh does not certify future unmodified state; prospective freeze must rebind exact sources and admission guards."
+  ],
+  "paidCallsByThisWork": 0,
+  "testOrPilotRerunsByThisWork": 0,
+  "frozenByThisWork": false,
+  "rootOrControlSourcesEditedByThisWork": false,
+  "oldPilotScoresChanged": false,
+  "priorReadinessAndInspectionErrorsPreserved": true
+}

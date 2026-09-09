@@ -1,0 +1,1018 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/platform/discord/src/authorization-matrix.test.ts:
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / paired / dm [12.22ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / paired / guild mention [4.25ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: pairing / paired / unaddressed guild [1.70ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / paired / owned thread [3.90ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: pairing / paired / foreign thread [1.24ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / paired / claim thread [2.59ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / allowed guest / dm [3.92ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / allowed guest / guild mention [2.73ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: pairing / allowed guest / unaddressed guild [1.62ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / allowed guest / owned thread [4.00ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: pairing / allowed guest / foreign thread [1.35ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / allowed guest / claim thread [3.34ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: pairing / unlinked guest / dm [1.94ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: pairing / unlinked guest / guild mention [1.81ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: pairing / unlinked guest / unaddressed guild [1.25ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: pairing / unlinked guest / owned thread [1.46ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: pairing / unlinked guest / foreign thread [1.35ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: pairing / unlinked guest / claim thread [2.80ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: pairing / blocked guest / dm [1.53ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: pairing / blocked guest / guild mention [1.54ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: pairing / blocked guest / unaddressed guild [1.47ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: pairing / blocked guest / owned thread [1.35ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: pairing / blocked guest / foreign thread [1.22ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: pairing / blocked guest / claim thread [1.53ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / paired and blocked / dm [2.24ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / paired and blocked / guild mention [2.67ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: pairing / paired and blocked / unaddressed guild [2.24ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / paired and blocked / owned thread [2.54ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: pairing / paired and blocked / foreign thread [1.16ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / paired and blocked / claim thread [2.25ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / allowed and blocked / dm [1.90ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / allowed and blocked / guild mention [3.00ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: pairing / allowed and blocked / unaddressed guild [1.48ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / allowed and blocked / owned thread [2.70ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: pairing / allowed and blocked / foreign thread [1.33ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: pairing / allowed and blocked / claim thread [2.44ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / paired / dm [3.46ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / paired / guild mention [2.86ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: allowlist / paired / unaddressed guild [1.42ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / paired / owned thread [2.21ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: allowlist / paired / foreign thread [1.27ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / paired / claim thread [2.44ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / allowed guest / dm [2.40ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / allowed guest / guild mention [2.15ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: allowlist / allowed guest / unaddressed guild [2.06ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / allowed guest / owned thread [2.68ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: allowlist / allowed guest / foreign thread [1.36ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / allowed guest / claim thread [2.32ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: allowlist / unlinked guest / dm [1.30ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: allowlist / unlinked guest / guild mention [1.36ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: allowlist / unlinked guest / unaddressed guild [1.34ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: allowlist / unlinked guest / owned thread [1.29ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: allowlist / unlinked guest / foreign thread [1.23ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: allowlist / unlinked guest / claim thread [1.17ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: allowlist / blocked guest / dm [1.29ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: allowlist / blocked guest / guild mention [1.32ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: allowlist / blocked guest / unaddressed guild [3.38ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: allowlist / blocked guest / owned thread [1.64ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: allowlist / blocked guest / foreign thread [1.18ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: allowlist / blocked guest / claim thread [1.26ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / paired and blocked / dm [2.00ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / paired and blocked / guild mention [2.19ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: allowlist / paired and blocked / unaddressed guild [2.13ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / paired and blocked / owned thread [2.51ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: allowlist / paired and blocked / foreign thread [2.43ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / paired and blocked / claim thread [3.01ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / allowed and blocked / dm [2.22ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / allowed and blocked / guild mention [2.51ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: allowlist / allowed and blocked / unaddressed guild [1.33ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / allowed and blocked / owned thread [2.51ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: allowlist / allowed and blocked / foreign thread [1.49ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: allowlist / allowed and blocked / claim thread [3.99ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / paired / dm [2.48ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / paired / guild mention [3.48ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: denylist / paired / unaddressed guild [1.45ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / paired / owned thread [2.47ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: denylist / paired / foreign thread [1.51ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / paired / claim thread [2.75ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / allowed guest / dm [3.50ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / allowed guest / guild mention [2.71ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: denylist / allowed guest / unaddressed guild [1.34ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / allowed guest / owned thread [2.44ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: denylist / allowed guest / foreign thread [1.37ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / allowed guest / claim thread [2.84ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / unlinked guest / dm [3.07ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / unlinked guest / guild mention [2.61ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: denylist / unlinked guest / unaddressed guild [2.01ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / unlinked guest / owned thread [2.48ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: denylist / unlinked guest / foreign thread [1.25ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: denylist / unlinked guest / claim thread [2.16ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / blocked guest / dm [1.25ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / blocked guest / guild mention [1.17ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: denylist / blocked guest / unaddressed guild [1.20ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / blocked guest / owned thread [1.47ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: denylist / blocked guest / foreign thread [1.28ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / blocked guest / claim thread [1.15ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / paired and blocked / dm [1.23ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / paired and blocked / guild mention [2.00ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: denylist / paired and blocked / unaddressed guild [1.55ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / paired and blocked / owned thread [1.45ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: denylist / paired and blocked / foreign thread [1.27ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / paired and blocked / claim thread [1.35ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / allowed and blocked / dm [1.26ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / allowed and blocked / guild mention [1.47ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: denylist / allowed and blocked / unaddressed guild [1.20ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / allowed and blocked / owned thread [1.14ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: denylist / allowed and blocked / foreign thread [1.21ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] unauthorized
+(pass) Discord access: denylist / allowed and blocked / claim thread [1.11ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / paired / dm [2.15ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / paired / guild mention [2.10ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: open / paired / unaddressed guild [1.10ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / paired / owned thread [3.24ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: open / paired / foreign thread [1.23ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / paired / claim thread [2.06ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / allowed guest / dm [1.81ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / allowed guest / guild mention [2.90ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: open / allowed guest / unaddressed guild [1.17ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / allowed guest / owned thread [2.04ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: open / allowed guest / foreign thread [1.35ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / allowed guest / claim thread [2.40ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / unlinked guest / dm [3.43ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / unlinked guest / guild mention [2.81ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: open / unlinked guest / unaddressed guild [1.25ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / unlinked guest / owned thread [1.95ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: open / unlinked guest / foreign thread [1.28ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / unlinked guest / claim thread [2.24ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / blocked guest / dm [1.97ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / blocked guest / guild mention [2.11ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: open / blocked guest / unaddressed guild [1.60ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / blocked guest / owned thread [2.51ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: open / blocked guest / foreign thread [1.23ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / blocked guest / claim thread [2.05ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / paired and blocked / dm [1.79ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / paired and blocked / guild mention [2.32ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: open / paired and blocked / unaddressed guild [1.21ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / paired and blocked / owned thread [2.22ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: open / paired and blocked / foreign thread [1.26ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / paired and blocked / claim thread [3.18ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / allowed and blocked / dm [2.35ms]
+[discord] handle bot-mention {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] thread created
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / allowed and blocked / guild mention [3.67ms]
+[discord] handle no-trigger {
+  botOwnsThread: false,
+  isThread: false,
+}
+[discord] skip no-trigger
+(pass) Discord access: open / allowed and blocked / unaddressed guild [1.39ms]
+[discord] handle in-thread {
+  botOwnsThread: true,
+  isThread: true,
+}
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / allowed and blocked / owned thread [2.44ms]
+[discord] handle foreign-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] skip foreign-thread
+(pass) Discord access: open / allowed and blocked / foreign thread [1.20ms]
+[discord] handle claim-thread {
+  botOwnsThread: false,
+  isThread: true,
+}
+[discord] claimed thread
+[discord] chat start messageId=unknown textBytes=5
+[discord] chat done
+(pass) Discord access: open / allowed and blocked / claim thread [3.62ms]
+(pass) Discord blocked paired user cannot execute /attach [1.52ms]
+(pass) Discord blocked paired user cannot execute /clear [0.75ms]
+(pass) Discord blocked paired user cannot execute /compact [0.54ms]
+(pass) Discord blocked paired user cannot execute /new [0.52ms]
+(pass) Discord blocked paired user cannot execute /status [0.55ms]
+(pass) Discord blocked paired user cannot execute /stop [1.99ms]
+(pass) Discord blocked paired user cannot execute /close [0.53ms]
+78 |       expect(calls.createSession).toBe(0);
+79 |       expect(calls.readProfileArtifactContent).toBe(0);
+80 |       expect(interaction.fileSendCalls).toBe(0);
+81 |       expect(threadStore.hasThreadId("thread_1")).toBe(true);
+82 |       const { loadDiscordConfigFile } = await import("@atlas/core/discord-config");
+83 |       expect((await loadDiscordConfigFile())?.allowedUserIds).toEqual([]);
+                                                                   ^
+error: expect(received).toEqual(expected)
+
+- []
++ [
++   "999999999999999999",
++ ]
+
+- Expected  - 1
++ Received  + 3
+
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/authorization-matrix.test.ts:83:63)
+(fail) Discord blocked paired user cannot execute /allow [3.66ms]
+92 |     const sessionStore = new SessionStore(path.join(homeDir, "sessions.json"));
+93 |     sessionStore.set("guild_channel_1", { profileId: "foreign_profile", sessionId: "foreign_session", updatedAt: "2026-01-01T00:00:00.000Z", deliverableArtifacts: [{ filename: "secret.txt", mimeType: "text/plain", path: "artifacts/secret.txt", sizeBytes: 6, sharedAt: "2026-01-01T00:00:00.000Z" }] });
+94 |     const handler = createChatHandler({ authStore: new DiscordAuthStore(), client, config: { botToken: "token", profileId: "default" }, fixedWorkspaceId: "org_a", orgStore: createTestOrgStore(homeDir), sessionStore, threadStore: new ThreadStore(path.join(homeDir, "threads.json")) });
+95 |     const interaction = createSlashInteraction({ commandName: "attach", userId: identities[0].userId });
+96 |     await handler.handleSlashCommand(interaction.interaction);
+97 |     expect(interaction.fileSendCalls).toBe(0);
+                                           ^
+error: expect(received).toBe(expected)
+
+Expected: 0
+Received: 1
+
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/authorization-matrix.test.ts:97:39)
+(fail) Discord /attach never claims a legacy registry without a sender owner [3.06ms]
+
+2 tests failed:
+(fail) Discord blocked paired user cannot execute /allow [3.66ms]
+(fail) Discord /attach never claims a legacy registry without a sender owner [3.06ms]
+
+ 151 pass
+ 2 fail
+ 973 expect() calls
+Ran 153 tests across 1 file. [1359.00ms]

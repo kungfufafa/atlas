@@ -1,0 +1,33 @@
+{
+  "at": "2026-09-07T05:32:54.908189+00:00",
+  "status": "closed known blocker, not ready for paid freeze",
+  "selectedReviewCopies": {
+    "review.json": {
+      "source": "/private/tmp/atlas-native-file-v3-control-independent-review/review.json",
+      "sha256": "a53f0405707475514065150150ced6166e23cb9597df009ed6a53e4b5c019977"
+    },
+    "review.md": {
+      "source": "/private/tmp/atlas-native-file-v3-control-independent-review/review.md",
+      "sha256": "a29a28d71279d68781a52742d3b016b1bd0fc544f987879e97e05539e8ad3d27"
+    },
+    "manifest.json": {
+      "source": "/private/tmp/atlas-native-file-v3-control-independent-review/manifest.json",
+      "sha256": "a2a995d5ee01ab2adc28e239b1d10cf8cc6861e268374444b0e291ad48e26920"
+    },
+    "seal.json": {
+      "source": "/private/tmp/atlas-native-file-v3-control-independent-review/seal.json",
+      "sha256": "77477069b1571b61fe50b3e3611551caf95a1c3e2dfcdaa23244846fe059bed7"
+    }
+  },
+  "completeArchive": {
+    "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c8-blocked",
+    "at": "2026-09-07T05:31:56.995543+00:00",
+    "bytes": 110674414,
+    "files": 5285,
+    "manifestSha256": "1b535e82bc3bfd83623330dc65e2fd11c98be364230d6d3a4a849e8c51842473",
+    "postPromotionVerified": true,
+    "providerCalls": 0,
+    "sourceRetained": true
+  },
+  "scope": "The copied review manifest describes the full archived review; only the four listed files are copied beside this reference. Original owner controls, both actual-native scripted pilot analyses and all failed evidence remain unchanged. New C9 controls are separate. No rescoring or paid calls."
+}

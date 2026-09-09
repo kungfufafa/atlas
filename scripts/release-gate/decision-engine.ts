@@ -61,6 +61,10 @@ export class ReleaseDecisionEngine {
     let warningCount = 0;
     let totalDurationMs = 0;
 
+    if (!checks.some((check) => check.required)) {
+      blockingReasons.push("No required validation checks were supplied.");
+    }
+
     for (const check of checks) {
       totalDurationMs += check.durationMs;
 
@@ -91,6 +95,11 @@ export class ReleaseDecisionEngine {
         }
       } else if (check.status === "warning") {
         warningCount++;
+        if (check.required) {
+          blockingReasons.push(
+            `[${check.category}] Required check ${check.id} did not pass (warning).`
+          );
+        }
         warnings.push(
           `[${check.category}] ${check.id}: ${check.message || ""}`
         );

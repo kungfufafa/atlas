@@ -1,0 +1,7 @@
+{
+  "operation": "Inspect nonexistent observation.turns field after reading field inventory",
+  "exitCode": 1,
+  "error": "KeyError: turns",
+  "resolution": "Use actual finalText/sessions/nativeEvents/evidence fields; no score, source, fixture or pilot change.",
+  "testOrPilotRerun": false
+}

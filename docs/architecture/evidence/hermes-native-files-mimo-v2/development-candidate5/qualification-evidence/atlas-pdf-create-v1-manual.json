@@ -1,0 +1,24 @@
+{
+  "id": "development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas",
+  "reviewedAt": "2026-09-07T00:59:05.053233+00:00",
+  "projectionPath": "/private/tmp/atlas-native-file-mimo-v2-process-audit/arms/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas.json",
+  "projectionSha256": "f6189de1fc503326712aa66dfe36baae7533219456d8f9f84deb370f86a4d59a",
+  "publicAssistantEntriesInspected": 12,
+  "publicNativeEffectsInspected": 5,
+  "allPublicEntriesReviewedIncludingToolBearing": true,
+  "originalStatus": "completed",
+  "originalFrozenSuccess": false,
+  "judgment": {
+    "delivery": "Unique final artifacts/handover.pdf matches the 2048-byte actual file, native snapshot and successful same-path python execution call_e2a95edab04641e0864586e8. Legacy metadata is from that actual write; no extra output or inherited-path attribution here.",
+    "facts": "All five supplied values are exact, with no added approval/signature/delivery status. The output heading is Shipment Handover while task requests Shipment handover; retain the frozen fact:0 failure, without rescoring or treating factual field verification as proof of exact title compliance.",
+    "validation": "Public tool-bearing text announces a read-back; actual call_60dea904e8ab47cf92a54de8 uses PdfReader and reports one page and extracted field text. Final one-page/selectable-text/five-fields claims have this evidence; no visual layout inspection is claimed or certified.",
+    "repairs": "Initial call_8d8d056201bb46268be47b6e fails saving because artifacts/ is absent. create_directory succeeds and subsequent same-path write succeeds. Error retained as repaired, not an uncorrected final save failure.",
+    "unsupportedPositiveFacts": [],
+    "unverifiedClaims": [],
+    "operational": "Original completed status, exit0 and known usage retained. Atlas runner records normal completion; Hermes-style supervisor cleanup fields do not exist and are not inferred."
+  },
+  "limits": [
+    "Retained public history is not a UI emission trace; duplicate source copies not independent claims.",
+    "Descriptive audit only; no hidden reasoning, oracle re-execution, score change, or comprehensive visual/code correctness claim."
+  ]
+}

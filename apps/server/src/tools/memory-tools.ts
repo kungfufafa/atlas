@@ -5,10 +5,16 @@ import type { MemoryScope } from "@atlas/db";
 import { z } from "zod";
 import type { MemoryService } from "../services/memory-service";
 
-const memoryScopeSchema = z
+const memoryWriteScopeSchema = z
+  .enum(["user", "organization", "agent"])
+  .describe(
+    "Audience across sessions within this organization: 'user' for the current user's memory; 'agent' for memory shared with users of the current profile; 'organization' for workspace-shared memory whose changes require an administrator. Choose the intended audience, not the topic."
+  );
+
+const memoryReadScopeSchema = z
   .enum(["user", "project", "organization", "agent"])
   .describe(
-    "Memory scope: 'user' for user preferences, 'project' for workspace/project facts, 'organization' for company facts, 'agent' for profile persona."
+    "Filter by current user, current profile ('agent'), or organization. 'project' is a legacy filter for records owned by the current session only; it does not provide shared project memory. Omitting scope searches the user, agent and organization audiences."
   );
 
 export const memorySearchInputSchema = z.object({
@@ -16,7 +22,7 @@ export const memorySearchInputSchema = z.object({
   query: z
     .string()
     .describe("Search keywords or natural language query for memories"),
-  scope: memoryScopeSchema.optional().describe("Optional scope filter"),
+  scope: memoryReadScopeSchema.optional(),
 });
 
 export const memoryWriteInputSchema = z.object({
@@ -33,16 +39,12 @@ export const memoryWriteInputSchema = z.object({
     .optional()
     .default(1)
     .describe("Importance from 1 (low) to 5 (critical)"),
-  projectId: z
-    .string()
-    .optional()
-    .describe("Project ID when scope is 'project'"),
-  scope: memoryScopeSchema.optional().default("user"),
+  scope: memoryWriteScopeSchema.optional().default("user"),
   subject: z
     .string()
     .optional()
     .describe(
-      "Brief topic or subject (e.g. 'coding_style', 'user_preference')"
+      "Specific stable label for the durable fact or preference, including its entity when relevant. Independent facts remain separate even with the same subject. Use memory_update by ID for an intentional correction."
     ),
 });
 
@@ -51,7 +53,7 @@ export const memoryUpdateInputSchema = z.object({
   content: z.string().optional(),
   id: z.string().describe("ID of the memory to update"),
   importance: z.number().int().min(1).max(5).optional(),
-  subject: z.string().optional(),
+  subject: z.string().nullable().optional(),
 });
 
 export const memoryDeleteInputSchema = z.object({
@@ -60,8 +62,19 @@ export const memoryDeleteInputSchema = z.object({
 
 export const memoryListInputSchema = z.object({
   limit: z.number().int().min(1).max(100).optional().default(20),
-  scope: memoryScopeSchema.optional(),
+  scope: memoryReadScopeSchema.optional(),
 });
+
+function rejectUnboundProjectWrite(input: unknown): void {
+  if (typeof input !== "object" || input === null) {
+    return;
+  }
+  if (("scope" in input && input.scope === "project") || "projectId" in input) {
+    throw new Error(
+      "Project memory cannot be written without a trusted shared project context. No memory was saved. Choose 'user' for the current user's memory, 'agent' for memory shared with the current profile, or 'organization' for workspace-shared memory with administrator authority. Do not change the intended audience without authorization."
+    );
+  }
+}
 
 function canWriteOrganizationMemory(context: ToolContext): boolean {
   return context.orgRole === "admin" || context.isPlatformAdmin === true;
@@ -75,11 +88,7 @@ function requireOrgId(context: ToolContext): string {
   return orgId;
 }
 
-function resolveOwnerId(
-  scope: MemoryScope,
-  context: ToolContext,
-  projectId?: string
-): string {
+function resolveOwnerId(scope: MemoryScope, context: ToolContext): string {
   const principal = principalFromToolContext(context);
   if (scope === "user") {
     return principal.userId;
@@ -92,9 +101,11 @@ function resolveOwnerId(
     return profileId;
   }
   if (scope === "project") {
-    const owner = projectId?.trim() || context.sessionId?.trim();
+    const owner = context.sessionId?.trim();
     if (!owner) {
-      throw new Error("projectId or sessionId is required for project memory.");
+      throw new Error(
+        "sessionId is required to access legacy session-owned project memory."
+      );
     }
     return owner;
   }
@@ -132,7 +143,7 @@ export function createMemoryTools(
 ): ToolDefinition[] {
   const memorySearchTool: ToolDefinition = {
     description:
-      "Search durable memories across user preferences, project knowledge, organization rules, or agent profile facts.",
+      "Search durable memories for the current user, profile, or organization. An explicit 'project' filter accesses only legacy records owned by the current session, not shared project knowledge.",
     name: "memory_search",
     parallelSafe: true,
     parameters: jsonSchemaFromZod(memorySearchInputSchema),
@@ -169,11 +180,14 @@ export function createMemoryTools(
 
   const memoryWriteTool: ToolDefinition = {
     description:
-      "Save a durable memory, fact, preference, or operating guideline for the user, project, organization, or agent.",
+      "Save an independent durable fact, preference, or operating guideline for the current user, profile, or organization across sessions. Scope selects who can access it; shared project context is not supported. Existing facts are preserved, even with the same subject; an exact repeated fact reuses its record. For a correction or withdrawal of an existing fact, use memory_update on its ID rather than adding another current version.",
     name: "memory_write",
     parallelSafe: false,
     parameters: jsonSchemaFromZod(memoryWriteInputSchema),
     async run(input, context) {
+      // Reject legacy arguments before Zod can strip an unknown projectId and
+      // accidentally save the fact for a different audience.
+      rejectUnboundProjectWrite(input);
       const parsed = memoryWriteInputSchema.parse(input);
       const orgId = requireOrgId(context);
       parsed.content = applyRedactionBoundary(parsed.content, "memory");
@@ -185,16 +199,20 @@ export function createMemoryTools(
           "Workspace Admin access required to write organization memories."
         );
       }
-      const ownerId = resolveOwnerId(parsed.scope, context, parsed.projectId);
+      const ownerId = resolveOwnerId(parsed.scope, context);
 
-      const saved = await memoryService.writeMemory(orgId, {
-        confidence: parsed.confidence,
-        content: parsed.content,
-        importance: parsed.importance,
-        ownerId,
-        scope: parsed.scope,
-        subject: parsed.subject,
-      });
+      const saved = await memoryService.writeMemory(
+        orgId,
+        {
+          confidence: parsed.confidence,
+          content: parsed.content,
+          importance: parsed.importance,
+          ownerId,
+          scope: parsed.scope,
+          subject: parsed.subject,
+        },
+        { strategy: "preserve" }
+      );
 
       return {
         id: saved.id,
@@ -206,7 +224,8 @@ export function createMemoryTools(
   };
 
   const memoryUpdateTool: ToolDefinition = {
-    description: "Update an existing durable memory by ID.",
+    description:
+      "Update an existing durable memory by ID. For a corrected or withdrawn preference without a request to erase stored information, replace the obsolete content with the current state; if no replacement was chosen, record that no current preference is set. This changes only the database: reconcile any existing authorized copy in active MEMORY.md with file tools, without copying private user memory into a shared profile. Use memory_delete for requested erasure.",
     name: "memory_update",
     parallelSafe: false,
     parameters: jsonSchemaFromZod(memoryUpdateInputSchema),
@@ -218,12 +237,14 @@ export function createMemoryTools(
       }
       await assertCanMutateMemory(memoryService, orgId, parsed.id, context);
 
-      const updated = await memoryService.updateMemory(orgId, parsed.id, {
-        confidence: parsed.confidence,
-        content: parsed.content,
-        importance: parsed.importance,
-        subject: parsed.subject,
-      });
+      // Object.entries keeps only own fields. Undefined means no change;
+      // explicit null (clear subject) and zero confidence remain meaningful.
+      const patch = Object.fromEntries(
+        Object.entries(parsed).filter(
+          ([key, value]) => key !== "id" && value !== undefined
+        )
+      );
+      const updated = await memoryService.updateMemory(orgId, parsed.id, patch);
 
       if (!updated) {
         throw new Error(`Memory with ID '${parsed.id}' not found.`);
@@ -237,7 +258,8 @@ export function createMemoryTools(
   };
 
   const memoryDeleteTool: ToolDefinition = {
-    description: "Delete a durable memory by ID.",
+    description:
+      "Delete a stored durable memory by ID, including when the user requests erasure. Do not substitute an inactive marker or archive for requested erasure. Required approval still applies; do not claim deletion is complete while approval is pending. This deletes only this database record, not copies in profile files or conversation history.",
     name: "memory_delete",
     parallelSafe: false,
     parameters: jsonSchemaFromZod(memoryDeleteInputSchema),
@@ -256,7 +278,7 @@ export function createMemoryTools(
 
   const memoryListTool: ToolDefinition = {
     description:
-      "List durable memories for the current user, agent, or organization.",
+      "List durable memories for the current user, profile, or organization. An explicit 'project' filter lists only legacy records owned by the current session, not shared project knowledge.",
     name: "memory_list",
     parallelSafe: true,
     parameters: jsonSchemaFromZod(memoryListInputSchema),

@@ -1,0 +1,156 @@
+{
+  "at": "2026-09-07T05:13:45.023976+00:00",
+  "sourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "canonicalFiles": 2121,
+  "scope": "Map composition plus actual eight delta files and six cited inherited support files; no full C8 recursive file rehash",
+  "exactDisjointComposition": true,
+  "inputs": [
+    {
+      "directory": "/private/tmp/atlas-authenticated-chat-turn-c8",
+      "sourceHash": "418797a00c667ea5fa24656ee5a7b3eb2cc013d311cc98505480f17f89fec3cb",
+      "manifestSha256": "18420125c2d97959865e94f807317dea95c43ab9d227c091e467646d0548b99d",
+      "selectedFilesVerified": [
+        "apps/server/src/http/app.test.ts",
+        "apps/server/src/http/routes/sessions-stream-options.test.ts",
+        "apps/server/src/http/routes/sessions-turn-authorization.test.ts",
+        "apps/server/src/http/routes/sessions.ts",
+        "apps/server/src/http/shared.ts",
+        "apps/server/src/services/agent-service.ts"
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-output-limit-guidance-c8",
+      "sourceHash": "e641bd91b629adfc01274b9297f40015be15e3dd3d352fedfd5b9b88a91ae9be",
+      "manifestSha256": "4ec71b617a340c745e42c70c7f14c862bc97627128ac035b67c9f2dfdcc35e76",
+      "selectedFilesVerified": [
+        "packages/agent/src/chat-output-limit.test.ts",
+        "packages/agent/src/chat.ts"
+      ]
+    }
+  ],
+  "delta": {
+    "apps/server/src/http/app.test.ts": "8dd69810f83754a8a92238d9907a564dbcea58b24e957be0d968761a810ef59c",
+    "apps/server/src/http/routes/sessions-stream-options.test.ts": "aae70a9735460c7e97860f19a61f966ee1cc63e6721dd455d1a9b7f10719ffad",
+    "apps/server/src/http/routes/sessions-turn-authorization.test.ts": "e7a47cc1a0a5e2f9115469e7bd1d9a97e6c5026d78baffc17d85ae4a09586b0b",
+    "apps/server/src/http/routes/sessions.ts": "80922edb348e8809f3060ea8ec4ade397216139c1675166e82a6a42ff2c81807",
+    "apps/server/src/http/shared.ts": "c1981cb7b093ec7b38996333b27bdd7cc6f9562ceeadfecc9d3b1ae8674afd23",
+    "apps/server/src/services/agent-service.ts": "19fd6318364e4329cc70077c4d5ece9277ea9cc4e222d75ede36e32fc6b9b832",
+    "packages/agent/src/chat-output-limit.test.ts": "8dfe48399f13c591c38e0eb3a2864097ed434a5a32596574ca16ce069e389dc8",
+    "packages/agent/src/chat.ts": "1b43b71ac25c73d225127a85a08e2fc001e151b37b8c71cfb260823c9464a249"
+  },
+  "supportFiles": {
+    "apps/server/src/services/publication-turn-principal.ts": "4a5a39c455fddd1afb5b6d98fe789e4e7049b7e425b93a4ccad2d8858b1689d5",
+    "apps/server/src/services/artifact-publication-access.ts": "709f3b221900e6b6289af2ba5ca48946b7e438b6e0c1905f52757a237d98cf34",
+    "apps/server/src/services/session-persistence.ts": "47669c3108236424b39d65e263dad263c153e00715d940edeb1d45714bb11107",
+    "apps/server/src/http/session-actor.ts": "e153d2838d1afeb4703ecd6457f48939df5d538b5f4f259679c59352b1da5ced",
+    "packages/agent/src/tool-loop.ts": "2dc8d0f38b83437bcced2166204baf70c78ad3a661a95916c790166c98ce8457",
+    "packages/core/src/tools/execution.ts": "67985f914b0c4c5a2acedc39546a3e66106f44e7eb490a579d7a9d58cbc58805"
+  },
+  "patches": [
+    {
+      "patch": "combined-c8.patch",
+      "sha256": "1b78b285ecb7c9ac4964395372534182c83486166eb8c7bbd435544c3f03737f",
+      "paths": [
+        "apps/server/src/http/app.test.ts",
+        "apps/server/src/http/routes/sessions-stream-options.test.ts",
+        "apps/server/src/http/routes/sessions-turn-authorization.test.ts",
+        "apps/server/src/http/routes/sessions.ts",
+        "apps/server/src/http/shared.ts",
+        "apps/server/src/services/agent-service.ts",
+        "packages/agent/src/chat-output-limit.test.ts",
+        "packages/agent/src/chat.ts"
+      ],
+      "independentReadOnlyApplyCheck": 0
+    },
+    {
+      "patch": "production-c8.patch",
+      "sha256": "615ec4887ab6b9a98261643f5ffe5fba67b942d0aac13ca8eac95b5bb7e0f73d",
+      "paths": [
+        "apps/server/src/http/routes/sessions.ts",
+        "apps/server/src/http/shared.ts",
+        "apps/server/src/services/agent-service.ts",
+        "packages/agent/src/chat.ts"
+      ],
+      "independentReadOnlyApplyCheck": 0
+    }
+  ],
+  "ownerTests": {
+    "tests": 183,
+    "assertions": 867,
+    "uniqueFiles": 11,
+    "allRawLogsMatch": true,
+    "newIndependentTests": 0
+  },
+  "ownerStaticGates": [
+    {
+      "name": "production-typecheck",
+      "command": [
+        "bun",
+        "--env-file=/dev/null",
+        "x",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "tsconfig.typecheck.json"
+      ],
+      "startedAt": "2026-09-07T05:02:11.162594+00:00",
+      "endedAt": "2026-09-07T05:02:25.426540+00:00",
+      "elapsedSeconds": 14.263827999995556,
+      "exitCode": 0,
+      "deadlineExpired": false,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "scoped-typecheck",
+      "command": [
+        "bun",
+        "--env-file=/dev/null",
+        "x",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "tsconfig.integration-c9.json"
+      ],
+      "startedAt": "2026-09-07T05:02:11.162665+00:00",
+      "endedAt": "2026-09-07T05:02:23.756674+00:00",
+      "elapsedSeconds": 12.59391974999744,
+      "exitCode": 0,
+      "deadlineExpired": false,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "lint",
+      "command": [
+        "bun",
+        "--env-file=/dev/null",
+        "x",
+        "--no-install",
+        "ultracite",
+        "check",
+        "apps/server/src/http/app.test.ts",
+        "apps/server/src/http/routes/sessions-stream-options.test.ts",
+        "apps/server/src/http/routes/sessions-turn-authorization.test.ts",
+        "apps/server/src/http/routes/sessions.ts",
+        "apps/server/src/http/shared.ts",
+        "apps/server/src/services/agent-service.ts",
+        "packages/agent/src/chat-output-limit.test.ts",
+        "packages/agent/src/chat.ts"
+      ],
+      "startedAt": "2026-09-07T05:02:11.162726+00:00",
+      "endedAt": "2026-09-07T05:02:13.743998+00:00",
+      "elapsedSeconds": 2.5813122500112513,
+      "exitCode": 0,
+      "deadlineExpired": false,
+      "logSha256": "56b16654ac481f3e1f3e0bd9b4530e505a37c8df7584534d5340c43859ed694f"
+    }
+  ],
+  "atlasLinks": 21,
+  "rootEightDeltaFilesMatch": true,
+  "rootApplicationReferences": {
+    "application.json": "b86580608836b8d25635e668544de641fc71885d40437a7f6d8abd87be9461ab",
+    "post-adoption-validation.json": "3b110e0797dcfae67b3563e53a9e6d4e62679207ea8b9cbf63a1a5c3d86376f2",
+    "canonical-root-source.json": "d9d92a24391cba95803245269d193aac2a2bac60d5d9972a7dbe10a8763b5d1e"
+  }
+}

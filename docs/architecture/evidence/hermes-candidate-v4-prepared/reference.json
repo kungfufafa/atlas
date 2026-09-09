@@ -1,0 +1,88 @@
+{
+  "createdAt": "2026-09-06T18:34:47.330865+00:00",
+  "scope": "Reviewed isolated candidate4; root still candidate3 during ongoing batch. Offline integration only, no live quality claim.",
+  "originalsRetained": true,
+  "knownCredentialLiteralScan": "passed selected files only",
+  "files": {
+    "readiness.json": {
+      "origin": "/private/tmp/atlas-candidate4-integration/readiness.json",
+      "sha256": "d32d5e3a05fc8432cd9a06007fdeb7ee34e48049c46ec5caf6f65b12f1f9acc1",
+      "bytes": 14492
+    },
+    "combined.patch": {
+      "origin": "/private/tmp/atlas-candidate4-integration/combined.patch",
+      "sha256": "be636e2a9ffc9d6566d83adb663afdec0d26dc13f5a14f238d98fc48dd25eb95",
+      "bytes": 53056
+    },
+    "production.patch": {
+      "origin": "/private/tmp/atlas-candidate4-integration/production.patch",
+      "sha256": "7c204d3a17e88981dd9c406d4f4f1d414a2397df81cb3e0975357222ce038a17",
+      "bytes": 19856
+    },
+    "source-inventory.json": {
+      "origin": "/private/tmp/atlas-candidate4-integration/source-inventory.json",
+      "sha256": "ffd0f2bd9eed3a52ae48ee955903bc789c807c63dbad6338a5e8dcab042480b4",
+      "bytes": 253297
+    },
+    "gates/regression-union.log": {
+      "origin": "/private/tmp/atlas-candidate4-integration/regression-union.log",
+      "sha256": "266fb4a5599ed0d691fc4bff9e2ad37cf68bac9e8569920368e07f499fd62c2c",
+      "bytes": 2026
+    },
+    "gates/production-typecheck.log": {
+      "origin": "/private/tmp/atlas-candidate4-integration/production-typecheck.log",
+      "sha256": "35c53bb67f16f34180e2c6f0d81a2ea1d6015fab0b59dd45c5df633d0504515c",
+      "bytes": 84541
+    },
+    "gates/changed-source-and-tests-typecheck.log": {
+      "origin": "/private/tmp/atlas-candidate4-integration/changed-source-and-tests-typecheck.log",
+      "sha256": "2a245de4845fae66593b0ff11bf2a54612c3d399674ed0e8089159e7e56cb903",
+      "bytes": 27590
+    },
+    "gates/scoped-lint.log": {
+      "origin": "/private/tmp/atlas-candidate4-integration/scoped-lint.log",
+      "sha256": "3011eb7cdc90829ac52743a4ddd781082dcd2a0d927827668479b9f1f0d79fa4",
+      "bytes": 45
+    },
+    "gates/regression-union-linked.log": {
+      "origin": "/private/tmp/atlas-candidate4-integration/regression-union-linked.log",
+      "sha256": "96bb07c5a14e8fe73d515d938f88ea1af16153c78f5fee5626fec53d081bf712",
+      "bytes": 13119
+    },
+    "gates/production-typecheck-linked.log": {
+      "origin": "/private/tmp/atlas-candidate4-integration/production-typecheck-linked.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "gates/changed-source-and-tests-typecheck-linked.log": {
+      "origin": "/private/tmp/atlas-candidate4-integration/changed-source-and-tests-typecheck-linked.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "memory/readiness.json": {
+      "origin": "/private/tmp/atlas-memory-scope-candidate4/readiness.json",
+      "sha256": "42290b0faeafa7fd3741ebcf5385dcfaf3c8dc4a71ad5307df468c60b47d8b35",
+      "bytes": 4607
+    },
+    "memory/independent-review.json": {
+      "origin": "/private/tmp/atlas-memory-scope-candidate4-independent-review/review.json",
+      "sha256": "5fef2ff64b95d2384bea5205c0c97e4ff022dec3d8178934e2e2e2644b55388c",
+      "bytes": 11501
+    },
+    "conversation/readiness.json": {
+      "origin": "/private/tmp/atlas-conversation-search-candidate4/readiness.json",
+      "sha256": "75c65a830b5740adcf2900454f2d348470576eec167fbdca1b6d335a45324d95",
+      "bytes": 4026
+    },
+    "conversation/independent-final.json": {
+      "origin": "/private/tmp/atlas-conversation-search-candidate4-independent-review/final-addendum.json",
+      "sha256": "6703158ac191f746598c16aff0cba22efb7d6b897ecc400fc23617f0166271cd",
+      "bytes": 5989
+    },
+    "conversation/independent-source-review.json": {
+      "origin": "/private/tmp/atlas-conversation-search-candidate4-independent-review/review.json",
+      "sha256": "b809cb667db332e823f66a8164d9aba7306b97d30185e153ab7040bacd276d6a",
+      "bytes": 11348
+    }
+  }
+}

@@ -133,7 +133,9 @@ export function toLlmToolDefinitions(
 }
 
 export function jsonSchemaFromZod(schema: z.ZodType): JsonSchema {
-  const { $schema, ...jsonSchema } = schema.toJSONSchema();
+  // Tool callers provide input. Output schemas incorrectly require fields whose
+  // defaults are applied only inside the handler's Zod parse.
+  const { $schema, ...jsonSchema } = schema.toJSONSchema({ io: "input" });
   return jsonSchema as JsonSchema;
 }
 
@@ -155,47 +157,62 @@ export function requiredTrimmedString(field: string) {
     .min(1, `${field} is required.`);
 }
 
-export const trimmedOptionalString = z.preprocess(
-  (value) =>
-    typeof value === "string" && value.trim() ? value.trim() : undefined,
-  z.string().optional()
-);
+export const trimmedOptionalString = z
+  .preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() ? value.trim() : undefined,
+    z.string().optional()
+  )
+  .meta({ type: "string" });
 
-export const maxResultsSchema = z.preprocess((value) => {
-  if (value === undefined) {
-    return DEFAULT_MAX_RESULTS;
-  }
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return DEFAULT_MAX_RESULTS;
-  }
-  const normalized = Math.floor(value);
-  if (normalized <= 0) {
-    return DEFAULT_MAX_RESULTS;
-  }
-  return Math.min(normalized, MAX_RESULTS_LIMIT);
-}, z.number().int().positive().max(MAX_RESULTS_LIMIT));
+export const maxResultsSchema = z
+  .preprocess((value) => {
+    if (value === undefined) {
+      return DEFAULT_MAX_RESULTS;
+    }
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      return DEFAULT_MAX_RESULTS;
+    }
+    const normalized = Math.floor(value);
+    if (normalized <= 0) {
+      return DEFAULT_MAX_RESULTS;
+    }
+    return Math.min(normalized, MAX_RESULTS_LIMIT);
+  }, z.number().int().positive().max(MAX_RESULTS_LIMIT))
+  .meta({
+    default: DEFAULT_MAX_RESULTS,
+    maximum: MAX_RESULTS_LIMIT,
+    minimum: 1,
+    type: "integer",
+  });
 
-export const optionalRegexFlag = z.preprocess(
-  (value) => (typeof value === "boolean" ? value : undefined),
-  z.boolean().optional().default(true)
-);
+export const optionalRegexFlag = z
+  .preprocess(
+    (value) => (typeof value === "boolean" ? value : undefined),
+    z.boolean().optional().default(true)
+  )
+  .meta({ default: true, type: "boolean" });
 
-export const readFileOffsetSchema = z.preprocess((value) => {
-  if (value === undefined) {
-    return 1;
-  }
-  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
-    return 1;
-  }
-  return value;
-}, z.number().int().positive());
+export const readFileOffsetSchema = z
+  .preprocess((value) => {
+    if (value === undefined) {
+      return 1;
+    }
+    if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
+      return 1;
+    }
+    return value;
+  }, z.number().int().positive())
+  .meta({ default: 1, minimum: 1, type: "integer" });
 
-export const readFileLimitSchema = z.preprocess((value) => {
-  if (value === undefined) {
-    return;
-  }
-  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
-    return;
-  }
-  return value;
-}, z.number().int().positive().optional());
+export const readFileLimitSchema = z
+  .preprocess((value) => {
+    if (value === undefined) {
+      return;
+    }
+    if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
+      return;
+    }
+    return value;
+  }, z.number().int().positive().optional())
+  .meta({ minimum: 1, type: "integer" });

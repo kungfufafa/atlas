@@ -35,7 +35,7 @@
     "preview:docs": "bun run --cwd docs/website preview",
     "release-gate": "bun run scripts/release-gate/index.ts",
     "start": "bun run apps/server/dist/index.js",
-    "test": "bun test apps packages scripts/e2e-critical-paths.test.ts scripts/release-gate scripts/pm2-deploy.test.ts scripts/verify-docker-startup.test.ts",
+    "test": "bun test apps packages scripts/e2e-critical-paths.test.ts scripts/release-gate scripts/pm2-deploy.test.ts scripts/verify-docker-startup.test.ts scripts/verify-docker-health.test.ts",
     "test:heavy": "bun test apps/server/src/services/browser-session-service.test.ts packages/core/src/artifact-preview/office-worker.test.ts",
     "test:smoke": "bun test scripts/channel-loop-harness/channel-loop-harness.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",

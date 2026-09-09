@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-07T00:17:54.444800+00:00",
+  "name": "final-typecheck",
+  "command": [
+    "bun",
+    "x",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "-p",
+    "tsconfig.producer.json"
+  ],
+  "exitCode": 0,
+  "log": "final-typecheck.log"
+}

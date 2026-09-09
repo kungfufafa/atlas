@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-06T22:55:07.139251+00:00",
+  "inspectionOnlyIssues": [
+    {
+      "operation": "Initial whole-JSON inspection of source manifests",
+      "outcome": "Tool display was truncated; source files were not changed. Replaced with bounded structured inspections and complete hash verification."
+    },
+    {
+      "operation": "Combined subsequent source/log/review inspection",
+      "outcome": "Tool display was truncated; count summaries were visible, and each authoritative source is subsequently bound and checked by the finalization script."
+    }
+  ],
+  "testOrPilotReruns": 0,
+  "paidCalls": 0,
+  "rootSourceEdits": false
+}

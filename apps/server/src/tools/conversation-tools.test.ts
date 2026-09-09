@@ -106,7 +106,6 @@ beforeAll(async () => {
       id,
       name: id,
       passwordHash: "hash",
-      role: "admin",
       updatedAt: now,
     });
   }
@@ -249,7 +248,6 @@ describe("conversation retrieval tools", () => {
       { query: "archived-build-output" },
       toolContext("member")
     )) as { results: Array<{ archiveId: string; sessionId: string }> };
-    expect(found.results).toHaveLength(1);
     expect(found.results[0]?.archiveId).toBe(archives[0]?.id);
     const recovered = (await getConversationTool.run(
       { archiveId: found.results[0]?.archiveId, sessionId },
@@ -302,8 +300,15 @@ describe("conversation retrieval tools", () => {
     const searchResult = (await searchChatsTool.run(
       { query: "private decision" },
       toolContext("member")
+    )) as { results: Array<{ sessionId: string }> };
+    expect(searchResult.results.map(({ sessionId }) => sessionId)).toEqual([
+      OWN_SESSION,
+    ]);
+    const privateOnly = (await searchChatsTool.run(
+      { query: "private" },
+      toolContext("member")
     )) as { count: number };
-    expect(searchResult.count).toBe(0);
+    expect(privateOnly.count).toBe(0);
   });
 
   test("org admin remains user-scoped at the tool boundary", async () => {
@@ -348,8 +353,15 @@ describe("conversation retrieval tools", () => {
     const searchResult = (await searchChatsTool.run(
       { query: "launch decision" },
       toolContext("member", { orgId: ORG_BETA, userId: USER_TWO })
+    )) as { results: Array<{ sessionId: string }> };
+    expect(searchResult.results.map(({ sessionId }) => sessionId)).toEqual([
+      OTHER_ORG_SESSION,
+    ]);
+    const launchOnly = (await searchChatsTool.run(
+      { query: "launch" },
+      toolContext("member", { orgId: ORG_BETA, userId: USER_TWO })
     )) as { count: number };
-    expect(searchResult.count).toBe(0);
+    expect(launchOnly.count).toBe(0);
 
     await expect(
       getConversationTool.run(

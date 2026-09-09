@@ -14,13 +14,16 @@ import {
   permissiveObjectSchema,
 } from "@atlas/core";
 import type { StoredToolRecord } from "@atlas/db";
-import { spawnJsonTool } from "./custom-tool-subprocess";
+import {
+  type CustomToolAdmission,
+  type CustomToolRuntimeAdmissionPolicy,
+  createJsonToolSpawner,
+} from "./custom-tool-subprocess";
 
 const BUN_BIN = process.env.ATLAS_BUN_BIN ?? "bun";
 const RUNNER_PATH = fileURLToPath(
   new URL("./javascript-tool-runner.js", import.meta.url)
 );
-const moduleMetadataCache = new Map<string, JavascriptToolMetadata>();
 
 const JAVASCRIPT_TOOL_RETRY_POLICY: RetryPolicy = {
   backoffFactor: 2,
@@ -52,8 +55,48 @@ interface CanonicalJavascriptModule {
   moduleReadRoot?: string;
 }
 
-export async function loadJavascriptTool(
-  record: StoredToolRecord
+export interface JavascriptToolLoaderOptions {
+  onAdmission?: (evidence: Readonly<CustomToolAdmission>) => void;
+  requireSandbox?: boolean;
+  runtimeAdmission?: CustomToolRuntimeAdmissionPolicy;
+}
+interface JavascriptToolRuntime {
+  cache: Map<string, JavascriptToolMetadata>;
+  canonicalRootsRequired: boolean;
+  onAdmission?: JavascriptToolLoaderOptions["onAdmission"];
+  requireSandbox?: boolean;
+  spawn: ReturnType<typeof createJsonToolSpawner>;
+}
+/** Captured host policy and private metadata cache; no request config chooses admission. */
+export function createJavascriptToolLoader(
+  options: JavascriptToolLoaderOptions = {}
+) {
+  const runtime: JavascriptToolRuntime = {
+    cache: new Map(),
+    canonicalRootsRequired: options.runtimeAdmission !== undefined,
+    onAdmission: options.onAdmission,
+    requireSandbox: options.requireSandbox,
+    spawn: createJsonToolSpawner(options.runtimeAdmission),
+  };
+  return {
+    invalidateJavascriptModuleCache: (modulePath: string) =>
+      invalidateJavascriptModuleCacheWith(modulePath, runtime.cache),
+    loadJavascriptTool: (record: StoredToolRecord) =>
+      loadJavascriptToolWith({ ...record }, runtime),
+    validateJavascriptToolModule: (modulePath: string) =>
+      validateJavascriptToolModuleWith(modulePath, runtime),
+  };
+}
+const defaultLoader = createJavascriptToolLoader();
+export const loadJavascriptTool = defaultLoader.loadJavascriptTool;
+export const validateJavascriptToolModule =
+  defaultLoader.validateJavascriptToolModule;
+export const invalidateJavascriptModuleCache =
+  defaultLoader.invalidateJavascriptModuleCache;
+
+async function loadJavascriptToolWith(
+  record: StoredToolRecord,
+  runtime: JavascriptToolRuntime
 ): Promise<ToolDefinition | null> {
   const config = readJavascriptHandlerConfig(record.handlerConfig);
 
@@ -85,7 +128,8 @@ export async function loadJavascriptTool(
     // never execute top-level code in the Atlas server process.
     const metadata = await inspectJavascriptModule(
       modulePath,
-      canonicalModule.moduleReadRoot
+      canonicalModule.moduleReadRoot,
+      runtime
     );
     const parameters =
       metadata.parameters ?? config.parameters ?? permissiveObjectSchema();
@@ -103,7 +147,8 @@ export async function loadJavascriptTool(
           modulePath,
           canonicalModule.moduleReadRoot,
           input,
-          context
+          context,
+          runtime
         );
       },
     };
@@ -112,8 +157,9 @@ export async function loadJavascriptTool(
   }
 }
 
-export async function validateJavascriptToolModule(
-  modulePath: string
+async function validateJavascriptToolModuleWith(
+  modulePath: string,
+  runtime: JavascriptToolRuntime
 ): Promise<void> {
   const resolvedPath = resolveJavascriptModulePath(modulePath);
   if (!(await pathExists(resolvedPath))) {
@@ -121,10 +167,14 @@ export async function validateJavascriptToolModule(
   }
 
   const canonicalModule = await canonicalizeJavascriptModulePath(resolvedPath);
-  invalidateJavascriptModuleCache(canonicalModule.modulePath);
+  invalidateJavascriptModuleCacheWith(
+    canonicalModule.modulePath,
+    runtime.cache
+  );
   await inspectJavascriptModule(
     canonicalModule.modulePath,
-    canonicalModule.moduleReadRoot
+    canonicalModule.moduleReadRoot,
+    runtime
   );
 }
 
@@ -141,10 +191,13 @@ export function resolveJavascriptModulePath(modulePath: string): string {
   return resolved;
 }
 
-export function invalidateJavascriptModuleCache(modulePath: string): void {
-  moduleMetadataCache.delete(modulePath);
+function invalidateJavascriptModuleCacheWith(
+  modulePath: string,
+  cache: Map<string, JavascriptToolMetadata>
+): void {
+  cache.delete(modulePath);
   try {
-    moduleMetadataCache.delete(realpathSync(modulePath));
+    cache.delete(realpathSync(modulePath));
   } catch {
     // A deleted module cannot have a second canonical cache key.
   }
@@ -152,25 +205,29 @@ export function invalidateJavascriptModuleCache(modulePath: string): void {
 
 async function inspectJavascriptModule(
   modulePath: string,
-  moduleReadRoot?: string
+  moduleReadRoot: string | undefined,
+  runtime: JavascriptToolRuntime
 ): Promise<JavascriptToolMetadata> {
-  const cached = moduleMetadataCache.get(modulePath);
+  const cached = runtime.cache.get(modulePath);
   if (cached) {
     return cached;
   }
 
-  const inspected = await spawnJsonTool({
+  const inspected = await runtime.spawn({
     bin: BUN_BIN,
+    canonicalRootsRequired: runtime.canonicalRootsRequired,
     context: {},
     input: {},
     label: "JavaScript tool inspection",
     mode: "--inspect",
     modulePath,
     moduleReadRoot,
+    onAdmission: runtime.onAdmission,
+    requireSandbox: runtime.requireSandbox,
     runnerPath: RUNNER_PATH,
   });
   const metadata = normalizeJavascriptToolMetadata(inspected);
-  moduleMetadataCache.set(modulePath, metadata);
+  runtime.cache.set(modulePath, metadata);
   return metadata;
 }
 
@@ -178,16 +235,20 @@ async function runJavascriptTool(
   modulePath: string,
   moduleReadRoot: string | undefined,
   input: unknown,
-  context: ToolContext
+  context: ToolContext,
+  runtime: JavascriptToolRuntime
 ): Promise<unknown> {
-  return spawnJsonTool({
+  return runtime.spawn({
     bin: BUN_BIN,
+    canonicalRootsRequired: runtime.canonicalRootsRequired,
     context,
     input,
     label: "JavaScript tool",
     mode: "--run",
     modulePath,
     moduleReadRoot,
+    onAdmission: runtime.onAdmission,
+    requireSandbox: runtime.requireSandbox,
     runnerPath: RUNNER_PATH,
     workspaceRoot: readOptionalString(context.workspaceRoot),
   });

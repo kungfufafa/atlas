@@ -23,6 +23,40 @@ With Discord enabled, users can:
 
 Discord accepts the same work files as the web app: text, photos, voice notes, and documents (`pdf`, `docx`, `xls`, `xlsx`, `csv`, `txt`, `md`). Voice notes are transcribed, then handled like text. When the agent saves an artifact, Atlas attaches the file in the chat (when it fits Discord’s size limit) and posts a share link.
 
+## Send a work file
+
+Use Discord's **Upload a File** option to attach the original and describe the job in the message, for example “Check this workbook and return a corrected version.” A pasted preview is not an attachment.
+
+Supported work files include `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.csv`, `.pdf`, `.docx`, `.txt`, `.md`, and `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif` images. Documents can be up to **25 MB** and images up to **5 MB**; your Discord upload limit may be lower. Voice messages and audio files up to **25 MB** are saved before their existing transcription flow.
+
+Atlas saves originals in the replying profile's **Artifacts**, uses the matching tool, and saves the requested result there. Images reach the model as real bytes. Legacy Excel workbooks are read or converted to a new `.xlsx` for editing; macros are not executed or carried into the result. Self-hosted XLS/XLSB conversion requires LibreOffice, which is included in the Atlas container. Authorized senders do not need a separate account pairing to save work files. Blocked senders and read-only viewers cannot submit file jobs, and **Channel controls** still enforce sender, room, and tool restrictions.
+
+In a server channel, an authorized attachment can start a file job without a mention. Atlas opens a conversation thread or continues in the existing thread; follow up there to keep the job together. An explicit mention restriction still applies and produces a clear rejection. Failed downloads, failed saves, and unsupported types stop the turn instead of producing a guessed answer.
+
+Finished spreadsheets, Word documents, slide decks, summaries, and images use the existing artifact delivery flow. Use `/attach` in the same conversation to retrieve the latest result.
+
+## Channel controls
+
+Workspace administrators can open **Integrations → Discord → Channel controls** to manage **Channel enabled**, **Approval buttons**, and **Native actions**. The replying profile needs the `channel_action` tool for native actions. Enable only the actions it should use, then choose **Save controls**.
+
+Discord actions include reactions, polls, editing or deleting its own session messages, pins, forum posts, threads, and saved media delivery. The bot also needs the matching Discord permissions. Actions stay in the current authorized conversation.
+
+Use **Direct messages**, **Groups**, **Room rules**, and **Sender rules** to restrict senders, workspace roles, tools, and actions. Room rules accept a channel ID, thread ID, or `*`. These rules apply together with **Access mode** and workspace permissions; a denial takes precedence. **Inherit** uses broader or default settings. Empty specified allowed lists permit no entries.
+
+The agent uses buttons or selection menus for single choices; for multiple-choice questions, select all applicable options in the menu and Atlas submits that set together, or choose **Write an answer** for a custom response. Approval cards offer approve and deny buttons. Only the original authorized sender can use a card in its bound conversation; replaced, expired, or already submitted controls cannot be reused.
+
+### Voice messages and voice channels
+
+Saved audio and video can be attached natively, including Discord voice messages where supported. To generate speech, use **Channel controls → Voice and speech → Configure speech synthesis** and select the exact **Speech provider instance**, **Speech model ID**, and **Speech voice ID**. The provider must support the OpenAI audio/speech API; subscription providers are unavailable for this transport.
+
+For a voice channel conversation:
+
+1. Configure **Audio transcription** in **Settings → Capability routing**, then configure speech synthesis above.
+2. Enable **Voice channel sessions**, add **Allowed voice room IDs**, and set the session and utterance limits. Choose **Save controls**.
+3. Give the bot permission to connect and speak, join an allowed voice channel, and run `/voice_join` from the bound Discord conversation. Use `/voice_leave` to disconnect.
+
+Atlas listens only to the authorized user who joined the session. Utterances are processed in bounded segments, up to 20 seconds each, and replies use the configured speech provider. Leaving the authorized room, losing access, or reaching the session limit ends the voice session. Other participants are not included in that user's recording.
+
 ## Step 1: Create the bot in Discord
 
 In the [Discord Developer Portal](https://discord.com/developers/applications), create an application, then configure it on two separate pages:
@@ -75,6 +109,8 @@ Pairing links your Discord user to Atlas so unlinked users cannot use the bot.
 
 After a successful match, that user is linked and the code is cleared. Server channels require DM pairing first.
 
+Your workspace role still applies after pairing. Removing a member or changing their role stops their active turns and pending approvals in that workspace. In denylist mode, a blocked user cannot use a valid chat access code until an administrator removes the block.
+
 ## Step 4: Start the Discord bridge
 
 On **Integrations → Discord**, use the **Bridge worker** controls to start the worker.
@@ -115,13 +151,16 @@ If an unlinked user opens the bot, Atlas asks for the chat access code instead o
 
 Atlas supports Discord servers, but it is intentionally conservative about when it replies.
 
-In a server channel, the bot responds only when the message is:
+By default, in a server channel, the bot responds when the message is:
 
 - a slash command from Discord's command menu
 - a reply to one of the bot's messages
 - a direct `@mention` of the bot, or of a Discord role the bot holds
+- an authorized file attachment, unless a channel rule requires a mention
 
 This keeps server channels usable without making the bot noisy.
+
+An administrator can permit unaddressed messages through **Channel controls → Groups → Require mention or reply → Disabled**. Sender, room, role, and tool restrictions still apply.
 
 ### Threads and profiles
 
@@ -136,7 +175,7 @@ In Discord threads, each thread keeps its own Atlas session.
 - `/org` stays channel-level, so switch org first if a thread needs a profile from another org
 - `/close` inside a bot-started thread archives that thread only; other open bot threads stay usable
 - `/new` starts a fresh Atlas conversation in the current Discord thread (it does not open a new Discord thread)
-- threads the bot did not start stay quiet until you `@mention` the bot (or reply to it); that claims the thread so follow-ups work without another mention
+- an authorized attachment, `@mention`, or reply can claim a thread the bot did not start; follow-ups then work without another mention
 
 Replies in server channels are visible to everyone in that channel. Atlas prefixes those messages so the agent knows the reply is public.
 
@@ -155,7 +194,9 @@ Session control, artifact delivery, and allowlist administration use Discord sla
 | `/close` | Slash | Close (archive) this bot conversation thread |
 | `/status` | Slash | Show server and model status |
 | `/attach` | Slash | Send the latest saved artifact |
-| `/allow user` | Slash | Add a Discord user to the allowed list (paired bot owner only) |
+| `/voice_join` | Slash | Start an authorized voice session in your allowed voice channel |
+| `/voice_leave` | Slash | Disconnect your voice session |
+| `/allow user` | Slash | Add a Discord user to the allowed list (paired workspace admin or platform admin only) |
 | `/org` | Text | Choose or switch organization |
 | `/profile` | Text | Choose or switch profile |
 
@@ -169,7 +210,7 @@ Discord has a 2000-character limit per message. Atlas automatically chunks longe
 
 ## Saved artifacts and share links
 
-When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas attaches that file in Discord when it is within Discord’s size limit, then posts a **Publish-style share link**.
+When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas attaches that file in Discord when it is within Atlas’s **8 MB** Discord delivery limit, then posts a **Publish-style share link**.
 
 - The link uses the same unguessable `/s/{token}` URLs as dashboard Publish — no Atlas login required to open it.
 - Anyone who can read the Discord message can open the link until the share is revoked from the web app.

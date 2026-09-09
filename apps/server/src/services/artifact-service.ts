@@ -14,6 +14,10 @@ import {
   type ToolArtifact,
 } from "@atlas/core";
 import {
+  stageToolArtifact,
+  type ToolArtifactPublisher,
+} from "@atlas/core/artifact-publication";
+import {
   type Artifact,
   type ArtifactType,
   inferArtifactType,
@@ -78,11 +82,13 @@ export class ArtifactService {
     filename: string,
     content: Buffer | string,
     options: {
+      artifactPublisher?: ToolArtifactPublisher;
       metadata?: Record<string, unknown>;
       mimeType?: string;
       sessionId?: string;
     } = {}
   ): Promise<ToolArtifact> {
+    const bytes = Buffer.from(content);
     const soulDir = getProfileSoulDir(orgId, profileId);
     const artifactsDir = path.join(soulDir, "artifacts");
     await mkdir(artifactsDir, { recursive: true });
@@ -94,13 +100,11 @@ export class ArtifactService {
       cwd: soulDir,
     });
 
-    if (typeof content === "string") {
-      await writeFile(guarded.resolved, content, "utf8");
-    } else {
-      await writeFile(guarded.resolved, content);
-    }
-
-    const fileStat = await stat(guarded.resolved);
+    await writeFile(guarded.resolved, bytes);
+    await stageToolArtifact(options.artifactPublisher, {
+      bytes,
+      sourcePath: `artifacts/${safeFilename}`,
+    });
     const mimeType = options.mimeType ?? detectArtifactMimeType(safeFilename);
     const id = nanoid(12);
 
@@ -109,9 +113,11 @@ export class ArtifactService {
       filename: safeFilename,
       id,
       mimeType,
-      path: path.relative(soulDir, guarded.resolved),
+      // guardFilePath resolves symlinked configuration roots. The public path
+      // remains relative to the logical profile, never between lexical/real roots.
+      path: `artifacts/${safeFilename}`,
       sessionId: options.sessionId,
-      sizeBytes: fileStat.size,
+      sizeBytes: bytes.length,
     };
   }
 
@@ -121,6 +127,7 @@ export class ArtifactService {
     filename: string,
     content: Buffer | string,
     options: {
+      artifactPublisher?: ToolArtifactPublisher;
       metadata?: Record<string, unknown>;
       mimeType?: string;
       sessionId?: string;

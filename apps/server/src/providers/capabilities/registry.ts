@@ -28,6 +28,8 @@ export type ProviderCapabilityExecutor = (
 
 export interface ProviderCapabilityExecutionContext {
   apiKey: string;
+  /** Explicit credential/endpoint environment; an empty object disables host fallback. */
+  env?: Record<string, string | undefined>;
   instance: ProviderInstance;
   model: string;
 }

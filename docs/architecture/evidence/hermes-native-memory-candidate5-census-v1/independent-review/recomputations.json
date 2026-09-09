@@ -1,0 +1,13 @@
+{
+  "fiveCedarCounts": [35, 32, 52, 56, 83],
+  "fiveCedarTotal": 258,
+  "misappliedMinimumSum": 280,
+  "tenCedarCounts": [35, 32, 52, 56, 83, 75, 39, 76, 79, 73],
+  "tenCedarTotal": 600,
+  "tenCedarPlusRequirement": 622,
+  "actualCobaltInventory": "unknown; a readiness minimum is not an actual current stock count",
+  "railSavings": 36,
+  "calendarDaysFromSep6ToOct27NextYear": 416,
+  "calendarDaysFromSep7LocalToOct27NextYear": 415,
+  "oneWeekBeforeInspection": "2027-04-20"
+}

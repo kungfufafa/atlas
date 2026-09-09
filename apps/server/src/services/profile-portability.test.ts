@@ -6,6 +6,7 @@ import {
   getCustomToolsDir,
   getProfileSoulDir,
   initSoulDirectory,
+  type JsonSchema,
   type ProfilePackManifest,
   pathExists,
 } from "@atlas/core";
@@ -112,7 +113,7 @@ async function seedPortableProfile(
     id: "toolkit_source",
     lastError: null,
     orgId: "org_source",
-    status: "connected",
+    status: "enabled",
     toolkitSlug: "github",
     updatedAt: NOW,
   });
@@ -501,12 +502,12 @@ describe("profile pack portability", () => {
     const toolsDir = getCustomToolsDir();
     await mkdir(toolsDir, { recursive: true });
     const source = "export async function run(input) { return input; }\n";
-    const packedParameters = {
+    const packedParameters: JsonSchema = {
       additionalProperties: false,
       properties: { message: { type: "string" } },
       required: ["message"],
       type: "object",
-    } as const;
+    };
     for (const tool of [
       {
         description: "Schema tool",

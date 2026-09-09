@@ -1,0 +1,13 @@
+{
+  "at": "2026-09-07T10:12:01.498535+00:00",
+  "source": "/private/tmp/atlas-file-v3-c9-confirmation-raw-archive",
+  "copiedFiles": {
+    "archive-receipt.json": "bc9f1acb9d414325373977235c560d01ca89aa21cb589ecefc6a34f740ca66ba",
+    "identity-scope-qualification.json": "b7fa522c9373189537a7ad0c34571f77089240ab849cbea86c28c3b3d5242aa0",
+    "close-receipt.json": "c90489de4bef3b43b172ac43b0c19fea4c6de04e85c87316e071ed7fc35c5b6f"
+  },
+  "copyBytesModesAndCensusVerified": true,
+  "rawArchiveManifest": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-confirmation-raw/archive-manifest.json",
+  "rawArchiveManifestSha256": "3e40586bea2272b083857105a8a19d54a852117484c9277fc515490de3d51eed",
+  "scope": "Exact closed receipts and additive identity-scope qualification. No primary scoring, native identity certification, source changes, tests or provider requests."
+}

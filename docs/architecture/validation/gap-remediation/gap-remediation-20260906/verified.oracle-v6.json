@@ -1,0 +1,872 @@
+[
+  {
+    "id": "D01",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.docx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["word/document.xml"]
+      },
+      {
+        "check": "edited part retains non-text XML structure: word/document.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "multilingual replacement",
+        "ok": true,
+        "detail": "Résumé validé — 東京 مرحبا"
+      },
+      {
+        "check": "run styles retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "image retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 347
+  },
+  {
+    "id": "D02",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.docx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["word/document.xml"]
+      },
+      {
+        "check": "edited part retains non-text XML structure: word/document.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "inner cell changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "outer cells retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 207
+  },
+  {
+    "id": "D03",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.docx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["word/document.xml"]
+      },
+      {
+        "check": "tracked insertion changed coherently",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "original reviewer identities retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "new revision ids unique",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "new insert and deletion attributed and dated",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "rejecting only Atlas revisions restores original document",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "accepting Atlas revisions yields requested visible text",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 137
+  },
+  {
+    "id": "D04",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.docx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["word/header2.xml"]
+      },
+      {
+        "check": "edited part retains non-text XML structure: word/header2.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "second header changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "first header retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 371
+  },
+  {
+    "id": "P01",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pptx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["ppt/slides/slide1.xml"]
+      },
+      {
+        "check": "edited part retains non-text XML structure: ppt/slides/slide1.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "caption changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "chart series retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 43
+  },
+  {
+    "id": "P02",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pptx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["ppt/slides/slide1.xml"]
+      },
+      {
+        "check": "edited part retains non-text XML structure: ppt/slides/slide1.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "group member changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "other member retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "group and shape bounds retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 37
+  },
+  {
+    "id": "P03",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pptx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["ppt/slides/slide1.xml"]
+      },
+      {
+        "check": "edited part retains non-text XML structure: ppt/slides/slide1.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "merged content changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "merge retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 36
+  },
+  {
+    "id": "P04",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pptx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["ppt/slides/slide1.xml"]
+      },
+      {
+        "check": "edited part retains non-text XML structure: ppt/slides/slide1.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "multilingual text changed",
+        "ok": true,
+        "detail": ["تمت المراجعة — 東京 café"]
+      },
+      {
+        "check": "RTL metadata retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 36
+  },
+  {
+    "id": "X01",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.xlsx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "input changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "ID remains text",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "date and formats retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "hidden sheet retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "comment retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "validation retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "hyperlink and freeze panes retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 80
+  },
+  {
+    "id": "X02",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.xlsx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "cross-sheet calculated values",
+        "ok": true,
+        "detail": "[19, 'Review', datetime.datetime(2026, 9, 6, 0, 0)]"
+      },
+      {
+        "check": "formulas retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 1175
+  },
+  {
+    "id": "X03",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.xlsx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "chart and source edit",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "chart workbook package parts retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "chart series and formatting retained: xl/charts/chart1.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: docProps/app.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: docProps/core.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: xl/theme/theme1.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: xl/drawings/drawing1.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: xl/drawings/_rels/drawing1.xml.rels",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: xl/worksheets/_rels/sheet1.xml.rels",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: xl/styles.xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: _rels/.rels",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: xl/_rels/workbook.xml.rels",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unrelated chart-workbook part retained: [Content_Types].xml",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "other chart-source cells retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 21
+  },
+  {
+    "id": "X04",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.xlsx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "table retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "totals definition retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "table range and style retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "unchanged identifiers and input retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "conditional format retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "structured formula total",
+        "ok": true,
+        "detail": 17
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 651
+  },
+  {
+    "id": "C01",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.csv",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "parsed records preserved",
+        "ok": true,
+        "detail": [
+          ["ID", "Long ID", "Description", "Code"],
+          [
+            "00012",
+            "12345678901234567890",
+            "café; 東京\nsecond line",
+            "=SUM(A1:A2)"
+          ],
+          ["00013", "00000000000000000009", "He said \"ready\"", "-0042"]
+        ]
+      },
+      {
+        "check": "IDs and expressions remain strings",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 24
+  },
+  {
+    "id": "C02",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.csv",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "locale decimal conversion",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "identifiers remain text",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 6
+  },
+  {
+    "id": "C03",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.csv",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "parsed records preserved",
+        "ok": true,
+        "detail": [
+          ["ID", "Description", "Expression", "Trailing"],
+          ["001", "a\tb\nnext", "@SUM(A1)", ""],
+          ["002", "\"quoted\"", "+0012", ""]
+        ]
+      },
+      {
+        "check": "IDs and expressions remain strings",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 19
+  },
+  {
+    "id": "F01",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "selected page order",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "selected Unicode text",
+        "ok": true,
+        "detail": ["Page three café naïve", "Rotated beta table"]
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 514
+  },
+  {
+    "id": "F02",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "filled fields read as named values",
+        "ok": true,
+        "detail": {
+          "reviewer": "Maya Synthetic",
+          "status": "Approved"
+        }
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 313
+  },
+  {
+    "id": "F03",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: scan.png",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "scanned text read",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 973
+  },
+  {
+    "id": "F04",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: appendix.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: input.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "merged page count",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "outline retained",
+        "ok": true,
+        "detail": 2
+      },
+      {
+        "check": "attachment retained",
+        "ok": true,
+        "detail": ["supporting.txt"]
+      },
+      {
+        "check": "attachment bytes retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "internal destination remains in merged page tree",
+        "ok": true,
+        "detail": [1]
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 152
+  },
+  {
+    "id": "F05",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: covering.ttf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "multilingual PDF extracted text",
+        "ok": true,
+        "detail": "Révision approuvée — تمت المراجعة — 東京"
+      }
+    ],
+    "detail": {
+      "visualReview": "pending"
+    },
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 2967
+  },
+  {
+    "id": "W01",
+    "attempt": "gap-remediation-20260906",
+    "oracleRevision": "v6",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: appendix.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: records.csv",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: report.docx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: summary.pptx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "independent total",
+        "ok": true,
+        "detail": 18
+      },
+      {
+        "check": "DOCX total",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "PPTX total",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "PDF packet total and appendix",
+        "ok": true,
+        "detail": "Synthetic review · 2026\nOriginal footer\nSynthetic delivery report\nTotal units: 18\n\nIndependent appendix retained\n"
+      }
+    ],
+    "detail": {},
+    "execution": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/execution.json",
+    "durationMs": 2016
+  }
+]

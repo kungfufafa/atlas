@@ -1,0 +1,103 @@
+{
+  "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-06/20260906T170357Z-057d18e4465d",
+  "manifestSha256": "bfa842d7c59be59e9238f3e9a0193fa71153ea03fe9d0943249d2dc260d70609",
+  "copiedRegularFileBytes": 1212359502,
+  "inventoryEntries": 19523,
+  "missingSelectedReferences": 0,
+  "explicitExclusions": 229,
+  "sourceMemberCheckStatuses": {
+    "not_verified_archive_unavailable": 9,
+    "verified": 24
+  },
+  "sourceMemberChecksNotVerified": [
+    {
+      "declaredRegularMembers": 2054,
+      "expectedAdjacentArchive": "atlas-source.tar.gz",
+      "index": "evaluation/runs/development-2026-09-06T12-18-54-546Z-700c14/candidate-source.json",
+      "inventoryField": "files",
+      "status": "not_verified_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 2057,
+      "expectedAdjacentArchive": "atlas-source.tar.gz",
+      "index": "evaluation/runs/development-2026-09-06T12-59-29-080Z-f1ae48/candidate-source.json",
+      "inventoryField": "files",
+      "status": "not_verified_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 2054,
+      "expectedAdjacentArchive": "atlas-source.tar.gz",
+      "index": "evaluation/runs/pilot-2026-09-06T12-10-25-466Z-974aa5/candidate-source.json",
+      "inventoryField": "files",
+      "status": "not_verified_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 17,
+      "expectedAdjacentArchive": "control-source.tar.gz",
+      "index": "evaluation/frozen-v1/manifest.json",
+      "inventoryField": "harnessHashes",
+      "status": "not_verified_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 7481,
+      "expectedAdjacentArchive": "hermes-source.tar.gz",
+      "index": "evaluation/frozen-v1/manifest.json",
+      "inventoryField": "hermesHashes",
+      "status": "not_verified_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 18,
+      "expectedAdjacentArchive": "control-source.tar.gz",
+      "index": "evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/candidate-source.json",
+      "inventoryField": "controlHashes",
+      "status": "not_verified_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 18,
+      "expectedAdjacentArchive": "control-source.tar.gz",
+      "index": "evaluation/memory-study-v1/batches/pilot-2026-09-06T14-17-12-326Z-447c2294/candidate-source.json",
+      "inventoryField": "controlHashes",
+      "status": "not_verified_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 18,
+      "expectedAdjacentArchive": "control-source.tar.gz",
+      "index": "evaluation/memory-study-v1/frozen/manifest.json",
+      "inventoryField": "controlHashes",
+      "status": "not_verified_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 21,
+      "expectedAdjacentArchive": "control-source.tar.gz",
+      "index": "evaluation/native-file-study-v1/frozen/manifest.json",
+      "inventoryField": "controlHashes",
+      "status": "not_verified_archive_unavailable"
+    }
+  ],
+  "knownCredentialScan": {
+    "aggregateScannedBytes": 3761679897,
+    "clean": true,
+    "complete": true,
+    "credentialInputCount": 1,
+    "finiteEncodings": [
+      "exact trimmed UTF8",
+      "JSON escaped",
+      "URL percent encoded",
+      "base64",
+      "URL-safe base64"
+    ],
+    "maxAggregateBytes": 21474836480,
+    "maxContainerDepth": 5,
+    "maxDecodedMemberBytes": 536870912,
+    "notAProofForUnknownSecretsOrArbitraryEncodings": true,
+    "streams": 132405
+  },
+  "originalsRetained": true,
+  "scoresRecomputed": false,
+  "limits": [
+    "Zero missing selected references does not mean every legacy inventory has an adjacent archived code bundle; unavailable legacy bindings remain explicitly unverified.",
+    "Known-value scan covers its finite encodings/recognized containers only; not proof against unknown secrets or arbitrary encodings.",
+    "Promotion provides atomic visibility, not a power-loss fsync durability guarantee.",
+    "This local archive is gitignored; no upload or commit occurred."
+  ]
+}

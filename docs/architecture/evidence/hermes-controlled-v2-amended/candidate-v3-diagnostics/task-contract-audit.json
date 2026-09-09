@@ -1,0 +1,852 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-06T16:58:24.458780+00:00",
+  "scope": "Outcome-blind task-text versus frozen strict oracle contract audit; all 36 development tasks and 45 turns.",
+  "focusRequestProvenance": {
+    "requestedBy": "parent /root after initial outcome-blind audit",
+    "request": "Explicitly enumerate specified type/normalization for every field, especially revision numeric ordinal vs string or fetched document ID, and capitalized vendor names title case vs all caps. This is not an outcome inquiry or request to excuse observed failures.",
+    "outcomesInspected": false
+  },
+  "provenance": {
+    "batch": "/private/tmp/atlas-hermes-evaluation/controlled-v2-amended/batches/development-2026-09-06T16-19-34-043Z-3cfbd0d9",
+    "evaluatorTasksSha256": "c9eee65af1f4d8d16d616f5aa196576ce5a69b2801129a7fa7396786926cc0a6",
+    "matchesFrozenDevelopmentBytes": true,
+    "sourceHashes": {
+      "scripts/harness-compare/tasks.ts": {
+        "sha256": "d51eee429ac0c1f8a742cc4452cf84c42a1a74642fb9fbdfb14aebe3d4f7b827",
+        "archivedMatchesCurrent": true
+      },
+      "scripts/harness-compare/oracles.ts": {
+        "sha256": "014e0bb69e9a250774cc58dc40941f2e61791235d7cf67c57a7c3af6cb6021e0",
+        "archivedMatchesCurrent": true
+      },
+      "scripts/harness-controlled-v2-amended/tasks.ts": {
+        "sha256": "8ef9fa1a5db1b747bcae9beb2e3e8f0d1f20ecabe5e257745a48286a5fa4dd12",
+        "archivedMatchesCurrent": true
+      },
+      "scripts/harness-controlled-v2-amended/oracles.ts": {
+        "sha256": "837fea8235fabe2e72d07aa5c472e240067195d6bb27dc7f52ff533595f39a46",
+        "archivedMatchesCurrent": true
+      }
+    },
+    "taskCount": 36,
+    "turnCount": 45,
+    "familyCounts": {
+      "invoice_reconciliation": 3,
+      "inventory_allocation": 3,
+      "customer_order_join": 3,
+      "configuration_migration": 3,
+      "missing_evidence": 3,
+      "invalid_path_recovery": 3,
+      "paged_ledger": 3,
+      "linked_workflow": 3,
+      "explicit_correction": 3,
+      "portable_memory_application": 3,
+      "source_latest_policy": 3,
+      "source_grounded_comparison": 3
+    },
+    "individualOutcomesObservationsOrWireRead": false,
+    "confirmatoryTaskContentsRead": false,
+    "noControlsChanged": true
+  },
+  "conclusions": [
+    "No hard contradictory final/artifact output contract found in any of the 36 tasks.",
+    "Exact field sets, separate file/final contracts, literal statuses, preservation rules and meaningful array sorting are generally explicit; routine JSON numeric/string types are sometimes source-inherited or conventional rather than formal schema annotations.",
+    "Recovery source path normalization and source-policy revision/date or source-comparison label/case domains are not completely specified at the literal level enforced by the oracle. These are scoped representation caveats, not evidence about any actual outcome.",
+    "Capitalized vendor names most naturally means the displayed title-case names, not all caps. It still is not a formal exact-key enum, and recommended/list labels have weaker direct casing instruction.",
+    "Object key order, JSON whitespace and numeric lexical variants such as 2 versus 2.0 are accepted; meaningful list orders are stated. Strictness should not be characterized as byte-for-byte JSON formatting.",
+    "The falseCompletion metric includes strict artifact mismatch, even extra correct fields or representation mismatch. It must not be described as a fabricated-facts or hallucination rate without separate evidence.",
+    "No recommendation to drop, change, rescore or retrospectively loosen any task follows from this audit. Preserve fixed scores and qualify their scope."
+  ],
+  "sharedContract": {
+    "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-controlled-v2-amended/tasks.ts:38",
+    "summary": "Exactly named artifact fields unless retaining source fields is requested; exactly final fields; final raw JSON object or one sole JSON fence, no surrounding prose. Every final fact required even if artifact repeats it. Preserve source files and add only requested outputs.",
+    "oracleSource": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/oracles.ts:35",
+    "oracle": "Recursive exact JSON values; sorted object keys, array order retained; scalar strings/numbers/booleans exact. final_facts_correct ignores object extras and list order but still requires exact scalar representations. V2 adds strict final envelope."
+  },
+  "families": [
+    {
+      "family": "invoice_reconciliation",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:invoice_reconciliation:351806427",
+        "atlas-hermes-controlled-v2:development:invoice_reconciliation:1332426668",
+        "atlas-hermes-controlled-v2:development:invoice_reconciliation:1174184127"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "clear ordinary contract",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "netCents",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "explicit integer cents",
+          "normalization": "Signed settled sales minus refunds; void excluded."
+        },
+        {
+          "scope": "artifact",
+          "field": "totals",
+          "oracleType": "object/map",
+          "typeBasis": "explicit maps each vendor",
+          "normalization": "Exactly the three supplied vendor keys; object key order ignored."
+        },
+        {
+          "scope": "artifact",
+          "field": "totals.<vendor>",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "explicit signed net cents",
+          "normalization": "Vendor spelling/case inherited from CSV Birch/Cedar/Maple; no alternate case normalization."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        },
+        {
+          "scope": "final",
+          "field": "settledCount",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "explicit number of rows",
+          "normalization": "Includes settled refunds; count, not array or string."
+        }
+      ],
+      "validSeemingRejectedExamples": [],
+      "notes": "No artifact status or settledCount is requested. Adding either conflicts with the shared exact-field rule, even if numerically correct.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:70",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "inventory_allocation",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:inventory_allocation:3369704853",
+        "atlas-hermes-controlled-v2:development:inventory_allocation:2705650855",
+        "atlas-hermes-controlled-v2:development:inventory_allocation:591675835"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "clear ordinary contract",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact",
+          "field": "$",
+          "oracleType": "array",
+          "typeBasis": "explicit array sorted by sku",
+          "normalization": "Ascending supplied SKU strings; exact row set."
+        },
+        {
+          "scope": "artifact",
+          "field": "[].sku",
+          "oracleType": "string",
+          "typeBasis": "source JSON string identifier",
+          "normalization": "Retain exact supplied SKU spelling/case."
+        },
+        {
+          "scope": "artifact",
+          "field": "[].available",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "formula applied to source JSON numbers; units explicit",
+          "normalization": "cartons*packSize+loose-reserved."
+        },
+        {
+          "scope": "artifact",
+          "field": "[].allocated",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "formula/source numeric types; ordinary quantity type",
+          "normalization": "min(available,demand)."
+        },
+        {
+          "scope": "artifact",
+          "field": "[].shortage",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "unmet demand and source numeric types",
+          "normalization": "max(0,demand-available)."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        },
+        {
+          "scope": "final",
+          "field": "totalAllocated",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "ordinary count/quantity sum",
+          "normalization": "Sum allocated individual units, not cartons."
+        },
+        {
+          "scope": "final",
+          "field": "shortageSkus",
+          "oracleType": "array of strings",
+          "typeBasis": "sorted plural identifier list; source strings",
+          "normalization": "Ascending supplied SKU strings; every positive shortage."
+        }
+      ],
+      "validSeemingRejectedExamples": [],
+      "notes": "Array order is expressly requested. Numeric string equivalents are not the strongest ordinary JSON quantity representation.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:111",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "customer_order_join",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:customer_order_join:164461544",
+        "atlas-hermes-controlled-v2:development:customer_order_join:2466693481",
+        "atlas-hermes-controlled-v2:development:customer_order_join:2738004762"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "clear explicit preservation contract",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact",
+          "field": "$",
+          "oracleType": "array",
+          "typeBasis": "orders source array + sorted output",
+          "normalization": "Ascending orderId, preserve every order."
+        },
+        {
+          "scope": "artifact",
+          "field": "[].customerId",
+          "oracleType": "string",
+          "typeBasis": "explicit IDs are strings and leading zeroes matter",
+          "normalization": "Exact original identifier."
+        },
+        {
+          "scope": "artifact",
+          "field": "[].orderId",
+          "oracleType": "string",
+          "typeBasis": "retain every order field exactly in context",
+          "normalization": "Exact source value; sorting by this field."
+        },
+        {
+          "scope": "artifact",
+          "field": "[].totalCents",
+          "oracleType": "number",
+          "typeBasis": "retain source JSON field",
+          "normalization": "No rescaling/string conversion."
+        },
+        {
+          "scope": "artifact",
+          "field": "[].customerName",
+          "oracleType": "string or null",
+          "typeBasis": "explicit null for unmatched; source string name for matches",
+          "normalization": "Exact matched name; do not invent absent names."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        },
+        {
+          "scope": "final",
+          "field": "orderCount",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "ordinary row count",
+          "normalization": "All orders counted."
+        },
+        {
+          "scope": "final",
+          "field": "missingCustomerIds",
+          "oracleType": "array of strings",
+          "typeBasis": "explicit unique sorted strings",
+          "normalization": "Exact unmatched IDs once, ascending."
+        }
+      ],
+      "validSeemingRejectedExamples": [],
+      "notes": "Extra per-row columns are explicitly forbidden by adding only customerName.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:147",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "configuration_migration",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:configuration_migration:1235117594",
+        "atlas-hermes-controlled-v2:development:configuration_migration:152420741",
+        "atlas-hermes-controlled-v2:development:configuration_migration:3715978068"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "clear explicit preservation contract",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "version",
+          "oracleType": "number 2",
+          "typeBasis": "explicit set version=2; source version is numeric",
+          "normalization": "Exactly 2."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "enabled",
+          "oracleType": "boolean false",
+          "typeBasis": "source JSON boolean and explicit preserve false",
+          "normalization": "No truthy fallback or string conversion."
+        },
+        {
+          "scope": "artifact",
+          "field": "extensions",
+          "oracleType": "object",
+          "typeBasis": "explicit preserve unknown extension fields",
+          "normalization": "Retain exact key/value tree, key order irrelevant."
+        },
+        {
+          "scope": "artifact",
+          "field": "extensions.allowed",
+          "oracleType": "empty array",
+          "typeBasis": "source JSON and explicit preserve empty arrays",
+          "normalization": "Must remain []."
+        },
+        {
+          "scope": "artifact",
+          "field": "extensions.label",
+          "oracleType": "string",
+          "typeBasis": "source JSON and preserve every other value",
+          "normalization": "Exact original label."
+        },
+        {
+          "scope": "artifact",
+          "field": "extensions.nullable",
+          "oracleType": "null",
+          "typeBasis": "source JSON and explicit preserve null",
+          "normalization": "Must remain null."
+        },
+        {
+          "scope": "artifact",
+          "field": "threshold",
+          "oracleType": "string",
+          "typeBasis": "source JSON and explicit preserve numeric strings",
+          "normalization": "Exactly source 0.00 as string."
+        },
+        {
+          "scope": "artifact",
+          "field": "timeout_ms",
+          "oracleType": "number 0",
+          "typeBasis": "source JSON and explicit preserve zero",
+          "normalization": "Must remain numeric 0."
+        },
+        {
+          "scope": "artifact",
+          "field": "retry",
+          "oracleType": "object",
+          "typeBasis": "explicit move to retry.maxAttempts/retry.waitMs",
+          "normalization": "Only those two nested keys; remove retry_count/retry_delay_ms."
+        },
+        {
+          "scope": "artifact",
+          "field": "retry.maxAttempts",
+          "oracleType": "number",
+          "typeBasis": "move source retry_count",
+          "normalization": "Exact source numeric value."
+        },
+        {
+          "scope": "artifact",
+          "field": "retry.waitMs",
+          "oracleType": "number",
+          "typeBasis": "move source retry_delay_ms",
+          "normalization": "Exact source numeric value."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        },
+        {
+          "scope": "final",
+          "field": "maxAttempts",
+          "oracleType": "number",
+          "typeBasis": "same moved source value",
+          "normalization": "Flattened final field explicitly named."
+        },
+        {
+          "scope": "final",
+          "field": "waitMs",
+          "oracleType": "number",
+          "typeBasis": "same moved source value",
+          "normalization": "Flattened final field explicitly named."
+        }
+      ],
+      "validSeemingRejectedExamples": [],
+      "notes": "Preserve every other value excludes the expressly changed version and retry keys; this is not a contradiction.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:187",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "missing_evidence",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:missing_evidence:546662902",
+        "atlas-hermes-controlled-v2:development:missing_evidence:2537289397",
+        "atlas-hermes-controlled-v2:development:missing_evidence:4260275249"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "clear ordinary contract",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "status",
+          "oracleType": "string needs_input",
+          "typeBasis": "explicit quoted literal in validation schema",
+          "normalization": "Exactly needs_input; terminal harness completed is a separate lifecycle state."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "missingEmployeeIds",
+          "oracleType": "array of strings",
+          "typeBasis": "plural IDs convention; source employee IDs are strings; no literal array annotation",
+          "normalization": "All three development variants contain only EMP-17; no meaningful ordering ambiguity exists."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "knownSubtotalCents",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "cents source arithmetic; ordinary numeric subtotal",
+          "normalization": "Exclude missing rates rather than infer or zero-fill."
+        }
+      ],
+      "validSeemingRejectedExamples": [],
+      "notes": "Artifact keys explicitly exact; final must match validation. No output/payroll.json may exist. Array syntax is conventional rather than formally declared, but an identifier list is the strongest ordinary reading.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:227",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "invalid_path_recovery",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:invalid_path_recovery:4046891331",
+        "atlas-hermes-controlled-v2:development:invalid_path_recovery:2624217565",
+        "atlas-hermes-controlled-v2:development:invalid_path_recovery:1616586718"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "narrow path normalization under-specification",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "status",
+          "oracleType": "string completed",
+          "typeBasis": "explicit quoted literal in artifact schema",
+          "normalization": "Exactly completed."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "source",
+          "oracleType": "string",
+          "typeBasis": "selected file source is ordinary path interpretation; type/literal spelling not explicitly declared",
+          "normalization": "Oracle requires raw input/current-batch.json. It does not normalize this data field, unlike tool receipt paths."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "count",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "ordinary array item count",
+          "normalization": "Every signed integer included."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "total",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "explicit sum signed integers",
+          "normalization": "Retain signs."
+        }
+      ],
+      "validSeemingRejectedExamples": [
+        {
+          "field": "source",
+          "example": "./input/current-batch.json",
+          "whyValidSeeming": "A standard relative spelling denotes the same allowed source file. Task says source, not copy selected manifest path verbatim.",
+          "oracleRejection": "Strict string comparison rejects in both final and artifact; tool path normalization itself accepts this equivalent spelling.",
+          "strength": "concrete narrow representation gap, not different data or failed recovery"
+        }
+      ],
+      "notes": "Preferred read once then fallback is explicit. The recovery-event requirement does not authorize adding an error field to the exact artifact schema.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:262",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "paged_ledger",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:paged_ledger:808116441",
+        "atlas-hermes-controlled-v2:development:paged_ledger:146322265",
+        "atlas-hermes-controlled-v2:development:paged_ledger:2439048460"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "clear ordinary contract",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "netCents",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "sum source amountCents JSON numbers",
+          "normalization": "Only settled entries; retain signs."
+        },
+        {
+          "scope": "artifact",
+          "field": "pageTotals",
+          "oracleType": "object/map",
+          "typeBasis": "explicit maps every page path",
+          "normalization": "Keys are each supplied manifest path; key order ignored."
+        },
+        {
+          "scope": "artifact",
+          "field": "pageTotals.<pagePath>",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "settled subtotal arithmetic",
+          "normalization": "Preserve exact manifest key spelling is the ordinary meaning of every page path."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "settledCount",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "ordinary row count",
+          "normalization": "Only settled entries from every page."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        },
+        {
+          "scope": "final",
+          "field": "pageCount",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "ordinary page count",
+          "normalization": "Count all six manifest paths."
+        }
+      ],
+      "validSeemingRejectedExamples": [],
+      "notes": "Final includes pageCount; artifact does not. Adding pageCount to the artifact is explicitly outside its requested fields.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:294",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "linked_workflow",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:linked_workflow:1980997833",
+        "atlas-hermes-controlled-v2:development:linked_workflow:3464234387",
+        "atlas-hermes-controlled-v2:development:linked_workflow:1638304808"
+      ],
+      "count": 3,
+      "turnsPerTask": 2,
+      "classification": "clear clarified multi-turn contract",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "balance",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "source JSON balance/deltas and integer adjustment arithmetic",
+          "normalization": "Apply each linked delta once; second turn subtract adjustment once."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "processedSteps",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "explicit V2 clarification: integer count",
+          "normalization": "Exactly processed count, not step path array or string."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "revision",
+          "oracleType": "number 1 then number 2",
+          "typeBasis": "artifact template revision:1 and explicit set revision to 2",
+          "normalization": "Final scored artifact/answer is revision 2; no document-ID alternative exists in this task."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        }
+      ],
+      "validSeemingRejectedExamples": [],
+      "notes": "The second turn retains first-turn artifact schema and updates only named values. Final facts score the last answer, not an independently checked first-turn envelope.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:346",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "explicit_correction",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:explicit_correction:1914013284",
+        "atlas-hermes-controlled-v2:development:explicit_correction:1167376992",
+        "atlas-hermes-controlled-v2:development:explicit_correction:4069361542"
+      ],
+      "count": 3,
+      "turnsPerTask": 3,
+      "classification": "clear preserved-value multi-turn contract",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "project",
+          "oracleType": "string",
+          "typeBasis": "source JSON string, keep unchanged",
+          "normalization": "Exact original Linden."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "quantity",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "source JSON numeric type and explicit numeric replacement",
+          "normalization": "Latest approved quantity, not original draft."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "deliveryDate",
+          "oracleType": "string",
+          "typeBasis": "source JSON date string + explicit replacement date",
+          "normalization": "Requested YYYY-MM-DD lexeme; using a different date spelling conflicts more strongly here with explicit replaced value than with generic policy extraction."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "warehouse",
+          "oracleType": "string",
+          "typeBasis": "source JSON string, keep unchanged",
+          "normalization": "Exact original Bandung."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        }
+      ],
+      "validSeemingRejectedExamples": [],
+      "notes": "Intermediate turn 2 asks to acknowledge corrected fields without writing; it does not enumerate a standalone full schema, and the oracle only scores the last final answer. No contradiction in the final artifact contract.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:391",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "portable_memory_application",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:portable_memory_application:3570121878",
+        "atlas-hermes-controlled-v2:development:portable_memory_application:4189404159",
+        "atlas-hermes-controlled-v2:development:portable_memory_application:1621632161"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "clear source-typed contract",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "mealId",
+          "oracleType": "string",
+          "typeBasis": "selected input option id is a JSON string",
+          "normalization": "Exact chosen feasible id."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "servings",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "supplied preference JSON number",
+          "normalization": "Exact requested servings."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "totalCents",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "perServingCents*servings source arithmetic",
+          "normalization": "Cheapest feasible total within budget; no currency string."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        }
+      ],
+      "validSeemingRejectedExamples": [],
+      "notes": "No memory-discovery behavior is requested. Field sets and source identifier use are clear.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:433",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "source_latest_policy",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:source_latest_policy:3284073652",
+        "atlas-hermes-controlled-v2:development:source_latest_policy:4229346297",
+        "atlas-hermes-controlled-v2:development:source_latest_policy:2961981636"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "narrow type/date normalization under-specification",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "revision",
+          "oracleType": "number 2",
+          "typeBasis": "not explicitly typed; ordinary reading of source phrase revision 2 is numeric ordinal",
+          "normalization": "Oracle accepts only number 2. String 2, string travel-v2, or string revision 2 are rejected; the task never chooses an explicit ordinal-vs-document-ID representation."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "effectiveDate",
+          "oracleType": "string 2026-07-01",
+          "typeBasis": "date comes from prose source with ISO-looking literal; output format not explicitly declared",
+          "normalization": "Oracle demands exact source date spelling; semantically same human date string rejected."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "allowanceCents",
+          "oracleType": "integer-valued JSON number",
+          "typeBasis": "ordinary cents value; source prose number",
+          "normalization": "Amount/unit explicit, JSON type conventional."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "taxiReceiptsRequired",
+          "oracleType": "boolean true",
+          "typeBasis": "source prose true lexeme and boolean-style field name; no formal JSON type declaration",
+          "normalization": "Boolean is strongest ordinary reading; string true or required is rejected."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "sourceUrl",
+          "oracleType": "string",
+          "typeBasis": "explicit cite supporting supplied document URL",
+          "normalization": "Exact supplied revision-2 URL; link wrappers/prose change the field value."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        }
+      ],
+      "validSeemingRejectedExamples": [
+        {
+          "field": "revision",
+          "examples": ["2", "travel-v2", "revision 2"],
+          "whyValidSeeming": "All can refer to the selected second revision; bare number 2 is still the strongest ordinary reading. No numeric-ordinal/string/document-ID type is explicitly declared.",
+          "oracleRejection": "Each string differs from expected JSON number 2, including final_facts_correct scalar comparison.",
+          "strength": "genuine narrow type/identifier-domain under-specification; not proof any observed answer was acceptable"
+        },
+        {
+          "field": "effectiveDate",
+          "example": "1 July 2026",
+          "whyValidSeeming": "Same calendar date; task does not explicitly require ISO 8601 string format, though source ISO spelling strongly cues it.",
+          "oracleRejection": "Strict string comparison in final and artifact.",
+          "strength": "narrow normalization convention, weaker than a contradictory instruction"
+        }
+      ],
+      "notes": "The effective revision itself is unambiguous: revision 2 is current, revision 3 future. The type/representation of its identifier is less explicit than the policy selection.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:493",
+      "allVariantBodiesInspected": true
+    },
+    {
+      "family": "source_grounded_comparison",
+      "taskIds": [
+        "atlas-hermes-controlled-v2:development:source_grounded_comparison:110489693",
+        "atlas-hermes-controlled-v2:development:source_grounded_comparison:352047651",
+        "atlas-hermes-controlled-v2:development:source_grounded_comparison:871586541"
+      ],
+      "count": 3,
+      "turnsPerTask": 1,
+      "classification": "narrow vendor-label/case normalization under-specification",
+      "hardContradictionFound": false,
+      "fields": [
+        {
+          "scope": "artifact + final",
+          "field": "firstYearCents",
+          "oracleType": "object/map",
+          "typeBasis": "explicit maps three vendor names",
+          "normalization": "Exactly three entries, object order ignored."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "firstYearCents.<vendorName>",
+          "oracleType": "integer-valued JSON number or null",
+          "typeBasis": "explicit integer cents or null",
+          "normalization": "Include mandatory setup, mark missing total null; no ambiguity about amount/null type."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "firstYearCents keys",
+          "oracleType": "Alder, Beech, Cypress",
+          "typeBasis": "capitalized vendor names + exact title-case names in prose sources; no literal key enumeration or defined capitalization operation",
+          "normalization": "Strongest ordinary reading is preserve displayed title case. All caps is not the usual meaning of capitalize a name, but prose alone does not formally disambiguate capitalization conventions; oracle rejects ALDER/BEECH/CYPRESS."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "recommended",
+          "oracleType": "string Beech",
+          "typeBasis": "recommend cheapest known option; no explicit type or exact label domain",
+          "normalization": "Strongest ordinary value is displayed vendor name Beech. Beech plan, vendor-beech, or BEECH refer to same option but strict comparison rejects."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "unknownCostVendors",
+          "oracleType": "array of strings",
+          "typeBasis": "both arrays explicitly sorted; vendor-name string entries are ordinary interpretation",
+          "normalization": "Alphabetically sorted; expected Cypress. Capitalization instruction grammatically directly modifies firstYearCents map, not explicitly this list."
+        },
+        {
+          "scope": "artifact + final",
+          "field": "sourceUrls",
+          "oracleType": "array of strings",
+          "typeBasis": "both arrays explicitly alphabetically sorted; supplied URL citation context",
+          "normalization": "Exact supplied document URLs, sorted ascending."
+        },
+        {
+          "scope": "final",
+          "field": "status",
+          "oracleType": "string",
+          "typeBasis": "explicit quoted literal",
+          "normalization": "Exactly completed; no case conversion."
+        }
+      ],
+      "validSeemingRejectedExamples": [
+        {
+          "field": "firstYearCents keys",
+          "example": {
+            "ALDER": "same amount",
+            "BEECH": "same amount",
+            "CYPRESS": null
+          },
+          "whyValidSeeming": "A loose reading of capitalized can suggest uppercase. Stronger ordinary reading and displayed source names favor title-case Alder/Beech/Cypress, so this is a weaker linguistic normalization ambiguity, not equally compelled output.",
+          "oracleRejection": "Different object keys; no case-insensitive matching.",
+          "strength": "weak but real lack of explicit literal casing specification"
+        },
+        {
+          "field": "recommended",
+          "examples": ["Beech plan", "vendor-beech", "BEECH"],
+          "whyValidSeeming": "Supplied plan title, supplied document ID, or uppercase entity name can identify the same cheapest known option; required exact field value domain is not declared.",
+          "oracleRejection": "Strict scalar string comparison also treats these as contradicted required facts.",
+          "strength": "narrow output-label domain under-specification"
+        },
+        {
+          "field": "unknownCostVendors",
+          "example": ["CYPRESS"],
+          "whyValidSeeming": "Same vendor entity; expected spelling is source-implied, with capitalization rule directly attached only to firstYearCents map.",
+          "oracleRejection": "Strict array element equality.",
+          "strength": "narrow case normalization convention"
+        }
+      ],
+      "notes": "Both array orders and integer/null amounts are explicit. Different casing does not establish a different vendor fact by itself, even when it violates the strongest ordinary exact-output reading.",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-compare/tasks.ts:536",
+      "allVariantBodiesInspected": true
+    }
+  ]
+}

@@ -11,6 +11,10 @@ import {
   pushDeliverableArtifact,
 } from "@atlas/core";
 import type { Context } from "grammy";
+import {
+  explainGroupMessageHandling,
+  isTelegramGroupChat,
+} from "./group-message";
 import type { TelegramRichMessenger } from "./rich-message";
 import {
   formatTelegramArtifactTooLargeMessage,
@@ -43,13 +47,21 @@ export async function maybeSendRequestedTelegramArtifactAttachment(input: {
     return;
   }
 
+  const delivery = {
+    ...input,
+    session: {
+      id: input.sessionStore.get(input.conversationKey)?.sessionId ?? "",
+    },
+  };
   try {
-    const sessionId = input.sessionStore.get(input.conversationKey)?.sessionId;
+    await authorizeArtifactDelivery(delivery);
+    const sessionId = delivery.session.id;
     const { data } = await input.client.readProfileArtifactContent(
       input.profileId,
       artifact.path,
       { sessionId }
     );
+    await authorizeArtifactDelivery(delivery);
     const result = await sendTelegramArtifact(input.ctx, {
       bytes: new Uint8Array(data),
       filename: artifact.filename,
@@ -57,9 +69,20 @@ export async function maybeSendRequestedTelegramArtifactAttachment(input: {
     });
 
     if (!result.ok && result.error) {
-      await input.messenger.sendPlain(result.error);
+      await authorizeArtifactDelivery(delivery);
+      await input.messenger.sendPlain(
+        `${result.error} Saved file: ${artifact.path.startsWith("artifacts/") ? artifact.path : `artifacts/${artifact.path}`}`
+      );
     }
   } catch (error) {
+    try {
+      await authorizeArtifactDelivery(delivery);
+    } catch {
+      await input.messenger.sendPlain(
+        "This saved file is no longer available to this conversation."
+      );
+      return;
+    }
     await input.messenger.sendPlain(
       error instanceof Error ? error.message : "Failed to send the saved file."
     );
@@ -75,6 +98,7 @@ export async function deliverTelegramTurnArtifactShares(input: {
   sessionStore: SessionStore;
   messenger: TelegramRichMessenger;
   streamedArtifacts?: ChannelArtifactRef[];
+  nativeMediaPaths?: ReadonlySet<string>;
 }): Promise<void> {
   const messages = await input.session.getMessages();
   const paired = extractTurnDeliverableArtifacts(
@@ -85,6 +109,8 @@ export async function deliverTelegramTurnArtifactShares(input: {
     return;
   }
 
+  await authorizeArtifactDelivery(input);
+
   const shareUrlCache = input.sessionStore.getArtifactShareUrls(
     input.conversationKey
   );
@@ -92,6 +118,7 @@ export async function deliverTelegramTurnArtifactShares(input: {
   const delivered = await mintDeliverableArtifacts({
     artifacts: paired,
     publish: async (path) => {
+      await authorizeArtifactDelivery(input);
       const response = await input.client.publishProfileArtifactShare(
         input.profileId,
         path,
@@ -106,6 +133,7 @@ export async function deliverTelegramTurnArtifactShares(input: {
   if (delivered.length === 0) {
     return;
   }
+  await authorizeArtifactDelivery(input);
 
   let registry = input.sessionStore.getDeliverableArtifacts(
     input.conversationKey
@@ -121,9 +149,13 @@ export async function deliverTelegramTurnArtifactShares(input: {
   await input.sessionStore.save();
 
   for (const artifact of delivered) {
+    await authorizeArtifactDelivery(input);
+    if (input.nativeMediaPaths?.has(artifact.path)) {
+      continue;
+    }
     if (artifact.sizeBytes > TELEGRAM_ARTIFACT_MAX_BYTES) {
       await input.messenger.sendPlain(
-        formatTelegramArtifactTooLargeMessage(artifact.sizeBytes)
+        `${formatTelegramArtifactTooLargeMessage(artifact.sizeBytes)} Saved file: ${artifact.path.startsWith("artifacts/") ? artifact.path : `artifacts/${artifact.path}`}`
       );
       continue;
     }
@@ -134,6 +166,7 @@ export async function deliverTelegramTurnArtifactShares(input: {
         artifact.path,
         { sessionId: input.session.id }
       );
+      await authorizeArtifactDelivery(input);
       const result = await sendTelegramArtifact(input.ctx, {
         bytes: new Uint8Array(data),
         filename: artifact.filename,
@@ -141,9 +174,13 @@ export async function deliverTelegramTurnArtifactShares(input: {
       });
 
       if (!result.ok && result.error) {
-        await input.messenger.sendPlain(result.error);
+        await authorizeArtifactDelivery(input);
+        await input.messenger.sendPlain(
+          `${result.error} Saved file: ${artifact.path.startsWith("artifacts/") ? artifact.path : `artifacts/${artifact.path}`}`
+        );
       }
     } catch (error) {
+      await authorizeArtifactDelivery(input);
       await input.messenger.sendPlain(
         error instanceof Error
           ? error.message
@@ -157,7 +194,44 @@ export async function deliverTelegramTurnArtifactShares(input: {
   });
 
   if (footer.trim()) {
+    await authorizeArtifactDelivery(input);
     // Raw: share tokens must not pass through markdown underscore stripping.
     await input.messenger.sendRaw(footer);
   }
+}
+
+async function authorizeArtifactDelivery(input: {
+  ctx: Context;
+  client: AtlasClient;
+  session?: Pick<RemoteChatSession, "id">;
+  conversationKey: string;
+  profileId: string;
+  sessionStore: SessionStore;
+}): Promise<void> {
+  const stored = input.sessionStore.get(input.conversationKey);
+  const channelUserId = String(input.ctx.from?.id ?? "");
+  if (
+    !(stored && channelUserId) ||
+    stored.channelUserId?.trim() !== channelUserId ||
+    (input.session && input.session.id !== stored.sessionId)
+  ) {
+    throw new Error("The saved conversation has no verified sender.");
+  }
+  await input.client.authorizeChannelPrincipal({
+    channel: "telegram",
+    channelAddressed:
+      !isTelegramGroupChat(input.ctx) ||
+      explainGroupMessageHandling(input.ctx, input.ctx.me).shouldHandle,
+    channelChatId: String(input.ctx.chat?.id ?? ""),
+    channelIsGroup:
+      input.ctx.chat?.type === "group" || input.ctx.chat?.type === "supergroup",
+    channelThreadId:
+      input.ctx.message?.message_thread_id === undefined
+        ? undefined
+        : String(input.ctx.message.message_thread_id),
+    channelUserId,
+    intent: "read",
+    profileId: input.profileId,
+    sessionId: stored.sessionId,
+  });
 }

@@ -1,0 +1,372 @@
+{
+  "caseId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes",
+  "trialPath": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes",
+  "evaluationUnchanged": {
+    "ambiguousFinal": false,
+    "boundaryValid": false,
+    "falseCompletion": false,
+    "finalContract": true,
+    "finalFactsCorrect": true,
+    "missingFacts": [],
+    "strictSuccess": false,
+    "success": false,
+    "wrongFacts": []
+  },
+  "sessions": [
+    {
+      "id": "memory-product-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-training",
+      "phase": "training",
+      "initialHistoryCount": 0,
+      "initialPersistedMessageCount": 0,
+      "status": "failed",
+      "lifecycleErrors": [],
+      "backgroundDrain": {
+        "completed": true,
+        "observedThreads": 1,
+        "pendingDeferred": 0,
+        "wallSeconds": 0.9985250829995493
+      },
+      "backgroundDrainAfterClose": {
+        "completed": true,
+        "observedThreads": 0,
+        "pendingDeferred": 0,
+        "wallSeconds": 1.3207994925323874e-5
+      },
+      "turns": [
+        {
+          "index": 0,
+          "status": "failed",
+          "input": "For project Linden-838, I considered air shipping at 203 credits and rail at 167 credits. The deadline allows either. I choose rail because it costs less. Summarize that decision without changing it.",
+          "finalText": "HTTP 400: Concurrent inference in one trial is disabled in this track."
+        }
+      ],
+      "providerRequestTrace": [
+        {
+          "atUnixMs": 1788705620545,
+          "url": "http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1/chat/completions",
+          "messagesSha256": "740b7743b0e2b789bd57f7553f42333556e5cff6db00a711db8ea73c9201e3b9",
+          "roles": ["system", "user"],
+          "model": "deepseek-v4-flash",
+          "thread": "Thread-3 (<lambda>)",
+          "hasTools": true
+        },
+        {
+          "atUnixMs": 1788705620545,
+          "url": "http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1/chat/completions",
+          "messagesSha256": "437a0811c4b82eef650418b25286964303139ffb636e4c1a9b5db1d7bc89cb3a",
+          "roles": ["system", "user"],
+          "model": "deepseek-v4-flash",
+          "thread": "auto-title",
+          "hasTools": false
+        },
+        {
+          "atUnixMs": 1788705651564,
+          "url": "http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1/chat/completions",
+          "messagesSha256": "437a0811c4b82eef650418b25286964303139ffb636e4c1a9b5db1d7bc89cb3a",
+          "roles": ["system", "user"],
+          "model": "deepseek-v4-flash",
+          "thread": "auto-title",
+          "hasTools": false
+        }
+      ],
+      "stderrPath": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/hermes-UYsgT7/hermes-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-e3e9eb8o/runner-evidence/training.stderr.log"
+    },
+    {
+      "id": "memory-product-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-recall",
+      "phase": "recall",
+      "initialHistoryCount": 0,
+      "initialPersistedMessageCount": 0,
+      "status": "completed",
+      "lifecycleErrors": [],
+      "backgroundDrain": {
+        "completed": true,
+        "observedThreads": 0,
+        "pendingDeferred": 0,
+        "wallSeconds": 9.165996743831784e-6
+      },
+      "backgroundDrainAfterClose": {
+        "completed": true,
+        "observedThreads": 0,
+        "pendingDeferred": 0,
+        "wallSeconds": 1.0707997716963291e-5
+      },
+      "turns": [
+        {
+          "index": 0,
+          "status": "completed",
+          "input": "For Linden-838, which shipping mode did I choose, and how many credits did it save versus the other option? Use previous conversations or durable context if available. Do not guess. Reply with only a JSON object containing exactly \"chosen_mode\", \"savings_credits\". Use null for an unknown value. Preserve dates as YYYY-MM-DD and numeric values as numbers.",
+          "finalText": "{\"chosen_mode\": \"rail\", \"savings_credits\": 36}"
+        }
+      ],
+      "providerRequestTrace": [
+        {
+          "atUnixMs": 1788705653190,
+          "url": "http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1/chat/completions",
+          "messagesSha256": "630545a116c8d8b97ba489fd42317a5c43fecc734d2c18df2f192b16b7ae5dc3",
+          "roles": ["system", "user"],
+          "model": "deepseek-v4-flash",
+          "thread": "Thread-3 (<lambda>)",
+          "hasTools": true
+        },
+        {
+          "atUnixMs": 1788705653190,
+          "url": "http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1/chat/completions",
+          "messagesSha256": "83001265ac79cfcf8a1b7e2d2e4c6faa2003b66fe721d57d804a4814a3fc8220",
+          "roles": ["system", "user"],
+          "model": "deepseek-v4-flash",
+          "thread": "auto-title",
+          "hasTools": false
+        },
+        {
+          "atUnixMs": 1788705668702,
+          "url": "http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1/chat/completions",
+          "messagesSha256": "76fb660b0a54eff1a6accf3f300c5dcc294f37b3f4df53af7b4a7f6cd3b24d90",
+          "roles": ["system", "user", "assistant", "tool"],
+          "model": "deepseek-v4-flash",
+          "thread": "Thread-4 (<lambda>)",
+          "hasTools": true
+        },
+        {
+          "atUnixMs": 1788705670065,
+          "url": "http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1/chat/completions",
+          "messagesSha256": "70f1f8b5b287ff1064424b05bcff96f223b9b239c2a46016ef6603cd750a6222",
+          "roles": ["system", "user", "assistant", "tool", "assistant", "tool"],
+          "model": "deepseek-v4-flash",
+          "thread": "Thread-5 (<lambda>)",
+          "hasTools": true
+        },
+        {
+          "atUnixMs": 1788705671461,
+          "url": "http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1/chat/completions",
+          "messagesSha256": "d7b4a354a5eeec0c91754d256cf59c0398563f2ade2057e5bf1f9f7827170346",
+          "roles": [
+            "system",
+            "user",
+            "assistant",
+            "tool",
+            "assistant",
+            "tool",
+            "assistant",
+            "tool"
+          ],
+          "model": "deepseek-v4-flash",
+          "thread": "Thread-6 (<lambda>)",
+          "hasTools": true
+        },
+        {
+          "atUnixMs": 1788705674558,
+          "url": "http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1/chat/completions",
+          "messagesSha256": "5766b173c1f3bae6b26e5ef3822ea4de0d87a7416bdfc0b2308474e72f5a163a",
+          "roles": [
+            "system",
+            "user",
+            "assistant",
+            "tool",
+            "assistant",
+            "tool",
+            "assistant",
+            "tool",
+            "assistant",
+            "tool",
+            "tool"
+          ],
+          "model": "deepseek-v4-flash",
+          "thread": "Thread-7 (<lambda>)",
+          "hasTools": true
+        }
+      ],
+      "stderrPath": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/hermes-UYsgT7/hermes-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-e3e9eb8o/runner-evidence/recall.stderr.log"
+    }
+  ],
+  "queue": [
+    {
+      "arrivedAt": 1788705620546,
+      "index": 1,
+      "queueWaitMs": 0
+    },
+    {
+      "arrivedAt": 1788705620546,
+      "index": 2,
+      "queueWaitMs": 30002
+    },
+    {
+      "arrivedAt": 1788705651566,
+      "index": 3,
+      "queueWaitMs": 0
+    },
+    {
+      "arrivedAt": 1788705653191,
+      "index": 4,
+      "queueWaitMs": 1
+    },
+    {
+      "arrivedAt": 1788705653192,
+      "index": 5,
+      "queueWaitMs": 13354
+    },
+    {
+      "arrivedAt": 1788705668703,
+      "index": 6,
+      "queueWaitMs": 0
+    },
+    {
+      "arrivedAt": 1788705670066,
+      "index": 7,
+      "queueWaitMs": 0
+    },
+    {
+      "arrivedAt": 1788705671463,
+      "index": 8,
+      "queueWaitMs": 0
+    },
+    {
+      "arrivedAt": 1788705674560,
+      "index": 9,
+      "queueWaitMs": 0
+    }
+  ],
+  "wireAssistantRecords": [
+    {
+      "file": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/wire/001-response.json",
+      "at": "2026-09-06T14:40:52.193Z",
+      "status": 200,
+      "sha256": "9888b5961ef7b39341257a784f65f67ad7bd7b34fd5a5438a91de5160ecfae58",
+      "requestSha256": "0c5323c145df0006911ec1f426ca924e2411b9c1f39693154f098b43adae5831",
+      "elapsedMs": 31646,
+      "toolCalls": null,
+      "assistantText": "{\"title\": \"Summarize Linden-838 rail shipping decision\"}"
+    },
+    {
+      "file": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/wire/002-response.json",
+      "at": "2026-09-06T14:41:06.545Z",
+      "status": 200,
+      "sha256": "7d3bc6adc56e73b8606946cc6b36d89fdfe12f241fd348d407bd8d1387b12c2c",
+      "requestSha256": "99ba145c0ca7775b0a347f5241b6e109b790eeca2f0fdf6d26d09cf85ead2c63",
+      "elapsedMs": 13353,
+      "toolCalls": null,
+      "assistantText": "{\"title\": \"Linden-838 shipping mode and savings\"}"
+    },
+    {
+      "file": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/wire/003-response.json",
+      "at": "2026-09-06T14:41:08.677Z",
+      "status": 200,
+      "sha256": "21d86ba110b3b83c11299783244fc8264f9f4e8262504c3a9b7298d4959701f7",
+      "requestSha256": "7a5fc93b28315f499022754f6a806e85b6f230bf1bc45e1bd63ee8c5a0d00559",
+      "elapsedMs": 2130,
+      "toolCalls": [
+        {
+          "index": 1,
+          "id": "call_8b44b903d00545ce8b80b44f",
+          "type": "function",
+          "function": {
+            "name": "tool_search",
+            "arguments": "{\"queries\": [\"session_search recall past conversations\"]}"
+          }
+        }
+      ],
+      "assistantText": ""
+    },
+    {
+      "file": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/wire/004-response.json",
+      "at": "2026-09-06T14:41:10.055Z",
+      "status": 200,
+      "sha256": "96b997dcdaede7386e27df0507aceac0855d54e1ad8c6e0058ed0acd78d266b1",
+      "requestSha256": "2edef114b9a0f2c181d6afb59da2cd3302d13ad4e6587d95b0f811a638a29036",
+      "elapsedMs": 1352,
+      "toolCalls": [
+        {
+          "index": 2,
+          "id": "call_47c7676f3a474c749d13227a",
+          "type": "function",
+          "function": {
+            "name": "tool_describe",
+            "arguments": "{\"names\": [\"session_search\"]}"
+          }
+        }
+      ],
+      "assistantText": ""
+    },
+    {
+      "file": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/wire/005-response.json",
+      "at": "2026-09-06T14:41:11.435Z",
+      "status": 200,
+      "sha256": "7d23b63c9983894e089b0b3dd507cb1820cc2ec168515c7e6e3dca06ac6f7e39",
+      "requestSha256": "37d049dce0399e3b0ca6825acca2d1a7a0784f525fe9cb864861feab9b28220c",
+      "elapsedMs": 1368,
+      "toolCalls": [
+        {
+          "index": 3,
+          "id": "call_623749f277594ee0a3a235d5",
+          "type": "function",
+          "function": {
+            "name": "tool_call",
+            "arguments": "{\"name\": \"session_search\", \"arguments\": {\"query\": \"Linden-838 shipping mode credits\", \"limit\": 5}}"
+          }
+        }
+      ],
+      "assistantText": ""
+    },
+    {
+      "file": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/wire/006-response.json",
+      "at": "2026-09-06T14:41:14.527Z",
+      "status": 200,
+      "sha256": "49a3e81e19b83421e04b79897121c146d6a16d0bfd27213e30b0f22f68f6ed3d",
+      "requestSha256": "2b4d3494bd44c01df4e4d8d291f2a20d030a658533b8539d8bdeb35aaa4d6b98",
+      "elapsedMs": 3063,
+      "toolCalls": [
+        {
+          "index": 3,
+          "id": "call_4bd8e322da8e4047a092cafe",
+          "type": "function",
+          "function": {
+            "name": "tool_call",
+            "arguments": "{\"arguments\": {\"limit\": 5, \"query\": \"Linden\"}, \"name\": \"session_search\"}"
+          }
+        },
+        {
+          "index": 3,
+          "id": "call_9793590c342042ef856d5887",
+          "type": "function",
+          "function": {
+            "name": "tool_call",
+            "arguments": "{\"arguments\": {\"limit\": 5, \"query\": \"shipping mode\"}, \"name\": \"session_search\"}"
+          }
+        }
+      ],
+      "assistantText": ""
+    },
+    {
+      "file": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/wire/007-response.json",
+      "at": "2026-09-06T14:41:17.307Z",
+      "status": 200,
+      "sha256": "2b02fe6d9b15dc71efdba19d5927a71ea2d73486e8e70aeb7f064b2ed9ce4f1a",
+      "requestSha256": "bc65c2362e6ab4e25b9a38958c32de07825ec41f4b45162a5968f61676e89cf7",
+      "elapsedMs": 2746,
+      "toolCalls": null,
+      "assistantText": "{\"chosen_mode\": \"rail\", \"savings_credits\": 36}"
+    }
+  ],
+  "trainingStderr": "state.db: on-disk journal_mode was delete and has been switched to WAL. This rewrites the database header and persists after this process exits. If delete was a deliberate choice (for example the mitigation for the SQLite WAL-reset bug, or a WAL-unsafe filesystem), setting it with PRAGMA on the file will not survive -- every open re-applies the configured mode. Set `database.journal_mode: delete` in config.yaml to make it stick. This message fires once per process per database.\n\ud83e\uddfe Request debug dump written to: /private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/hermes-UYsgT7/hermes-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-e3e9eb8o/native-state/sessions/request_dump_memory-product-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_deci_6f696d7c1ea0_20260906_214050_560140.json\n\u26a0\ufe0f  API call failed (attempt 1/3): BadRequestError [HTTP 400]\n   \ud83d\udd0c Provider: custom  Model: deepseek-v4-flash\n   \ud83c\udf10 Endpoint: http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1\n   \ud83d\udcdd Error: HTTP 400: Concurrent inference in one trial is disabled in this track.\n   \ud83d\udccb Details: {'code': 'concurrent_inference', 'message': 'Concurrent inference in one trial is disabled in this track.', 'type': 'comparison_error'}\n   \u23f1\ufe0f  Elapsed: 30.20s  Context: 2 msgs, ~2,633 tokens\n\u274c Non-retryable error (HTTP 400): HTTP 400: Concurrent inference in one trial is disabled in this track.\n\u274c Non-retryable client error (HTTP 400). Aborting.\n   \ud83d\udd0c Provider: custom  Model: deepseek-v4-flash\n   \ud83c\udf10 Endpoint: http://127.0.0.1:54032/runs/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/v1\n   \ud83d\udca1 This type of error won't be fixed by retrying.\n\u26a0 Auxiliary title generation failed: HTTP 400: Concurrent inference in one trial is disabled in this track.\n",
+  "conclusion": {
+    "historyBoundary": "A and B are distinct sessions with zero initial history and zero initial persisted messages. No native history leakage was found. The boundaryValid field also enforces completed training turns; that lifecycle condition failed.",
+    "observedFailure": "A1 returned local HTTP400 concurrent_inference; its foreground call never reached the upstream provider. An overlapping title call was admitted first, lasted31.646 seconds, and the queue admitted the next request after30.002 seconds while the broker was still active.",
+    "mechanism": "Frozen product proxy releases admission in finally when its requester-linked inner fetch aborts; the broker upstream request uses a separate90-second signal and can remain active. Hermes auxiliary default timeout is30seconds. Native stderr logs the concurrent rejection after30.20seconds. This strongly supports title-client timeout releasing the wrapper queue early; the outer abort reason itself was not separately logged.",
+    "recall": "Session B used native session_search to retrieve the persisted training user message despite A1 failure, then returned rail and36 correctly. Retrieval of persisted prior-session content is authorized by this track and is not history carryover.",
+    "fairness": "Treat this as a local native-transport/admission interference limitation, not memory incompetence or evidence of cross-session leakage. Frozen primary failure remains unchanged.",
+    "predeclaredControls": "Native title source asks for64output tokens, but the frozen broker normalizes every request to4096 maximum output tokens. No controls were changed retrospectively.",
+    "sourceVerification": "Read source matches the frozen memory-protocol archive for shared proxy, product proxy and memory oracle."
+  },
+  "sourceAnchors": [
+    "scripts/harness-product-compare/memory-oracles.ts:143-162",
+    "scripts/harness-product-compare/product-proxy.ts:207-240",
+    "scripts/harness-compare/proxy.ts:93-103,160-162",
+    "Hermes agent/title_generator.py:263-270",
+    "Hermes agent/auxiliary_client.py:5511,5624-5641"
+  ],
+  "evidenceHashes": {
+    "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/observation.json": "d9f85c3b3b68e873f2cd7db088852441a3c2909135cd5a46d14262db48735864",
+    "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/result.json": "58f44a38953601e937a46811b1ccb447aac08f64a14b6db4a1ce0035ae7b945b",
+    "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/wire/native-request-queue.jsonl": "8154b1cba6a0c1720417a3c853c730dbd73931021d57d3bd805acb39b007a9f4",
+    "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/hermes-UYsgT7/hermes-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-e3e9eb8o/runner-evidence/training.stderr.log": "8617aa841b7fa72a4adb9cfdf966b639c634fa3d52f0fb48375fc3b029e54797"
+  }
+}

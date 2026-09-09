@@ -26,6 +26,27 @@ const webSearchTool: ToolDefinition = {
 };
 
 describe("tool-resolver", () => {
+  test("standalone stored-tool search only discovers the resolved assignment set", async () => {
+    const records = ["tool_search", "calculator"].map((name) => ({
+      createdAt: "2026-09-06T00:00:00.000Z",
+      description: name,
+      handlerConfig: {},
+      handlerType: "builtin",
+      id: `assigned_${name}`,
+      name,
+      updatedAt: "2026-09-06T00:00:00.000Z",
+    }));
+    const tools = await resolveToolsFromStorage(records);
+    const search = tools.find((tool) => tool.name === "tool_search");
+    expect(search).toBeDefined();
+    expect(await search?.run({ query: "python_execute" }, {})).toMatchObject({
+      totalMatches: 0,
+    });
+    expect(await search?.run({ query: "calculator" }, {})).toMatchObject({
+      totalMatches: 1,
+    });
+    expect(search?.parallelSafe).not.toBe(true);
+  });
   test("drops email when mailbox is not configured", () => {
     const tools = [webSearchTool, emailTool];
 

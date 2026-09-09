@@ -1,0 +1,12 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/agent/src/chat-turn-admission.test.ts:
+(pass) API send binds fresh per-turn guards and publication lifecycles [39.48ms]
+(pass) API stream binds fresh per-turn guards and publication lifecycles [2.60ms]
+(pass) native send binds fresh per-turn guards and publication lifecycles [1.24ms]
+(pass) native stream binds fresh per-turn guards and publication lifecycles [1.67ms]
+
+ 4 pass
+ 0 fail
+ 56 expect() calls
+Ran 4 tests across 1 file. [747.00ms]

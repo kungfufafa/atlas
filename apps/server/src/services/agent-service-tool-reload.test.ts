@@ -48,12 +48,26 @@ async function seedTool(db: DatabaseAdapter): Promise<StoredToolRecord> {
 
 async function seedProfile(db: DatabaseAdapter): Promise<void> {
   const now = new Date().toISOString();
+  await db.createUser({
+    createdAt: now,
+    email: "reload@example.com",
+    id: "user_1",
+    name: "Reload admin",
+    passwordHash: "test",
+    updatedAt: now,
+  });
   await db.upsertOrganization({
     createdAt: now,
     id: ORG_ID,
     name: "Tool reload",
     slug: "tool-reload",
     updatedAt: now,
+  });
+  await db.upsertOrgMember({
+    createdAt: now,
+    orgId: ORG_ID,
+    role: "admin",
+    userId: "user_1",
   });
   await db.upsertProfile({
     createdAt: now,

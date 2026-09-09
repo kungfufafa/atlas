@@ -1,0 +1,119 @@
+{
+  "at": "2026-09-07T10:27:56.405146+00:00",
+  "scope": "Closed C9 confirmation contributor report and exact selected evidence copies. Full failures and limitations retained; no parity claim.",
+  "copiedFiles": {
+    "analysis-final.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/analysis-final.json",
+      "sha256": "180ceb12182c8febc7c13f3290f2140ea787784b2ddab94f8fbbbb4639920064",
+      "bytes": 21711,
+      "mode": 420
+    },
+    "completed.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/completed.json",
+      "sha256": "8a7dded6ee49daa91e03994c95d98fb139e8bcef0480764026ae2a6048e5d45c",
+      "bytes": 304,
+      "mode": 420
+    },
+    "census.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-census/census.json",
+      "sha256": "69cc6a8257df6ddf7ca336000bd28f5922eee342ed35ff14f97c354531964dbf",
+      "bytes": 739188,
+      "mode": 420
+    },
+    "census-report.md": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-census/report.md",
+      "sha256": "3fa7d5b52314c31b85ee7152fb0491854da7f6acb7d85b1a4fbf62e2967d9292",
+      "bytes": 24689,
+      "mode": 420
+    },
+    "all-108-original-arms.md": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-census/all-108-original-arms.md",
+      "sha256": "e13f0fcbf8822de0de9c79834571b63c243526fcc3cc73b4595eeaec70f4ac59",
+      "bytes": 10471,
+      "mode": 420
+    },
+    "all-eighteen-failure-diagnoses.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-census/all-eighteen-failure-diagnoses.json",
+      "sha256": "8977f159935f5806a0ccc09bdab686546154f085911a68f050c1cbcdd274a027",
+      "bytes": 71011,
+      "mode": 420
+    },
+    "all-ten-unknown-accounting.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-census/all-ten-unknown-accounting.json",
+      "sha256": "c85b106ef846c1af18edec785fd9961711a8fea55ed744fb96c13524e9717504",
+      "bytes": 18981,
+      "mode": 420
+    },
+    "independent-review.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/review.json",
+      "sha256": "402c0232b86b42c2490c39c5815053dece65dc91b55e9a93a58fb9ad4046cef0",
+      "bytes": 99493,
+      "mode": 420
+    },
+    "independent-review.md": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/review.md",
+      "sha256": "f16675c66c19839452b1f3181b778456eb11e975274d25d425d5e00dca47c05f",
+      "bytes": 4927,
+      "mode": 420
+    },
+    "confirmatory-admission.json": {
+      "source": "/private/tmp/atlas-native-file-v3-final-admission/confirmatory-admission.json",
+      "sha256": "8d397316af6c86b13e61d6701768fad39511b9586faaa03440de5ae9a0606acb",
+      "bytes": 4784,
+      "mode": 420
+    },
+    "confirmatory-execution.json": {
+      "source": "/private/tmp/atlas-native-file-v3-final-admission/confirmatory-execution.json",
+      "sha256": "067df3782f82608fcfff08eff368474229011c0859c8d7a45914946e161d5376",
+      "bytes": 558,
+      "mode": 420
+    },
+    "confirmatory-analysis-execution.json": {
+      "source": "/private/tmp/atlas-native-file-v3-final-admission/confirmatory-analysis-execution.json",
+      "sha256": "607484b6556b4a8c48983e339c76a0876e9ab6ce1e79e42d1461c760e2eb6223",
+      "bytes": 746,
+      "mode": 420
+    },
+    "root-review-acceptance.json": {
+      "source": "/private/tmp/atlas-native-file-v3-final-admission/confirmatory-review-acceptance.json",
+      "sha256": "34c9114ff0e79776a44dfc640926e18ae9beb7c18463d62b7c86d33c91367764",
+      "bytes": 2092,
+      "mode": 420
+    },
+    "raw-archive-receipt.json": {
+      "source": "/private/tmp/atlas-file-v3-c9-confirmation-raw-archive/archive-receipt.json",
+      "sha256": "bc9f1acb9d414325373977235c560d01ca89aa21cb589ecefc6a34f740ca66ba",
+      "bytes": 614,
+      "mode": 420
+    },
+    "raw-identity-scope-qualification.json": {
+      "source": "/private/tmp/atlas-file-v3-c9-confirmation-raw-archive/identity-scope-qualification.json",
+      "sha256": "b7fa522c9373189537a7ad0c34571f77089240ab849cbea86c28c3b3d5242aa0",
+      "bytes": 2085,
+      "mode": 420
+    },
+    "review-archive-receipt.json": {
+      "source": "/private/tmp/atlas-file-v3-c9-confirmation-review-archive/archive-receipt.json",
+      "sha256": "1d2c3fbe2612948537978a2d6ecd0ec769924327215d6b1f36ab589edba5d1e8",
+      "bytes": 477,
+      "mode": 420
+    }
+  },
+  "reportSha256": "8cb6102bfb2886b3578805f2d1b8043100bfb5f09018b8aa92a07ff4d9c9695e",
+  "copyHashesModesCensusVerified": true,
+  "rawArchiveManifest": {
+    "path": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-confirmation-raw/archive-manifest.json",
+    "sha256": "3e40586bea2272b083857105a8a19d54a852117484c9277fc515490de3d51eed"
+  },
+  "reviewArchiveManifest": {
+    "path": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-confirmation-review/archive-manifest.json",
+    "sha256": "9c762d4086971c771da9bb78645db79f1b5a6b76070ab3ce56b8155fe58ec1d5"
+  },
+  "originalAnalysisSha256": "180ceb12182c8febc7c13f3290f2140ea787784b2ddab94f8fbbbb4639920064",
+  "candidateSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "controlSourceHash": "b3673405fab43fdd268aa286d4f6f0164ea00c2332ba43d00e28abd3d538fde5",
+  "goalComplete": false,
+  "newProviderCalls": 0,
+  "newTests": 0,
+  "rescores": 0
+}

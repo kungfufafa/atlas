@@ -1,0 +1,421 @@
+{
+  "schemaVersion": 1,
+  "status": "PARTIAL_NOT_ALL_PROVEN",
+  "createdAt": "2026-09-06T09:08:56.621960+00:00",
+  "gitHead": "92ce5e432609425e5cd9a701f1b77e7062ff7b21",
+  "workingTree": "Dirty shared workspace; source hashes identify tested changes; no commit created",
+  "providers": {
+    "declaredCases": 6,
+    "instances": 5,
+    "scope": "Every configured instance default and profile-selected model; other catalog IDs explicitly not covered",
+    "cases": [
+      {
+        "id": "gemini-f650b27152d5",
+        "instanceHash": "c9af74ccae17",
+        "model": "gemini-3-flash-preview",
+        "provider": "gemini",
+        "status": "PASS",
+        "fileSha256": "ae1b5fc7f6ad158b16bec022ad896775723a20d9478a0d8bb1aceb8b325e5006",
+        "bytes": 47,
+        "currentRoleRechecked": true,
+        "operationalConfigurationChanged": false,
+        "resultEvidence": {
+          "path": "/private/tmp/atlas-live-provider-proof/gemini-probe-retry/results.json",
+          "sha256": "06be39f868ab8c608d71c2b305de4409f26e91322f45f007df325a4c489f3c6c",
+          "bytes": 1031
+        },
+        "serviceGate": "PASS",
+        "rawProbeGate": "PASS",
+        "limitation": "Exact model capability enriched only in disposable test configuration; operational metadata remains unknown"
+      },
+      {
+        "id": "opencode_go-ef414504e6e5",
+        "instanceHash": "8027359e26ab",
+        "model": "opencode-go/deepseek-v4-flash",
+        "provider": "opencode_go",
+        "status": "FAIL",
+        "resultEvidence": {
+          "path": "/private/tmp/atlas-live-provider-proof/opencode-original-status/results.json",
+          "sha256": "fab5180dde410c3a6548a0d5f6cf3111e259376f69b44963dfe3216a7c031aa8",
+          "bytes": 1007
+        },
+        "serviceGate": "NOT_COMPLETED",
+        "upstreamStatus": 401,
+        "limitation": "Invalid API key; inference and tool support unproven"
+      },
+      {
+        "id": "opencode_go-b267b19d13e2",
+        "instanceHash": "02fb6f150818",
+        "model": "opencode-go/kimi-k2.7-code",
+        "provider": "opencode_go",
+        "status": "FAIL",
+        "resultEvidence": {
+          "path": "/private/tmp/atlas-live-provider-proof/opencode-original-status/results.json",
+          "sha256": "fab5180dde410c3a6548a0d5f6cf3111e259376f69b44963dfe3216a7c031aa8",
+          "bytes": 1007
+        },
+        "serviceGate": "NOT_COMPLETED",
+        "upstreamStatus": 401,
+        "limitation": "Invalid API key; inference and tool support unproven"
+      },
+      {
+        "id": "openai_compatible-c91ce6a3084e",
+        "instanceHash": "609cd07af281",
+        "model": "fusion",
+        "provider": "openai_compatible",
+        "status": "FAIL",
+        "resultEvidence": {
+          "path": "/private/tmp/atlas-live-provider-proof/fusion-probe-retry/results.json",
+          "sha256": "976facab521d26173a2a5fa51a691eba30b052005c7282c148204eefa78da36f",
+          "bytes": 1417
+        },
+        "serviceGate": "NOT_COMPLETED",
+        "limitation": "Raw write/read/disk bytes succeeded; final response changed nonce; strict gate FAIL"
+      },
+      {
+        "id": "openai_compatible-beb54ef594aa",
+        "instanceHash": "609cd07af281",
+        "model": "cx/gpt-5.4-mini",
+        "provider": "openai_compatible",
+        "status": "PASS",
+        "fileSha256": "75075106f9fc047b7e81f31d8e6dbda7f4da6c531269b0bcce9e6765cfa44a8e",
+        "bytes": 47,
+        "currentRoleRechecked": true,
+        "operationalConfigurationChanged": false,
+        "resultEvidence": {
+          "path": "/private/tmp/atlas-live-provider-proof/api-probe/results.json",
+          "sha256": "d397afc34344d22cd37d6246b92135a256f1e93fc19543a30ef527077fb932df",
+          "bytes": 5854
+        },
+        "serviceGate": "PASS",
+        "rawProbeGate": "PASS",
+        "limitation": "Exact model capability enriched only in disposable test configuration; operational metadata remains unknown"
+      },
+      {
+        "id": "chatgpt-c2099079f445",
+        "instanceHash": "a6cf66998615",
+        "model": "gpt-5.6-sol",
+        "provider": "chatgpt",
+        "status": "PASS",
+        "fileSha256": "299d2bc69d2666da1877a059f2147f413de812a75f4c3e66f8a2b1d3f5edfd63",
+        "bytes": 47,
+        "currentRoleRechecked": true,
+        "operationalConfigurationChanged": false,
+        "resultEvidence": {
+          "path": "/private/tmp/atlas-live-provider-proof/api-probe/results.json",
+          "sha256": "d397afc34344d22cd37d6246b92135a256f1e93fc19543a30ef527077fb932df",
+          "bytes": 5854
+        },
+        "serviceGate": "PASS",
+        "transport": "Actual Atlas-owned native runtime; not HTTP replay"
+      }
+    ]
+  },
+  "claude": {
+    "authentication": "not_authenticated",
+    "runtime": "2.1.247",
+    "lastProbeAt": "2026-09-06T08:43:07.958Z",
+    "inference": "NOT_RUN",
+    "requires": "Complete official login in Atlas-owned Claude home"
+  },
+  "messengers": {
+    "whatsapp": "NOT_RUN",
+    "telegram": "NOT_RUN",
+    "discord": "NOT_RUN",
+    "realAccountSends": 0,
+    "requires": "Explicitly approved test destinations and tenant-scoped live configuration",
+    "mockEvidence": "Actual handlers, HTTP, SQLite and file bytes with controlled outbound transports; not upstream delivery"
+  },
+  "docker": {
+    "architecture": "linux/arm64",
+    "image": "sha256:63a8977614e07b14a1cb2af2828d35dee5e798b29032953a27c40d9a1f8e0a67",
+    "actualFileTests": {
+      "pass": 77,
+      "fail": 0,
+      "assertions": 412,
+      "files": 11
+    },
+    "strictStartup": {
+      "status": "PASS",
+      "healthStatus": 200,
+      "apiVersion": 1,
+      "indexStatus": 200
+    },
+    "largeFontBytes": 23278008,
+    "pdfOcrNavigationAttachments": "PASS",
+    "sourceFilesMatchedInsideImage": 36,
+    "network": "none",
+    "hostDataMounts": 0,
+    "uid": 1000,
+    "amd64": "NOT_PROVEN",
+    "details": "../docker-linux-proof-20260906/summary.json"
+  },
+  "verification": {
+    "repository": {
+      "pass": 6358,
+      "fail": 0,
+      "assertions": 21585,
+      "tests": 6358,
+      "files": 653,
+      "evidence": {
+        "path": "/private/tmp/atlas-live-final-full.log",
+        "sha256": "84e72382c7c8a474449e647ee3537beb2e5b6c92737e41ab0684e28f2aa1a088",
+        "bytes": 709094
+      }
+    },
+    "scriptsFinal": {
+      "pass": 116,
+      "fail": 0,
+      "assertions": 385,
+      "tests": 116,
+      "files": 15,
+      "evidence": {
+        "path": "/private/tmp/atlas-live-final-scripts-frozen.log",
+        "sha256": "6c8b45677695f2b935b285cc6bc7c0bc090bd1df7137cda3051789d3a1470d52",
+        "bytes": 12836
+      }
+    },
+    "startupCheckerNegativeTests": {
+      "pass": 20,
+      "fail": 0,
+      "assertions": 95,
+      "tests": 20,
+      "files": 2,
+      "evidence": {
+        "path": "/private/tmp/atlas-startup-gates-20260906-final-tests.log",
+        "sha256": "bca11e28bdd9a9bc540523253df0011df38a9177b75a60948142370df2c7367e",
+        "bytes": 1903
+      }
+    },
+    "messengerPreparationTests": {
+      "pass": 48,
+      "fail": 0,
+      "assertions": 153,
+      "transport": "controlled"
+    },
+    "rootTypecheck": "PASS",
+    "scriptSpecificTypechecks": "PASS",
+    "globalLint": "PASS",
+    "countWarning": "Overlapping test sets; do not add counts"
+  },
+  "replayIntegrity": {
+    "positiveActualHttpCaptures": 4,
+    "archivedProviderPayloadsMatched": 37,
+    "cassetteAndTracePayloadsVerified": 8,
+    "hashOrSemanticMismatches": 0,
+    "unexpectedNetwork": "Rejected",
+    "nativeRuntimeHttpCassetteClaim": false
+  },
+  "rbacTenancy": {
+    "matrix": "../../tenant-channel-authorization-audit.md",
+    "mainActualHttpProductRequests": 1296,
+    "discordAdminProductRequests": 144,
+    "scope": "Current tenant, channel policy, identity, role, profile/session, assignment and integration authorization; controlled external transport",
+    "fullLiveCartesianProduct": "NOT_PROVEN"
+  },
+  "retainedFailures": [
+    "Initial captionless WhatsApp TXT-to-Markdown mock case failed to reach controlled model; later passes do not establish root cause",
+    "Initial mock harness recovered real workers from synthetic configuration; controlled preload now suppresses lifecycle; no real-account delivery claim",
+    "Docker OOM, missing libc development linker support, noexec fixture mounts, missing tsconfig and production playwright dependency; fixed and rerun in final image",
+    "Initial checker-test fixtures contained quote parsing errors; corrected with assertions preserved",
+    "False-positive HTML health and messenger cleanup/send-receipt bugs; negative tests now reject them",
+    "OpenCode 401 was initially masked as MSW500; original upstream status now recorded",
+    "Fusion final nonce mismatch remains a failed gate"
+  ],
+  "additionalLimits": [
+    "No live tenant SaaS/OAuth operations or exhaustive provider/channel/role/tool race product",
+    "Gemini image proof uses one small PNG and nonempty response; not general visual accuracy",
+    "Provider guide browser checks pass layout/sidebar/search dialog; search result destination remains unverified",
+    "Operational provider configuration preservation is supported by readonly code path, not before/after configuration hash snapshots"
+  ],
+  "evidenceHandling": {
+    "existingArchive": "archive-index.json",
+    "newRawBulkArchive": "NOT_CREATED_AFTER_AUTOMATIC_APPROVAL_REJECTION",
+    "reason": "Potential sensitive fields outside configured API key scan",
+    "replacement": "Reviewed scalar facts and exact hashes referencing local originals; no new raw log payloads copied"
+  },
+  "localEvidence": [
+    {
+      "path": "/private/tmp/atlas-live-final-typecheck-complete.log",
+      "sha256": "1e7364545b505adc6ef70012ce70f69a90a7eb05ebb0a0886a63cceb701bcb27",
+      "bytes": 42
+    },
+    {
+      "path": "/private/tmp/atlas-live-final-lint-complete.log",
+      "sha256": "e3fd9e5dac7d2dacf9af34d64a8f09822d103a8a8733378b1675c782b1788b2d",
+      "bytes": 44
+    },
+    {
+      "path": "/private/tmp/atlas-live-final-file-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/atlas-live-claude-20260906-final-auth-check.log",
+      "sha256": "aa1d8e8c080f9e1f8c04fc54f039d454ebab46de48d80fbda9bd77017264b4a8",
+      "bytes": 732
+    },
+    {
+      "path": "/private/tmp/atlas-live-messenger-preparation/cleanup-regression-report.json",
+      "sha256": "18bbe5763a7f2c782eb0b0118e899cff08377ded50935ff71e04acf601795473",
+      "bytes": 1106
+    },
+    {
+      "path": "/private/tmp/atlas-startup-gates-20260906-final-tests.log",
+      "sha256": "bca11e28bdd9a9bc540523253df0011df38a9177b75a60948142370df2c7367e",
+      "bytes": 1903
+    },
+    {
+      "path": "/private/tmp/atlas-startup-gates-20260906-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/atlas-startup-gates-20260906-initial-fixture-parse-failure.log",
+      "sha256": "4587ad9f686af3e3de0d988a871de28e61dad845d81b5c870a37ec9e431df0ce",
+      "bytes": 8052
+    },
+    {
+      "path": "/private/tmp/atlas-channel-loop-regression/original-suite.log",
+      "sha256": "70ed81b0a4899075e447d4d7bd2cf40792dbc67fb020c89d2cbf34f15950e263",
+      "bytes": 10919
+    },
+    {
+      "path": "/private/tmp/atlas-channel-loop-regression/original-channel-loop-report.json",
+      "sha256": "ec789a287091679df50a6236c9388368450f64eb848df04223fe8246f2a8b187",
+      "bytes": 4494
+    },
+    {
+      "path": "/private/tmp/atlas-channel-loop-regression/regression-report.json",
+      "sha256": "4e2f3683fa67573c398c7822456a03e4e7d7c5c7a00ce10dbbb2498aa25ada2f",
+      "bytes": 1646
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-production-final.log",
+      "sha256": "0d9283f940c84b7d0a8806c54869d7601e40dd8e039168ff7f46bfa1aa7fe0a9",
+      "bytes": 63673
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-production-startup-strict.log",
+      "sha256": "5f50f5165cdc7d53b938bc147396bbf5d791bd3431b38e18f44fc0df93053001",
+      "bytes": 619
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/arm64-production-large-font.log",
+      "sha256": "dffe6232730ac2527a5bfcf0dd0175899547c2a852f86bffe46aac9fa9bd2190",
+      "bytes": 458
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/production-image-source-hash-check.log",
+      "sha256": "f7011e545c09d150eccff6f2e1bfc9eef7674e58053652d99db9aaaafa416a8e",
+      "bytes": 1546
+    },
+    {
+      "path": "/private/tmp/atlas-docker-proof/production-container-environment.log",
+      "sha256": "c4eace21e8e2736c875eb0f02902598bb6705824f69bb742af0d607ed4b26c67",
+      "bytes": 667
+    },
+    {
+      "path": "/private/tmp/atlas-provider-docs-browser/qa-report.md",
+      "sha256": "075476717e856e5e5cc525014c81efb558a3818f08e029e4643310477e2dc0e4",
+      "bytes": 1350
+    },
+    {
+      "path": "/private/tmp/atlas-provider-fixture-archives-20260906-tests.log",
+      "sha256": "21152d0dbf9a4f83c840d5edaa4e8893247f37fa3da66db0ca6ab038c8181f96",
+      "bytes": 921
+    }
+  ],
+  "sourceHashes": [
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/Dockerfile",
+      "sha256": "3b2deb2d937d8acccb4f0a96b7a527a1e0a9a4356d42c1e023b8e8cb045e8afd",
+      "bytes": 5210
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/package.json",
+      "sha256": "a7821b1a25d4facb18dea25b1a57ee54cbf5dcdc2d8742b1ca7139fcb9c28849",
+      "bytes": 1035
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/bun.lock",
+      "sha256": "15fc1b0bf2561915fba917b928c25c79cc838de118e6173c60d2e29a529fdf22",
+      "bytes": 516759
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/tsconfig.json",
+      "sha256": "88ddb9cc868016f4d0fd7593b90ed4d1afa96d65113e82a27e68136d88fa3331",
+      "bytes": 697
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/providers/subscription/env.ts",
+      "sha256": "4670bf44ec40eb2aeb73d6b0cccd0900a14878968de435e8f3a40ab4e3252f79",
+      "bytes": 2389
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/providers/subscription/binary.ts",
+      "sha256": "b5ee1e46979830474107e5fc72bfa0d6af1c3deb9357c937c14deb36ec6bf66b",
+      "bytes": 10075
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/providers/subscription/claude/runtime.ts",
+      "sha256": "d62cb6f9042689cbb297d15f1165d4bf110bca51f8344e02b49eb6f6c86c214c",
+      "bytes": 36772
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/testing/llm-msw-cassette.ts",
+      "sha256": "182d7ed187724e0328ac15004afc09fd68552c12920842d2eeb78dc664ebe7c4",
+      "bytes": 7703
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/paths.ts",
+      "sha256": "fd81a7a5df9a7054dcf0576d8e4b53edec10c23f9628f7feca43b0804fe4260a",
+      "bytes": 5607
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-channel-audit/live-providers.ts",
+      "sha256": "e58af14c0889b479a1a437625f657d6da6ba6cf8b755cd6967c9e73618e0cb82",
+      "bytes": 15487
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-channel-audit/live-claude.ts",
+      "sha256": "4acda7571cd62728a06bd909056262788058e7ba5b14beefcdac9fe2e3f2a579",
+      "bytes": 8122
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-channel-audit/live-messengers.ts",
+      "sha256": "bdfd36a0ef04c85aed0b87021daeadc80cf65626cf05d7d48ff20d79b7fe9ef2",
+      "bytes": 18230
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/release-gate/atlas-server-harness.ts",
+      "sha256": "02001e906d28a4f4e7524105f689925ac2d67da9b4fc831013ab982cf91d3ed4",
+      "bytes": 6317
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/channel-loop-harness/disable-worker-processes.ts",
+      "sha256": "7073001d1fefeabc38f47be576df34be72c327fd25ed276171408e22f768aebb",
+      "bytes": 1402
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/verify-docker-files.sh",
+      "sha256": "cdd5588ad552d4e9a27c77fda1fe97210a13b5664fdd88131bcf762470e5d56d",
+      "bytes": 2217
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/verify-docker-startup.sh",
+      "sha256": "fe6b32d2a3e15d1ce0f86e8bf5ebbee540484d114aebbdf219f5d7c4b6e9a0c8",
+      "bytes": 3230
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/testing/recorded-provider-file-flow.ts",
+      "sha256": "25fa41cc187a6ca332a1cb8ef442bfa96db6d3039fc9ba2f34fa8fafc97fd185",
+      "bytes": 10516
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/providers/provider-file-flow.llm.test.ts",
+      "sha256": "d6c7ee6c445fb518ee1885aa5de00da0f2ea9e2cf0f25df6e6e661035fca44e6",
+      "bytes": 3045
+    }
+  ]
+}

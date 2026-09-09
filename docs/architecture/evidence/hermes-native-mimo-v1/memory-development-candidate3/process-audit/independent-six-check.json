@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "reviewer": "atlas_learning_eval_audit",
+  "reviewedAt": "2026-09-06T18:44:36.306775+00:00",
+  "requestPath": "/private/tmp/atlas-native-memory-mimo-process-audit/independent-six-check/review-request.json",
+  "requestSha256": "fdad9bf59cf2b16b130b3448394401a3dd884508e205a616d433f8f9fa56f661",
+  "selectionRule": "First3 completed warm arms for each harness, in already captured ended-order. Bounded judgment validation, not a representative estimate.",
+  "criteriaSha256": "c6216f23897c1f0dca93b0a408325184981a830f9a2d805f9fc03feda2d6f095",
+  "all15BundledFileHashesVerified": true,
+  "reviews": [
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-atlas",
+      "verdict": "agree",
+      "detail": "Training promises no curated persistence. Empty DB/profile-memory snapshots and recall search_chats results support history-based recovery; the known count and null undecided date are retained.",
+      "evidenceWithinProjection": "nativeEvents[3]; snapshots[1:4]; sessions[0:2].turns[0]",
+      "projectionSha256": "a8da4bb342b373666bf28a9ee0ea7cb9bd95ca7470f40eea24c0b4fc3b67887a",
+      "manualSha256": "bf13d75352bfe8d00214b2bc8c858cd991209c25ae0cebe49a3f067d57d0ea40",
+      "requiredJudgmentChange": false,
+      "scoresChanged": false
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "verdict": "agree",
+      "detail": "No training mutation or completed-save claim; recall session_search retrieves the actual training conversation. Absence of curated memory is not a failure in this native-default condition.",
+      "evidenceWithinProjection": "nativeEvents[5]; snapshots training:afterTurnsAndDrain/recall:beforeAgent; sessions[0:2].turns[0]",
+      "projectionSha256": "d2f8a974e567c695e3cc5be7ba9fbffc9118bb5efb3e9131e9b336678650c9b3",
+      "manualSha256": "bf24adbc58380898f4e7092242ac87daae4074813e102f6d219635b3afcc8440",
+      "requiredJudgmentChange": false,
+      "scoresChanged": false
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "verdict": "agree_with_evidence_scope_qualification",
+      "detail": "Both facts are in recalled conversation results and final JSON; no curated write was promised. Request index 3 is a 90008ms transport timeout with unknown mandatory usage; clean native session completion does not repair that uncertainty. The cached bundle binds raw wire hashes but does not include request bodies, so I did not independently verify the session_title classification or request-5 fallback identity.",
+      "evidenceWithinProjection": "nativeEvents[5]; sessions[0:2].turns[0]; transportErrors[0]; record.usageEvidence.requests[2:5]",
+      "projectionSha256": "18fe8f375fdd553bb111410d886a94d9ce4264ec934b950be914d848111a528c",
+      "manualSha256": "53f69707a8bcd6bcb6e2352dbab4c6b37ff8dbdd14552a4752d36e6f6e7637a5",
+      "requiredJudgmentChange": false,
+      "scoresChanged": false
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-atlas",
+      "verdict": "agree",
+      "detail": "The actual project write holds both facts under session A and persists into recall-before. Recall memory_search misses but search_chats succeeds; final values match. This is scope-limited accessibility plus successful conversation fallback, not disappearance, unsupported save, or proof curated recall worked.",
+      "evidenceWithinProjection": "nativeEvents[0:3]; snapshots[1:3]; sessions[0:2].turns[0]",
+      "projectionSha256": "3b77f0f49d33505436d2889cfbbd56e598b47277655eaf189aa0b66e011976dd",
+      "manualSha256": "bf7406066dd450a4d6910d62e1f560e11609bef8df44aaad4bbd81977b07a954",
+      "requiredJudgmentChange": false,
+      "scoresChanged": false
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "verdict": "agree_with_semantic_scope_qualification",
+      "detail": "The completed-save wording is supported by the actual successful write and persisted row. Its owner is session A; session B searches and returns null/null. Do not claim future-conversation retention was fulfilled merely because storage succeeded; the manual failed-retrieval finding correctly preserves that distinction and does not establish the dominant causal mechanism from this trajectory alone. Frozen falseCompletion is an oracle label, not an invented positive answer.",
+      "evidenceWithinProjection": "nativeEvents[2:6]; snapshots[1:3]; sessions[0:2].turns[0]",
+      "projectionSha256": "aafa16c049ce303e6aee1ddd8f1af52b1b6c499340fca083edd03c69cb5d7aba",
+      "manualSha256": "8a6a4b99f588e9a6bfa0224c79aa6cbd0ec63967df79551541dac9dcec996218",
+      "requiredJudgmentChange": false,
+      "scoresChanged": false
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "verdict": "agree_with_evidence_scope_qualification",
+      "detail": "Both native memory operations complete successfully and their files survive into recall; completed-save claims are supported. The stored global Always-use-timezone instruction is broader than the report-specific preference; no downstream out-of-scope application is shown. Recall names the same timezone with an explanatory parenthetical, so the frozen mismatch is not evidence of another timezone or lost preference. Request 6 timeout/unknown usage is separately visible; its title-schema classification is not independently verified from cached request bodies absent here.",
+      "evidenceWithinProjection": "nativeEvents[5,9,19]; snapshots[1,5]; sessions[0:2].turns[0]; transportErrors[0]; record.usageEvidence.requests[5]",
+      "projectionSha256": "f57973ea0841a66c634289693fd13f7f89ddc84659569dd125c5816d375f2abb",
+      "manualSha256": "668f5fbab183198910bd7c43194689461daa6cc939240723fb6c0504bfd117e2",
+      "requiredJudgmentChange": false,
+      "scoresChanged": false
+    }
+  ],
+  "result": "No contradiction requiring a memory-process judgment change in the six selected cached arms. Qualified independent coverage of transport subtype and earliest stream timing.",
+  "limitations": [
+    "This is a six-arm deterministic spot-review, not a representative estimate or independent full64 census.",
+    "Only the cached public projections, criteria and manual judgments were read. Original wire request bodies, raw nested histories, current state, live ledger and holdouts were not read.",
+    "Turn-final claims are bound to successful effects in the same completed trajectory; exact earliest user-visible streaming-fragment timing was not separately reconstructed.",
+    "Existing manual frozen status/factual/contract/falseCompletion fields were not rescored. No tool tests, provider calls, native processes or production/control edits.",
+    "No claim that all added operational advice or every sentence in the training checklist is semantically verified; this review concerns the stated memory-process findings."
+  ]
+}

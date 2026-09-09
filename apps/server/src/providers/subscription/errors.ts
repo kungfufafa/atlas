@@ -3,6 +3,10 @@ import {
   type SubscriptionErrorCode,
   type SubscriptionProviderKind,
 } from "@atlas/core";
+import {
+  captureProviderFailureEvidence,
+  type ProviderFailureEvidence,
+} from "../failure-evidence";
 
 export class SubscriptionRuntimeError extends Error {
   readonly code: SubscriptionErrorCode;
@@ -11,9 +15,10 @@ export class SubscriptionRuntimeError extends Error {
   constructor(
     provider: SubscriptionProviderKind,
     code: SubscriptionErrorCode,
-    message: string
+    message: string,
+    options?: ErrorOptions
   ) {
-    super(message);
+    super(message, options);
     this.name = "SubscriptionRuntimeError";
     this.code = code;
     this.provider = provider;
@@ -135,14 +140,19 @@ export function classifySubscriptionError(
 export function throwSubscriptionError(
   provider: SubscriptionProviderKind,
   message: string,
-  code?: SubscriptionErrorCode
+  code?: SubscriptionErrorCode,
+  cause?: unknown,
+  evidence?: ProviderFailureEvidence
 ): never {
   const resolved = code ?? classifySubscriptionError(message);
-  throw new SubscriptionRuntimeError(
+  const error = new SubscriptionRuntimeError(
     provider,
     resolved,
-    subscriptionErrorMessage(provider, resolved, message)
+    subscriptionErrorMessage(provider, resolved, message),
+    cause === undefined ? undefined : { cause }
   );
+  // Primitive causes cannot hold WeakMap evidence; retain it on the classified error.
+  throw evidence ? captureProviderFailureEvidence(error, evidence) : error;
 }
 
 export function subscriptionErrorMessage(

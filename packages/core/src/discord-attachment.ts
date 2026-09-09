@@ -1,6 +1,6 @@
 import { inferArtifactMimeType, normalizeMimeType } from "./artifact-mime";
 
-/** Discord bot upload cap for non-boosted servers (issue #200). */
+/** Conservative Atlas Discord upload policy, not the platform maximum (issue #200). */
 export const DISCORD_ARTIFACT_ATTACHMENT_MAX_BYTES = 8 * 1024 * 1024;
 
 const DISCORD_ATTACHABLE_EXTENSIONS = new Set([
@@ -16,6 +16,7 @@ const DISCORD_ATTACHABLE_EXTENSIONS = new Set([
   "md",
   "markdown",
   "json",
+  "jsonl",
   "zip",
   "docx",
   "xls",
@@ -36,6 +37,8 @@ const DISCORD_ATTACHABLE_MIME_TYPES = new Set([
   "text/tab-separated-values",
   "text/markdown",
   "application/json",
+  "application/x-ndjson",
+  "application/jsonl",
   "application/zip",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.ms-excel",

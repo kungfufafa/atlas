@@ -136,7 +136,7 @@ export async function stampArtifactLineage(input: {
       revision: 1,
       rootArtifactId: parentId,
       savedAt: new Date().toISOString(),
-      sizeBytes: 0,
+      sizeBytes: (await sizeOnDisk(input.parentFilePath)) ?? 0,
     };
     await writeFile(
       lineageMetaPath(input.parentFilePath),

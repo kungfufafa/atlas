@@ -44,7 +44,14 @@ export interface StreamHandlers {
   onActivityStart?: (activity: ActivityEvent) => void;
   onActivityUpdate?: (activity: ActivityEvent) => void;
   onApprovalRequested?: (approval: ApprovalRequest) => void;
+  onApprovalResolved?: (event: {
+    approvalId: string;
+    status: "approved" | "rejected";
+  }) => void;
   onArtifactCreated?: (artifact: Artifact) => void;
+  onChannelActionRequested?: (
+    request: import("@atlas/core/channel-native-actions").ChannelNativeActionRequest
+  ) => void;
   onChunk: StreamHandler;
   onCitationCreated?: (event: {
     citation: Citation;

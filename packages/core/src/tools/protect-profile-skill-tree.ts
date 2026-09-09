@@ -1,7 +1,17 @@
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  lstat,
+  mkdir,
+  readdir,
+  readFile,
+  readlink,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import type { ToolContext } from "../contract";
-import { pathExists } from "../fs";
+import { withProfileSoulMutationLock } from "../soul/mutation-lock";
 
 export const PROFILE_SKILL_SHELL_WRITE_MESSAGE =
   "Use skill_manage to create, patch, edit, delete, or manage supporting files for profile skills; writing skills/ via python_execute or bash is not allowed when skill_manage is available.";
@@ -19,62 +29,128 @@ export async function withProtectedProfileSkillTree<T>(
     return run();
   }
 
+  const protectedRun = () => runWithSkillSnapshot(workspaceRoot, run);
+  // Keep a concurrent skill_manage/file mutation from being mistaken for the
+  // shell's changes and overwritten during restoration.
+  if (context.orgId && context.profileId) {
+    return withProfileSoulMutationLock(
+      context.orgId,
+      context.profileId,
+      protectedRun
+    );
+  }
+  return protectedRun();
+}
+
+async function runWithSkillSnapshot<T>(
+  workspaceRoot: string,
+  run: () => Promise<T>
+): Promise<T> {
   const skillsRoot = path.join(workspaceRoot, "skills");
   const before = await snapshotSkillTree(skillsRoot);
-  const result = await run();
-  const after = await snapshotSkillTree(skillsRoot);
-
-  if (skillTreesEqual(before, after)) {
-    return result;
+  let outcome: { ok: true; value: T } | { ok: false; error: unknown };
+  try {
+    outcome = { ok: true, value: await run() };
+  } catch (error) {
+    outcome = { error, ok: false };
   }
-
-  await restoreSkillTree(skillsRoot, before);
-  throw new Error(PROFILE_SKILL_SHELL_WRITE_MESSAGE);
+  let changed = true;
+  try {
+    changed = !skillTreesEqual(before, await snapshotSkillTree(skillsRoot));
+  } catch {
+    // An unreadable tree after execution must also restore the known snapshot.
+  }
+  if (changed) {
+    await restoreSkillTree(skillsRoot, before);
+  }
+  if (!outcome.ok) {
+    throw outcome.error;
+  }
+  if (changed) {
+    throw new Error(PROFILE_SKILL_SHELL_WRITE_MESSAGE);
+  }
+  return outcome.value;
 }
+
+type SkillTreeEntry =
+  | { kind: "directory"; mode: number }
+  | { kind: "file"; mode: number; bytes: Buffer }
+  | { kind: "symlink"; target: string };
+
+type SkillTreeSnapshot = Map<string, SkillTreeEntry>;
 
 async function snapshotSkillTree(
   skillsRoot: string
-): Promise<Map<string, Buffer>> {
-  const files = new Map<string, Buffer>();
-  if (!(await pathExists(skillsRoot))) {
-    return files;
+): Promise<SkillTreeSnapshot> {
+  const snapshot: SkillTreeSnapshot = new Map();
+  try {
+    await lstat(skillsRoot);
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return snapshot;
+    }
+    throw error;
   }
-
-  await walkSkillFiles(skillsRoot, skillsRoot, files);
-  return files;
+  await walkSkillTree(skillsRoot, "", snapshot);
+  return snapshot;
 }
 
-async function walkSkillFiles(
+async function walkSkillTree(
   skillsRoot: string,
-  dir: string,
-  files: Map<string, Buffer>
+  relative: string,
+  snapshot: SkillTreeSnapshot
 ): Promise<void> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await walkSkillFiles(skillsRoot, full, files);
-      continue;
-    }
-    if (!entry.isFile()) {
-      continue;
-    }
-    const rel = path.relative(skillsRoot, full).split(path.sep).join("/");
-    files.set(rel, await readFile(full));
+  const full = path.join(skillsRoot, relative);
+  const info = await lstat(full);
+  // Links, including a linked skills root, are snapshot data. Never traverse
+  // their targets: those may be dangling or outside the protected tree.
+  if (info.isSymbolicLink()) {
+    snapshot.set(relative, { kind: "symlink", target: await readlink(full) });
+    return;
+  }
+  // biome-ignore lint/suspicious/noBitwiseOperators: Retain Unix permission bits, excluding file type.
+  const mode = info.mode & 0o777;
+  if (info.isFile()) {
+    snapshot.set(relative, { bytes: await readFile(full), kind: "file", mode });
+    return;
+  }
+  if (!info.isDirectory()) {
+    throw new Error(
+      "Cannot snapshot a special file in the protected skills tree."
+    );
+  }
+  snapshot.set(relative, { kind: "directory", mode });
+  for (const name of await readdir(full)) {
+    await walkSkillTree(skillsRoot, path.join(relative, name), snapshot);
   }
 }
 
 function skillTreesEqual(
-  left: Map<string, Buffer>,
-  right: Map<string, Buffer>
+  left: SkillTreeSnapshot,
+  right: SkillTreeSnapshot
 ): boolean {
   if (left.size !== right.size) {
     return false;
   }
 
-  for (const [rel, bytes] of left) {
+  for (const [rel, entry] of left) {
     const other = right.get(rel);
-    if (!(other && bytes.equals(other))) {
+    if (!other || entry.kind !== other.kind) {
+      return false;
+    }
+    if (entry.kind === "symlink" && other.kind === "symlink") {
+      if (entry.target !== other.target) {
+        return false;
+      }
+    } else if (entry.kind === "file" && other.kind === "file") {
+      if (entry.mode !== other.mode || !entry.bytes.equals(other.bytes)) {
+        return false;
+      }
+    } else if (
+      entry.kind === "directory" &&
+      other.kind === "directory" &&
+      entry.mode !== other.mode
+    ) {
       return false;
     }
   }
@@ -84,13 +160,26 @@ function skillTreesEqual(
 
 async function restoreSkillTree(
   skillsRoot: string,
-  snapshot: Map<string, Buffer>
+  snapshot: SkillTreeSnapshot
 ): Promise<void> {
   await rm(skillsRoot, { force: true, recursive: true });
 
-  for (const [rel, bytes] of snapshot) {
-    const dest = path.join(skillsRoot, ...rel.split("/"));
+  for (const [rel, entry] of snapshot) {
+    const dest = path.join(skillsRoot, rel);
     await mkdir(path.dirname(dest), { recursive: true });
-    await writeFile(dest, bytes);
+    if (entry.kind === "directory") {
+      // Restore children before reapplying possibly read-only directory modes.
+      await mkdir(dest, { mode: 0o700 });
+    } else if (entry.kind === "symlink") {
+      await symlink(entry.target, dest);
+    } else {
+      await writeFile(dest, entry.bytes, { mode: entry.mode });
+      await chmod(dest, entry.mode);
+    }
+  }
+  for (const [rel, entry] of [...snapshot].reverse()) {
+    if (entry.kind === "directory") {
+      await chmod(path.join(skillsRoot, rel), entry.mode);
+    }
   }
 }

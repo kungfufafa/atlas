@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
+import { CHANNEL_DOCUMENT_SAVE_FAILED_REPLY } from "@atlas/core/attachments/inbound-document";
 import type { Message } from "discord.js";
 import {
   buildDiscordAttachmentInput,
@@ -6,6 +7,13 @@ import {
   OVERSIZED_FILE_REPLY,
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
 } from "./attachments";
+
+async function saveAttachment(input: { bytes: Buffer; filename: string }) {
+  return {
+    relativePath: `artifacts/${input.filename}`,
+    sizeBytes: input.bytes.length,
+  };
+}
 
 function createMessage(options: {
   content?: string;
@@ -44,7 +52,77 @@ describe("buildDiscordAttachmentInput", () => {
     fetchSpy?.mockRestore();
   });
 
-  test("forwards a pdf with caption", async () => {
+  test("preserves all five saved document references and rejects a sixth before downloading", async () => {
+    const bytes = Buffer.alloc(5 * 1024 * 1024 + 1, 32);
+    fetchSpy = spyOn(globalThis, "fetch").mockImplementation(
+      Object.assign(async () => new Response(bytes), {
+        preconnect: fetch.preconnect,
+      })
+    );
+    const attachments = Array.from({ length: 5 }, (_, index) => ({
+      contentType: "text/plain",
+      name: `source-${index}.txt`,
+      size: bytes.length,
+    }));
+    let saves = 0;
+    const result = await buildDiscordAttachmentInput(
+      createMessage({ attachments, content: "Compare every file" }),
+      {
+        saveInboundDocument: async (input) => {
+          saves++;
+          return {
+            relativePath: `artifacts/${input.filename}`,
+            sizeBytes: input.bytes.length,
+          };
+        },
+      }
+    );
+    expect(result?.kind).toBe("input");
+    if (result?.kind !== "input") {
+      throw new Error("Expected saved documents");
+    }
+    expect(saves).toBe(5);
+    expect(result.input.documents).toBeUndefined();
+    expect(result.input.message).toContain("Compare every file");
+    for (const item of attachments) {
+      expect(result.input.message).toContain(`artifacts/${item.name}`);
+    }
+    fetchSpy.mockClear();
+    const rejected = await buildDiscordAttachmentInput(
+      createMessage({ attachments: [...attachments, { name: "sixth.txt" }] })
+    );
+    expect(rejected?.kind).toBe("reject");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("rejects a later unsupported entry before any source is saved", async () => {
+    fetchSpy = spyOn(globalThis, "fetch").mockRejectedValue(
+      new Error("must not download")
+    );
+    let saves = 0;
+    const result = await buildDiscordAttachmentInput(
+      createMessage({
+        attachments: [
+          { name: "source.txt", size: 6 * 1024 * 1024 },
+          { name: "payload.zip" },
+        ],
+      }),
+      {
+        saveInboundDocument: async () => {
+          saves++;
+          return {
+            relativePath: "artifacts/source.txt",
+            sizeBytes: 6 * 1024 * 1024,
+          };
+        },
+      }
+    );
+    expect(result?.kind).toBe("reject");
+    expect(saves).toBe(0);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("saves a pdf with caption and a tool reference", async () => {
     fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("pdf-bytes", {
         headers: { "content-type": "application/pdf" },
@@ -60,22 +138,23 @@ describe("buildDiscordAttachmentInput", () => {
           },
         ],
         content: "Summarize",
-      })
+      }),
+      { saveInboundDocument: saveAttachment }
     );
 
     expect(result).toEqual({
       input: {
-        documents: [
-          expect.objectContaining({
-            filename: "report.pdf",
-            mediaType: "application/pdf",
-          }),
-        ],
+        documents: undefined,
         images: undefined,
-        message: "Summarize",
+        message: expect.stringContaining("artifacts/report.pdf"),
       },
       kind: "input",
     });
+    if (result?.kind === "input") {
+      expect(result.input.message).toContain("Summarize");
+      expect(result.input.message).toContain("extract_document_text");
+      expect(result.input.message).not.toContain("pdf-bytes");
+    }
   });
 
   test("canonicalizes an image MIME alias before forwarding", async () => {
@@ -95,7 +174,8 @@ describe("buildDiscordAttachmentInput", () => {
             name: "photo.jpg",
           },
         ],
-      })
+      }),
+      { saveInboundDocument: saveAttachment }
     );
 
     expect(result).toEqual({
@@ -107,13 +187,13 @@ describe("buildDiscordAttachmentInput", () => {
             mediaType: "image/jpeg",
           },
         ],
-        message: "",
+        message: expect.stringContaining("artifacts/photo.jpg"),
       },
       kind: "input",
     });
   });
 
-  test("accepts xlsx like the web app", async () => {
+  test("saves xlsx for the spreadsheet tool without an inline document", async () => {
     fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("xlsx-bytes")
     );
@@ -127,13 +207,30 @@ describe("buildDiscordAttachmentInput", () => {
             name: "sheet.xlsx",
           },
         ],
-      })
+      }),
+      { saveInboundDocument: saveAttachment }
     );
 
     expect(result?.kind).toBe("input");
     if (result?.kind === "input") {
-      expect(result.input.documents?.[0]?.filename).toBe("sheet.xlsx");
+      expect(result.input.documents).toBeUndefined();
+      expect(result.input.message).toContain("artifacts/sheet.xlsx");
+      expect(result.input.message).toContain("spreadsheet");
+      expect(result.input.message).not.toContain("xlsx-bytes");
     }
+  });
+
+  test("rejects a supported source when persistence is unavailable", async () => {
+    fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("source text")
+    );
+    const result = await buildDiscordAttachmentInput(
+      createMessage({ attachments: [{ name: "notes.txt" }] })
+    );
+    expect(result).toEqual({
+      kind: "reject",
+      message: CHANNEL_DOCUMENT_SAVE_FAILED_REPLY,
+    });
   });
 
   test("transcribes a voice note into message text", async () => {
@@ -152,6 +249,10 @@ describe("buildDiscordAttachmentInput", () => {
       }),
       {
         caption: "Please summarize",
+        saveInboundDocument: async (input) => {
+          expect(input.bytes).toEqual(Buffer.from("ogg-bytes"));
+          return saveAttachment(input);
+        },
         transcribeAudio: async () => ({ text: "Transcribed voice message" }),
       }
     );
@@ -160,10 +261,38 @@ describe("buildDiscordAttachmentInput", () => {
       input: {
         documents: undefined,
         images: undefined,
-        message: "Transcribed voice message\n\nPlease summarize",
+        message: expect.stringContaining(
+          "Transcribed voice message\n\nPlease summarize"
+        ),
       },
       kind: "input",
     });
+  });
+
+  test("audio save failure prevents transcription", async () => {
+    fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("ogg-bytes")
+    );
+    let transcriptions = 0;
+    const result = await buildDiscordAttachmentInput(
+      createMessage({
+        attachments: [{ contentType: "audio/ogg", name: "voice.ogg" }],
+      }),
+      {
+        saveInboundDocument: async () => {
+          throw new Error("Disk full");
+        },
+        transcribeAudio: async () => {
+          transcriptions++;
+          return { text: "must not run" };
+        },
+      }
+    );
+    expect(result).toEqual({
+      kind: "reject",
+      message: CHANNEL_DOCUMENT_SAVE_FAILED_REPLY,
+    });
+    expect(transcriptions).toBe(0);
   });
 
   test("rejects zip files before download", async () => {
@@ -191,7 +320,7 @@ describe("buildDiscordAttachmentInput", () => {
           {
             contentType: "application/pdf",
             name: "big.pdf",
-            size: 6 * 1024 * 1024,
+            size: 26 * 1024 * 1024,
           },
         ],
       })
@@ -220,7 +349,7 @@ describe("buildDiscordAttachmentInput", () => {
 
     fetchSpy.mockResolvedValueOnce(
       new Response("x", {
-        headers: { "content-length": String(5 * 1024 * 1024 + 1) },
+        headers: { "content-length": String(25 * 1024 * 1024 + 1) },
       })
     );
     await expect(buildDiscordAttachmentInput(message)).resolves.toEqual({
@@ -236,8 +365,8 @@ describe("buildDiscordAttachmentInput", () => {
         cancelled = true;
       },
       start(controller) {
-        controller.enqueue(new Uint8Array(3 * 1024 * 1024));
-        controller.enqueue(new Uint8Array(3 * 1024 * 1024));
+        controller.enqueue(new Uint8Array(13 * 1024 * 1024));
+        controller.enqueue(new Uint8Array(13 * 1024 * 1024));
       },
     });
     fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(new Response(body));
@@ -295,7 +424,9 @@ describe("buildDiscordAttachmentInput", () => {
 
   test("bounds the initial CDN request with the overall deadline", async () => {
     fetchSpy = spyOn(globalThis, "fetch").mockImplementation(
-      async () => await new Promise<Response>(() => {})
+      Object.assign(async () => await new Promise<Response>(() => {}), {
+        preconnect: fetch.preconnect,
+      })
     );
 
     const result = await buildDiscordAttachmentInput(

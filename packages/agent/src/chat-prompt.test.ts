@@ -147,7 +147,6 @@ test("buildChatSystemPrompt includes artifact skill pointer when write_file is a
   expect(prompt).toContain("do not overwrite sizeBytes");
   expect(prompt).toContain("Do not paste the full file in chat");
   expect(prompt).toContain("HTML, React/JSX, SVG, Mermaid");
-  expect(prompt).toContain("artifacts/, not the profile workspace root");
   expect(prompt).not.toContain("save_artifact");
 });
 

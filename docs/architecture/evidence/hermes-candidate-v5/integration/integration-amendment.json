@@ -1,0 +1,12 @@
+{
+  "requestedBy": "Parent after direct production-patch review",
+  "at": "2026-09-06T19:17:59.508752+00:00",
+  "path": "apps/server/src/services/task-runner.ts",
+  "beforeSha256": "e20ee0ccfb5d915f082cbe69418939bde667f402ec5565ba26b440729a6ea6b5",
+  "afterSha256": "86232e6c5af0699c9a7e7b695c2e95d5c9758175eefc2b0f9a9105887c92adb0",
+  "scope": "Two equivalent template literals in stoppedTaskError only, per Atlas code style; original isolated patch/readiness unchanged.",
+  "behaviorChange": false,
+  "initialAssembledSourceHash": "a5b56faffdd6acbfb76237d1a0ae889d60ef136a740c325f86485a013a8678e7",
+  "initialCombinedPatchSha256": "95458a7d912d1b19ab9c790d899d5a2ec139eecd5aa1c574874459354fb9c5ef",
+  "initialProductionPatchSha256": "9e80b6c1f7bfe3743ffa042619469d069b708f01eee661962801c86b803fe806"
+}

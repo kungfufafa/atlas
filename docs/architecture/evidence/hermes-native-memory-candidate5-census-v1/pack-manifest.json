@@ -1,0 +1,140 @@
+{
+  "createdAt": "2026-09-07T00:43:10.101745+00:00",
+  "scope": "descriptive-live-batch-audit",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "files": {
+    "README.md": {
+      "sha256": "2e0b4ba0c821f277f89c239fab80176961279fc0193897496fdf1b56c0c826b2",
+      "bytes": 2924
+    },
+    "gate-summary.json": {
+      "sha256": "8d7c6ed891ad2cfdbc2da4a5fc6731affff293c681e60c79f3f6d15560aa6853",
+      "bytes": 704
+    },
+    "independent-review/episodic-qualification.json": {
+      "sha256": "60a92f351f5ac1dda12b205f266bd2bad1f0be86e409b373cb7875d71da639aa",
+      "bytes": 4453
+    },
+    "independent-review/episodic-qualification.md": {
+      "sha256": "369feec5db977a2650ce2ffc0e4db013ad4ab974bbb197cddccc58c095f0d13e",
+      "bytes": 1106
+    },
+    "independent-review/evidence-reference.json": {
+      "sha256": "68afd0ecd8b5d53014ea11a8bf7a53e2e430cc984b8059faa794f53dacc0f467",
+      "bytes": 12751
+    },
+    "independent-review/recomputations.json": {
+      "sha256": "4e395dab1b328f2a0f86ff119758307547c88a69525f6cdadebaa4f792d51ddd",
+      "bytes": 547
+    },
+    "independent-review/registration.json": {
+      "sha256": "9e486cec3c9ee0df6e6f01e1a07b9aeb52e925923633505a3e1a4b5dcc0b3fa9",
+      "bytes": 113777
+    },
+    "independent-review/review.json": {
+      "sha256": "2258db74b0e45464990c249d266ff679519e643b1022d1fc71de287226efd649",
+      "bytes": 1036
+    },
+    "independent-review/review.md": {
+      "sha256": "2cd8e018b5b09927f5ec16fabda2dabe494d6181db5f052a6c4a0ae0ef2e4f9b",
+      "bytes": 7422
+    },
+    "independent-review/reviews.json": {
+      "sha256": "87c3d9267d1d8e88e98bc2080cbff94fcf04954c9900a1ff663355a12f1cc742",
+      "bytes": 56074
+    },
+    "independent-review/selected-evidence.json": {
+      "sha256": "c9bab84edf257d1d0b0879e34f8cbd2a23cd039714944a232bbefb7cdb9f39ec",
+      "bytes": 34971
+    },
+    "independent-review/validation.json": {
+      "sha256": "72a4342c80dffdccbdfd65172ee7f5f5a0ae42b88770e255ff13176bb2d5558d",
+      "bytes": 931
+    },
+    "independent-review/validation.log": {
+      "sha256": "82e0159764f6a6e2df4a0710445def91231506bf6a2881a7b7b2db37b49d1773",
+      "bytes": 1478
+    },
+    "owner/audit-checkpoints/20260907T002838553169Z.json": {
+      "sha256": "6583c560b8f98fca74c18f0f89167024348ac780f73fa9361372cf37bdc68e13",
+      "bytes": 194675
+    },
+    "owner/closure.md": {
+      "sha256": "5c05a030adc9ddb56940a24a7220aa33d5094b8f91f06e21ab5cde381c598105",
+      "bytes": 6510
+    },
+    "owner/control-review/criteria.md": {
+      "sha256": "b735bdd1985388e97ccabff213e34bd67b04e3ba13dc4a49415110c72f1f52d5",
+      "bytes": 2947
+    },
+    "owner/control-view-registration.json": {
+      "sha256": "99def4c49c0789163a49cd5add80114a172247855f67786138d6976b8945b1de",
+      "bytes": 558
+    },
+    "owner/criteria.md": {
+      "sha256": "c6216f23897c1f0dca93b0a408325184981a830f9a2d805f9fc03feda2d6f095",
+      "bytes": 5002
+    },
+    "owner/final/completion.json": {
+      "sha256": "2ce5873ccb41a45f9f5784936fd036c3e0c939bbe164f020eba97915bcb45338",
+      "bytes": 1310
+    },
+    "owner/final/controls-dispositions.json": {
+      "sha256": "5e3c905e63703adc6c9dc2cdc098cba56ab3e11ee9202d61dcd3a56e4c59eff1",
+      "bytes": 238073
+    },
+    "owner/final/manifest.json": {
+      "sha256": "407572fb66e6b9b40aaeee8ee11f8688402ea4d2d93f4f81545c956045b2c83a",
+      "bytes": 139812
+    },
+    "owner/final/warm-dispositions.json": {
+      "sha256": "86f551153f4b82ff2480616f7e82f98b3282e097dca326f51352a6835b73c035",
+      "bytes": 447137
+    },
+    "owner/independent-episodic-qualification-reference.json": {
+      "sha256": "b71b6edf759ede030cffd0b741910e226acb7cb2f6a7816c0b52e993522f5d29",
+      "bytes": 518
+    },
+    "owner/independent-review-reference.json": {
+      "sha256": "88776dd037566a63e304663557de185466056e6ed3cae5ebc5b08db0bbf53ceb",
+      "bytes": 879
+    },
+    "owner/latest-report.json": {
+      "sha256": "1427b6a61131ece232ad9e27be1f4aefec5c8a93ce1e6391902e352a2d45f961",
+      "bytes": 457
+    },
+    "owner/latest-review-checkpoint.json": {
+      "sha256": "d0cc4d5013724b56bbb3402a8373801bee2e530455dcc67f944e45a324136001",
+      "bytes": 521
+    },
+    "owner/registration.json": {
+      "sha256": "ab558e2435e161d51285e56af59caae177b5bc2221b2376206ca2dac6fc857ec",
+      "bytes": 1799
+    },
+    "owner/report-script-v2-registration.json": {
+      "sha256": "613ff0b9298b0ceea34d7f65fbaeceaac371e11354f54a335d213c13dd83fefb",
+      "bytes": 620
+    },
+    "owner/reports/20260907T002838626697Z.md": {
+      "sha256": "1ccf5878f3484e7fa3106a0ef06242e4cb5127090d3d26740a96267bab6e640d",
+      "bytes": 51922
+    },
+    "owner/script-registration.json": {
+      "sha256": "cc31f7be39583cb90072055a71cd12c616faaeb1b941b650c4210115039cff3c",
+      "bytes": 2086
+    },
+    "source-copies.json": {
+      "sha256": "b76480a963334a11239dbf2243fd5bfd0a778e8b813f812dcb90b22f4f29728e",
+      "bytes": 8877
+    }
+  },
+  "copiedFiles": 28,
+  "totalPayloadBytes": 1341877,
+  "exactCopyHashesVerified": true,
+  "privateCredentialLiteralScan": "passed; value not copied or printed",
+  "sourceOriginalsRetained": true,
+  "sourceOrControlEdits": false,
+  "newProviderCalls": 0,
+  "testReruns": false,
+  "claimLimits": "No score replacement, outcome-blind second score, prevalence estimate, equivalent identity-security control, full96 independent review or Atlas/Hermes parity claim. Main failures, retries, auxiliary timeouts, missing usage and ancillary factual errors remain. Public dispositions contain no raw hidden reasoning. Full original projections, revision chains, source traces and archives remain at the original tmp paths, not in this selected static pack."
+}

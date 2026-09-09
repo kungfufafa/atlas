@@ -7,9 +7,11 @@ import { createCorsMiddleware } from "./cors";
 import { serializeHttpOpenApiSpec } from "./openapi";
 import { createOrgContextMiddleware } from "./org-middleware";
 import { registerArtifactPreviewRoutes } from "./routes/artifact-preview";
+import { registerArtifactPublicationRoutes } from "./routes/artifact-publications";
 import { registerArtifactShareRoutes } from "./routes/artifact-shares";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAutomationRoutes } from "./routes/automations";
+import { registerChannelAuthorizationRoutes } from "./routes/channel-authorization";
 import { registerCodingHarnessSettingsRoutes } from "./routes/coding-harnesses";
 import {
   registerComposioOAuthRoutes,
@@ -125,6 +127,8 @@ export function createHonoApp(options: ServerOptions) {
   registerSubscriptionRoutes(app, options);
   registerUserContextRoutes(app, options);
   registerSessionRoutes(app, options);
+  registerArtifactPublicationRoutes(app, options);
+  registerChannelAuthorizationRoutes(app, options);
   registerSubagentRoutes(app, options);
   registerProfileRoutes(app, options);
   registerProfilePortabilityRoutes(app, options);

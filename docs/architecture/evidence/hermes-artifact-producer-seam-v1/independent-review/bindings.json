@@ -1,0 +1,46 @@
+{
+  "files": [
+    {
+      "path": "/private/tmp/atlas-artifact-producer-seam/readiness.json",
+      "sha256": "4f6c5524f0da0cc8fac3138ec3a10d5061d65e90f26e8fe11868aa7646c7eb43",
+      "bytes": 4170
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-producer-seam/production.patch",
+      "sha256": "776a6e5235cf5ebd0739f47daa7bb1e2eac35ff03130210ba723f6729c70b4e6",
+      "bytes": 20620
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-producer-seam/combined.patch",
+      "sha256": "4809370cdce4ab3f756107576b605f6266d5f4c8d3b5190d8a47b33f18dbd4fc",
+      "bytes": 42186
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-producer-seam/source-inventory.json",
+      "sha256": "b78f0aa65a6f06a54ab682499904370d1abc896dcbafcc179480109a12008f62",
+      "bytes": 255531
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-producer-seam/implementation-notes.md",
+      "sha256": "97d631ca4c4dea19f3f742ffc9778af2d7defd34b66a3a567b5168b7bd7cd2ee",
+      "bytes": 6776
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-producer-seam/final-regressions.log",
+      "sha256": "2bccbee530c99703acad2416d5ab2f70d71518374c2f65b95d2fad4c18c9664b",
+      "bytes": 8593
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-producer-seam/final-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-producer-seam/final-lint.log",
+      "sha256": "4e07ac9498f4ceb2bcb8405851a3904ca0191770c25f5b27f6a5fdbb819693c9",
+      "bytes": 45
+    }
+  ],
+  "sourceFilesVerified": 2086,
+  "rootC5FilesVerifiedUnchanged": 2078
+}

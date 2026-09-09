@@ -1,0 +1,11 @@
+{
+  "status": "approved_for_one_execution",
+  "planSha256": "5c5981703f649a6008b07f9d66a4bfe4d396db4e0796a7f05b92d14f9e992a37",
+  "runnerSha256": "54e23c0d247df09f1df32460533329878b533cf2424838497d03cae45ca13d2e",
+  "readinessSha256": "f98e1e0328a397dfb7e777ddc8eb5bace45d09d9a0d6df9794608a7f980868d2",
+  "admissionId": "64510368-f5af-4a68-bf28-d8c0e1b759ef",
+  "outputDirectory": "/private/tmp/atlas-go-compatibility-probe-v1/execution",
+  "at": "2026-09-06T16:51:06.551908+00:00",
+  "independentReviewSha256": "32d4b19895be3cf0fc2c0c08b8ac17ea4bf4e6227a286d58946de981e782a2ee",
+  "scope": "User-authorized inexpensive-model compatibility investigation; ten fixed slots, both models, no harness quality selection; all prior DeepSeek outcomes preserved."
+}

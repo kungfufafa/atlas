@@ -1,0 +1,85 @@
+{
+  "at": "2026-09-06T23:48:38.702049+00:00",
+  "scope": "Selected source-bound evidence; full original evidence remains at source paths. Root product remains C5, implementations in scratch only.",
+  "copySetupQualification": "First copy attempt incorrectly guessed foundation manifest.json and stopped after readiness/notes. Discovery found evidence-reference.json; identical prior copies checked before completing this pack. No source evidence modified.",
+  "files": [
+    {
+      "path": "readiness.json",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/readiness.json",
+      "sha256": "d5d3d3c7185bc8fbd6ec71ad80809812532001e0002a1462b7420aafed9cee96",
+      "bytes": 10709
+    },
+    {
+      "path": "implementation-notes.md",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/implementation-notes.md",
+      "sha256": "9df87de19628835699c89c0fd7d9fb27355c1031195127d90b37f084493a96e7",
+      "bytes": 6550
+    },
+    {
+      "path": "evidence-reference.json",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/evidence-reference.json",
+      "sha256": "e3271a0e3f098df896cd1ae0d69f35799e8b5301e8c7943cc589132b1dbe54c5",
+      "bytes": 7681
+    },
+    {
+      "path": "source-inventory.json",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/source-inventory.json",
+      "sha256": "38b659f6c03bc0ab9bb5cf98df35f1068fffda741402323620e323d91577b7dd",
+      "bytes": 254952
+    },
+    {
+      "path": "combined.patch",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/combined.patch",
+      "sha256": "650ec0d646072bd3fc5f536023638688b3ecb89c95f23c36dcd72687243c94c6",
+      "bytes": 63675
+    },
+    {
+      "path": "production.patch",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/production.patch",
+      "sha256": "5df9f1413d68920db8e2f765011b40fe1fb617cec1fc348ebbdacbfee3379680",
+      "bytes": 38650
+    },
+    {
+      "path": "final-scoped-regressions.log",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/final-scoped-regressions.log",
+      "sha256": "de51555413f18ed6bb16f88f328478c73d2bf21e48a281b89ab34d9296eb2d27",
+      "bytes": 4694
+    },
+    {
+      "path": "final-production-typecheck.log",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/final-production-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-scope-with-foreign-negatives.log",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/final-scope-with-foreign-negatives.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "final-lint.log",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/final-lint.log",
+      "sha256": "9ad98b0a44e38ed9bccf3867dbb03ffd8b84228c18005d13adf65a24f81e1136",
+      "bytes": 46
+    },
+    {
+      "path": "initial-tests.log",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/initial-tests.log",
+      "sha256": "4a0bc10ae2f4735014f3efe9d189741883940e1c167f010bc70ab27cbcbd343d",
+      "bytes": 26312
+    },
+    {
+      "path": "second-tests.log",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/second-tests.log",
+      "sha256": "776683703ba29444da0e14529467c0eabb537349a13fbb566cd0da6bb157cb99",
+      "bytes": 3764
+    },
+    {
+      "path": "format-initial.log",
+      "source": "/private/tmp/atlas-artifact-publication-foundation/format-initial.log",
+      "sha256": "a4f22ce4b777195e373cdc5c540a7d956198143be81fbef7b526430522e3f7b5",
+      "bytes": 638
+    }
+  ]
+}

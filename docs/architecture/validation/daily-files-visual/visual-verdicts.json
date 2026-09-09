@@ -1,0 +1,268 @@
+{
+  "attempt": "protected-import-layout-20260906",
+  "files": 24,
+  "pages": 30,
+  "renderTools": "Bundled LibreOffice and Poppler; explicit fontconfig directories and writable temporary cache",
+  "coveringFontSha256": "876af2cd4854644e7f3e7feb2f688997fdb3343c6df6693611209c9dfb47ccec",
+  "initialFindings": [
+    "Default fontconfig omitted CJK glyphs; configured font discovery repaired the test rendering without modifying documents.",
+    "New CSV import layout clipped identifiers and headers; product import sizing repaired and rerendered.",
+    "Initial perceived X02 header regression was a visual-review mistake: before/after PNG hashes match; inherited date ### remains."
+  ],
+  "limits": [
+    "Renderer uses explicitly configured local fonts; Docker image not rebuilt.",
+    "Spreadsheet source print layouts may remain unreadable.",
+    "No OCR or universal Office layout claim."
+  ],
+  "records": [
+    {
+      "case": "D01",
+      "reference": "artifacts/input-edited.docx",
+      "sha256": "15c317bfb1a3adb8afb1a338f6c48edc3ec41d46341c8165f1c612d651765efa",
+      "pages": ["D01/input-edited.docx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "D02",
+      "reference": "artifacts/input-edited.docx",
+      "sha256": "fcbea9cc3ccd6dd1ce3113d9d6204c07a2beeee45b91f4f0202d50978946bc44",
+      "pages": ["D02/input-edited.docx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "D04",
+      "reference": "artifacts/input-edited.docx",
+      "sha256": "e821813738d4f02daa076f01f6e073d27699d7a7a316277cf6d1ee31fbf582d8",
+      "pages": [
+        "D04/input-edited.docx/page-1.png",
+        "D04/input-edited.docx/page-2.png"
+      ],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "P01",
+      "reference": "artifacts/input-edited.pptx",
+      "sha256": "f04ae4e34f5854a9ac190570cc181ab76d710fe3b63408a0b7a09feb59bf27e5",
+      "pages": ["P01/input-edited.pptx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "P02",
+      "reference": "artifacts/input-edited.pptx",
+      "sha256": "2cbf6f3cb4f8a99242f3f765d0a71c581e52a3f5618d9aa117c57a3f25eb37ac",
+      "pages": ["P02/input-edited.pptx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "P03",
+      "reference": "artifacts/input-edited.pptx",
+      "sha256": "93f3829ab7e65d8070580c79bf42c90d90ad91aa6f697f6ee257458222446c81",
+      "pages": ["P03/input-edited.pptx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "P04",
+      "reference": "artifacts/input-edited.pptx",
+      "sha256": "3191eb5f81d32e9ded185de2d5dc5e740067c348774ebe1b5a13a258ffb0779f",
+      "pages": [
+        "P04/input-edited.pptx/page-1.png",
+        "P04/input-edited.pptx/page-2.png"
+      ],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "X01",
+      "reference": "input-v2.xlsx",
+      "sha256": "021cdddf13cae6947fcc19c166810697529978146a9ffb78cbd4e389b66d660f",
+      "pages": ["X01/input-v2.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inherited-layout-limit",
+      "sourceUnchanged": true,
+      "notes": "Date cells display ### because source column widths are too narrow; cell types/values preserved. No automatic print-layout repair requested."
+    },
+    {
+      "case": "X01",
+      "reference": "input.xlsx",
+      "sha256": "731657b4f3ffb8671f1d0f1ea34358bcc99e3423f9288f8ae0103dfd609b6674",
+      "pages": ["X01/input.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inherited-layout-limit",
+      "sourceUnchanged": true,
+      "notes": "Date cells display ### because source column widths are too narrow; cell types/values preserved. No automatic print-layout repair requested."
+    },
+    {
+      "case": "X02",
+      "reference": "input-v2-v2.xlsx",
+      "sha256": "c802ef96a5fda83ed5d2c52a1abd870a90600221c8354a1db3e1a395cb4b53b0",
+      "pages": [
+        "X02/input-v2-v2.xlsx/page-1.png",
+        "X02/input-v2-v2.xlsx/page-2.png"
+      ],
+      "conversion": "success",
+      "visualVerdict": "inherited-layout-limit",
+      "sourceUnchanged": true,
+      "notes": "Date cells display ### because source column widths are too narrow; cell types/values preserved. No automatic print-layout repair requested."
+    },
+    {
+      "case": "X02",
+      "reference": "input-v2.xlsx",
+      "sha256": "27f6fae2d396086d60fb9c3eb80869ae206d19a1587e68a3cd6a04925143a781",
+      "pages": ["X02/input-v2.xlsx/page-1.png", "X02/input-v2.xlsx/page-2.png"],
+      "conversion": "success",
+      "visualVerdict": "inherited-layout-limit",
+      "sourceUnchanged": true,
+      "notes": "Date cells display ### because source column widths are too narrow; cell types/values preserved. No automatic print-layout repair requested."
+    },
+    {
+      "case": "X03",
+      "reference": "input.xlsx",
+      "sha256": "9d0bbd5e2f634da968f3192a2ac3c5b72d943a6e6afbea85f09196cb1bf780e1",
+      "pages": ["X03/input.xlsx/page-1.png", "X03/input.xlsx/page-2.png"],
+      "conversion": "success",
+      "visualVerdict": "source-only-unsupported-edit",
+      "sourceUnchanged": true,
+      "notes": "Unmodified source chart spans two print pages; chart workbook editing remains unsupported."
+    },
+    {
+      "case": "X04",
+      "reference": "input-v2-v2.xlsx",
+      "sha256": "ac0be7c16c0f64ed0aaa43f171b2820f384e584167b394735f76b77d913c2716",
+      "pages": ["X04/input-v2-v2.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "X04",
+      "reference": "input-v2.xlsx",
+      "sha256": "619b26dc01e60c228c5ba4a035ccc2e90b71f3c6a7fab214139e1d8989051d35",
+      "pages": ["X04/input-v2.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "C01",
+      "reference": "artifacts/imported.xlsx",
+      "sha256": "1aa0b39f89c368194568a161389a3afd87d3077a5a823f014e555762a589628b",
+      "pages": ["C01/imported.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "C02",
+      "reference": "artifacts/imported.xlsx",
+      "sha256": "3471b8ba8604b302c78c6edcdd175a4e8332715f5b112cbe967553a2eb8c636f",
+      "pages": ["C02/imported.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "C03",
+      "reference": "artifacts/imported.xlsx",
+      "sha256": "0410de0a4f0667a48a4864d81db2906aeb437daf87513a1b624d30aa2cc39762",
+      "pages": ["C03/imported.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "W01",
+      "reference": "artifacts/packet.pdf",
+      "sha256": "602203ba93ba241d03354583cd6e6d39b5f7e029c2915d2b76d5b4d614b9ab1b",
+      "pages": ["W01/packet.pdf/page-1.png", "W01/packet.pdf/page-2.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "W01",
+      "reference": "artifacts/report-edited.docx",
+      "sha256": "7cd8bfe593c32c9f4a851c0df3f9b92e676b87db01ca3111591d51a3b8d1f2db",
+      "pages": ["W01/report-edited.docx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "W01",
+      "reference": "artifacts/report.pdf",
+      "sha256": "0b874441012490103888832815978fcf8b9d7dd93d7ceb6913c9a1030715e4c8",
+      "pages": ["W01/report.pdf/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "W01",
+      "reference": "artifacts/summary-edited.pptx",
+      "sha256": "095dc2e5486da879236db6203313cc456ed4ad15f0327f07afe800daadcc02ea",
+      "pages": ["W01/summary-edited.pptx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "W01",
+      "reference": "artifacts/summary-v2-v2.xlsx",
+      "sha256": "1fcc3aeed6c73ed07350e3616344d728960da3539a753fc6c57eba064e449b26",
+      "pages": ["W01/summary-v2-v2.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "W01",
+      "reference": "artifacts/summary-v2.xlsx",
+      "sha256": "9808306ab930a4f66b0b0cdf042b921037a841be7eb1b92572982a8ceb7114aa",
+      "pages": ["W01/summary-v2.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    },
+    {
+      "case": "W01",
+      "reference": "artifacts/summary.xlsx",
+      "sha256": "17fb46579301868472f7c8fa8d200c8fd18e8910bfdb50aadeba880a56ab03a8",
+      "pages": ["W01/summary.xlsx/page-1.png"],
+      "conversion": "success",
+      "visualVerdict": "inspected",
+      "sourceUnchanged": true,
+      "notes": "Content readable in this configured LibreOffice render; this is not universal layout fidelity."
+    }
+  ]
+}

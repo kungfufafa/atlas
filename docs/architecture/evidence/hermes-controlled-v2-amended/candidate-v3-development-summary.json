@@ -1,0 +1,662 @@
+{
+  "admittedPairs": {
+    "atlasSuccess": 0.7777777777777778,
+    "counts": {
+      "atlasOnly": 2,
+      "bothFail": 3,
+      "bothPass": 26,
+      "hermesOnly": 5
+    },
+    "difference": -0.08333333333333333,
+    "hermesSuccess": 0.8611111111111112,
+    "pairs": 36
+  },
+  "allEndedAttempts": 72,
+  "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "categories": [
+    {
+      "category": "corrections_and_supplied_memory",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 6,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 6
+    },
+    {
+      "category": "evidence_and_recovery",
+      "atlasSuccess": 0.5,
+      "counts": {
+        "atlasOnly": 1,
+        "bothFail": 1,
+        "bothPass": 2,
+        "hermesOnly": 2
+      },
+      "difference": -0.16666666666666666,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 6
+    },
+    {
+      "category": "file_transformation",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 6,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 6
+    },
+    {
+      "category": "long_context_and_continuation",
+      "atlasSuccess": 0.8333333333333334,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 1,
+        "bothPass": 5,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 0.8333333333333334,
+      "pairs": 6
+    },
+    {
+      "category": "numeric_fidelity",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 6,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 6
+    },
+    {
+      "category": "source_grounding",
+      "atlasSuccess": 0.3333333333333333,
+      "counts": {
+        "atlasOnly": 1,
+        "bothFail": 1,
+        "bothPass": 1,
+        "hermesOnly": 3
+      },
+      "difference": -0.3333333333333333,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 6
+    }
+  ],
+  "decision": {
+    "classification": "exploratory_only",
+    "equivalenceClaim": false,
+    "reasons": [
+      "Pilot and development results are unscored or exploratory, not confirmatory.",
+      "Atlas aggregate strict success is below 90%.",
+      "Atlas strict success is below 80% in at least one family.",
+      "At least one family regresses by more than ten percentage points."
+    ],
+    "regressedFamilies": ["missing_evidence", "source_grounded_comparison"]
+  },
+  "families": [
+    {
+      "family": "configuration_migration",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 3,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 3,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "customer_order_join",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 3,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 3,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "explicit_correction",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 3,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 3,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "invalid_path_recovery",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 1,
+        "bothFail": 0,
+        "bothPass": 2,
+        "hermesOnly": 0
+      },
+      "difference": 0.3333333333333333,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 1,
+          "bothFail": 0,
+          "bothPass": 2,
+          "hermesOnly": 0
+        },
+        "difference": 0.3333333333333333,
+        "hermesSuccess": 0.6666666666666666,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0.3333333333333333,
+      "instances": 3
+    },
+    {
+      "family": "inventory_allocation",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 3,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 3,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "invoice_reconciliation",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 3,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 3,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "linked_workflow",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 3,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 3,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "missing_evidence",
+      "atlasSuccess": 0,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 1,
+        "bothPass": 0,
+        "hermesOnly": 2
+      },
+      "difference": -0.6666666666666666,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 1,
+          "bothPass": 0,
+          "hermesOnly": 2
+        },
+        "difference": -0.6666666666666666,
+        "hermesSuccess": 0.6666666666666666,
+        "pairs": 3
+      },
+      "equalWeightDifference": -0.6666666666666666,
+      "instances": 3
+    },
+    {
+      "family": "paged_ledger",
+      "atlasSuccess": 0.6666666666666666,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 1,
+        "bothPass": 2,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 0.6666666666666666,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0.6666666666666666,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 1,
+          "bothPass": 2,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 0.6666666666666666,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "portable_memory_application",
+      "atlasSuccess": 1,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 3,
+        "hermesOnly": 0
+      },
+      "difference": 0,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 3,
+          "hermesOnly": 0
+        },
+        "difference": 0,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    },
+    {
+      "family": "source_grounded_comparison",
+      "atlasSuccess": 0.3333333333333333,
+      "counts": {
+        "atlasOnly": 0,
+        "bothFail": 0,
+        "bothPass": 1,
+        "hermesOnly": 2
+      },
+      "difference": -0.6666666666666666,
+      "hermesSuccess": 1,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0.3333333333333333,
+        "counts": {
+          "atlasOnly": 0,
+          "bothFail": 0,
+          "bothPass": 1,
+          "hermesOnly": 2
+        },
+        "difference": -0.6666666666666666,
+        "hermesSuccess": 1,
+        "pairs": 3
+      },
+      "equalWeightDifference": -0.6666666666666666,
+      "instances": 3
+    },
+    {
+      "family": "source_latest_policy",
+      "atlasSuccess": 0.3333333333333333,
+      "counts": {
+        "atlasOnly": 1,
+        "bothFail": 1,
+        "bothPass": 0,
+        "hermesOnly": 1
+      },
+      "difference": 0,
+      "hermesSuccess": 0.3333333333333333,
+      "pairs": 3,
+      "admittedPairs": {
+        "atlasSuccess": 0.3333333333333333,
+        "counts": {
+          "atlasOnly": 1,
+          "bothFail": 1,
+          "bothPass": 0,
+          "hermesOnly": 1
+        },
+        "difference": 0,
+        "hermesSuccess": 0.3333333333333333,
+        "pairs": 3
+      },
+      "equalWeightDifference": 0,
+      "instances": 3
+    }
+  ],
+  "familyBootstrap": {
+    "draws": 100000,
+    "seed": 20260906,
+    "clusters": 12,
+    "degenerate": false,
+    "lower": -0.24999999999999997,
+    "method": "Percentile paired bootstrap of equal-weight family effects; repeats averaged within seeded instance.",
+    "pointEstimate": -0.08333333333333333,
+    "upper": 0.05555555555555555
+  },
+  "intentionToRun": {
+    "atlasSuccess": 0.7777777777777778,
+    "counts": {
+      "atlasOnly": 2,
+      "bothFail": 3,
+      "bothPass": 26,
+      "hermesOnly": 5
+    },
+    "difference": -0.08333333333333333,
+    "hermesSuccess": 0.8611111111111112,
+    "pairs": 36
+  },
+  "limitations": [
+    "Results concern the frozen synthetic task distribution, exact model/provider, harness revisions and resource limits only.",
+    "Twelve task families are the uncertainty clusters; repeated variants are not independent task concepts.",
+    "Diagnostic artifact/factual/protocol outcomes do not relax strict task success.",
+    "Unknown costs remain unknown; token counts are not monetary cost or subscription-quota evidence.",
+    "This pre-live control amendment hides descriptive evaluator identities behind opaque transport IDs and neutral workspaces; original frozen V2 remains an unrun prior revision. Tasks, seeds, ordering, budgets, and oracles are unchanged.",
+    "V2 is a separately frozen contract clarification and envelope tightening. V1 and native-product results are retained separately and never pooled.",
+    "Non-2xx, transport errors or missing mandatory usage make the entire attempt uncertifiable and failed, even if later requests recover. Known partial token sums are lower bounds, not complete totals.",
+    "Cached usage omission remains unknown and does not invalidate otherwise certified mandatory usage. No monetary cost or subscription quota is inferred.",
+    "The original falseCompletion diagnostic includes exact artifact-schema defects; it is not a claim of deception. Envelope-only defects are reported separately.",
+    "Only the last final answer and final artifact state are scored; intermediate turns and exactly-once transitions are not measured."
+  ],
+  "missingExecutions": [],
+  "perHarness": {
+    "atlas": {
+      "artifactCorrect": 31,
+      "artifactFailures": 5,
+      "criticalIntegrityFailures": 0,
+      "endedAttempts": 36,
+      "evaluatedAttempts": 36,
+      "evidenceFailures": 0,
+      "factualFailures": 5,
+      "falseCompletion": 5,
+      "integrityFailures": 0,
+      "missingUsage": 0,
+      "protocolFailures": 8,
+      "resources": {
+        "cachedTokens": {
+          "mean": 16105.411764705883,
+          "measuredCount": 34,
+          "median": 11072,
+          "missingCount": 2,
+          "p95": 47417.6,
+          "total": null,
+          "observedSum": 547584
+        },
+        "elapsedMs": {
+          "mean": 17377.666666666668,
+          "measuredCount": 36,
+          "median": 12189,
+          "missingCount": 0,
+          "p95": 49350.25,
+          "total": 625596,
+          "observedSum": 625596
+        },
+        "generatedTokens": {
+          "mean": 1525.0833333333333,
+          "measuredCount": 36,
+          "median": 1028,
+          "missingCount": 0,
+          "p95": 5308,
+          "total": 54903,
+          "observedSum": 54903
+        },
+        "observedCostUsd": {
+          "mean": null,
+          "measuredCount": 0,
+          "median": null,
+          "missingCount": 36,
+          "p95": null,
+          "total": null,
+          "observedSum": null
+        },
+        "promptTokens": {
+          "mean": 24242.027777777777,
+          "measuredCount": 36,
+          "median": 14389,
+          "missingCount": 0,
+          "p95": 86797.75,
+          "total": 872713,
+          "observedSum": 872713
+        },
+        "providerRequests": {
+          "mean": 5.222222222222222,
+          "measuredCount": 36,
+          "median": 4,
+          "missingCount": 0,
+          "p95": 14.25,
+          "total": 188,
+          "observedSum": 188
+        },
+        "scope": "All scheduled attempts including failures. Totals are null if any value is missing; observedSum is only the measured partial sum."
+      },
+      "unavailable": 0
+    },
+    "hermes": {
+      "artifactCorrect": 34,
+      "artifactFailures": 2,
+      "criticalIntegrityFailures": 0,
+      "endedAttempts": 36,
+      "evaluatedAttempts": 36,
+      "evidenceFailures": 0,
+      "factualFailures": 4,
+      "falseCompletion": 2,
+      "integrityFailures": 0,
+      "missingUsage": 0,
+      "protocolFailures": 5,
+      "resources": {
+        "cachedTokens": {
+          "mean": 30061.176470588234,
+          "measuredCount": 34,
+          "median": 22272,
+          "missingCount": 2,
+          "p95": 90879.99999999997,
+          "total": null,
+          "observedSum": 1022080
+        },
+        "elapsedMs": {
+          "mean": 20159.694444444445,
+          "measuredCount": 36,
+          "median": 15841.5,
+          "missingCount": 0,
+          "p95": 52723,
+          "total": 725749,
+          "observedSum": 725749
+        },
+        "generatedTokens": {
+          "mean": 1482.7222222222222,
+          "measuredCount": 36,
+          "median": 1065.5,
+          "missingCount": 0,
+          "p95": 4589.75,
+          "total": 53378,
+          "observedSum": 53378
+        },
+        "observedCostUsd": {
+          "mean": null,
+          "measuredCount": 0,
+          "median": null,
+          "missingCount": 36,
+          "p95": null,
+          "total": null,
+          "observedSum": null
+        },
+        "promptTokens": {
+          "mean": 36892.86111111111,
+          "measuredCount": 36,
+          "median": 27677,
+          "missingCount": 0,
+          "p95": 112493,
+          "total": 1328143,
+          "observedSum": 1328143
+        },
+        "providerRequests": {
+          "mean": 6.138888888888889,
+          "measuredCount": 36,
+          "median": 5.5,
+          "missingCount": 0,
+          "p95": 13,
+          "total": 221,
+          "observedSum": 221
+        },
+        "scope": "All scheduled attempts including failures. Totals are null if any value is missing; observedSum is only the measured partial sum."
+      },
+      "unavailable": 0
+    }
+  },
+  "phase": "development",
+  "session": "development-2026-09-06T16-19-34-043Z-3cfbd0d9",
+  "unavailableExecutions": [],
+  "validity": {
+    "issues": [],
+    "valid": true
+  },
+  "accounting": {
+    "atlas": {
+      "cacheUnknownAttempts": 2,
+      "certifiedAttempts": 36,
+      "claimedCompletionContradicted": 5,
+      "finalEnvelopeFailures": 0,
+      "knownPartialGeneratedTokens": 54903,
+      "knownPartialPromptTokens": 872713,
+      "originalFinalContractPass": 28,
+      "provenBudgetExceeded": 0,
+      "uncertifiableAttempts": 0
+    },
+    "hermes": {
+      "cacheUnknownAttempts": 2,
+      "certifiedAttempts": 36,
+      "claimedCompletionContradicted": 2,
+      "finalEnvelopeFailures": 2,
+      "knownPartialGeneratedTokens": 53378,
+      "knownPartialPromptTokens": 1328143,
+      "originalFinalContractPass": 31,
+      "provenBudgetExceeded": 0,
+      "uncertifiableAttempts": 0
+    }
+  },
+  "certifiedUsagePairs": {
+    "counts": {
+      "atlasOnly": 2,
+      "bothFail": 3,
+      "bothPass": 26,
+      "hermesOnly": 5
+    },
+    "pairs": 36
+  },
+  "transportAdmittedPairs": {
+    "counts": {
+      "atlasOnly": 2,
+      "bothFail": 3,
+      "bothPass": 26,
+      "hermesOnly": 5
+    },
+    "pairs": 36
+  },
+  "version": "atlas-hermes-controlled-v2-amended"
+}

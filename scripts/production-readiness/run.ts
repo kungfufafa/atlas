@@ -8,7 +8,10 @@ import {
 } from "../../packages/core/src";
 import { chaosInjector } from "./chaos-injector";
 import { AtlasLoadHarness } from "./load-harness";
-import { writeProductionReports } from "./report-writer";
+import {
+  evaluateProductionEvidence,
+  writeProductionReports,
+} from "./report-writer";
 import { ResourceAuditor } from "./resource-auditor";
 import { RollbackVerifier } from "./rollback-verifier";
 
@@ -310,7 +313,7 @@ async function main() {
   const leakAudit = auditor.auditLeaks(snapshotBefore, snapshotAfter);
   console.log(` -> ${leakAudit.details}`);
   console.log(
-    ` -> Zero Zombie / Leaks: ${leakAudit.passed ? "PASSED ✅" : "FAILED ❌"}`
+    ` -> Runner memory audit: ${leakAudit.passed ? "PASS" : "FAIL"}; browser/temp resources were not instrumented`
   );
 
   // 14. Deployment Rollback Verification (Level 1, Level 2, Level 3)
@@ -324,7 +327,7 @@ async function main() {
   const stagingDeployment = await rollbackVerifier.verifyRealStagingFlow();
 
   console.log(
-    ` -> Level 1 Rollback Simulation: ${rollbackSimulation.passed ? "PASSED ✅" : "FAILED ❌"}`
+    ` -> Level 1 Rollback Simulation: ${rollbackSimulation.status.toUpperCase()}`
   );
   console.log(
     ` -> Level 2 Local Prod-Like Rollback: ${localProdLikeRollback.passed ? "PASSED ✅" : "FAILED ❌"} (Baseline PID: ${localProdLikeRollback.baselinePid}, Candidate PID: ${localProdLikeRollback.candidatePid})`
@@ -343,12 +346,12 @@ async function main() {
   // 16. Resource Capacity Limits Snapshot
   const resourceLimits: Record<
     string,
-    { capacity: number; measuredPeak: number }
+    { capacity: number; activeAtEnd: number }
   > = {};
   for (const [key, cap] of Object.entries(DEFAULT_RESOURCE_CAPACITIES)) {
     resourceLimits[key] = {
+      activeAtEnd: defaultResourceLimiter.getActive(key as any),
       capacity: cap,
-      measuredPeak: defaultResourceLimiter.getActive(key as any),
     };
   }
 
@@ -385,9 +388,9 @@ async function main() {
     cancellationStress,
     cascadeTimeline,
     chaosResults: {
-      provider5xxRecovery: chaosBatch.failed > 0,
+      provider5xxRecovery: false,
       providerTimeoutRecovery: false,
-      rateLimit429Recovery: chaosBatch.failed > 0,
+      rateLimit429Recovery: false,
       retrySafety: false,
     },
     commitSha,
@@ -399,10 +402,7 @@ async function main() {
       testsFailed: 0,
       testsPassed: 0,
     },
-    decision:
-      localProdLikeRollback.passed && soak.status === "pass"
-        ? ("MATURE" as const)
-        : ("PARTIAL" as const),
+    decision: "PARTIAL" as const,
     environment: "LOCAL / CI LOAD BASELINE",
     localProdLikeRollback,
     noisyNeighborEvidence,
@@ -415,10 +415,9 @@ async function main() {
     resourceLimits,
     rollbackSimulation,
     saturationPoint: {
-      degradationConcurrencyOnset: 65,
-      mainBottleneck:
-        "Provider token rate limits & child process concurrency bounds",
-      safeObservedConcurrency: 50,
+      degradationConcurrencyOnset: null,
+      mainBottleneck: "NOT_MEASURED: workloads use delayed fixture responses",
+      safeObservedConcurrency: null,
     },
     slos: sloEvaluations,
     soak,
@@ -431,15 +430,11 @@ async function main() {
     `📄 Generated Reports:\n- JSON: ${paths.jsonPath}\n- Markdown: ${paths.mdPath}`
   );
   console.log("============================================================");
-  const ready =
-    soak.status === "pass" &&
-    leakAudit.passed &&
-    rollbackSimulation.passed &&
-    localProdLikeRollback.passed;
+  const evidence = evaluateProductionEvidence(reportData);
 
   console.log("============================================================");
-  console.log(`ATLAS PRODUCTION OPERATIONS: ${reportData.decision}`);
-  console.log(`CONTROLLED BETA: ${ready ? "GO" : "NO-GO"}`);
+  console.log(`LOCAL HARNESS DECISION: ${evidence.decision}`);
+  console.log(`PRODUCTION READINESS: ${evidence.productionReadiness}`);
   console.log(`SOAK STABILITY: ${soak.status.toUpperCase()}`);
   console.log(
     `LEVEL 1 ROLLBACK SIMULATION: ${rollbackSimulation.status.toUpperCase()}`
@@ -452,7 +447,7 @@ async function main() {
   );
   console.log("============================================================");
 
-  if (!ready) {
+  if (evidence.productionReadiness === "NOT_ESTABLISHED") {
     process.exit(1);
   }
 }

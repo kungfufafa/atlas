@@ -1,0 +1,18 @@
+{
+  "at": "2026-09-07T10:16:01.209379+00:00",
+  "source": "/private/tmp/atlas-native-file-v3-c9-confirmation-docx-contract-review",
+  "files": {
+    "all-seven-diagnoses.json": "620d380e60658f2557d8ced51750cf7c4dc7e1b0f72a673c3b3c4b6e4f9ccc3d",
+    "inspect.py": "17b159233ab204d4685d7dd161a13b02645ca9a4d46915e4644a646fd63d461d",
+    "inspection-closure.json": "a8486a25bbe37107e64a98491adb947f8b924002e69bd002df03e5df3166431f",
+    "public-package-projections.json": "789f1bddcce7357cc8bf2355e878142eee82d6281b780d9dc4e1c0c9e608db29",
+    "registration.json": "0fbfe783336b297d57358a6372a40617e9c531e3658a9019f7cebb58002c14ea",
+    "report.md": "752d1b63c339de4747a733df5c4e1d137785582f7c40b45e87321e788e8cb7ee",
+    "source-bindings.json": "17c88c0834c22accb20bae59f3e7c00aa0b5856cf24b9861416154313d3ff5bf",
+    "manifest.json": "cef8f3c7f390eb7bf15cfff13fde7aa695ea31f844d1c604e58e5f39c131205b",
+    "seal.json": "b5d8f2b552b14c5007e3c7cf31c190ece04ed865d7751d530e34791c44bf50d7"
+  },
+  "byteHashModeCensusVerified": true,
+  "originalScoresRetained": true,
+  "scope": "Exact closed7artifact diagnostic packet copy. No original evidence or score changes; no tests/provider calls."
+}

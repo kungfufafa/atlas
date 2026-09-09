@@ -1,0 +1,242 @@
+[
+  {
+    "phase": "approval_wait",
+    "observedAt": "2026-09-06T23:00:10.334Z",
+    "leaseExpired": true,
+    "before": {
+      "checkpoint": "{\"remainingToolCalls\":[{\"arguments\":{\"path\":\"disposable-counter\"},\"id\":\"call-restart-approval\",\"name\":\"delete_file\"}],\"resumeStepIndex\":0}",
+      "createdAt": "2026-09-06T22:58:46.658Z",
+      "currentStepIndex": 0,
+      "id": "restart-run",
+      "idempotencyKey": null,
+      "kind": "chat",
+      "leaseExpiresAt": "2026-09-06T22:59:16.658Z",
+      "leaseOwner": "atlas-45783:h78oQliTc7g_rek5sDm5r",
+      "orgId": "restart-org",
+      "principalUserId": "restart-user",
+      "sessionId": "restart-session",
+      "status": "awaiting_approval",
+      "updatedAt": "2026-09-06T22:58:46.660Z"
+    },
+    "after": {
+      "checkpoint": "{\"remainingToolCalls\":[{\"arguments\":{\"path\":\"disposable-counter\"},\"id\":\"call-restart-approval\",\"name\":\"delete_file\"}],\"resumeStepIndex\":0}",
+      "createdAt": "2026-09-06T22:58:46.658Z",
+      "currentStepIndex": 0,
+      "id": "restart-run",
+      "idempotencyKey": null,
+      "kind": "chat",
+      "leaseExpiresAt": "2026-09-06T22:59:16.658Z",
+      "leaseOwner": "atlas-45783:h78oQliTc7g_rek5sDm5r",
+      "orgId": "restart-org",
+      "principalUserId": "restart-user",
+      "sessionId": "restart-session",
+      "status": "awaiting_approval",
+      "updatedAt": "2026-09-06T22:58:46.660Z"
+    },
+    "steps": [
+      {
+        "approvalId": "restart-approval",
+        "argsHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+        "argsJson": "{\"path\":\"disposable-counter\"}",
+        "createdAt": "2026-09-06T22:58:46.661Z",
+        "id": "swk-kQVzIqptP8wMWP46U",
+        "resultJson": null,
+        "runId": "restart-run",
+        "status": "awaiting_approval",
+        "stepIndex": 0,
+        "toolCallId": "call-restart-approval",
+        "toolName": "delete_file",
+        "updatedAt": "2026-09-06T22:58:46.661Z"
+      }
+    ],
+    "approval": {
+      "actionHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+      "argsJson": "{\"path\":\"disposable-counter\"}",
+      "createdAt": "2026-09-06T22:58:46.661Z",
+      "decidedAt": null,
+      "decidedByUserId": null,
+      "expiresAt": "2026-09-06T23:13:46.661Z",
+      "grantId": null,
+      "id": "restart-approval",
+      "orgId": "restart-org",
+      "principalUserId": "restart-user",
+      "runId": "restart-run",
+      "sessionId": "restart-session",
+      "status": "pending",
+      "stepId": "swk-kQVzIqptP8wMWP46U",
+      "toolName": "delete_file"
+    },
+    "activeRuns": [],
+    "registry": {
+      "active": false
+    },
+    "decision": {
+      "rejected": true,
+      "status": 409,
+      "message": "The turn is no longer waiting for this approval. Continue the conversation to request a new action."
+    },
+    "counter": 0,
+    "modelCalls": 0,
+    "mutationInvocations": 0
+  },
+  {
+    "phase": "before_effect",
+    "observedAt": "2026-09-06T23:00:10.870Z",
+    "leaseExpired": true,
+    "before": {
+      "checkpoint": "{\"remainingToolCalls\":[{\"arguments\":{\"path\":\"disposable-counter\"},\"id\":\"call-restart-approval\",\"name\":\"delete_file\"}],\"resumeStepIndex\":0}",
+      "createdAt": "2026-09-06T22:58:47.760Z",
+      "currentStepIndex": 0,
+      "id": "restart-run",
+      "idempotencyKey": null,
+      "kind": "chat",
+      "leaseExpiresAt": "2026-09-06T22:59:17.761Z",
+      "leaseOwner": "atlas-45785:ZnbQxzVKF707susyP2oBz",
+      "orgId": "restart-org",
+      "principalUserId": "restart-user",
+      "sessionId": "restart-session",
+      "status": "running",
+      "updatedAt": "2026-09-06T22:58:47.764Z"
+    },
+    "after": {
+      "checkpoint": "{\"remainingToolCalls\":[{\"arguments\":{\"path\":\"disposable-counter\"},\"id\":\"call-restart-approval\",\"name\":\"delete_file\"}],\"resumeStepIndex\":0}",
+      "createdAt": "2026-09-06T22:58:47.760Z",
+      "currentStepIndex": 0,
+      "id": "restart-run",
+      "idempotencyKey": null,
+      "kind": "chat",
+      "leaseExpiresAt": "2026-09-06T22:59:17.761Z",
+      "leaseOwner": "atlas-45785:ZnbQxzVKF707susyP2oBz",
+      "orgId": "restart-org",
+      "principalUserId": "restart-user",
+      "sessionId": "restart-session",
+      "status": "running",
+      "updatedAt": "2026-09-06T22:58:47.764Z"
+    },
+    "steps": [
+      {
+        "approvalId": "restart-approval",
+        "argsHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+        "argsJson": "{\"path\":\"disposable-counter\"}",
+        "createdAt": "2026-09-06T22:58:47.761Z",
+        "id": "YZtt6VjhA_XMVMT89i0I-",
+        "resultJson": null,
+        "runId": "restart-run",
+        "status": "running",
+        "stepIndex": 0,
+        "toolCallId": "call-restart-approval",
+        "toolName": "delete_file",
+        "updatedAt": "2026-09-06T22:58:47.764Z"
+      }
+    ],
+    "approval": {
+      "actionHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+      "argsJson": "{\"path\":\"disposable-counter\"}",
+      "createdAt": "2026-09-06T22:58:47.761Z",
+      "decidedAt": "2026-09-06T22:58:47.763Z",
+      "decidedByUserId": "restart-user",
+      "expiresAt": "2026-09-06T23:13:47.761Z",
+      "grantId": "grant_1788735527763_tkgese",
+      "id": "restart-approval",
+      "orgId": "restart-org",
+      "principalUserId": "restart-user",
+      "runId": "restart-run",
+      "sessionId": "restart-session",
+      "status": "approved",
+      "stepId": "YZtt6VjhA_XMVMT89i0I-",
+      "toolName": "delete_file"
+    },
+    "activeRuns": [],
+    "registry": {
+      "active": false
+    },
+    "decision": {
+      "rejected": true,
+      "status": 409,
+      "message": "The turn is no longer waiting for this approval. Continue the conversation to request a new action."
+    },
+    "counter": 0,
+    "modelCalls": 0,
+    "mutationInvocations": 0
+  },
+  {
+    "phase": "after_effect_before_receipt",
+    "observedAt": "2026-09-06T23:00:11.400Z",
+    "leaseExpired": true,
+    "before": {
+      "checkpoint": "{\"remainingToolCalls\":[{\"arguments\":{\"path\":\"disposable-counter\"},\"id\":\"call-restart-approval\",\"name\":\"delete_file\"}],\"resumeStepIndex\":0}",
+      "createdAt": "2026-09-06T22:58:48.857Z",
+      "currentStepIndex": 0,
+      "id": "restart-run",
+      "idempotencyKey": null,
+      "kind": "chat",
+      "leaseExpiresAt": "2026-09-06T22:59:18.858Z",
+      "leaseOwner": "atlas-45787:qRjc4-e2PihbX3c-H9703",
+      "orgId": "restart-org",
+      "principalUserId": "restart-user",
+      "sessionId": "restart-session",
+      "status": "running",
+      "updatedAt": "2026-09-06T22:58:48.859Z"
+    },
+    "after": {
+      "checkpoint": "{\"remainingToolCalls\":[{\"arguments\":{\"path\":\"disposable-counter\"},\"id\":\"call-restart-approval\",\"name\":\"delete_file\"}],\"resumeStepIndex\":0}",
+      "createdAt": "2026-09-06T22:58:48.857Z",
+      "currentStepIndex": 0,
+      "id": "restart-run",
+      "idempotencyKey": null,
+      "kind": "chat",
+      "leaseExpiresAt": "2026-09-06T22:59:18.858Z",
+      "leaseOwner": "atlas-45787:qRjc4-e2PihbX3c-H9703",
+      "orgId": "restart-org",
+      "principalUserId": "restart-user",
+      "sessionId": "restart-session",
+      "status": "running",
+      "updatedAt": "2026-09-06T22:58:48.859Z"
+    },
+    "steps": [
+      {
+        "approvalId": "restart-approval",
+        "argsHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+        "argsJson": "{\"path\":\"disposable-counter\"}",
+        "createdAt": "2026-09-06T22:58:48.858Z",
+        "id": "70tDxllu7k9ykD6z9uruQ",
+        "resultJson": null,
+        "runId": "restart-run",
+        "status": "running",
+        "stepIndex": 0,
+        "toolCallId": "call-restart-approval",
+        "toolName": "delete_file",
+        "updatedAt": "2026-09-06T22:58:48.859Z"
+      }
+    ],
+    "approval": {
+      "actionHash": "ccfdbae7bee7670741531decd5ef4166723bca34c5cd2b835e41218aae02b272",
+      "argsJson": "{\"path\":\"disposable-counter\"}",
+      "createdAt": "2026-09-06T22:58:48.858Z",
+      "decidedAt": "2026-09-06T22:58:48.859Z",
+      "decidedByUserId": "restart-user",
+      "expiresAt": "2026-09-06T23:13:48.858Z",
+      "grantId": "grant_1788735528859_7blm8b",
+      "id": "restart-approval",
+      "orgId": "restart-org",
+      "principalUserId": "restart-user",
+      "runId": "restart-run",
+      "sessionId": "restart-session",
+      "status": "approved",
+      "stepId": "70tDxllu7k9ykD6z9uruQ",
+      "toolName": "delete_file"
+    },
+    "activeRuns": [],
+    "registry": {
+      "active": false
+    },
+    "decision": {
+      "rejected": true,
+      "status": 409,
+      "message": "The turn is no longer waiting for this approval. Continue the conversation to request a new action."
+    },
+    "counter": 1,
+    "modelCalls": 0,
+    "mutationInvocations": 0
+  }
+]

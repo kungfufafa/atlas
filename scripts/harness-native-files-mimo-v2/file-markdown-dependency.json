@@ -1,0 +1,26 @@
+{
+  "name": "marked",
+  "version": "18.0.6",
+  "usage": "Lexer only; exact existing dependency bytes, no rendering, hooks, network or installation.",
+  "declaration": "packages/core/package.json",
+  "lockEntry": "marked@18.0.6",
+  "bunLockSha256": "754af815b5047ad40d733ecc1985dd0c3b728c620cc4ad69fe7918d1e8d6196f",
+  "files": {
+    "file-markdown-vendor.mjs": {
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/marked@18.0.6/node_modules/marked/lib/marked.esm.js",
+      "sha256": "35398f546525d5e79a8f2f8738635d3ecbd277618cba2ada874e9d27dc9e88f0"
+    },
+    "file-markdown-vendor.d.mts": {
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/marked@18.0.6/node_modules/marked/lib/marked.d.ts",
+      "sha256": "951765f4db0f5a4fab97fd750625a6a27db1db7da44655bad300ce88805ab662"
+    },
+    "file-markdown-package.json": {
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/marked@18.0.6/node_modules/marked/package.json",
+      "sha256": "3f3cd44098f75b9ac509942be2d279350ba29f76ccab36a27be195665ff881fe"
+    },
+    "file-markdown-license.txt": {
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/marked@18.0.6/node_modules/marked/LICENSE",
+      "sha256": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c"
+    }
+  }
+}

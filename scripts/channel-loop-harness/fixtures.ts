@@ -46,6 +46,7 @@ export async function salesXlsx(): Promise<FileFixture> {
   sheet.addRow(["sku", "qty", "revenue"]);
   sheet.addRow([SALES_MARKER, 2, 100]);
   sheet.addRow(["WIDGET", 5, 250]);
+  sheet.addRow(["GADGET", 3, 180]);
   const buffer = await workbook.xlsx.writeBuffer();
   return {
     bytes: Buffer.from(buffer),
@@ -64,4 +65,26 @@ export function zipArchive(): FileFixture {
 
 export function isZipMagic(bytes: Uint8Array): boolean {
   return bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4b;
+}
+
+export async function assertSalesResult(bytes: Uint8Array): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(Buffer.from(bytes));
+  const sheet = workbook.getWorksheet("Cleaned");
+  const rows = sheet
+    ?.getSheetValues()
+    .slice(1)
+    .map((row) => (Array.isArray(row) ? row.slice(1) : row));
+  if (
+    JSON.stringify(rows) !==
+    JSON.stringify([
+      ["sku", "qty", "revenue"],
+      ["WIDGET", 5, 250],
+      ["GADGET", 3, 180],
+    ])
+  ) {
+    throw new Error(
+      "Delivered workbook does not contain the exact expected cleaned rows."
+    );
+  }
 }

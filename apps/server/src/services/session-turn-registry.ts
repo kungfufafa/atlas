@@ -16,6 +16,7 @@ export interface TurnStatus {
 type Subscriber = {
   push: (event: StreamEvent) => void;
   close: () => void;
+  terminalDelivered: boolean;
 };
 
 type ActiveTurn = {
@@ -31,14 +32,24 @@ type ActiveTurn = {
 
 function estimateEventBytes(event: StreamEvent): number {
   try {
-    return JSON.stringify(event).length;
+    return Buffer.byteLength(JSON.stringify(event), "utf8");
   } catch {
-    return 256;
+    return Number.POSITIVE_INFINITY;
   }
 }
 
 function isTerminalEvent(event: StreamEvent): boolean {
   return event.type === "done" || event.type === "error";
+}
+
+function deliverEvent(subscriber: Subscriber, event: StreamEvent): void {
+  if (isTerminalEvent(event)) {
+    if (subscriber.terminalDelivered) {
+      return;
+    }
+    subscriber.terminalDelivered = true;
+  }
+  subscriber.push(event);
 }
 
 function snapshotKey(event: StreamEvent): string | null {
@@ -68,39 +79,9 @@ function rebuildSnapshotIndexes(turn: ActiveTurn): void {
 }
 
 function removeEventAt(turn: ActiveTurn, index: number): StreamEvent {
-  const removed = turn.events[index]!;
-  const lastIndex = turn.events.length - 1;
-
-  if (index !== lastIndex) {
-    const lastEvent = turn.events[lastIndex]!;
-    turn.events[index] = lastEvent;
-    const movedKey = snapshotKey(lastEvent);
-    if (movedKey) {
-      turn.snapshotIndexes.set(movedKey, index);
-    }
-  }
-
-  turn.events.pop();
-
-  const removedKey = snapshotKey(removed);
-  if (removedKey) {
-    turn.snapshotIndexes.delete(removedKey);
-  }
-
-  return removed;
-}
-
-function onShiftFront(turn: ActiveTurn, removed: StreamEvent): void {
-  const removedKey = snapshotKey(removed);
-  if (removedKey) {
-    turn.snapshotIndexes.delete(removedKey);
-  }
-
-  for (const [key, index] of turn.snapshotIndexes) {
-    if (index > 0) {
-      turn.snapshotIndexes.set(key, index - 1);
-    }
-  }
+  const [removed] = turn.events.splice(index, 1);
+  rebuildSnapshotIndexes(turn);
+  return removed!;
 }
 
 function shouldReplaceOnPublish(event: StreamEvent): boolean {
@@ -118,58 +99,57 @@ function publishSnapshotKey(event: StreamEvent): string | null {
   return snapshotKey(event);
 }
 
-function compactBuffer(events: StreamEvent[]): StreamEvent[] {
-  const snapshotIndexes = new Map<string, number>();
-
-  for (let index = 0; index < events.length; index += 1) {
-    const key = snapshotKey(events[index]!);
-    if (key) {
-      snapshotIndexes.set(key, index);
-    }
-  }
-
-  const keep = new Set<number>();
-  for (const index of snapshotIndexes.values()) {
-    keep.add(index);
-  }
-
-  for (
-    let index = events.length - 1;
-    index >= 0 && keep.size < MAX_BUFFER_EVENTS;
-    index -= 1
-  ) {
-    if (!keep.has(index)) {
-      keep.add(index);
-    }
-  }
-
-  return events.filter((_, index) => keep.has(index));
-}
-
 function trimBuffer(turn: ActiveTurn): void {
-  while (
-    turn.events.length > MAX_BUFFER_EVENTS ||
-    turn.bufferBytes > MAX_BUFFER_BYTES
+  if (
+    turn.events.length <= MAX_BUFFER_EVENTS &&
+    turn.bufferBytes <= MAX_BUFFER_BYTES
   ) {
-    if (turn.events.length <= 1) {
-      break;
+    return;
+  }
+
+  const latestSnapshots = new Map<string, number>();
+  const sizes = turn.events.map((event, index) => {
+    const key = snapshotKey(event);
+    if (key) {
+      latestSnapshots.set(key, index);
     }
+    return estimateEventBytes(event);
+  });
+  const snapshots = new Set(latestSnapshots.values());
+  const keep = new Set<number>();
+  let bufferBytes = 0;
+  const retain = (index: number): void => {
+    const size = sizes[index]!;
+    if (
+      !keep.has(index) &&
+      keep.size < MAX_BUFFER_EVENTS &&
+      bufferBytes + size <= MAX_BUFFER_BYTES
+    ) {
+      keep.add(index);
+      bufferBytes += size;
+    }
+  };
 
-    turn.events = compactBuffer(turn.events);
-    rebuildSnapshotIndexes(turn);
-    turn.bufferBytes = turn.events.reduce(
-      (total, event) => total + estimateEventBytes(event),
-      0
-    );
-
-    if (turn.events.length > MAX_BUFFER_EVENTS) {
-      const removed = turn.events.shift();
-      if (removed) {
-        turn.bufferBytes -= estimateEventBytes(removed);
-        onShiftFront(turn, removed);
-      }
+  // Replay is a bounded window. Prefer terminal events, then the newest
+  // snapshot for each key, then recent events that fit. Never truncate payloads
+  // or loop until a budget changes: every pass visits each candidate once.
+  for (let index = turn.events.length - 1; index >= 0; index -= 1) {
+    if (isTerminalEvent(turn.events[index]!)) {
+      retain(index);
     }
   }
+  for (let index = turn.events.length - 1; index >= 0; index -= 1) {
+    if (snapshots.has(index)) {
+      retain(index);
+    }
+  }
+  for (let index = turn.events.length - 1; index >= 0; index -= 1) {
+    retain(index);
+  }
+
+  turn.events = turn.events.filter((_, index) => keep.has(index));
+  turn.bufferBytes = bufferBytes;
+  rebuildSnapshotIndexes(turn);
 }
 
 export class SessionTurnRegistry {
@@ -250,9 +230,13 @@ export class SessionTurnRegistry {
     return this.turns.has(sessionId);
   }
 
-  publish(sessionId: string, event: StreamEvent): void {
+  publish(
+    sessionId: string,
+    event: StreamEvent,
+    owner?: AbortController
+  ): void {
     const turn = this.turns.get(sessionId);
-    if (!turn) {
+    if (!turn || (owner && !turn.attachedAborts.has(owner))) {
       return;
     }
 
@@ -265,15 +249,19 @@ export class SessionTurnRegistry {
       }
     }
 
-    turn.events.push(event);
-    turn.bufferBytes += estimateEventBytes(event);
-    if (key) {
-      turn.snapshotIndexes.set(key, turn.events.length - 1);
+    const eventBytes = estimateEventBytes(event);
+    // Oversized or non-serializable events still reach live subscribers, but
+    // cannot enter the replay buffer. Replaced snapshots stay invalidated.
+    if (eventBytes <= MAX_BUFFER_BYTES) {
+      turn.events.push(event);
+      turn.bufferBytes += eventBytes;
+      if (key) {
+        turn.snapshotIndexes.set(key, turn.events.length - 1);
+      }
+      trimBuffer(turn);
     }
-    trimBuffer(turn);
-
     for (const subscriber of turn.subscribers) {
-      subscriber.push(event);
+      deliverEvent(subscriber, event);
     }
   }
 
@@ -295,30 +283,36 @@ export class SessionTurnRegistry {
         turn.subscribers.delete(subscriber);
       },
       push: onEvent,
+      terminalDelivered: false,
     };
 
     turn.subscribers.add(subscriber);
 
     for (const event of turn.events) {
-      onEvent(event);
+      deliverEvent(subscriber, event);
     }
 
     return { unsubscribe: subscriber.close };
   }
 
-  endTurn(sessionId: string, terminal: StreamEvent): void {
+  endTurn(
+    sessionId: string,
+    terminal: StreamEvent,
+    owner?: AbortController
+  ): void {
     const turn = this.turns.get(sessionId);
-    if (!turn) {
+    if (!turn || (owner && !turn.attachedAborts.has(owner))) {
       return;
     }
 
-    if (!isTerminalEvent(terminal)) {
-      this.publish(sessionId, terminal);
-    } else if (!turn.events.some(isTerminalEvent)) {
-      turn.events.push(terminal);
+    if (isTerminalEvent(terminal)) {
+      // A subscriber may join after an oversized terminal was excluded from
+      // replay. Complete it too, without repeating terminal delivery to peers.
       for (const subscriber of turn.subscribers) {
-        subscriber.push(terminal);
+        deliverEvent(subscriber, terminal);
       }
+    } else {
+      this.publish(sessionId, terminal);
     }
 
     for (const subscriber of turn.subscribers) {

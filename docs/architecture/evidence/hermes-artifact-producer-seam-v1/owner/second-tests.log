@@ -1,0 +1,21 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/artifact-producer-seam.test.ts:
+(pass) saveFileArtifact freezes caller bytes before awaits; disk, revision and private publication agree [13.01ms]
+(pass) generic writes and edits publish only explicit deliverables and reject invalid destinations before mutation [20.81ms]
+(pass) nested document helpers assign distinct ordinals without publishing materialized sources or reads [176.20ms]
+(pass) spreadsheet creates and exports stage exact complete bytes; reads do not stage [51.11ms]
+(pass) low-level versioned writers freeze mutable bytes before IO and revision calculation [1.92ms]
+(pass) storage preserves original workspace receipts and blocks the complete publication set without producer replay [3.55ms]
+(pass) invalid-stage preserves original workspace receipts and blocks the complete publication set without producer replay [2.88ms]
+(pass) throwing bytes getter reaches trusted failure boundary and poisons earlier staged output [1.96ms]
+(pass) throwing sourcePath getter reaches trusted failure boundary and poisons earlier staged output [4.05ms]
+(pass) one invocation owns ordinals across overlapping nested saves; a second publisher starts independently [3.45ms]
+(pass) symlinked profile root produces canonical relative publication paths [9.04ms]
+(pass) generated image stages the same bytes as its file and preserves success when staging rejects [7.35ms]
+(pass) ArtifactService captures buffer before awaits, and browser screenshot/download forward one capability per output [6.71ms]
+
+ 13 pass
+ 0 fail
+ 55 expect() calls
+Ran 13 tests across 1 file. [1465.00ms]

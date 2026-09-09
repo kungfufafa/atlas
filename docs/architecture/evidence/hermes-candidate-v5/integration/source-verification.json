@@ -1,0 +1,74 @@
+{
+  "checkedAt": "2026-09-06T19:17:11.629434+00:00",
+  "rootCandidate3SourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "rootFilesVerifiedUnchanged": 2072,
+  "candidate3ArchiveVerified": true,
+  "candidate4SourceHash": "d09f087f01f3a8590ce8e2faef7b9454ce4546c8912dfce38e824d95fecb2ce3",
+  "candidate4FilesVerifiedUnchanged": 2076,
+  "taskStopFilesVerifiedUnchanged": 2078,
+  "copiedBaseBeforeApplyVerified": true,
+  "assembledSourceMatchesReviewedStopSource": false,
+  "candidate4TaskStopPatchOverlap": [],
+  "changedExisting": [
+    "apps/server/src/services/agent-service.ts",
+    "apps/server/src/services/task-runner.ts",
+    "apps/server/src/tools/conversation-tools.test.ts",
+    "apps/server/src/tools/conversation-tools.ts",
+    "apps/server/src/tools/memory-tools-dedup.test.ts",
+    "apps/server/src/tools/memory-tools.ts",
+    "packages/agent/src/chat.ts",
+    "packages/agent/src/index.ts",
+    "packages/db/src/adapters/in-memory.ts",
+    "packages/db/src/adapters/sqlite.ts",
+    "packages/db/src/memory-search.ts",
+    "packages/db/src/types.ts"
+  ],
+  "newFiles": [
+    "apps/server/src/services/task-stop-semantics.test.ts",
+    "apps/server/src/tools/memory-scope-contract.test.ts",
+    "packages/agent/src/chat-stop-semantics.test.ts",
+    "packages/db/src/conversation-keyword-search.test.ts",
+    "packages/db/src/conversation-keyword-search.ts",
+    "packages/db/src/memory-search.test.ts"
+  ],
+  "productionFiles": [
+    "apps/server/src/tools/memory-tools.ts",
+    "apps/server/src/tools/conversation-tools.ts",
+    "packages/db/src/adapters/in-memory.ts",
+    "packages/db/src/adapters/sqlite.ts",
+    "packages/db/src/conversation-keyword-search.ts",
+    "packages/db/src/memory-search.ts",
+    "packages/db/src/types.ts",
+    "apps/server/src/services/agent-service.ts",
+    "apps/server/src/services/task-runner.ts",
+    "packages/agent/src/chat.ts",
+    "packages/agent/src/index.ts"
+  ],
+  "testFiles": [
+    "apps/server/src/tools/memory-tools-dedup.test.ts",
+    "apps/server/src/tools/memory-scope-contract.test.ts",
+    "apps/server/src/tools/conversation-tools.test.ts",
+    "packages/db/src/conversation-keyword-search.test.ts",
+    "packages/db/src/memory-search.test.ts",
+    "apps/server/src/services/task-stop-semantics.test.ts",
+    "packages/agent/src/chat-stop-semantics.test.ts"
+  ],
+  "rootApplyChecksOnly": true,
+  "rootApplied": false,
+  "fullGatesHeld": true,
+  "reviewedStopSourceDifference": {
+    "path": "apps/server/src/services/task-runner.ts",
+    "reason": "Parent-requested template-literal formatting, documented in integration-amendment.json",
+    "otherSourceFilesMatch": true
+  },
+  "afterAssemblyRootReverified": true,
+  "afterAssemblyCandidate4Reverified": true,
+  "afterAssemblyTaskStopReverified": true,
+  "toolingOnlyExtraFiles": [
+    ".gitignore",
+    "biome.jsonc",
+    "tsconfig.integration-scope.json"
+  ],
+  "actualSourceFiles": 2078,
+  "aliasesResolveIntoCandidate5": true
+}

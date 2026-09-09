@@ -1,0 +1,305 @@
+[
+  {
+    "event": "test_dependency",
+    "recalculationEngine": "Codex bundled LibreOffice injected via ATLAS_OFFICE_CONVERTER_PATH; not proof of a production host installation",
+    "converterPath": "[explicit test-runner LibreOffice injection]"
+  },
+  {
+    "event": "auth",
+    "authenticated": true,
+    "status": "authenticated",
+    "runtimeVersion": "codex-cli 0.150.1"
+  },
+  {
+    "event": "selected_model",
+    "model": "gpt-5.6-sol"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "inspect"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "inspect"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "edit"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "edit",
+    "path": "original_reviewed.docx"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "turn_complete",
+    "format": "docx",
+    "toolCalls": 6,
+    "persistedTools": 6
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "inspect"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "inspect"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "edit"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "edit",
+    "path": "original_reviewed.pptx"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "inspect"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "inspect"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_start",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "office_document",
+    "operation": "read"
+  },
+  {
+    "event": "turn_complete",
+    "format": "pptx",
+    "toolCalls": 9,
+    "persistedTools": 15
+  },
+  {
+    "event": "tool_start",
+    "tool": "spreadsheet",
+    "operation": "inspect"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "spreadsheet",
+    "operation": "inspect",
+    "path": "original.xlsx"
+  },
+  {
+    "event": "tool_start",
+    "tool": "spreadsheet",
+    "operation": "read_range"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "spreadsheet",
+    "operation": "read_range",
+    "path": "original.xlsx"
+  },
+  {
+    "event": "tool_start",
+    "tool": "spreadsheet",
+    "operation": "write_range"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "spreadsheet",
+    "operation": "write_range",
+    "path": "original-v2.xlsx"
+  },
+  {
+    "event": "tool_start",
+    "tool": "spreadsheet",
+    "operation": "recalculate"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "spreadsheet",
+    "operation": "recalculate",
+    "path": "original-v2-v2.xlsx",
+    "calculationStatus": "recalculated"
+  },
+  {
+    "event": "tool_start",
+    "tool": "spreadsheet",
+    "operation": "read_range"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "spreadsheet",
+    "operation": "read_range",
+    "path": "original-v2-v2.xlsx"
+  },
+  {
+    "event": "turn_complete",
+    "format": "xlsx",
+    "toolCalls": 5,
+    "persistedTools": 20
+  },
+  {
+    "event": "spreadsheet_verified",
+    "formula": "A1*B1",
+    "calculatedResult": 20,
+    "calculationVerified": true
+  },
+  {
+    "event": "tool_start",
+    "tool": "pdf_document",
+    "operation": "create"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "pdf_document",
+    "operation": "create",
+    "path": "alpha.pdf"
+  },
+  {
+    "event": "tool_start",
+    "tool": "pdf_document",
+    "operation": "create"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "pdf_document",
+    "operation": "create",
+    "path": "beta.pdf"
+  },
+  {
+    "event": "tool_start",
+    "tool": "pdf_document",
+    "operation": "merge"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "pdf_document",
+    "operation": "merge",
+    "path": "combined.pdf"
+  },
+  {
+    "event": "tool_start",
+    "tool": "pdf_document",
+    "operation": "extract"
+  },
+  {
+    "event": "tool_complete",
+    "tool": "pdf_document",
+    "operation": "extract"
+  },
+  {
+    "event": "turn_complete",
+    "format": "pdf",
+    "toolCalls": 4,
+    "persistedTools": 24
+  },
+  {
+    "event": "verified",
+    "formats": ["docx", "pptx", "xlsx", "pdf"],
+    "toolCalls": 24,
+    "originalsPreserved": true,
+    "spreadsheetRecalculation": true
+  }
+]

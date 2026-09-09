@@ -327,7 +327,7 @@ export class IdentityService {
     channelUserId: string;
     orgId: string;
   }): Promise<CanonicalPrincipal> {
-    const normalizedActor = normalizeExternalActor({
+    const normalizedActor = await normalizeExternalActor({
       channel: input.channel,
       channelUserAliases: input.channelUserAliases,
       channelUserId: input.channelUserId,

@@ -1,0 +1,24 @@
+test_all_development_families_and_variants_accept_known_good_files (__main__.OracleTests.test_all_development_families_and_variants_accept_known_good_files) ... ok
+test_archive_duplicates_and_extreme_sheet_dimensions_fail_before_iteration (__main__.OracleTests.test_archive_duplicates_and_extreme_sheet_dimensions_fail_before_iteration) ... ok
+test_csv_tasks_reject_lost_string_ids_missing_values_and_quote_damage (__main__.OracleTests.test_csv_tasks_reject_lost_string_ids_missing_values_and_quote_damage) ... ok
+test_delivery_must_be_explicit_and_versioned_paths_are_allowed (__main__.OracleTests.test_delivery_must_be_explicit_and_versioned_paths_are_allowed) ... ok
+test_docx_report_rejects_substring_fact_falsepass_and_accepts_negative_status (__main__.OracleTests.test_docx_report_rejects_substring_fact_falsepass_and_accepts_negative_status) ... ok
+test_docx_revision_rejects_wrong_date_emphasis_and_table_content (__main__.OracleTests.test_docx_revision_rejects_wrong_date_emphasis_and_table_content) ... ok
+test_every_family_rejects_changed_source_bytes (__main__.OracleTests.test_every_family_rejects_changed_source_bytes) ... ok
+test_expectations_must_be_outside_workspace_and_cannot_be_overwritten (__main__.OracleTests.test_expectations_must_be_outside_workspace_and_cannot_be_overwritten) ... ok
+test_hidden_code_execution_is_never_inferred_from_source_or_partial_receipt (__main__.OracleTests.test_hidden_code_execution_is_never_inferred_from_source_or_partial_receipt) ... ok
+test_inherited_word_style_and_deck_theme_font_changes_are_detected (__main__.OracleTests.test_inherited_word_style_and_deck_theme_font_changes_are_detected) ... ok
+test_numeric_facts_do_not_match_dates_decimals_or_grouped_numbers (__main__.OracleTests.test_numeric_facts_do_not_match_dates_decimals_or_grouped_numbers) ... ok
+test_numeric_reconciliation_rejects_wrong_facts_and_string_numbers (__main__.OracleTests.test_numeric_reconciliation_rejects_wrong_facts_and_string_numbers) ... ok
+test_pdf_creation_rejects_wrong_box_count_and_extra_page (__main__.OracleTests.test_pdf_creation_rejects_wrong_box_count_and_extra_page) ... ok
+test_pptx_equivalent_same_style_split_runs_are_accepted (__main__.OracleTests.test_pptx_equivalent_same_style_split_runs_are_accepted) ... ok
+test_pptx_preservation_rejects_position_underline_color_and_wrong_text (__main__.OracleTests.test_pptx_preservation_rejects_position_underline_color_and_wrong_text) ... ok
+test_reconciliation_styled_empty_cells_are_benign_but_extra_data_is_schema_failure (__main__.OracleTests.test_reconciliation_styled_empty_cells_are_benign_but_extra_data_is_schema_failure) ... ok
+test_report_positive_assertion_and_table_corruption_fail (__main__.OracleTests.test_report_positive_assertion_and_table_corruption_fail) ... ok
+test_surgical_workbook_rejects_formula_style_and_type_corruption (__main__.OracleTests.test_surgical_workbook_rejects_formula_style_and_type_corruption) ... ok
+test_symlinks_and_untrusted_evaluator_originals_are_rejected (__main__.OracleTests.test_symlinks_and_untrusted_evaluator_originals_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 1.097s
+
+OK

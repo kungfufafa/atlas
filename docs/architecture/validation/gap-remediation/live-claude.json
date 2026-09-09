@@ -1,0 +1,9 @@
+{
+  "authStatus": "not_authenticated",
+  "evidenceClass": "actual Claude runtime authentication probe",
+  "inference": "NOT_RUN",
+  "liveMessengers": "NOT_RUN",
+  "reason": "Log in through Atlas's configured Claude runtime before retrying.",
+  "runtimeVersion": "2.1.247 (Claude Code)",
+  "status": "BLOCKED"
+}

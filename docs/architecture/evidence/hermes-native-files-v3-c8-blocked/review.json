@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-09-07T05:25:25.459371+00:00",
+  "status": "CLOSED INDEPENDENT REVIEW: KNOWN BLOCKER, NOT READY FOR PAID FREEZE",
+  "ownerRoot": "/private/tmp/atlas-native-file-v3-control-integration",
+  "ownerSourceHash": "57881c9892fe4b6a97d87ad46ede55a5f8c14d53a31cac3517f4d04bf7394193",
+  "ownerControlSourceHash": "35735bf2b18a2606d15d666288815729a39ce2518e855b0d1eac063dacae97dc",
+  "ownerManifestSha256": "89b81de4fc1c50e39e9e914c5093a19dcdd129fab3b93423c00f21750c18d915",
+  "ownerReadinessSha256": "8c7b0c3476358056103341327da8ac9a28b80ae95e4e7f271afa512276d230f3",
+  "ownerSealSha256": "4e84a21b9875d9e38a8bcc0fb937ff98433b15366045cbea6989c8ca0a5b292c",
+  "registrationSha256": "7cb3ba3dc117296ab1c0e3f7119b863d16b3ce3d4f29e2e462910af8f7549c81",
+  "independence": "Reviewer did not author this caller or analyzer. Independent source findings and read-only source/evidence verification; owner tests and actual native process executions are owner evidence, not independently rerun. Prior C3/C5 development knowledge was available; no blinded performance assessment claimed.",
+  "findings": [
+    {
+      "id": "V3-R1",
+      "disposition": "fixed; source and owner failing regression retained",
+      "finding": "Source-free missing/non-array sourceCopies was accepted as empty by verifier but failed by caller, producing structural input projection mismatch.",
+      "finalEvidence": "file-parent-evidence.ts:485 validates array, entries and uniqueness consistently with file-run.ts. Original source-free-before-fix regression 0 pass/1 fail is copied; corrected owner union passes."
+    },
+    {
+      "id": "V3-R2",
+      "disposition": "fixed; independently inspected source and subsequent actual owner counterexample verify retained projections",
+      "finding": "A broker-finalize exception after full invocation/caller return could omit already-known native fields.",
+      "finalEvidence": "file-run.ts:1213 computes fields with inspectionAllowed:false before finalize at1230; catch retains them. All four actual counterexample arms retain nativeObservation/inputIdentical/boundaryValid/inspectionAllowed/elapsedMs/taskId."
+    },
+    {
+      "id": "V3-R3",
+      "disposition": "fixed through prospectively recorded diagnostic amendment; primary unchanged",
+      "finding": "Atlas diagnostic inspection previously depended on derived deadline/accounting primary status while Hermes used native eligibility.",
+      "finalEvidence": "file-run.ts:1254\u20131260 now requires native completed/process-safe/canonical workspace for Atlas; Hermes retains explicit native inspection admission. Verifier processEligible remains distinct from inspectionPossible. All primary deadline/usage requirements persist."
+    },
+    {
+      "id": "V3-Q4",
+      "disposition": "confirmed blocker; original C8 controls and analysis immutable",
+      "finding": "Full analyzer treats absence of final usage file after real listener.stop finalization failure as structural mismatch despite verified parent/caller/native identity and explicit uncertain accounting.",
+      "source": "product-analysis.ts:1727\u20131731 unconditionally requires matching final file whenever usageEvidence is present; product-proxy.ts:299 awaits listener.stop before finalized ledger persistence.",
+      "counterexample": "Four real native adapter arms under local synthetic upstream completed and were identity-bound; actual listener.stop rejected. All four primary outcomes failed with mandatory totals null/finalized false; final files absent. Original full analysis validity false has exactly four final_usage_evidence_mismatch issues.",
+      "analysisSha256": "a42474766552da277dfe8b11f6f0f93588ff5de2203367b1ceb466fd5dd3bd97",
+      "nextScope": "Separate C9 correction must distinguish genuinely absent final evidence plus verified explicit uncertainty from present conflicting/malformed evidence, preserve request/header/model and parent/source checks, and keep these arms primary failures. No existing C8 outcome is rescored here."
+    }
+  ],
+  "reviewedContracts": [
+    {
+      "area": "deadline",
+      "conclusion": "A single per-arm deadline begins before identity/source/proxy setup; caller return spans the full await invoke including process references and compatibility persistence. The helper-return timestamp alone does not decide the caller deadline. The caller-return receipt write, subsequent broker finalization and grading are outside that measured invocation return; this is not a durable end-result persistence timestamp or hard whole-pipeline watchdog."
+    },
+    {
+      "area": "attribution",
+      "conclusion": "Native runId remains nullable and never repaired from parent. Missing/malformed native output may remain a scheduled failed primary only with full independently verified parent/source/caller lifecycle. Conflicts and missing/duplicate lifecycle evidence remain structural."
+    },
+    {
+      "area": "accounting",
+      "conclusion": "Unknown mandatory usage remains failed primary; known subtotals are not a complete ledger or billing claim. The finalization absence blocker remains unresolved in this sealed component."
+    },
+    {
+      "area": "inspection",
+      "conclusion": "Native output inspection eligibility is separate from primary deadline/accounting. Inspection does not restore a failed primary and does not certify all descendant processes terminated."
+    },
+    {
+      "area": "schedule",
+      "conclusion": "Full materialized schedule and exactly one start/end per arm are verified. No adaptive subset or automatic same-candidate paid rerun is added. Separate scripted diagnostic runs are not score-selected repetitions."
+    },
+    {
+      "area": "statistical scope",
+      "conclusion": "FILE V3 descriptive finite scheduled census has observed floors only. Repeated executions do not establish new task families, future task/provider parity or a calibrated population noninferiority result."
+    }
+  ],
+  "verification": {
+    "sourceFiles": 2170,
+    "c8SoftwareFiles": 2119,
+    "controlFiles": 51,
+    "ownerManifestMembers": 5228,
+    "ownerManifestBytes": 107610995,
+    "patchExactNewFileReconstructions": 47,
+    "selectedExactCopies": 27,
+    "actualNativeBatchesInspected": 2,
+    "actualNativeArmsInspected": 8,
+    "processCallerReferencesIndependentlyRehashed": 72,
+    "ownerFocusedUnion": {
+      "tests": 59,
+      "assertions": 469,
+      "files": 4,
+      "failures": 0
+    },
+    "ownerScopedTypecheckAndLint": "pass; logs bound, not rerun",
+    "reviewerTests": 0,
+    "reviewerProviderCalls": 0
+  },
+  "firstPilot": {
+    "analysisSha256": "60dc37f582d9924c14351d24c893bb31a1a7f74454554a6081d44fbd0678f78c",
+    "valid": true,
+    "arms": 4,
+    "primarySuccesses": 0,
+    "scope": "Actual native adapters with intentionally no-file synthetic final responses; transport/source/session control evidence, not task quality or live provider gain."
+  },
+  "preservation": {
+    "interimJudgments": "findings-interim.json unchanged; this final disposition records Q4 confirmation and R2 actual reproduction additively.",
+    "originalFailedEvidence": "Initial source snapshots and owner source-free failure retained. Original first-pilot and counterexample analyses unchanged; final control snapshot equals corrected pilot-window snapshot.",
+    "privateLimits": "No hidden reasoning or holdout task/answer inspection; native stdout, input and archived model/task content were stream-hashed opaquely. No archived code execution or 800MB predecessor counterexample parsing/copying. No current root or frozen owner mutations.",
+    "failedReviewerLookup": "An initial metadata lookup guessed analysis-final.json for the counterexample and raised FileNotFoundError before any output write. Exact existing analysis-original.json was then discovered and bound; no fallback analysis generated."
+  },
+  "readyForPaidFreeze": false,
+  "liveQualityGainEstablished": false
+}

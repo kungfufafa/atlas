@@ -12,7 +12,7 @@ import type { ComposioService } from "./composio-service";
 import type { McpClientManager } from "./mcp-client-manager";
 
 const COMPOSIO_META_TOOL_PATTERN = /^COMPOSIO_(MANAGE|WAIT|SEARCH|MULTI)/;
-const composioSessionUrls = new Map<string, string>();
+const composioSessionFingerprints = new Map<string, string>();
 
 const MAX_SEARCH_DESCRIPTION_CHARS = 120;
 const TRUNCATION_MARKER = "\n...[truncated]";
@@ -23,10 +23,14 @@ async function ensureComposioMcpConnection(
   connectionKey: string,
   session: { url: string; headers?: Record<string, string> }
 ): Promise<void> {
-  const cachedUrl = composioSessionUrls.get(connectionKey);
+  const fingerprint = JSON.stringify({
+    headers: session.headers ?? {},
+    url: session.url,
+  });
+  const cachedFingerprint = composioSessionFingerprints.get(connectionKey);
 
-  if (cachedUrl !== session.url) {
-    if (cachedUrl !== undefined) {
+  if (cachedFingerprint !== fingerprint) {
+    if (cachedFingerprint !== undefined) {
       await mcpClientManager.disconnectHttpEndpoint(connectionKey);
     }
 
@@ -35,7 +39,7 @@ async function ensureComposioMcpConnection(
       session.url,
       session.headers
     );
-    composioSessionUrls.set(connectionKey, session.url);
+    composioSessionFingerprints.set(connectionKey, fingerprint);
     return;
   }
 
@@ -45,7 +49,7 @@ async function ensureComposioMcpConnection(
       session.url,
       session.headers
     );
-    composioSessionUrls.set(connectionKey, session.url);
+    composioSessionFingerprints.set(connectionKey, fingerprint);
   }
 }
 
@@ -67,6 +71,29 @@ function notConnectedError(toolkitSlug: string): ComposioToolErrorResult {
     error: `Composio toolkit "${toolkitSlug}" is not connected for your account. Call composio__connect_account with toolkit_slug "${toolkitSlug}" to generate an OAuth link for the user.`,
     toolkitSlug,
   };
+}
+
+async function loadConnectedAssignments(
+  orgId: string,
+  userId: string,
+  profileId: string,
+  service: ComposioService
+) {
+  const assigned = await service.getAssignedToolkitRecords(
+    orgId,
+    userId,
+    profileId
+  );
+  return assigned.filter(
+    ({ orgToolkit, userConnection }) =>
+      orgToolkit.orgId === orgId &&
+      orgToolkit.status === "enabled" &&
+      userConnection?.orgId === orgId &&
+      userConnection.userId === userId &&
+      userConnection.toolkitId === orgToolkit.id &&
+      userConnection.status === "connected" &&
+      orgToolkit.cachedTools.length > 0
+  );
 }
 
 interface ComposioConnectAccountInput {
@@ -190,7 +217,9 @@ export async function buildComposioConnectTools(
   );
   const needsConnection = assigned.filter(
     ({ orgToolkit, userConnection }) =>
-      orgToolkit.status === "enabled" && userConnection?.status !== "connected"
+      orgToolkit.orgId === orgId &&
+      orgToolkit.status === "enabled" &&
+      userConnection?.status !== "connected"
   );
 
   if (needsConnection.length === 0) {
@@ -233,6 +262,26 @@ export async function buildComposioConnectTools(
         }
 
         try {
+          const currentAssignments =
+            await composioService.getAssignedToolkitRecords(
+              orgId,
+              userId,
+              profileId
+            );
+          if (
+            !currentAssignments.some(
+              ({ orgToolkit }) =>
+                orgToolkit.orgId === orgId &&
+                orgToolkit.status === "enabled" &&
+                orgToolkit.toolkitSlug === toolkitSlug
+            )
+          ) {
+            return {
+              code: "COMPOSIO_POLICY",
+              error: "Toolkit access has been revoked.",
+              toolkitSlug,
+            } satisfies ComposioToolErrorResult;
+          }
           const callbackBaseUrl = resolveComposioCallbackBaseUrl({
             clientOrigin: context.clientOrigin,
           });
@@ -299,20 +348,11 @@ export async function buildComposioToolDefinitions(
     return [];
   }
 
-  const assigned = await composioService.getAssignedToolkitRecords(
+  const connectedAssignments = await loadConnectedAssignments(
     orgId,
     userId,
-    profileId
-  );
-  if (assigned.length === 0) {
-    return [];
-  }
-
-  const connectedAssignments = assigned.filter(
-    ({ orgToolkit, userConnection }) =>
-      orgToolkit.status === "enabled" &&
-      userConnection?.status === "connected" &&
-      orgToolkit.cachedTools.length > 0
+    profileId,
+    composioService
   );
 
   if (connectedAssignments.length === 0) {
@@ -368,7 +408,15 @@ export async function buildComposioToolDefinitions(
           ? parsed.toolkit_slug.toLowerCase()
           : undefined;
 
-      const matches = searchableActions.filter(
+      const currentActions = buildSearchableActions(
+        await loadConnectedAssignments(
+          orgId,
+          userId,
+          profileId,
+          composioService
+        )
+      );
+      const matches = currentActions.filter(
         (action) =>
           (toolkitSlug ? action.toolkitSlug === toolkitSlug : true) &&
           actionMatchesQuery(action, query)
@@ -434,8 +482,14 @@ export async function buildComposioToolDefinitions(
         } satisfies ComposioToolErrorResult;
       }
 
+      const currentAssignments = await loadConnectedAssignments(
+        orgId,
+        userId,
+        profileId,
+        composioService
+      );
       const action = findSearchableAction(
-        searchableActions,
+        buildSearchableActions(currentAssignments),
         toolkitSlug,
         actionSlug
       );
@@ -447,19 +501,40 @@ export async function buildComposioToolDefinitions(
         } satisfies ComposioToolErrorResult;
       }
 
-      const assignment = connectedAssignments.find(
+      const assignment = currentAssignments.find(
         ({ orgToolkit }) => orgToolkit.toolkitSlug === action.toolkitSlug
       );
       const userConnection = assignment?.userConnection;
       if (userConnection?.status !== "connected") {
         return notConnectedError(action.toolkitSlug);
       }
+      const originalConnection = connectedAssignments.find(
+        ({ orgToolkit }) => orgToolkit.id === assignment?.orgToolkit.id
+      )?.userConnection;
+      if (
+        originalConnection?.connectedAccountId !==
+        userConnection.connectedAccountId
+      ) {
+        return {
+          code: "COMPOSIO_POLICY",
+          error: "The connected account changed. Retry the request.",
+          toolkitSlug,
+        } satisfies ComposioToolErrorResult;
+      }
 
       try {
+        const currentSession = await composioService.getProfileSessionEndpoint(
+          orgId,
+          userId,
+          profileId
+        );
+        if (!currentSession) {
+          return notConnectedError(action.toolkitSlug);
+        }
         await ensureComposioMcpConnection(
           mcpClientManager,
           connectionKey,
-          session
+          currentSession
         );
 
         const result = await mcpClientManager.callHttpEndpointTool(

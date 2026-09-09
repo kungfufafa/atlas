@@ -247,7 +247,7 @@ export const cloudflareAudioTranscriptionExecutor: ProviderCapabilityExecutor =
   async (context, input) => {
     const execution = normalizeExecutionContext(context);
     const audio = normalizeAudioTranscriptionInput(input);
-    const url = cloudflareMediaRunUrl(execution.model, context.instance);
+    const url = cloudflareMediaRunUrl(execution.model, context);
     const useJsonAudio = /whisper-large-v3-turbo/i.test(execution.model);
     const audioCopy = Uint8Array.from(audio.bytes);
     const response = await fetch(url, {
@@ -389,13 +389,13 @@ function openRouterAudioFormat(mediaType: string, filename: string): string {
 
 function cloudflareMediaRunUrl(
   model: string,
-  instance: ProviderCapabilityExecutionContext["instance"]
+  context: ProviderCapabilityExecutionContext
 ): string {
   try {
     return resolveCloudflareModelRunUrl(
       model,
-      instance,
-      readEnvValue(process.env, "CLOUDFLARE_ACCOUNT_ID") ?? ""
+      context.instance,
+      readEnvValue(context.env ?? process.env, "CLOUDFLARE_ACCOUNT_ID") ?? ""
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

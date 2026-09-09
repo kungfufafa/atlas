@@ -1,0 +1,3 @@
+Candidate5 final gates passed. See readiness-final.json for the final reviewable record; README.md/readiness.json remain the original pre-gate checkpoint.
+
+One planned deduplicated union passed 218 tests / 1159 assertions across 19 files. Full production TypeScript, scoped TypeScript including changed tests, and 18-file Ultracite passed. No source changes during gates. All 2072 candidate3 root source bytes, 2076 candidate4 bytes and 2078 original task-stop bytes are still unchanged. Candidate5 has 2078 files and only the documented two-template-literal amendment beyond the approved inputs. Both candidate3-relative patches pass a fresh root git apply --check. Root application is left to parent. All gate processes are closed.

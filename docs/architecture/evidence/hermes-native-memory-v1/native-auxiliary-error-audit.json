@@ -1,0 +1,1364 @@
+{
+  "batch": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c",
+  "scope": "Completed original development V1 only; all 96 arms scanned. No holdout or live accounts. Fixed scores untouched.",
+  "endpoint": "https://opencode.ai/zen/go/v1",
+  "model": "deepseek-v4-flash",
+  "counts": {
+    "atlas": {
+      "arms": 48,
+      "mandatoryUsageKnownArms": 48,
+      "upstreamHTTP200": 434
+    },
+    "hermes": {
+      "arms": 48,
+      "mandatoryUsageKnownArms": 2,
+      "upstreamHTTP400": 86,
+      "upstreamHTTP200": 401,
+      "proxyTransport502": 2
+    }
+  },
+  "byHermesCondition": {
+    "explicit-memory": {
+      "providerSchema400Requests": 44,
+      "providerSchema400AffectedArms": 24
+    },
+    "native-default": {
+      "providerSchema400Requests": 42,
+      "providerSchema400AffectedArms": 22
+    }
+  },
+  "hermesTitleJsonSchema": {
+    "400": 86,
+    "200": 11
+  },
+  "errorClasses": {
+    "upstream_title_response_format_400": {
+      "requests": 86,
+      "affectedArms": 46,
+      "origin": "Retained HTTP400 response from upstream endpoint, error invalid_request_error; provider message names Console Go. Not a local concurrency guard.",
+      "role": "auxiliary session title",
+      "mandatoryUsagePresent": 0,
+      "queueCorrectionAlone": "No. Request field and upstream response remain unchanged."
+    },
+    "local_proxy_concurrency_400": {
+      "affectedArms": 4,
+      "distinctFailedForegroundTurns": 6,
+      "inferredRejectedForwards": 12,
+      "origin": "Local frozen comparison broker activeRequest guard after requester abort releases product queue early.",
+      "role": "foreground caller rejected while auxiliary title is still active",
+      "mandatoryUsage": "These rejected local requests never reach upstream and have no provider usage; active title calls are accounted separately.",
+      "queueCorrectionAlone": "Addresses this specific race by retaining the slot through broker/accounting settlement. It does not prove the eventual task succeeds or remaining title usage is known."
+    },
+    "local_finalization_cancelled_title_fallback": {
+      "requests": 2,
+      "observedProviderHTTP502": 0,
+      "origin": "Product finalization abort of pending upstream work, converted by broker to local HTTP502 transport error.",
+      "role": "auxiliary title fallback without response_format",
+      "mandatoryUsagePresent": 0,
+      "queueCorrectionAlone": "Not guaranteed. These occurred in race-affected arms, but corrected scheduling cannot establish what an uncancelled title would have returned."
+    }
+  },
+  "affectedProviderErrorArms": [
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "corrected_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:06:32.481Z",
+          "responseSha256": "9bce39c823d58659e55c2d1a4e3ab1a5a752f38bae4a34b5554eb262f0e4540c"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "corrected_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:20:15.895Z",
+          "responseSha256": "8d77bfafbd34a1bb8a5fcd104b10347525ce4ca502a3285dc8527e9da0cd4588"
+        },
+        {
+          "requestIndex": 6,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:20:37.873Z",
+          "responseSha256": "b890fe5900cb58c15e80e0fc8daf98b16e372ef1f9f61b0da76c7cb79356a1cf"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "corrected_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:44:40.414Z",
+          "responseSha256": "7b1b142bb85f309305171ee52b291ffe41f6edddfe88c83f31561622e8682434"
+        },
+        {
+          "requestIndex": 7,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:45:07.120Z",
+          "responseSha256": "804afc97e3b0c75232db8c7bd78057163ee36a95e25164dd371a13fdecff5046"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "corrected_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:06:05.345Z",
+          "responseSha256": "ecfc56834c2716abc9918a489bc53aacaab547f205e528f920c15a3b22553a86"
+        },
+        {
+          "requestIndex": 6,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:06:26.892Z",
+          "responseSha256": "64a6db56229844641dd9da984677feaddf3d7b55a733ad9a94d424f7ac13142a"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "cross_language",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:10:58.005Z",
+          "responseSha256": "1cbe8f6e3ed668dbc0bb32a582cf23c18705b39af797a72ac567faf7da2dc8a5"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:11:15.642Z",
+          "responseSha256": "f1ae0de48d65ba4f59469dedf73a82420098ac2c95adaabaaa015c93af609b22"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "cross_language",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:09:14.353Z",
+          "responseSha256": "4291b2f995627603a6587c4d9986298b2ae31a899f1f4bf42492e81339b1f240"
+        },
+        {
+          "requestIndex": 8,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:09:39.888Z",
+          "responseSha256": "e57724783425fdbbb480695831c3c4adcd3f04cfe7ffadafe6b2df00ff3b1e83"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "cross_language",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:11:25.164Z",
+          "responseSha256": "ce6766df3f9f59e672c5f1a1c4e7eb152eff16dbb7fbd904a66eaaf3b26c4999"
+        },
+        {
+          "requestIndex": 6,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:11:49.719Z",
+          "responseSha256": "558106d192bedfea4bd140ab716494927caba7e13945acfde22bfd7b13111154"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "cross_language",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:26:20.487Z",
+          "responseSha256": "e95422daf4ac6ed1554344eb9b93fbe4b689aed935227154583905d7338656fa"
+        },
+        {
+          "requestIndex": 6,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:26:41.794Z",
+          "responseSha256": "77e788ddc932ae015f77f05cdf5d11a8a169064716350a8e69a6cbefef2cdf20"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "distractor_recall",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:24:07.643Z",
+          "responseSha256": "81402a0a7560397ba9a8061e4d3a5c14233d147f037c7b161411a80280eee35d"
+        },
+        {
+          "requestIndex": 9,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:24:59.151Z",
+          "responseSha256": "64f17713ee3b0a97cf637bdb5861e498fe21165e07d5a081e2482e9697d8e321"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "distractor_recall",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:17:57.278Z",
+          "responseSha256": "70eb301274b42927fe07f9798aa4c616034b6c2fbadf50827a7baa2204f6d160"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "distractor_recall",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:01:24.744Z",
+          "responseSha256": "474a16a47824a21d323368a17d92d27b6010fced1a57f1da317cc3018ef8841e"
+        },
+        {
+          "requestIndex": 4,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:01:57.156Z",
+          "responseSha256": "946c973bcfc61f23265a99669053ffe23b545f9a8c645f6430735fe067286a87"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "distractor_recall",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:55:11.479Z",
+          "responseSha256": "f645bf61a9ae2fa6de931887aa656062993630cfc1b8164965d421237ce18390"
+        },
+        {
+          "requestIndex": 9,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:55:49.303Z",
+          "responseSha256": "02f672db6e535568ea533acea2c62a17f8faecad29b7b499a12e14becbc88215"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "durable_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:27:48.210Z",
+          "responseSha256": "306dd5f9274b001327b3c17283db4c939e0d35836dc467ae6a47ac2aecb5287d"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:28:02.128Z",
+          "responseSha256": "c2de9436c902e547cc9663bb511afe7a90cdc1d2f86f50bd7f81549786a33bd1"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "durable_fact",
+      "recallIdentity": "different-organization",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:30:12.575Z",
+          "responseSha256": "d9b0e4200d504e5ae2a69d77570b8607785901da96a0026757b23dda8e15c045"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:30:40.456Z",
+          "responseSha256": "c6a21e2ea1e57f25fbefa23239a8f1e03109ae0d0f3fe133c05a3f39bfe644dd"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "durable_fact",
+      "recallIdentity": "different-user",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:28:45.668Z",
+          "responseSha256": "a15e40b77e021f7b1d3cfce9c98ee53aab832c56093f85b2f9f2bd8360384aca"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "durable_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:38:59.934Z",
+          "responseSha256": "cb9fd8d84cda87549115164a400fffa614636bc8ad35426fafe7bee4810646eb"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "durable_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:45:41.489Z",
+          "responseSha256": "226a006e69f7e190092392742239d7ad44d916663af7f091289c933768374bee"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:46:05.950Z",
+          "responseSha256": "0ffdc21477b90698f24a370aa4a5e156ee121e4d382a60070031bc270c0f6a1c"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes",
+      "condition": "native-default",
+      "family": "durable_fact",
+      "recallIdentity": "different-user",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:33:33.809Z",
+          "responseSha256": "6885f01212d824e3929358780d711284e311f3a1ef9dcf71ea2bc9970a07060d"
+        },
+        {
+          "requestIndex": 6,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:34:06.512Z",
+          "responseSha256": "7a76aef81d5cbdc7d82ed9ccec5c25b4cd57118fd78354e6565f63174795db0b"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "durable_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:16:50.919Z",
+          "responseSha256": "eb7ff47393dfc5d3ce889d58121e3b3210ea5e47cc2ed20626f883322877fea5"
+        },
+        {
+          "requestIndex": 6,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:17:21.230Z",
+          "responseSha256": "1baf10cbe36f7d69957cfd77d38ccf495cd10dcc52071f2a178a4193101916db"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "durable_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:27:18.416Z",
+          "responseSha256": "31e352c691056ecc88ea85907e4fc57d236da10bb6b49e3ef2fafce9b117ac39"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:27:33.231Z",
+          "responseSha256": "0277fabd1d2d8aefca7acdabc0952cb35fa28fde783b13af9a1b0539307899a2"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "durable_fact",
+      "recallIdentity": "different-organization",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:21:29.659Z",
+          "responseSha256": "b88d7d967a6d430c49c71468f8a4df00473f22390fe63c788642bc01ce102a19"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:21:56.164Z",
+          "responseSha256": "f19520f6dcbd98114eeddad3ea4d045e3df4172666f9a25292b768eb484769e1"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "durable_fact",
+      "recallIdentity": "different-user",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:16:14.263Z",
+          "responseSha256": "6e70788d8aec72bcd5b66a1e4cdd85d3e4dbeee9f8db3f6cb45584e6262c5dc6"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:16:35.559Z",
+          "responseSha256": "af2397351ddf0733920d68780bce273a55722e3410f90a1d46ddf282c5690185"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "durable_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:32:32.777Z",
+          "responseSha256": "67274cace7d8555439a3fbf8a7ebc69f956ae4dbb748c8e3ea989a573e7dd202"
+        },
+        {
+          "requestIndex": 3,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:33:09.545Z",
+          "responseSha256": "5037a5c0d3eda0c91de96ef051d95a7c3b8999dff7f8a938a63a5ccaed8ade9c"
+        },
+        {
+          "requestIndex": 6,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:33:26.873Z",
+          "responseSha256": "750280185b287ac20d642b69bdfc91684a9132e78345a3c0d67b478a3f0d42bc"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "durable_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:38:16.189Z",
+          "responseSha256": "5bcfe41924ca08b99585754e9a27be9e2d468c8478f2e2d2fe1c9b8508cc2e48"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:38:43.329Z",
+          "responseSha256": "a9d80d29685136b1f4c20da0be019aa1aa9fd1f4cb0a75bead27b8f3bca7df9a"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes",
+      "condition": "native-default",
+      "family": "durable_fact",
+      "recallIdentity": "different-organization",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:03:34.878Z",
+          "responseSha256": "847b7d6be3f50b84c60ccfa96d2e1aabb8503b1a676c5ec9c384e703b1953561"
+        },
+        {
+          "requestIndex": 6,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:03:56.712Z",
+          "responseSha256": "dd7a8a62dc9eddf1db9eb07d7a118bc1b72a478025c70cc6864b9c193bfb2928"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes",
+      "condition": "native-default",
+      "family": "durable_fact",
+      "recallIdentity": "different-user",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:41:50.157Z",
+          "responseSha256": "41f7bd0d2df54f4b157711be700f75f867095792ae274972e06611bf4b163f46"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:42:26.796Z",
+          "responseSha256": "f4c94a76db6ba2b3ab04c1d5cbe4e3d223bdbbeb4c9b652290817aa4815a1fa8"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "durable_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:21:26.054Z",
+          "responseSha256": "e76c783caf443a4b3acbf1e904a54d65d2b0dd171ace41f2f434fe327816af58"
+        },
+        {
+          "requestIndex": 9,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:21:56.026Z",
+          "responseSha256": "3f4833b7657f8b6a1aa1cb6b08bbf122974ffa6ff4adb5c4c47521e033cbf2bd"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "episodic_decision",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:50:56.115Z",
+          "responseSha256": "5ebf3c9c1b4e5008cf44d98c5ef266ae5830959419d5a5bab978d58839d9fe96"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "episodic_decision",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:13:00.213Z",
+          "responseSha256": "229690d73be5451e5bbca9151827a66e343824e1f8970ead47a7630e1317d43c"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "episodic_decision",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:21:06.782Z",
+          "responseSha256": "afbb66cb447c1d89b0e3503c10e81d46f9886f8119096cbf9e9b89082e9b87e3"
+        },
+        {
+          "requestIndex": 4,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:21:17.118Z",
+          "responseSha256": "1310bcf7fb5b6c67095ec1eda07305bc7022a33b56ebca8edfd3dfbc1ce2ce2c"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "forgotten_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:58:59.220Z",
+          "responseSha256": "9e06263e1640b3ca5a0ce0f7f3904cb3b5224c3313a9c7884d896bf9d8e6846a"
+        },
+        {
+          "requestIndex": 9,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:59:58.783Z",
+          "responseSha256": "a670ae8e9aa5b7a43567c741bf31b05868db0ff1e6802a0011e23b789c691ee9"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "forgotten_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:51:51.183Z",
+          "responseSha256": "e54abdd16046fca8c24cbd06786d782829aa49b64f159aa486a3881075794edc"
+        },
+        {
+          "requestIndex": 8,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:52:40.806Z",
+          "responseSha256": "293a83e623514f9c68bd53f575e933e8c4a683b6ed6b54ee84a1b0e584bfeaea"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "forgotten_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:35:05.445Z",
+          "responseSha256": "2bf2a6e4ccdeeea77f0b7bba6b72fb2f781ca338bae624b0a1b3aa7792d56302"
+        },
+        {
+          "requestIndex": 3,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:35:39.731Z",
+          "responseSha256": "9478b355d7685a3d698741f20d123b7bef2b0864366a2ad3a863e5f2cd090a44"
+        },
+        {
+          "requestIndex": 7,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:35:55.055Z",
+          "responseSha256": "3064364bd4538b3170c81571d4ce61e8a0fa027d5cc996c96cccea8013205d7d"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "forgotten_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:47:21.810Z",
+          "responseSha256": "de055a8a9f01a5f876edde271040f55a9559d7c8397ec2d1431de4071e2130ce"
+        },
+        {
+          "requestIndex": 8,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:47:53.383Z",
+          "responseSha256": "d0a8b4305f8faa0cc614e5206059dd00e150c7c695b4817bf71315a301821c18"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "implicit_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:36:44.497Z",
+          "responseSha256": "bd7fbb28971a1c512329126794201f548a99bab5e3c753d6342c4cd73a242a0f"
+        },
+        {
+          "requestIndex": 7,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:37:32.908Z",
+          "responseSha256": "fab730086c73c837d2f9c6ddf533a8af4ab80731a9982a02f899f4de7efff1eb"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "implicit_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:23:06.257Z",
+          "responseSha256": "34ef85a6490a6fc7e06adffd77d9a6f039cdb55ef1b373cfbb620d87eb94b3c8"
+        },
+        {
+          "requestIndex": 3,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:23:38.801Z",
+          "responseSha256": "83eb346fe38b143955626a4f74dbd60dd6429648fc2220a5fad0c306c0ef4e50"
+        },
+        {
+          "requestIndex": 8,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:23:55.712Z",
+          "responseSha256": "fbcd82193c7f691554ff8e98ea889bd25b97e587fe46d93f171d5fee7f70339a"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "implicit_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 2,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:00:21.130Z",
+          "responseSha256": "d6d400b251800a0626f9b113bdc2a6a7a85a9158704ec2b09bb0f95f183b3ee7"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:00:32.424Z",
+          "responseSha256": "6292acbeb837691ec869d682407d8e758efc950631e14165bdee7ded3d4c78eb"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "implicit_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:31:26.647Z",
+          "responseSha256": "0dcd9c50ba180e55bb5d4e4519856e56480580e16e9db810bd446fc228fff953"
+        },
+        {
+          "requestIndex": 8,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:32:00.554Z",
+          "responseSha256": "5c2167da2edc057d1e0715b1a02af6581eb8a511ff48bbf3e5469a8e131065cb"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "implicit_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:42:55.936Z",
+          "responseSha256": "65706342e7e3cd41b90eab74f55e4299fa42e45e797682f3733377644d2911df"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "implicit_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:24:33.060Z",
+          "responseSha256": "a37c0b30ba3046f3427e6a56fa51dfece88647bac9f405e2024b50583c8334dc"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "implicit_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:49:58.051Z",
+          "responseSha256": "176fce4b8c9175e563ce45133b480e58aff4fc2b425a5df7e9216b418eaa9b98"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:50:16.415Z",
+          "responseSha256": "1b0a95d0bc89850e37567cfc867b3bc7c3b2e6ebf686129cf734286b990b33d4"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "implicit_preference",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:54:29.885Z",
+          "responseSha256": "29227d35eac4b23d63ce9395b778a90ce965fc6592ad815cb3382de8aa53e3d1"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:54:49.017Z",
+          "responseSha256": "9f39a62b0632bc009d1be427000b987d0e832e7f2943853a4c5bd8e84f9df637"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "unsupported_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:22:53.827Z",
+          "responseSha256": "66ad55198cff13a1ece11973c34441f65d13df73e6b499e04551ad5617883d03"
+        },
+        {
+          "requestIndex": 9,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:23:48.979Z",
+          "responseSha256": "d6c959f94e1599ff1177d3bbf43d7ba2b5af2a70cc24b13f53a6d2a729781de8"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "unsupported_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T14:20:38.863Z",
+          "responseSha256": "a16824a53cac7c9e859c338ad52fb5af45acf814dfb7acfc88ff6ff9397bf5ac"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "family": "unsupported_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 1,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:08:17.752Z",
+          "responseSha256": "e5037f9011fcc051671685b559861be22e1da591460e36758310321147c418e4"
+        },
+        {
+          "requestIndex": 7,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:08:56.612Z",
+          "responseSha256": "f647b555bd28a0658ef1a11713169a48a871fd0ec88c633f3b88594f1a3cfde7"
+        }
+      ]
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "family": "unsupported_fact",
+      "recallIdentity": "same-owner",
+      "requests": [
+        {
+          "requestIndex": 2,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:13:37.487Z",
+          "responseSha256": "93774283220d3bd57aa3854f0fa0a910123cc49b1394bbc0a861f0b1b21cc187"
+        },
+        {
+          "requestIndex": 5,
+          "class": "upstream_title_response_format_400",
+          "mandatoryUsageReported": false,
+          "at": "2026-09-06T15:13:44.037Z",
+          "responseSha256": "618c5954648ab9406ba61bd36a39e45230026070acb5c73bb97b24731fe03a1e"
+        }
+      ]
+    }
+  ],
+  "localConcurrencyArms": [
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "class": "local_proxy_concurrency_400",
+      "failedForegroundTurns": [
+        {
+          "sessionIndex": 0,
+          "turnIndex": 0,
+          "nativeStatus": "failed"
+        }
+      ],
+      "foregroundTurnCount": 1,
+      "inferredRejectedForwardCount": 2,
+      "forwardingEvidence": [
+        {
+          "queueIndex": 4,
+          "forwardAtMs": 1788706914754,
+          "queueWaitMs": 12465,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 1190
+        },
+        {
+          "queueIndex": 5,
+          "forwardAtMs": 1788706914827,
+          "queueWaitMs": 0,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 1117
+        }
+      ],
+      "queueRows": 12,
+      "upstreamAdmissions": 10,
+      "mandatoryProviderUsageForRejectedLocalRequests": null,
+      "inferenceLimitation": "Broker does not retain numbered response receipts for local guard rejection. Exact unique request count is inferred from extra queued forwards during an already active upstream interval; native final errors prove the six distinct failed foreground turns."
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes",
+      "condition": "explicit-memory",
+      "class": "local_proxy_concurrency_400",
+      "failedForegroundTurns": [
+        {
+          "sessionIndex": 0,
+          "turnIndex": 0,
+          "nativeStatus": "failed"
+        },
+        {
+          "sessionIndex": 1,
+          "turnIndex": 0,
+          "nativeStatus": "failed"
+        }
+      ],
+      "foregroundTurnCount": 2,
+      "inferredRejectedForwardCount": 4,
+      "forwardingEvidence": [
+        {
+          "queueIndex": 4,
+          "forwardAtMs": 1788708555680,
+          "queueWaitMs": 17995,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 2426
+        },
+        {
+          "queueIndex": 5,
+          "forwardAtMs": 1788708555763,
+          "queueWaitMs": 0,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 2343
+        },
+        {
+          "queueIndex": 6,
+          "forwardAtMs": 1788708557917,
+          "queueWaitMs": 1,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 189
+        },
+        {
+          "queueIndex": 7,
+          "forwardAtMs": 1788708557917,
+          "queueWaitMs": 0,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 189
+        }
+      ],
+      "queueRows": 7,
+      "upstreamAdmissions": 3,
+      "mandatoryProviderUsageForRejectedLocalRequests": null,
+      "inferenceLimitation": "Broker does not retain numbered response receipts for local guard rejection. Exact unique request count is inferred from extra queued forwards during an already active upstream interval; native final errors prove the six distinct failed foreground turns."
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes",
+      "condition": "native-default",
+      "class": "local_proxy_concurrency_400",
+      "failedForegroundTurns": [
+        {
+          "sessionIndex": 0,
+          "turnIndex": 0,
+          "nativeStatus": "failed"
+        }
+      ],
+      "foregroundTurnCount": 1,
+      "inferredRejectedForwardCount": 2,
+      "forwardingEvidence": [
+        {
+          "queueIndex": 2,
+          "forwardAtMs": 1788705650548,
+          "queueWaitMs": 30002,
+          "activeRequestIndex": 1,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 1645
+        },
+        {
+          "queueIndex": 3,
+          "forwardAtMs": 1788705651566,
+          "queueWaitMs": 0,
+          "activeRequestIndex": 1,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 627
+        }
+      ],
+      "queueRows": 9,
+      "upstreamAdmissions": 7,
+      "mandatoryProviderUsageForRejectedLocalRequests": null,
+      "inferenceLimitation": "Broker does not retain numbered response receipts for local guard rejection. Exact unique request count is inferred from extra queued forwards during an already active upstream interval; native final errors prove the six distinct failed foreground turns."
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "condition": "explicit-memory",
+      "class": "local_proxy_concurrency_400",
+      "failedForegroundTurns": [
+        {
+          "sessionIndex": 0,
+          "turnIndex": 0,
+          "nativeStatus": "failed"
+        },
+        {
+          "sessionIndex": 1,
+          "turnIndex": 0,
+          "nativeStatus": "failed"
+        }
+      ],
+      "foregroundTurnCount": 2,
+      "inferredRejectedForwardCount": 4,
+      "forwardingEvidence": [
+        {
+          "queueIndex": 4,
+          "forwardAtMs": 1788708303070,
+          "queueWaitMs": 14538,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 1910
+        },
+        {
+          "queueIndex": 5,
+          "forwardAtMs": 1788708303145,
+          "queueWaitMs": 0,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 1835
+        },
+        {
+          "queueIndex": 6,
+          "forwardAtMs": 1788708304809,
+          "queueWaitMs": 0,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 171
+        },
+        {
+          "queueIndex": 7,
+          "forwardAtMs": 1788708304810,
+          "queueWaitMs": 1,
+          "activeRequestIndex": 3,
+          "activeRequestRole": "auxiliary_title",
+          "activeRequestRemainingMs": 170
+        }
+      ],
+      "queueRows": 7,
+      "upstreamAdmissions": 3,
+      "mandatoryProviderUsageForRejectedLocalRequests": null,
+      "inferenceLimitation": "Broker does not retain numbered response receipts for local guard rejection. Exact unique request count is inferred from extra queued forwards during an already active upstream interval; native final errors prove the six distinct failed foreground turns."
+    }
+  ],
+  "cancelledTitleRequests": [
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes",
+      "requestIndex": 3,
+      "class": "local_finalization_cancelled_title_fallback",
+      "status": 502,
+      "observedUpstreamHTTPStatus": null,
+      "mandatoryUsageReported": false,
+      "at": "2026-09-06T15:29:18.106Z",
+      "elapsedMs": 20491,
+      "transportSha256": "01aa3ca1e21c34ddb0a046f1bf02fd7f803e8e3aea0e346cd0379e01b9042a68"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "requestIndex": 3,
+      "class": "local_finalization_cancelled_title_fallback",
+      "status": 502,
+      "observedUpstreamHTTPStatus": null,
+      "mandatoryUsageReported": false,
+      "at": "2026-09-06T15:25:04.980Z",
+      "elapsedMs": 16496,
+      "transportSha256": "e85ab59fedc873d770da49eaf5b1427b35370c4ad88e245986482ebe1c689828"
+    }
+  ],
+  "observedSuccessfulSameSchemaRequests": [
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "requestIndex": 10,
+      "at": "2026-09-06T15:07:15.464Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "9aba771a5d0f971015bc242606c06c0bac89ded27428207a962cf5827ed91aa4"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes",
+      "requestIndex": 11,
+      "at": "2026-09-06T15:18:46.428Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "dcb73bcb36cdfdd181c75a857f48abe11955267ff58f0a46a7155c4aef46ca5d"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "requestIndex": 5,
+      "at": "2026-09-06T14:39:17.709Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "eb6d4e804b4c14bb19601099263acadfb78ba703ae5efb61f31f5227b4cc5a4c"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes",
+      "requestIndex": 1,
+      "at": "2026-09-06T14:49:06.631Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "33887cb0bd2c999e0e498f478bf9678410b1e09c331970e9104acbc96c4f49cf"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes",
+      "requestIndex": 4,
+      "at": "2026-09-06T14:49:44.783Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "3e380774bd10013b0167e31a6cdae620f890a61fc3e34e0d9d023655969b1cda"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "requestIndex": 5,
+      "at": "2026-09-06T14:51:15.271Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "88abace8c42ea253c224a62acb08cc8644cbb5a7a63f240ca4fbe87c7ad24524"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes",
+      "requestIndex": 1,
+      "at": "2026-09-06T14:40:52.193Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "9888b5961ef7b39341257a784f65f67ad7bd7b34fd5a5438a91de5160ecfae58"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes",
+      "requestIndex": 2,
+      "at": "2026-09-06T14:41:06.545Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "7d3bc6adc56e73b8606946cc6b36d89fdfe12f241fd348d407bd8d1387b12c2c"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "requestIndex": 6,
+      "at": "2026-09-06T15:13:30.161Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "d15612f3690c21012cac7c7c6dd5a36c94df708426db8d1c8323ac0ca7fb41e9"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes",
+      "requestIndex": 5,
+      "at": "2026-09-06T14:43:17.257Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "65566b35bcceb3e37d672208dff3494d4a67e69e3ab96a264f62f88d4eea87f3"
+    },
+    {
+      "attemptId": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "requestIndex": 8,
+      "at": "2026-09-06T14:21:13.879Z",
+      "mandatoryUsageReported": true,
+      "responseSha256": "c70bdf221577470608bcd9eb09ee0dfea757f908e90f6294c09a88b14994be47"
+    }
+  ],
+  "pinnedHermesConfigurationFinding": {
+    "commit": "089bb32886c8c18f7fa20182c7bf8826d6935ac5",
+    "nativeOptionMeetingConstraintsFound": false,
+    "evidence": [
+      "agent/title_generator.py:265-269 always supplies session_title JSON schema in caller extra_body.",
+      "agent/auxiliary_client.py:6537-6538 loads configured task extra_body then overwrites with caller fields; response_format:null/text in config does not override this title request.",
+      "hermes_cli/config_defaults.py:709-723 exposes enabled, provider, model, prefer_fast_model, base_url, api_key, timeout, extra_body, reasoning_effort, language; no title format toggle.",
+      "agent/auxiliary_client.py:3096-3113 and6654-6664 detect structured format rejection and retry once without it, preserving the initial failed request in this evaluation."
+    ],
+    "constraints": "Changing provider/model/transport or disabling title generation would change the requested native comparison. No such action performed.",
+    "capabilityConclusion": "Observed inconsistent handling of the same session_title JSON schema: 86 errors and11 successes. Do not infer global unsupported status or future support from model name.",
+    "sourceVerification": {
+      "agent/title_generator.py": {
+        "sha256": "1eb801e5f020bb9f32373ed52afb68ab64e384618649260fdf82b12370c13d4b",
+        "capturedSha256": "1eb801e5f020bb9f32373ed52afb68ab64e384618649260fdf82b12370c13d4b",
+        "matchesCapturedSource": true
+      },
+      "agent/auxiliary_client.py": {
+        "sha256": "856c39b1cecd1d7a5d38ff1c39cdd439eadadf485dcaea1fc61d8d52626ea0ac",
+        "capturedSha256": "856c39b1cecd1d7a5d38ff1c39cdd439eadadf485dcaea1fc61d8d52626ea0ac",
+        "matchesCapturedSource": true
+      },
+      "hermes_cli/config_defaults.py": {
+        "sha256": "22125f5f52402c862412a1b2e4c65a8f7a8c9101ab82f125be53a18551212c0e",
+        "capturedSha256": "22125f5f52402c862412a1b2e4c65a8f7a8c9101ab82f125be53a18551212c0e",
+        "matchesCapturedSource": true
+      }
+    }
+  },
+  "claimLimits": [
+    "46/48 Hermes arms have unknown mandatory whole-trajectory usage because of provider title errors; queue correction does not remove this accounting limitation.",
+    "Two Hermes arms have known mandatory usage; one still has the observed local concurrency failure. Known usage does not imply successful task performance.",
+    "Do not derive parity/superiority from accounting-driven zeros, exclude affected attempts selectively, rewrite scores, or treat missing usage as zero tokens.",
+    "A provider HTTP400 does not prove it consumed no generated tokens. No billing or subscription-quota inference is available.",
+    "The source-based queue correction prevents the observed local early-release mechanism; all other native/provider behavior remains to be measured under a separately frozen revision."
+  ],
+  "scannedEvidenceDigest": "6a6184455238a3b2ec93e8441fcd7591e97f4f4a24ba831f57bcfdf90ec42d18",
+  "scannedEvidenceFileCount": 1994,
+  "paidCalls": 0,
+  "affectedHermesArmsAcrossAllErrorClasses": 47
+}

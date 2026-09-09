@@ -1,0 +1,97 @@
+{
+  "evidence": [
+    {
+      "harness": "hermes",
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "systemMessagesSearched": 1,
+      "hits": [
+        {
+          "wirePath": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes/wire/001-request.json",
+          "sha256": "3caad3ee5017d3e469c94fd6eb66e9f32e15836a142606b27b733a1b8880221b",
+          "jsonPointer": "/effective/messages/0/content",
+          "label": "unsupported_fact",
+          "snippet": "1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/hermes-xDTDPj/hermes-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes-tx9a2jao/workspace\n\nPython toolchain: python3=missing, pip=missing.\n\nActive Hermes profile: default. Other profiles ("
+        },
+        {
+          "wirePath": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes/wire/001-request.json",
+          "sha256": "3caad3ee5017d3e469c94fd6eb66e9f32e15836a142606b27b733a1b8880221b",
+          "jsonPointer": "/effective/messages/0/content",
+          "label": "native-default",
+          "snippet": "ment-2026-09-06T14-20-07-841Z-e58d2c9c/hermes-xDTDPj/hermes-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes-tx9a2jao/workspace\n\nPython toolchain: python3=missing, pip=missing.\n\nActive Hermes profile: default. Other profiles (if any) live under /pr"
+        },
+        {
+          "wirePath": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes/wire/001-request.json",
+          "sha256": "3caad3ee5017d3e469c94fd6eb66e9f32e15836a142606b27b733a1b8880221b",
+          "jsonPointer": "/effective/messages/0/content",
+          "label": "memory-v1-development",
+          "snippet": "luation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/hermes-xDTDPj/hermes-development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes-tx9a2jao/workspace\n\nPython toolchain: python3=missing, pip=missing.\n\nActive Hermes profile: def"
+        }
+      ]
+    },
+    {
+      "harness": "atlas",
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas",
+      "systemMessagesSearched": 9,
+      "hits": [],
+      "effectiveRequestChecks": [
+        {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire/001-request.json",
+          "sha256": "0103d5d2113254b58a7a135ee3c6d11f789a54b0f8704edfa9d49a263c8cc55c",
+          "containsFamilyLabel": false,
+          "containsConditionLabel": false
+        },
+        {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire/002-request.json",
+          "sha256": "08f2f563be4b0245d2f4af6d7a506758735a157af7085c9e0d227c867e0e02ec",
+          "containsFamilyLabel": false,
+          "containsConditionLabel": false
+        },
+        {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire/003-request.json",
+          "sha256": "b4cd3994ecf007a4f94043b1c931d9de927170955c97eea6e725622d35fa4274",
+          "containsFamilyLabel": false,
+          "containsConditionLabel": false
+        },
+        {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire/004-request.json",
+          "sha256": "c8bcc3a58095973b1cd9f4b419d00cc187242216362c2e0b6d6c40eef5348ea6",
+          "containsFamilyLabel": false,
+          "containsConditionLabel": false
+        },
+        {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire/005-request.json",
+          "sha256": "4c613d13e5557a689bf6e05fe80f9d43081a8ff60e359b7ef1230e83b807d039",
+          "containsFamilyLabel": false,
+          "containsConditionLabel": false
+        },
+        {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire/006-request.json",
+          "sha256": "50a3fdb9a97d590408f2822d28b543ae97a72fd439189742efcea4bc4c9957b5",
+          "containsFamilyLabel": false,
+          "containsConditionLabel": false
+        },
+        {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire/007-request.json",
+          "sha256": "9104eb3112234a4a7f8e45e1a53961b388503ae9190b295203a786f07e4e7cc3",
+          "containsFamilyLabel": false,
+          "containsConditionLabel": false
+        },
+        {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire/008-request.json",
+          "sha256": "46714058a7b4eabcb71c98c7c38ac6556be8e440164b2803901bc16ce68b33f6",
+          "containsFamilyLabel": false,
+          "containsConditionLabel": false
+        },
+        {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire/009-request.json",
+          "sha256": "867ba3b45c139d20bfa89eeef51784f1a960a6a52277e60d55769131cb5ad274",
+          "containsFamilyLabel": false,
+          "containsConditionLabel": false
+        }
+      ],
+      "effectiveRequestCount": 9
+    }
+  ],
+  "scope": "Fixed completed development case only; no expected output values sought or injected; no causal attribution.",
+  "interpretation": "Family and condition are model-visible study metadata. The unsupported_fact family name can suggest a relevance/strategy category, but is not an expected answer and supplies neither correct crate count nor a scoring rule. No direct correct-answer leakage established."
+}

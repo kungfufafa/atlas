@@ -1,0 +1,1409 @@
+{
+  "batch": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076",
+  "archiveBindings": {
+    "atlas-source.tar.gz": "9affeb4d249dd60bca072caa88d163a18a43c4b04cf0bd15942d30a3969f7658",
+    "file-protocol-source.tar.gz": "6b1e30a8a4c1769d83b59d654caf699afc08ffe53e0ce600e23ffcefde5bad08",
+    "hermes-source.tar.gz": "96974b71a4e6747ac59e83d32896de54fcb3e14b1b8b1da84df7d0303f83ddd7"
+  },
+  "completed": {
+    "at": "2026-09-06T19:31:05.014Z",
+    "pairedTasks": 2,
+    "runtimeIdentitiesSha256": "ff219d67116160e89163383c0bf1447b03ea064750b3f5aac395929af50d75df",
+    "scheduledAttempts": 4,
+    "sourceUnchanged": true
+  },
+  "analysis": {
+    "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+    "coverage": {
+      "batchErrors": 0,
+      "duplicateLifecycleRecords": 0,
+      "endsWithoutStart": 0,
+      "identifiableAttempts": 4,
+      "pairPreparationErrors": 0,
+      "rawEndRecords": 4,
+      "rawErrorRecords": 0,
+      "rawStartRecords": 4,
+      "scheduledArms": 4,
+      "scheduledArmsMissingOrAmbiguous": 0,
+      "scheduledPairs": 2,
+      "startsWithoutEnd": 0
+    },
+    "groups": [
+      {
+        "bootstrap": {
+          "clusters": 2,
+          "degenerate": true,
+          "descriptive95": {
+            "confidence": 0.95,
+            "lower": 0,
+            "upper": 0
+          },
+          "draws": 100000,
+          "familyEffects": [0, 0],
+          "method": "Percentile paired bootstrap of equal-weight family effects; repetitions averaged within seeded instance.",
+          "pointEstimate": 0,
+          "seed": 20260917,
+          "simultaneous97_5": {
+            "confidence": 0.975,
+            "lower": 0,
+            "upper": 0
+          }
+        },
+        "completePaired": {
+          "atlasRate": 1,
+          "counts": {
+            "atlasOnly": 0,
+            "bothPass": 2,
+            "hermesOnly": 0,
+            "neitherSuccessful": 0
+          },
+          "delta": 0,
+          "hermesRate": 1,
+          "pairs": 2,
+          "pairsWithMissingOrAmbiguousArm": 0
+        },
+        "decision": {
+          "aggregateFloor": 0.9,
+          "comparativeAccountingKnown": true,
+          "complete": true,
+          "criticalIntegrityFailure": false,
+          "exploratory": true,
+          "familyFloor": 0.8,
+          "floorPass": true,
+          "informationAdequate": false,
+          "intervalConfidence": 0.95,
+          "multiplicity": "One predeclared file track.",
+          "noninferiority": "inconclusive_or_does_not_qualify",
+          "observedTie": true,
+          "statement": "Exploratory implementation/development evidence; no confirmatory claim.",
+          "superiority": "inconclusive_or_does_not_qualify"
+        },
+        "diagnosticOnly": false,
+        "diagnostics": {
+          "atlas": {
+            "accountingUncertain": 0,
+            "ambiguousFinal": 0,
+            "artifactOracle": {
+              "denominator": 2,
+              "numerator": 2,
+              "rate": 1
+            },
+            "boundaryFailures": 0,
+            "budgetExceeded": 0,
+            "deliveryFailures": 0,
+            "factual": null,
+            "falseCompletion": 0,
+            "finalContract": null,
+            "integrityFailures": 0,
+            "invocationErrors": 0,
+            "missingFacts": 0,
+            "statusCounts": {
+              "completed": 2
+            },
+            "strict": null,
+            "transferAccuracy": 0,
+            "transferredFacts": []
+          },
+          "hermes": {
+            "accountingUncertain": 0,
+            "ambiguousFinal": 0,
+            "artifactOracle": {
+              "denominator": 2,
+              "numerator": 2,
+              "rate": 1
+            },
+            "boundaryFailures": 0,
+            "budgetExceeded": 0,
+            "deliveryFailures": 0,
+            "factual": null,
+            "falseCompletion": 0,
+            "finalContract": null,
+            "integrityFailures": 0,
+            "invocationErrors": 0,
+            "missingFacts": 0,
+            "statusCounts": {
+              "completed": 2
+            },
+            "strict": null,
+            "transferAccuracy": 0,
+            "transferredFacts": []
+          }
+        },
+        "equalFamilyAtlasRate": 1,
+        "families": [
+          {
+            "family": "csv_join",
+            "atlasRate": 1,
+            "counts": {
+              "atlasOnly": 0,
+              "bothPass": 1,
+              "hermesOnly": 0,
+              "neitherSuccessful": 0
+            },
+            "delta": 0,
+            "hermesRate": 1,
+            "pairs": 1,
+            "pairsWithMissingOrAmbiguousArm": 0,
+            "effect": 0,
+            "instanceCount": 1
+          },
+          {
+            "family": "xlsx_reconciliation",
+            "atlasRate": 1,
+            "counts": {
+              "atlasOnly": 0,
+              "bothPass": 1,
+              "hermesOnly": 0,
+              "neitherSuccessful": 0
+            },
+            "delta": 0,
+            "hermesRate": 1,
+            "pairs": 1,
+            "pairsWithMissingOrAmbiguousArm": 0,
+            "effect": 0,
+            "instanceCount": 1
+          }
+        ],
+        "id": "files",
+        "intentionToRun": {
+          "atlasRate": 1,
+          "counts": {
+            "atlasOnly": 0,
+            "bothPass": 2,
+            "hermesOnly": 0,
+            "neitherSuccessful": 0
+          },
+          "delta": 0,
+          "hermesRate": 1,
+          "pairs": 2,
+          "pairsWithMissingOrAmbiguousArm": 0
+        },
+        "resources": {
+          "atlas": {
+            "attempts": 2,
+            "cachedTokens": {
+              "mean": 0,
+              "measuredCount": 2,
+              "median": 0,
+              "missingCount": 0,
+              "observedTotal": 0,
+              "p95": 0,
+              "total": 0
+            },
+            "costUsd": {
+              "mean": null,
+              "measuredCount": 0,
+              "median": null,
+              "missingCount": 2,
+              "observedTotal": null,
+              "p95": null,
+              "total": null
+            },
+            "generatedTokens": {
+              "mean": 30,
+              "measuredCount": 2,
+              "median": 30,
+              "missingCount": 0,
+              "observedTotal": 60,
+              "p95": 30,
+              "total": 60
+            },
+            "invocationLatencyMs": {
+              "mean": 1218,
+              "measuredCount": 2,
+              "median": 1218,
+              "missingCount": 0,
+              "observedTotal": 2436,
+              "p95": 1414.2,
+              "total": 2436
+            },
+            "observedGeneratedTokenLowerBounds": {
+              "mean": 30,
+              "measuredCount": 2,
+              "median": 30,
+              "missingCount": 0,
+              "observedTotal": 60,
+              "p95": 30,
+              "total": 60
+            },
+            "observedPromptTokenLowerBounds": {
+              "mean": 60,
+              "measuredCount": 2,
+              "median": 60,
+              "missingCount": 0,
+              "observedTotal": 120,
+              "p95": 60,
+              "total": 120
+            },
+            "privateGradingLatencyMs": {
+              "mean": 236,
+              "measuredCount": 2,
+              "median": 236,
+              "missingCount": 0,
+              "observedTotal": 472,
+              "p95": 254.89999999999998,
+              "total": 472
+            },
+            "promptTokens": {
+              "mean": 60,
+              "measuredCount": 2,
+              "median": 60,
+              "missingCount": 0,
+              "observedTotal": 120,
+              "p95": 60,
+              "total": 120
+            },
+            "providerRequests": {
+              "mean": 3,
+              "measuredCount": 2,
+              "median": 3,
+              "missingCount": 0,
+              "observedTotal": 6,
+              "p95": 3,
+              "total": 6
+            },
+            "providerStatusCounts": {
+              "200": 6
+            },
+            "scope": "All identifiable started/ended attempts, including failures and extra attempts; never only successful tasks. Unknown totals are not zero.",
+            "totalAttemptLatencyMs": {
+              "mean": 1459,
+              "measuredCount": 2,
+              "median": 1459,
+              "missingCount": 0,
+              "observedTotal": 2918,
+              "p95": 1675,
+              "total": 2918
+            }
+          },
+          "hermes": {
+            "attempts": 2,
+            "cachedTokens": {
+              "mean": 0,
+              "measuredCount": 2,
+              "median": 0,
+              "missingCount": 0,
+              "observedTotal": 0,
+              "p95": 0,
+              "total": 0
+            },
+            "costUsd": {
+              "mean": null,
+              "measuredCount": 0,
+              "median": null,
+              "missingCount": 2,
+              "observedTotal": null,
+              "p95": null,
+              "total": null
+            },
+            "generatedTokens": {
+              "mean": 30,
+              "measuredCount": 2,
+              "median": 30,
+              "missingCount": 0,
+              "observedTotal": 60,
+              "p95": 30,
+              "total": 60
+            },
+            "invocationLatencyMs": {
+              "mean": 2656.5,
+              "measuredCount": 2,
+              "median": 2656.5,
+              "missingCount": 0,
+              "observedTotal": 5313,
+              "p95": 2719.0499999999997,
+              "total": 5313
+            },
+            "observedGeneratedTokenLowerBounds": {
+              "mean": 30,
+              "measuredCount": 2,
+              "median": 30,
+              "missingCount": 0,
+              "observedTotal": 60,
+              "p95": 30,
+              "total": 60
+            },
+            "observedPromptTokenLowerBounds": {
+              "mean": 60,
+              "measuredCount": 2,
+              "median": 60,
+              "missingCount": 0,
+              "observedTotal": 120,
+              "p95": 60,
+              "total": 120
+            },
+            "privateGradingLatencyMs": {
+              "mean": 208,
+              "measuredCount": 2,
+              "median": 208,
+              "missingCount": 0,
+              "observedTotal": 416,
+              "p95": 208,
+              "total": 416
+            },
+            "promptTokens": {
+              "mean": 60,
+              "measuredCount": 2,
+              "median": 60,
+              "missingCount": 0,
+              "observedTotal": 120,
+              "p95": 60,
+              "total": 120
+            },
+            "providerRequests": {
+              "mean": 3,
+              "measuredCount": 2,
+              "median": 3,
+              "missingCount": 0,
+              "observedTotal": 6,
+              "p95": 3,
+              "total": 6
+            },
+            "providerStatusCounts": {
+              "200": 6
+            },
+            "scope": "All identifiable started/ended attempts, including failures and extra attempts; never only successful tasks. Unknown totals are not zero.",
+            "totalAttemptLatencyMs": {
+              "mean": 2869,
+              "measuredCount": 2,
+              "median": 2869,
+              "missingCount": 0,
+              "observedTotal": 5738,
+              "p95": 2932,
+              "total": 5738
+            }
+          }
+        },
+        "scope": "This synthetic fixture distribution and the frozen model/runtime/capability configuration only.",
+        "strictIntentionToRun": null,
+        "transportAdmittedPaired": {
+          "atlasRate": 1,
+          "counts": {
+            "atlasOnly": 0,
+            "bothPass": 2,
+            "hermesOnly": 0,
+            "neitherSuccessful": 0
+          },
+          "delta": 0,
+          "hermesRate": 1,
+          "pairs": 2,
+          "pairsWithMissingOrAmbiguousArm": 0
+        }
+      }
+    ],
+    "limits": [
+      "No universal harness, provider, subscription, visual-quality or before/after improvement claim.",
+      "Memory formatting/factual metrics are separate. File final JSON/strict chat formatting is not required and is reported as not applicable.",
+      "A missing arm is unsuccessful for intention-to-run and remains explicitly missing; it is not an observed successful tie.",
+      "Provider prices are not guessed. Resource distributions include failures, missing observations and extra attempts."
+    ],
+    "phase": "pilot",
+    "resources": {
+      "atlas": {
+        "attempts": 2,
+        "cachedTokens": {
+          "mean": 0,
+          "measuredCount": 2,
+          "median": 0,
+          "missingCount": 0,
+          "observedTotal": 0,
+          "p95": 0,
+          "total": 0
+        },
+        "costUsd": {
+          "mean": null,
+          "measuredCount": 0,
+          "median": null,
+          "missingCount": 2,
+          "observedTotal": null,
+          "p95": null,
+          "total": null
+        },
+        "generatedTokens": {
+          "mean": 30,
+          "measuredCount": 2,
+          "median": 30,
+          "missingCount": 0,
+          "observedTotal": 60,
+          "p95": 30,
+          "total": 60
+        },
+        "invocationLatencyMs": {
+          "mean": 1218,
+          "measuredCount": 2,
+          "median": 1218,
+          "missingCount": 0,
+          "observedTotal": 2436,
+          "p95": 1414.2,
+          "total": 2436
+        },
+        "observedGeneratedTokenLowerBounds": {
+          "mean": 30,
+          "measuredCount": 2,
+          "median": 30,
+          "missingCount": 0,
+          "observedTotal": 60,
+          "p95": 30,
+          "total": 60
+        },
+        "observedPromptTokenLowerBounds": {
+          "mean": 60,
+          "measuredCount": 2,
+          "median": 60,
+          "missingCount": 0,
+          "observedTotal": 120,
+          "p95": 60,
+          "total": 120
+        },
+        "privateGradingLatencyMs": {
+          "mean": 236,
+          "measuredCount": 2,
+          "median": 236,
+          "missingCount": 0,
+          "observedTotal": 472,
+          "p95": 254.89999999999998,
+          "total": 472
+        },
+        "promptTokens": {
+          "mean": 60,
+          "measuredCount": 2,
+          "median": 60,
+          "missingCount": 0,
+          "observedTotal": 120,
+          "p95": 60,
+          "total": 120
+        },
+        "providerRequests": {
+          "mean": 3,
+          "measuredCount": 2,
+          "median": 3,
+          "missingCount": 0,
+          "observedTotal": 6,
+          "p95": 3,
+          "total": 6
+        },
+        "providerStatusCounts": {
+          "200": 6
+        },
+        "scope": "All identifiable started/ended attempts, including failures and extra attempts; never only successful tasks. Unknown totals are not zero.",
+        "totalAttemptLatencyMs": {
+          "mean": 1459,
+          "measuredCount": 2,
+          "median": 1459,
+          "missingCount": 0,
+          "observedTotal": 2918,
+          "p95": 1675,
+          "total": 2918
+        }
+      },
+      "hermes": {
+        "attempts": 2,
+        "cachedTokens": {
+          "mean": 0,
+          "measuredCount": 2,
+          "median": 0,
+          "missingCount": 0,
+          "observedTotal": 0,
+          "p95": 0,
+          "total": 0
+        },
+        "costUsd": {
+          "mean": null,
+          "measuredCount": 0,
+          "median": null,
+          "missingCount": 2,
+          "observedTotal": null,
+          "p95": null,
+          "total": null
+        },
+        "generatedTokens": {
+          "mean": 30,
+          "measuredCount": 2,
+          "median": 30,
+          "missingCount": 0,
+          "observedTotal": 60,
+          "p95": 30,
+          "total": 60
+        },
+        "invocationLatencyMs": {
+          "mean": 2656.5,
+          "measuredCount": 2,
+          "median": 2656.5,
+          "missingCount": 0,
+          "observedTotal": 5313,
+          "p95": 2719.0499999999997,
+          "total": 5313
+        },
+        "observedGeneratedTokenLowerBounds": {
+          "mean": 30,
+          "measuredCount": 2,
+          "median": 30,
+          "missingCount": 0,
+          "observedTotal": 60,
+          "p95": 30,
+          "total": 60
+        },
+        "observedPromptTokenLowerBounds": {
+          "mean": 60,
+          "measuredCount": 2,
+          "median": 60,
+          "missingCount": 0,
+          "observedTotal": 120,
+          "p95": 60,
+          "total": 120
+        },
+        "privateGradingLatencyMs": {
+          "mean": 208,
+          "measuredCount": 2,
+          "median": 208,
+          "missingCount": 0,
+          "observedTotal": 416,
+          "p95": 208,
+          "total": 416
+        },
+        "promptTokens": {
+          "mean": 60,
+          "measuredCount": 2,
+          "median": 60,
+          "missingCount": 0,
+          "observedTotal": 120,
+          "p95": 60,
+          "total": 120
+        },
+        "providerRequests": {
+          "mean": 3,
+          "measuredCount": 2,
+          "median": 3,
+          "missingCount": 0,
+          "observedTotal": 6,
+          "p95": 3,
+          "total": 6
+        },
+        "providerStatusCounts": {
+          "200": 6
+        },
+        "scope": "All identifiable started/ended attempts, including failures and extra attempts; never only successful tasks. Unknown totals are not zero.",
+        "totalAttemptLatencyMs": {
+          "mean": 2869,
+          "measuredCount": 2,
+          "median": 2869,
+          "missingCount": 0,
+          "observedTotal": 5738,
+          "p95": 2932,
+          "total": 5738
+        }
+      }
+    },
+    "schemaVersion": 1,
+    "track": "files",
+    "transportMode": "offline-scripted",
+    "validity": {
+      "issues": [],
+      "valid": true
+    },
+    "evidence": {
+      "archivedAnalysisSha256": "37c07e387482bda56ee4e0f955e22d77bbc1d1ca5be1230a5e01f4f60f456ccc",
+      "archiveVerification": "Archived member contents checked against recorded inventories without executing or extracting archived code; mutable app/package checkout not read.",
+      "batchDirectory": "/private/tmp/atlas-hermes-evaluation/file-orchestrator-pilot-yfGZcU/batches/pilot-1788723051260-36566076",
+      "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+      "executedAnalysisSha256": "37c07e387482bda56ee4e0f955e22d77bbc1d1ca5be1230a5e01f4f60f456ccc",
+      "manifestSha256": null
+    }
+  },
+  "arms": [
+    {
+      "id": "pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas",
+      "harness": "atlas",
+      "family": "xlsx_reconciliation",
+      "status": "completed",
+      "success": true,
+      "usage": {
+        "budgetExceeded": false,
+        "cachedTokens": 0,
+        "costUsd": null,
+        "generatedTokens": 30,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 30,
+        "observedPromptTokens": 60,
+        "promptTokens": 60,
+        "providerRequests": 3
+      },
+      "usageEvidence": {
+        "cachedTokens": 0,
+        "finalized": true,
+        "generatedTokens": 30,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": true,
+        "observationError": false,
+        "observedGeneratedTokens": 30,
+        "observedPromptTokens": 60,
+        "promptTokens": 60,
+        "requests": [
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 1,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          },
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 2,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          },
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 3,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          }
+        ]
+      },
+      "result": {
+        "at": "2026-09-06T19:30:56.755Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "event": "end",
+        "family": "xlsx_reconciliation",
+        "harness": "atlas",
+        "id": "pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-atlas",
+        "identitySha256": "b9c021abb9a6dce177c7dee5f49cf34a8868236a12e968e9e874da4c3b8c409f",
+        "pairId": "native-file-pilot-xlsx-v999",
+        "phase": "pilot",
+        "repetition": 0,
+        "transportId": "transport-014b5bb0-54dd-472d-931d-8848645eb491",
+        "variant": 999,
+        "boundaryValid": true,
+        "elapsedMs": 1436,
+        "evaluation": {
+          "binding": {
+            "actualSha256": "0fea1c8c14661822c654501dbe31628aef0cadf8c772d7d681c215ef134523f9",
+            "bytes": 5450,
+            "nativeEffectObserved": true,
+            "pass": true,
+            "snapshotMatches": true
+          },
+          "codeEvidence": null,
+          "gradingMs": 257,
+          "oracle": {
+            "pass": true,
+            "integrityFailure": false,
+            "checks": [
+              {
+                "id": "source_preserved:input/invoices.xlsx",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "delivery_selected",
+                "pass": true,
+                "detail": "artifacts/reconciliation.xlsx"
+              },
+              {
+                "id": "deliverable_exists",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "sheet_names",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "cells:Summary",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "schema_extra_cells:Summary",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "cell_types:Summary",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "cells:Audit",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "schema_extra_cells:Audit",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "cell_types:Audit",
+                "pass": true,
+                "detail": ""
+              }
+            ],
+            "scope": "Native artifact structure and required supplied facts; forbidden positive phrases are a limited diagnostic, not comprehensive supported-fact proof. No claim of visual perfection, OCR quality, or general code correctness."
+          },
+          "selection": {
+            "candidates": ["artifacts/reconciliation.xlsx"],
+            "evidence": "final-text",
+            "invalidCandidates": [],
+            "path": "artifacts/reconciliation.xlsx"
+          },
+          "success": true
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "inputIdentical": true,
+        "manifestSha256": "d8e683f419ec6a1dee989f67d6b4c8885abf26ebecc583981d0e2e1b17e0b25c",
+        "nativeRoot": "/private/tmp/agent-runtime-dZbTrw/state-5PcwHO",
+        "providerStatuses": [200, 200, 200],
+        "seed": "4401969754305960088",
+        "status": "completed",
+        "success": true,
+        "taskId": "native-file-development-xlsx_reconciliation-999",
+        "totalAttemptElapsedMs": 1699,
+        "transportAdmitted": true,
+        "usage": {
+          "budgetExceeded": false,
+          "cachedTokens": 0,
+          "costUsd": null,
+          "generatedTokens": 30,
+          "mandatoryUsageKnown": true,
+          "missingUsage": false,
+          "observedGeneratedTokens": 30,
+          "observedPromptTokens": 60,
+          "promptTokens": 60,
+          "providerRequests": 3
+        },
+        "usageEvidence": {
+          "cachedTokens": 0,
+          "finalized": true,
+          "generatedTokens": 30,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 30,
+          "observedPromptTokens": 60,
+          "promptTokens": 60,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "actualWorkspaceRoot": "/private/tmp/agent-runtime-dZbTrw/state-5PcwHO/atlas-native-file-cL1Je5/orgs/file_study_org/profiles/file_study_profile",
+      "observedNativeEvents": 1,
+      "sessionCount": 1
+    },
+    {
+      "id": "pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+      "harness": "hermes",
+      "family": "xlsx_reconciliation",
+      "status": "completed",
+      "success": true,
+      "usage": {
+        "budgetExceeded": false,
+        "cachedTokens": 0,
+        "costUsd": null,
+        "generatedTokens": 30,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 30,
+        "observedPromptTokens": 60,
+        "promptTokens": 60,
+        "providerRequests": 3
+      },
+      "usageEvidence": {
+        "cachedTokens": 0,
+        "finalized": true,
+        "generatedTokens": 30,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": true,
+        "observationError": false,
+        "observedGeneratedTokens": 30,
+        "observedPromptTokens": 60,
+        "promptTokens": 60,
+        "requests": [
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 1,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          },
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 2,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          },
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 3,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          }
+        ]
+      },
+      "result": {
+        "at": "2026-09-06T19:30:59.694Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "event": "end",
+        "family": "xlsx_reconciliation",
+        "harness": "hermes",
+        "id": "pilot-1788723051260-36566076-native-file-pilot-xlsx-v999-hermes",
+        "identitySha256": "b06a28a439fe0fe659cb50dc71b664547eda9304a2ad58d3c40b8530c026a09b",
+        "pairId": "native-file-pilot-xlsx-v999",
+        "phase": "pilot",
+        "repetition": 0,
+        "transportId": "transport-10040a68-9568-4f1b-8260-b82440a6abdc",
+        "variant": 999,
+        "boundaryValid": true,
+        "elapsedMs": 2726,
+        "evaluation": {
+          "binding": {
+            "actualSha256": "55ca6e7450085cb2874fa777d730fe8bc453e8be511a34de034dec95f2a4fbc6",
+            "bytes": 5451,
+            "nativeEffectObserved": true,
+            "pass": true,
+            "snapshotMatches": true
+          },
+          "codeEvidence": null,
+          "gradingMs": 208,
+          "oracle": {
+            "pass": true,
+            "integrityFailure": false,
+            "checks": [
+              {
+                "id": "source_preserved:input/invoices.xlsx",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "delivery_selected",
+                "pass": true,
+                "detail": "artifacts/reconciliation.xlsx"
+              },
+              {
+                "id": "deliverable_exists",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "sheet_names",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "cells:Summary",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "schema_extra_cells:Summary",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "cell_types:Summary",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "cells:Audit",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "schema_extra_cells:Audit",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "cell_types:Audit",
+                "pass": true,
+                "detail": ""
+              }
+            ],
+            "scope": "Native artifact structure and required supplied facts; forbidden positive phrases are a limited diagnostic, not comprehensive supported-fact proof. No claim of visual perfection, OCR quality, or general code correctness."
+          },
+          "selection": {
+            "candidates": ["artifacts/reconciliation.xlsx"],
+            "evidence": "final-text",
+            "invalidCandidates": [],
+            "path": "artifacts/reconciliation.xlsx"
+          },
+          "success": true
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "inputIdentical": true,
+        "manifestSha256": "d8e683f419ec6a1dee989f67d6b4c8885abf26ebecc583981d0e2e1b17e0b25c",
+        "nativeRoot": "/private/tmp/agent-runtime-dZbTrw/state-lEtDoR",
+        "providerStatuses": [200, 200, 200],
+        "seed": "4401969754305960088",
+        "status": "completed",
+        "success": true,
+        "taskId": "native-file-development-xlsx_reconciliation-999",
+        "totalAttemptElapsedMs": 2939,
+        "transportAdmitted": true,
+        "usage": {
+          "budgetExceeded": false,
+          "cachedTokens": 0,
+          "costUsd": null,
+          "generatedTokens": 30,
+          "mandatoryUsageKnown": true,
+          "missingUsage": false,
+          "observedGeneratedTokens": 30,
+          "observedPromptTokens": 60,
+          "promptTokens": 60,
+          "providerRequests": 3
+        },
+        "usageEvidence": {
+          "cachedTokens": 0,
+          "finalized": true,
+          "generatedTokens": 30,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 30,
+          "observedPromptTokens": 60,
+          "promptTokens": 60,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "actualWorkspaceRoot": "/private/tmp/agent-runtime-dZbTrw/state-lEtDoR/hermes-native-files-gxlpo2a3/workspace",
+      "observedNativeEvents": 1,
+      "sessionCount": 1
+    },
+    {
+      "id": "pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+      "harness": "hermes",
+      "family": "csv_join",
+      "status": "completed",
+      "success": true,
+      "usage": {
+        "budgetExceeded": false,
+        "cachedTokens": 0,
+        "costUsd": null,
+        "generatedTokens": 30,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 30,
+        "observedPromptTokens": 60,
+        "promptTokens": 60,
+        "providerRequests": 3
+      },
+      "usageEvidence": {
+        "cachedTokens": 0,
+        "finalized": true,
+        "generatedTokens": 30,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": true,
+        "observationError": false,
+        "observedGeneratedTokens": 30,
+        "observedPromptTokens": 60,
+        "promptTokens": 60,
+        "requests": [
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 1,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          },
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 2,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          },
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 3,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          }
+        ]
+      },
+      "result": {
+        "at": "2026-09-06T19:31:03.372Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "event": "end",
+        "family": "csv_join",
+        "harness": "hermes",
+        "id": "pilot-1788723051260-36566076-native-file-pilot-csv-v999-hermes",
+        "identitySha256": "e62d8dc3ad98c56d8a726f5acf6f9145fe767ba7205e0d11707d237fa136635e",
+        "pairId": "native-file-pilot-csv-v999",
+        "phase": "pilot",
+        "repetition": 0,
+        "transportId": "transport-859a37a7-31ad-4134-9c51-b6a51e34ead3",
+        "variant": 999,
+        "boundaryValid": true,
+        "elapsedMs": 2587,
+        "evaluation": {
+          "binding": {
+            "actualSha256": "1d77f49fb9d7eb7bdc9f3092bc20df9f2d76540b0d0b0e7f1b001c979211694f",
+            "bytes": 292,
+            "nativeEffectObserved": true,
+            "pass": true,
+            "snapshotMatches": true
+          },
+          "codeEvidence": null,
+          "gradingMs": 208,
+          "oracle": {
+            "pass": true,
+            "integrityFailure": false,
+            "checks": [
+              {
+                "id": "source_preserved:input/customers.csv",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "source_preserved:input/orders.csv",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "delivery_selected",
+                "pass": true,
+                "detail": "artifacts/joined.csv"
+              },
+              {
+                "id": "deliverable_exists",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "csv_content",
+                "pass": true,
+                "detail": ""
+              }
+            ],
+            "scope": "Native artifact structure and required supplied facts; forbidden positive phrases are a limited diagnostic, not comprehensive supported-fact proof. No claim of visual perfection, OCR quality, or general code correctness."
+          },
+          "selection": {
+            "candidates": ["artifacts/joined.csv"],
+            "evidence": "final-text",
+            "invalidCandidates": [],
+            "path": "artifacts/joined.csv"
+          },
+          "success": true
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "inputIdentical": true,
+        "manifestSha256": "af542f2f89811e65ce61c2774cbd6aab285ebc81d166564a17637490c00f3440",
+        "nativeRoot": "/private/tmp/agent-runtime-dZbTrw/state-8JMDKE",
+        "providerStatuses": [200, 200, 200],
+        "seed": "12538436610991504349",
+        "status": "completed",
+        "success": true,
+        "taskId": "native-file-development-csv_join-999",
+        "totalAttemptElapsedMs": 2799,
+        "transportAdmitted": true,
+        "usage": {
+          "budgetExceeded": false,
+          "cachedTokens": 0,
+          "costUsd": null,
+          "generatedTokens": 30,
+          "mandatoryUsageKnown": true,
+          "missingUsage": false,
+          "observedGeneratedTokens": 30,
+          "observedPromptTokens": 60,
+          "promptTokens": 60,
+          "providerRequests": 3
+        },
+        "usageEvidence": {
+          "cachedTokens": 0,
+          "finalized": true,
+          "generatedTokens": 30,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 30,
+          "observedPromptTokens": 60,
+          "promptTokens": 60,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "actualWorkspaceRoot": "/private/tmp/agent-runtime-dZbTrw/state-8JMDKE/hermes-native-files-cswxe6a9/workspace",
+      "observedNativeEvents": 1,
+      "sessionCount": 1
+    },
+    {
+      "id": "pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+      "harness": "atlas",
+      "family": "csv_join",
+      "status": "completed",
+      "success": true,
+      "usage": {
+        "budgetExceeded": false,
+        "cachedTokens": 0,
+        "costUsd": null,
+        "generatedTokens": 30,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 30,
+        "observedPromptTokens": 60,
+        "promptTokens": 60,
+        "providerRequests": 3
+      },
+      "usageEvidence": {
+        "cachedTokens": 0,
+        "finalized": true,
+        "generatedTokens": 30,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": true,
+        "observationError": false,
+        "observedGeneratedTokens": 30,
+        "observedPromptTokens": 60,
+        "promptTokens": 60,
+        "requests": [
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 1,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          },
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 2,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          },
+          {
+            "cachedTokens": 0,
+            "generatedTokens": 10,
+            "index": 3,
+            "kind": "success",
+            "promptTokens": 20,
+            "status": 200
+          }
+        ]
+      },
+      "result": {
+        "at": "2026-09-06T19:31:04.592Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "event": "end",
+        "family": "csv_join",
+        "harness": "atlas",
+        "id": "pilot-1788723051260-36566076-native-file-pilot-csv-v999-atlas",
+        "identitySha256": "eb9873955d08d9b82461bcce08ca8bade46452d5ee15fdeefb636bab8d43d4f5",
+        "pairId": "native-file-pilot-csv-v999",
+        "phase": "pilot",
+        "repetition": 0,
+        "transportId": "transport-a9cd4005-fc6d-4d73-b985-bc471a63e962",
+        "variant": 999,
+        "boundaryValid": true,
+        "elapsedMs": 1000,
+        "evaluation": {
+          "binding": {
+            "actualSha256": "1d77f49fb9d7eb7bdc9f3092bc20df9f2d76540b0d0b0e7f1b001c979211694f",
+            "bytes": 292,
+            "nativeEffectObserved": true,
+            "pass": true,
+            "snapshotMatches": true
+          },
+          "codeEvidence": null,
+          "gradingMs": 215,
+          "oracle": {
+            "pass": true,
+            "integrityFailure": false,
+            "checks": [
+              {
+                "id": "source_preserved:input/customers.csv",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "source_preserved:input/orders.csv",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "delivery_selected",
+                "pass": true,
+                "detail": "artifacts/joined.csv"
+              },
+              {
+                "id": "deliverable_exists",
+                "pass": true,
+                "detail": ""
+              },
+              {
+                "id": "csv_content",
+                "pass": true,
+                "detail": ""
+              }
+            ],
+            "scope": "Native artifact structure and required supplied facts; forbidden positive phrases are a limited diagnostic, not comprehensive supported-fact proof. No claim of visual perfection, OCR quality, or general code correctness."
+          },
+          "selection": {
+            "candidates": ["artifacts/joined.csv"],
+            "evidence": "final-text",
+            "invalidCandidates": [],
+            "path": "artifacts/joined.csv"
+          },
+          "success": true
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "inputIdentical": true,
+        "manifestSha256": "af542f2f89811e65ce61c2774cbd6aab285ebc81d166564a17637490c00f3440",
+        "nativeRoot": "/private/tmp/agent-runtime-dZbTrw/state-DZ7roE",
+        "providerStatuses": [200, 200, 200],
+        "seed": "12538436610991504349",
+        "status": "completed",
+        "success": true,
+        "taskId": "native-file-development-csv_join-999",
+        "totalAttemptElapsedMs": 1219,
+        "transportAdmitted": true,
+        "usage": {
+          "budgetExceeded": false,
+          "cachedTokens": 0,
+          "costUsd": null,
+          "generatedTokens": 30,
+          "mandatoryUsageKnown": true,
+          "missingUsage": false,
+          "observedGeneratedTokens": 30,
+          "observedPromptTokens": 60,
+          "promptTokens": 60,
+          "providerRequests": 3
+        },
+        "usageEvidence": {
+          "cachedTokens": 0,
+          "finalized": true,
+          "generatedTokens": 30,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 30,
+          "observedPromptTokens": 60,
+          "promptTokens": 60,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 10,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 20,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "actualWorkspaceRoot": "/private/tmp/agent-runtime-dZbTrw/state-DZ7roE/atlas-native-file-IYqNtq/orgs/file_study_org/profiles/file_study_profile",
+      "observedNativeEvents": 1,
+      "sessionCount": 1
+    }
+  ]
+}

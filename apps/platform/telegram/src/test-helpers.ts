@@ -8,10 +8,14 @@ import {
   parseListProfilesResponse,
   parseListUserOrgsResponse,
 } from "@atlas/core/bridge-api";
+import type { ChannelNativeActionRequest } from "@atlas/core/channel-native-actions";
 import { ChannelOrgStore } from "@atlas/core/channel-org";
 import type {
+  AgentQuestionnaire,
   AgentTodo,
+  ApprovalRequest,
   ChatMessage,
+  SendMessageInput,
   TranscribeAudioRequest,
   UserOrgSummary,
 } from "@atlas/core/contract";
@@ -136,6 +140,9 @@ export interface MockStreamControl {
 }
 
 type StreamStep =
+  | { type: "channel_action"; request: ChannelNativeActionRequest }
+  | { type: "questionnaire"; questionnaire: AgentQuestionnaire | null }
+  | { type: "approval"; approval: ApprovalRequest }
   | { type: "artifact"; artifact: Artifact }
   | { type: "todos"; todos: AgentTodo[] }
   | { type: "chunk"; delta: string }
@@ -231,8 +238,10 @@ export function createMockClient(
     | Parameters<AtlasClient["bindChannelPrincipal"]>[0]
     | undefined;
   let lastCreateSessionProfileId: string | undefined;
-  let lastCreateSessionExternalPrincipal: { channelUserId: string } | undefined;
-  let lastStreamInput: unknown;
+  let lastCreateSessionExternalPrincipal: NonNullable<
+    Parameters<AtlasClient["createSession"]>[1]
+  >["externalPrincipal"];
+  let lastStreamInput: SendMessageInput | undefined;
   let lastTranscribeAudioInput: TranscribeAudioRequest | undefined;
   const orgIdScope = new AsyncLocalStorage<{ orgId: string | null }>();
 
@@ -240,7 +249,7 @@ export function createMockClient(
   const streamControls: MockStreamControl[] = [];
 
   const sendStream = async (
-    input: unknown,
+    input: SendMessageInput,
     handlers: unknown,
     streamOptions?: { signal?: AbortSignal }
   ) => {
@@ -296,6 +305,15 @@ export function createMockClient(
           }
 
           switch (step.type) {
+            case "channel_action":
+              streamHandlers.onChannelActionRequested?.(step.request);
+              break;
+            case "questionnaire":
+              streamHandlers.onQuestionnaireUpdated?.(step.questionnaire);
+              break;
+            case "approval":
+              streamHandlers.onApprovalRequested?.(step.approval);
+              break;
             case "artifact":
               streamHandlers.onArtifactCreated?.(step.artifact);
               break;
@@ -367,6 +385,11 @@ export function createMockClient(
   const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
+    authorizeChannelPrincipal: async () => ({
+      orgId: currentOrgId(),
+      userId: "user_test",
+    }),
+    bindChannelActionContext: async () => ({ bound: true }),
     bindChannelPrincipal: async (
       input: Parameters<AtlasClient["bindChannelPrincipal"]>[0]
     ) => {
@@ -383,10 +406,7 @@ export function createMockClient(
     createChatSession: () => session,
     createSession: async (
       _channel: string,
-      input?: {
-        profileId?: string;
-        externalPrincipal?: { channelUserId: string };
-      }
+      input?: Parameters<AtlasClient["createSession"]>[1]
     ) => {
       calls.createSession += 1;
       if (options.failCreateSession) {
@@ -397,6 +417,7 @@ export function createMockClient(
       createSessionOrgIds.push(currentOrgId());
       return session;
     },
+    decideChannelApproval: async () => ({ resumed: true, status: "approved" }),
     getModels: async () => ({
       currentProviderId: null,
       displayName: null,
@@ -404,6 +425,15 @@ export function createMockClient(
       provider: null,
       providers: [],
     }),
+    getSessionMessages: async () => {
+      const step = options.steps?.findLast(
+        (entry) => entry.type === "questionnaire"
+      );
+      return {
+        questionnaire:
+          step?.type === "questionnaire" ? step.questionnaire : null,
+      };
+    },
     health: async () => ({
       ok: true,
       providerConfigured: options.providerConfigured ?? false,
@@ -503,9 +533,13 @@ export async function writeTelegramConfigIni(
     handshakeUserId?: string | null;
     pairedUserIds?: number[];
     allowedUserIds?: number[];
+    blockedUserIds?: number[];
+    orgId?: string;
   }
 ): Promise<void> {
-  const dir = path.join(homeDir, ".atlas", "telegram");
+  const dir = config.orgId
+    ? path.join(homeDir, ".atlas", "orgs", config.orgId, "channels", "telegram")
+    : path.join(homeDir, ".atlas", "telegram");
   await mkdir(dir, { recursive: true });
 
   const lines = [
@@ -533,6 +567,10 @@ export async function writeTelegramConfigIni(
 
   if (config.allowedUserIds?.length) {
     lines.push(`allowed_user_ids=${config.allowedUserIds.join(",")}`);
+  }
+
+  if (config.blockedUserIds?.length) {
+    lines.push(`blocked_user_ids=${config.blockedUserIds.join(",")}`);
   }
 
   lines.push("");

@@ -1,0 +1,458 @@
+{
+  "scope": "Prospective arithmetic only; no outcomes read; no simulation; no inference",
+  "strictCriterion": "Upper loss probability bound < 0.05",
+  "iidExactMinimumIndependentPairs": [
+    {
+      "oneSidedAlpha": 0.05,
+      "observedLosses": 0,
+      "minimumN": 59
+    },
+    {
+      "oneSidedAlpha": 0.05,
+      "observedLosses": 1,
+      "minimumN": 93
+    },
+    {
+      "oneSidedAlpha": 0.05,
+      "observedLosses": 2,
+      "minimumN": 124
+    },
+    {
+      "oneSidedAlpha": 0.05,
+      "observedLosses": 3,
+      "minimumN": 153
+    },
+    {
+      "oneSidedAlpha": 0.05,
+      "observedLosses": 5,
+      "minimumN": 208
+    },
+    {
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 0,
+      "minimumN": 72
+    },
+    {
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 1,
+      "minimumN": 110
+    },
+    {
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 2,
+      "minimumN": 142
+    },
+    {
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 3,
+      "minimumN": 173
+    },
+    {
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 5,
+      "minimumN": 230
+    },
+    {
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 0,
+      "minimumN": 86
+    },
+    {
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 1,
+      "minimumN": 125
+    },
+    {
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 2,
+      "minimumN": 160
+    },
+    {
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 3,
+      "minimumN": 192
+    },
+    {
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 5,
+      "minimumN": 252
+    }
+  ],
+  "balancedStrataChernoffMinimumIndependentPairs": [
+    {
+      "scope": "files",
+      "families": 9,
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 0,
+      "minimumN": 72
+    },
+    {
+      "scope": "files",
+      "families": 9,
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 1,
+      "minimumN": 135
+    },
+    {
+      "scope": "files",
+      "families": 9,
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 2,
+      "minimumN": 171
+    },
+    {
+      "scope": "files",
+      "families": 9,
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 3,
+      "minimumN": 207
+    },
+    {
+      "scope": "files",
+      "families": 9,
+      "oneSidedAlpha": 0.025,
+      "observedLosses": 5,
+      "minimumN": 279
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 0,
+      "minimumN": 88
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 1,
+      "minimumN": 152
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 2,
+      "minimumN": 192
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 3,
+      "minimumN": 224
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "oneSidedAlpha": 0.0125,
+      "observedLosses": 5,
+      "minimumN": 296
+    }
+  ],
+  "allZeroBonferroniStratumExact": [
+    {
+      "scope": "files",
+      "families": 9,
+      "oneSidedAlpha": 0.025,
+      "perFamilyAlpha": 0.002777777777777778,
+      "minimumIndependentPairsPerFamily": 115,
+      "minimumTotalPairs": 1035
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "oneSidedAlpha": 0.0125,
+      "perFamilyAlpha": 0.0015625,
+      "minimumIndependentPairsPerFamily": 126,
+      "minimumTotalPairs": 1008
+    }
+  ],
+  "iidExactNIOnlyPowerIllustration": [
+    {
+      "n": 72,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 0,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.48499137027416284,
+        "0.02": 0.23349492727035415,
+        "0.03": 0.11157447889774263,
+        "0.05": 0.024894280619189402
+      }
+    },
+    {
+      "n": 88,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 0,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.41294967113388814,
+        "0.02": 0.16900309612819286,
+        "0.03": 0.06853503129613371,
+        "0.05": 0.01095663679740604
+      }
+    },
+    {
+      "n": 100,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 0,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.3660323412732292,
+        "0.02": 0.13261955589475294,
+        "0.03": 0.04755250792540563,
+        "0.05": 0.0059205292203339975
+      }
+    },
+    {
+      "n": 150,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 2,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.8094818620160628,
+        "0.02": 0.4209256728618172,
+        "0.03": 0.16931834287047864,
+        "0.05": 0.018154055021944306
+      }
+    },
+    {
+      "n": 200,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 3,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.8580340344447425,
+        "0.02": 0.43149497316150287,
+        "0.03": 0.14715119408240107,
+        "0.05": 0.009048376396101461
+      }
+    },
+    {
+      "n": 300,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 7,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.9885259213651195,
+        "0.02": 0.7453822069342898,
+        "0.03": 0.32032370043912833,
+        "0.05": 0.0159680007970871
+      }
+    },
+    {
+      "n": 500,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 15,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.9999385414341796,
+        "0.02": 0.9530029019903457,
+        "0.03": 0.5680974954490782,
+        "0.05": 0.01985837716300622
+      }
+    },
+    {
+      "n": 72,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": -1,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.0,
+        "0.02": 0.0,
+        "0.03": 0.0,
+        "0.05": 0.0
+      }
+    },
+    {
+      "n": 88,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": 0,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.41294967113388814,
+        "0.02": 0.16900309612819286,
+        "0.03": 0.06853503129613371,
+        "0.05": 0.01095663679740604
+      }
+    },
+    {
+      "n": 100,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": 0,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.3660323412732292,
+        "0.02": 0.13261955589475294,
+        "0.03": 0.04755250792540563,
+        "0.05": 0.0059205292203339975
+      }
+    },
+    {
+      "n": 150,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": 1,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.556984798206832,
+        "0.02": 0.19614098423375606,
+        "0.03": 0.05847574074986479,
+        "0.05": 0.004052041615144109
+      }
+    },
+    {
+      "n": 200,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": 3,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.8580340344447425,
+        "0.02": 0.43149497316150287,
+        "0.03": 0.14715119408240107,
+        "0.05": 0.009048376396101461
+      }
+    },
+    {
+      "n": 300,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": 6,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.9672490535972182,
+        "0.02": 0.6063082456422704,
+        "0.03": 0.20262745727506468,
+        "0.05": 0.006579374400801467
+      }
+    },
+    {
+      "n": 500,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": 14,
+      "probabilityNIOnlyPass": {
+        "0.01": 0.9997943221351755,
+        "0.02": 0.9186431004830982,
+        "0.03": 0.46409016718051554,
+        "0.05": 0.010812459496288378
+      }
+    }
+  ],
+  "balancedQuotaKLNIOnlyPowerHomogeneousIndependentScenario": [
+    {
+      "scope": "files",
+      "families": 9,
+      "n": 72,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 0,
+      "probabilityNIOnlyPass": {
+        "0.005": 0.6970466008354949,
+        "0.01": 0.48499137027416284,
+        "0.025": 0.16155943670880252,
+        "0.05": 0.024894280619189402
+      }
+    },
+    {
+      "scope": "files",
+      "families": 9,
+      "n": 180,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 2,
+      "probabilityNIOnlyPass": {
+        "0.005": 0.9375978193054839,
+        "0.01": 0.7308934112135875,
+        "0.025": 0.17003414947645049,
+        "0.05": 0.005387637504575531
+      }
+    },
+    {
+      "scope": "files",
+      "families": 9,
+      "n": 360,
+      "oneSidedAlpha": 0.025,
+      "maximumQualifyingLosses": 7,
+      "probabilityNIOnlyPass": {
+        "0.005": 0.9994642314570718,
+        "0.01": 0.9699338046814113,
+        "0.025": 0.3209276912656508,
+        "0.05": 0.0024098384429648875
+      }
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "n": 88,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": 0,
+      "probabilityNIOnlyPass": {
+        "0.005": 0.6433260027715241,
+        "0.01": 0.41294967113388814,
+        "0.025": 0.1077472467404545,
+        "0.05": 0.01095663679740604
+      }
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "n": 192,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": 2,
+      "probabilityNIOnlyPass": {
+        "0.005": 0.927367889367992,
+        "0.01": 0.6984295626510634,
+        "0.025": 0.13919861936831435,
+        "0.05": 0.0032704338750437307
+      }
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "n": 384,
+      "oneSidedAlpha": 0.0125,
+      "maximumQualifyingLosses": 7,
+      "probabilityNIOnlyPass": {
+        "0.005": 0.9991871758276668,
+        "0.01": 0.9586586414411306,
+        "0.025": 0.25510444449129716,
+        "0.05": 0.0010761255347941055
+      }
+    }
+  ],
+  "illustrativeAllZeroNIAndAccuracyBonferroni": [
+    {
+      "scope": "files",
+      "families": 9,
+      "trackAlpha": 0.025,
+      "componentAlpha": 0.002272727272727273,
+      "simultaneousComponents": "NI, aggregate accuracy, each family accuracy",
+      "minimumAggregateZeroAtlasFailurePairs": 58,
+      "minimumPerFamilyZeroAtlasFailurePairs": 28,
+      "minimumTotalBalancedPairsForFamilyBounds": 252,
+      "minimumZeroLossNIOnlyBalancedPairs": 126
+    },
+    {
+      "scope": "each_memory_condition",
+      "families": 8,
+      "trackAlpha": 0.0125,
+      "componentAlpha": 0.00125,
+      "simultaneousComponents": "NI, aggregate accuracy, each family accuracy",
+      "minimumAggregateZeroAtlasFailurePairs": 64,
+      "minimumPerFamilyZeroAtlasFailurePairs": 30,
+      "minimumTotalBalancedPairsForFamilyBounds": 240,
+      "minimumZeroLossNIOnlyBalancedPairs": 136
+    }
+  ],
+  "allZeroAdditiveHoeffding": [
+    {
+      "oneSidedAlpha": 0.05,
+      "minimumIndependentUnits": 600
+    },
+    {
+      "oneSidedAlpha": 0.025,
+      "minimumIndependentUnits": 738
+    },
+    {
+      "oneSidedAlpha": 0.0125,
+      "minimumIndependentUnits": 877
+    }
+  ],
+  "allZeroUAtCurrentDeclaredPairCountsUnderNewIndependentDesignOnly": [
+    {
+      "n": 54,
+      "oneSidedAlpha": 0.025,
+      "upper": 0.06603151424442177
+    },
+    {
+      "n": 48,
+      "oneSidedAlpha": 0.0125,
+      "upper": 0.08724905357753665
+    }
+  ],
+  "sourceSha256": "f9637c69202b0f46a450a1c33c698603f4941516507e9d71bc720bfac4e4d728"
+}

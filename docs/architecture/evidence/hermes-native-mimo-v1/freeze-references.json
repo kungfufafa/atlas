@@ -1,0 +1,121 @@
+{
+  "references": [
+    {
+      "track": "memory",
+      "studyRoot": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1",
+      "manifest": {
+        "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/frozen/manifest.json",
+        "bytes": 1169217,
+        "sha256": "76ea6c44820011fc8d70205c139322a5c8faf8975565206893f0abd3fe1a298c"
+      },
+      "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+      "model": "mimo-v2.5",
+      "endpoint": "https://opencode.ai/zen/go/v1",
+      "budget": {
+        "maxGeneratedTokens": 12000,
+        "maxOutputTokens": 4096,
+        "maxProviderRequests": 24,
+        "timeoutMs": 300000
+      },
+      "controlHashes": {
+        "docs/architecture/hermes-memory-mimo-preregistration.md": "4cc1b37cc5c155284181ba0f23b7715744cf35c6a34119d791e2b4f684580914",
+        "scripts/harness-compare/provenance.ts": "ac40b77f01a1b39e2fbf0c9d00ce3e4b8806b2fdcf4784d204125594187d22d3",
+        "scripts/harness-compare/tools.ts": "d697eb0fb4bfc4147651745568d4705fa0ef77a1fc37ac6fd4276d183492e6dc",
+        "scripts/harness-compare/types.ts": "31deb1a465fd635268b8384eab1ca30aa197b0ce4ea96464eb038659a32e2f22",
+        "scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts": "3bfa287df4c075287fd8a8ac28efd1fa17ca6ad8fdd3d9795ae930f4187103cd",
+        "scripts/harness-native-mimo-v1/memory-atlas-runner.ts": "2329d6f750a430710df8af3acdd2c63ee7ad5b917b9c5d0b400933f70eb05124",
+        "scripts/harness-native-mimo-v1/memory-oracles.ts": "f00a54d05942c752253d28cb6c73045539a0c3467b129d71e56ddf47fcc35e38",
+        "scripts/harness-native-mimo-v1/memory-run.test.ts": "336656f8ac6af237624a895f84675ac24f4ba4999c5330cc442a127ba7f266a8",
+        "scripts/harness-native-mimo-v1/memory-run.ts": "fed43ce958eb4d0efbbeea7e18e74ea461492f07b3b00a3cfa79cdf00f0e9c27",
+        "scripts/harness-native-mimo-v1/memory-tasks.test.ts": "488678fadaf237629872ccb72d9fdc491c4333aaef79d4e38065483753e28dfb",
+        "scripts/harness-native-mimo-v1/memory-tasks.ts": "16fb8ae75d9ff18d5a6f27ae98f415b7d650bc9294494bccb45d48f22512fdaa",
+        "scripts/harness-native-mimo-v1/memory-types.ts": "dec52fba1b1dcbcabfc16afb9ce93e89a6936ffd87377f5adaed4865d597c6dd",
+        "scripts/harness-native-mimo-v1/memory_hermes_runner.py": "e9bfde626ab06988f7ee7549ab7de5eb0b55454d42d5e92c6baea72e4bea15ff",
+        "scripts/harness-native-mimo-v1/product-analysis.test.ts": "62236c7376d3f624cc54697fa028a72658839ec936bb62e3ef9a8b5b14d97862",
+        "scripts/harness-native-mimo-v1/product-analysis.ts": "742950ec31c46ad2ae796e5997a13f0750abe456ea2d5d9135858c2e89abac2a",
+        "scripts/harness-native-mimo-v1/product-identity.test.ts": "6a453da5a2f913bf8a66b2a4a41246d93ab749fe590169e41b4ab2b749a0a19d",
+        "scripts/harness-native-mimo-v1/product-identity.ts": "ab2fd2fb011c972b5b6855a4f0b1f6d9c792d7282677fe52203c8d5b2442a0a3",
+        "scripts/harness-native-mimo-v1/product-model-parity.json": "3b9e751b79e5eb2a2896518e3a6f4d4f730aab013054a490ec92d874b57e14bf",
+        "scripts/harness-native-mimo-v1/product-model-probe-completed.json": "3fdac17312d98760aeff0b12e080487c7b920eda5cb12251b0ce368549415a87",
+        "scripts/harness-native-mimo-v1/product-model-probe-tool-request.json": "be8f079c130d3a80889a0719a32978261e8d9a321db79fcc709acd545038d266",
+        "scripts/harness-native-mimo-v1/product-model-probe-tool-response.json": "2f08690013ac7a15e555f5e3fe98d65c3822dbce727ebb53ec5490ff9a57ef3c",
+        "scripts/harness-native-mimo-v1/product-model-profile.json": "cdf6673db186ca05db06f2acb51fb48e82d02602bacbae30c93da14c47a3d053",
+        "scripts/harness-native-mimo-v1/product-model.test.ts": "6c1d57f3cfffe67a1569c76e6af1e1297281df32d8ba75e60fa12c3096f7b656",
+        "scripts/harness-native-mimo-v1/product-model.ts": "9e3e012b376f7e5985e2f04a91cd814417cd55cdc594c471b129d8dea5aa3d3b",
+        "scripts/harness-native-mimo-v1/product-proxy-broker.ts": "ee2efdb702a17adfd65387c5738f1218f530ee1dd88fa44e1cf7597efc85374d",
+        "scripts/harness-native-mimo-v1/product-proxy-queue.test.ts": "32d870b2f9cfc9c0c3a6beb776ac707260d511ef5de08852c479e2392b0e0c0a",
+        "scripts/harness-native-mimo-v1/product-proxy.test.ts": "0c083a61b77b0dc56f59c837bc25c572232f4430662d1f7bb18116f8cecca941",
+        "scripts/harness-native-mimo-v1/product-proxy.ts": "92e8f4d3f8860d0f64403f292fa82694a33d1723cfe01df46d07ecf726523d30"
+      },
+      "archiveHashes": {
+        "atlas-source.tar.gz": "728c6b1eeb664b171719fca7d3a4024a2bfdff3fef06b78bd09a79c17ccdc338",
+        "hermes-source.tar.gz": "8642c08cb4aede98be6641afdef9ab248dc61ec5218175298310ac9d0d61b57d",
+        "memory-protocol-source.tar.gz": "bf39c931ac1c6a01044a98fa0fc41aae9d910d257a7a5e6b311c64354914da07"
+      },
+      "frozenAt": "2026-09-06T17:15:08.666Z",
+      "qualification": "A reference to the immutable frozen definition, not an executed-result report. No task, oracle, holdout expected content or tar bytes are copied into this evidence pack.",
+      "protocolSha256": "4cc1b37cc5c155284181ba0f23b7715744cf35c6a34119d791e2b4f684580914",
+      "baselineSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74"
+    },
+    {
+      "track": "files",
+      "studyRoot": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v1",
+      "manifest": {
+        "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v1/frozen/manifest.json",
+        "bytes": 1168115,
+        "sha256": "d7007a47777bc2a3495be3ce4682640b507112e77c6c17ac6cfd82d64b27b871"
+      },
+      "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+      "model": "mimo-v2.5",
+      "endpoint": "https://opencode.ai/zen/go/v1",
+      "budget": {
+        "maxGeneratedTokens": 12000,
+        "maxOutputTokens": 4096,
+        "maxProviderRequests": 24,
+        "timeoutMs": 300000
+      },
+      "controlHashes": {
+        "docs/architecture/hermes-native-files-mimo-preregistration.md": "b6bdbd0d5a820903007fea28af1abfc72e3f7906ac7e7eeea20cdc69589766eb",
+        "scripts/harness-compare/provenance.ts": "ac40b77f01a1b39e2fbf0c9d00ce3e4b8806b2fdcf4784d204125594187d22d3",
+        "scripts/harness-compare/tools.ts": "d697eb0fb4bfc4147651745568d4705fa0ef77a1fc37ac6fd4276d183492e6dc",
+        "scripts/harness-compare/types.ts": "31deb1a465fd635268b8384eab1ca30aa197b0ce4ea96464eb038659a32e2f22",
+        "scripts/harness-native-mimo-v1/file-atlas-runner.test.ts": "c23e9ba30bde65e74939618779e3f19e020283104a8f3c2beb1e951c97eb2144",
+        "scripts/harness-native-mimo-v1/file-atlas-runner.ts": "ae237ebf3e7dd6bc59897be12ee6397762541f1bf66bec863ebcbe1ef432aa94",
+        "scripts/harness-native-mimo-v1/file-code-check-test.py": "72c2ea4618565562c3d89689543e7c26796880acfed3e1070ff8aa095e8c71b0",
+        "scripts/harness-native-mimo-v1/file-code-check.py": "758235b97785e7b6351f0084d00697dca4d1ffe9ea1410f53385113782920c53",
+        "scripts/harness-native-mimo-v1/file-code-contract.py": "dece0956900d5b51d942b26f11a55fbb3ddcea2838c66e411f6705d31368645a",
+        "scripts/harness-native-mimo-v1/file-fixtures.py": "f888bd34c6cac99da6183c346cc885ec0d11e132d1a5e021302cc762186ea6f2",
+        "scripts/harness-native-mimo-v1/file-hermes-runner-test.py": "18ca2031b16650a9d11eb6b38bd54d98d2d5b70127a488b50946bd65afbd25c6",
+        "scripts/harness-native-mimo-v1/file-oracles-test.py": "f97efb5113409954c89c0c5fd30109747e8d858d4e12eeae75b720ac7560d646",
+        "scripts/harness-native-mimo-v1/file-oracles.py": "b330f312c8d791918077be2f61110af611f2f531735b55989cb89ce8aaaa8e8e",
+        "scripts/harness-native-mimo-v1/file-run.test.ts": "a5f6d2e219dc54baeae3bd1b03a383de3ab9470c6bf6b5fc1938d176d51c21a3",
+        "scripts/harness-native-mimo-v1/file-run.ts": "6168b52d96319786d0ae71662d53487d1c64b841af93a3d6bc4cf7759eb642dd",
+        "scripts/harness-native-mimo-v1/file_hermes_runner.py": "7a358bb570d0a341d303539dddc03d157569b7aafbb1a767183a749ed174ec52",
+        "scripts/harness-native-mimo-v1/product-analysis.test.ts": "62236c7376d3f624cc54697fa028a72658839ec936bb62e3ef9a8b5b14d97862",
+        "scripts/harness-native-mimo-v1/product-analysis.ts": "742950ec31c46ad2ae796e5997a13f0750abe456ea2d5d9135858c2e89abac2a",
+        "scripts/harness-native-mimo-v1/product-identity.test.ts": "6a453da5a2f913bf8a66b2a4a41246d93ab749fe590169e41b4ab2b749a0a19d",
+        "scripts/harness-native-mimo-v1/product-identity.ts": "ab2fd2fb011c972b5b6855a4f0b1f6d9c792d7282677fe52203c8d5b2442a0a3",
+        "scripts/harness-native-mimo-v1/product-model-parity.json": "3b9e751b79e5eb2a2896518e3a6f4d4f730aab013054a490ec92d874b57e14bf",
+        "scripts/harness-native-mimo-v1/product-model-probe-completed.json": "3fdac17312d98760aeff0b12e080487c7b920eda5cb12251b0ce368549415a87",
+        "scripts/harness-native-mimo-v1/product-model-probe-tool-request.json": "be8f079c130d3a80889a0719a32978261e8d9a321db79fcc709acd545038d266",
+        "scripts/harness-native-mimo-v1/product-model-probe-tool-response.json": "2f08690013ac7a15e555f5e3fe98d65c3822dbce727ebb53ec5490ff9a57ef3c",
+        "scripts/harness-native-mimo-v1/product-model-profile.json": "cdf6673db186ca05db06f2acb51fb48e82d02602bacbae30c93da14c47a3d053",
+        "scripts/harness-native-mimo-v1/product-model.test.ts": "6c1d57f3cfffe67a1569c76e6af1e1297281df32d8ba75e60fa12c3096f7b656",
+        "scripts/harness-native-mimo-v1/product-model.ts": "9e3e012b376f7e5985e2f04a91cd814417cd55cdc594c471b129d8dea5aa3d3b",
+        "scripts/harness-native-mimo-v1/product-proxy-broker.ts": "ee2efdb702a17adfd65387c5738f1218f530ee1dd88fa44e1cf7597efc85374d",
+        "scripts/harness-native-mimo-v1/product-proxy-queue.test.ts": "32d870b2f9cfc9c0c3a6beb776ac707260d511ef5de08852c479e2392b0e0c0a",
+        "scripts/harness-native-mimo-v1/product-proxy.test.ts": "0c083a61b77b0dc56f59c837bc25c572232f4430662d1f7bb18116f8cecca941",
+        "scripts/harness-native-mimo-v1/product-proxy.ts": "92e8f4d3f8860d0f64403f292fa82694a33d1723cfe01df46d07ecf726523d30"
+      },
+      "archiveHashes": {
+        "atlas-source.tar.gz": "0ade867dfa70bb09b3e07e1e56a1e22c82ef5659af787999ffdabb6cbe32573c",
+        "file-protocol-source.tar.gz": "6e381a7c71e2b932ea88932292ff62c48e9dfa95f46ee5779fc5d1307a7b40bd",
+        "hermes-source.tar.gz": "71cefea5c5dc638a29fcc2b75b94f1fa24b40c8fa64a6fe909a919e92738dbf2"
+      },
+      "frozenAt": null,
+      "qualification": "A reference to the immutable frozen definition, not an executed-result report. No task, oracle, holdout expected content or tar bytes are copied into this evidence pack.",
+      "candidateContractSha256": "526406f8134c08fedc580372d5c857465c8fd0e938fa4f40e29baa29ae1e917f",
+      "codeSandboxPolicySha256": "73bc77b068c07e1816a199a476725d74b8ad6f28fc9b46961ef386120f55c92e"
+    }
+  ]
+}

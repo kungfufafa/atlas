@@ -47,11 +47,22 @@ export async function createBot(
   // grammY's default long-polling loop awaits middleware for each update.
   // Detach message work here; per-conversation locks in the handler retain
   // ordering while unrelated chats can download and run concurrently.
-  bot.on("message", (ctx) => {
-    dispatchTelegramUpdate(handleMessage, ctx, reportError);
-  });
+  registerTelegramBotHandlers(bot, handleMessage, reportError);
 
   bot.catch(reportError);
 
   return bot;
+}
+
+export function registerTelegramBotHandlers(
+  bot: Bot,
+  handler: ReturnType<typeof createChatHandler>,
+  onError: (error: unknown) => void
+): void {
+  bot.on("message", (ctx) => {
+    dispatchTelegramUpdate(handler, ctx, onError);
+  });
+  bot.on("callback_query:data", (ctx) => {
+    dispatchTelegramUpdate(handler.handleCallback, ctx, onError);
+  });
 }

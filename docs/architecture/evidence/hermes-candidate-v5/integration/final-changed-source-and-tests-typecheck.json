@@ -1,0 +1,18 @@
+{
+  "name": "changed-source-and-tests-typecheck",
+  "command": [
+    "bun",
+    "run",
+    "tsc",
+    "--noEmit",
+    "-p",
+    "tsconfig.integration-scope.json"
+  ],
+  "cwd": "/private/tmp/atlas-candidate5-integration/source",
+  "startedAt": "2026-09-06T19:23:47.819502+00:00",
+  "finishedAt": "2026-09-06T19:23:54.808823+00:00",
+  "elapsedSeconds": 6.9893134589947294,
+  "exitCode": 0,
+  "log": "/private/tmp/atlas-candidate5-integration/final-changed-source-and-tests-typecheck.log",
+  "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

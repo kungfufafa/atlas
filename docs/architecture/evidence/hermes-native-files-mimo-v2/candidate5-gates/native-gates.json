@@ -1,0 +1,33 @@
+[
+  {
+    "name": "atlas-native-adapter-tests",
+    "command": [
+      "bun",
+      "test",
+      "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-files-mimo-v2/file-atlas-runner.test.ts"
+    ],
+    "exitCode": 0,
+    "elapsedSeconds": 1.981537624989869,
+    "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/atlas-native-adapter-tests.log"
+  },
+  {
+    "name": "hermes-native-adapter-tests",
+    "command": [
+      "/private/tmp/atlas-hermes-evaluation/venv/bin/python",
+      "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-files-mimo-v2/file-hermes-runner-test.py"
+    ],
+    "exitCode": 0,
+    "elapsedSeconds": 16.074331750001875,
+    "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/hermes-native-adapter-tests.log"
+  },
+  {
+    "name": "full-native-scripted-pilot",
+    "command": [
+      "bun",
+      "/private/tmp/atlas-native-file-delivery-audit/v2-file-full-pilot-candidate5.ts"
+    ],
+    "exitCode": 0,
+    "elapsedSeconds": 16.25997975000064,
+    "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/full-native-scripted-pilot.log"
+  }
+]

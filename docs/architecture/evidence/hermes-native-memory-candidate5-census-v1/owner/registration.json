@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-06T23:08:50.653429+00:00",
+  "batch": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06",
+  "scope": "All 64 warm arms and all 32 cold/identity controls, reported separately; prior criteria copied verbatim. Historical dates/batch path in copied criteria identify original C3 criteria; this registration applies those same distinctions to C5.",
+  "priorKnowledge": "Auditor knows summarized C3 outcomes and source/overhead audit findings. No C5 trajectory, frozen outcome, public output or native effect has been read before this registration. Criteria selection is not outcome-blind relative to C3. Original control criteria were exploratory; reuse does not convert them into a new confirmatory endpoint.",
+  "rules": "Read only finalized arms. Preserve original scores and every judgment revision; review complete public assistant chronology including tool-bearing text and actual native effects/snapshots. Never read hidden reasoning. No live API, heavy tests, source/control mutation or holdout access. Root supplies checkpoints; no repeated unchanged polling.",
+  "criteria": [
+    {
+      "source": "/private/tmp/atlas-native-memory-mimo-process-audit/criteria.md",
+      "copy": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/criteria.md",
+      "sha256": "c6216f23897c1f0dca93b0a408325184981a830f9a2d805f9fc03feda2d6f095",
+      "byteIdentical": true
+    },
+    {
+      "source": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/criteria.md",
+      "copy": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/criteria.md",
+      "sha256": "b735bdd1985388e97ccabff213e34bd67b04e3ba13dc4a49415110c72f1f52d5",
+      "byteIdentical": true
+    }
+  ]
+}

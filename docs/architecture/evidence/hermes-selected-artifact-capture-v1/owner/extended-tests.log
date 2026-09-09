@@ -1,0 +1,25 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/selected-artifact-capture.test.ts:
+(pass) captures explicit existing bytes with bound identity, size and digest while preserving source [163.64ms]
+(pass) rejects noncanonical, hidden, sidecar, traversal and absolute selections [34.84ms]
+(pass) rejects root/parent/final symlinks and hardlinked foreign files [229.63ms]
+(pass) replacing the profile root cannot refresh the captured root authority [80.18ms]
+(pass) directory rename and foreign symlink replacement after open returns no usable bytes [50.46ms]
+(pass) directory rename and real foreign-directory replacement after open returns no usable bytes [39.85ms]
+(pass) root replacement after its descriptor is opened returns no usable bytes [41.45ms]
+(pass) an added hardlink after open fails the post-read identity check [38.40ms]
+(pass) same-size mutation during a bounded multichunk read returns no partial bytes [39.92ms]
+(pass) oversized files and cancelled requests never return captured bytes [78.33ms]
+(pass) captures empty and exactly maximum-size regular files [421.79ms]
+(pass) FIFO capture rejects without waiting for another process to open it [104.85ms]
+(pass) renaming a parent away and back is detected even when its final inode matches [38.15ms]
+(pass) file replacement after open cannot substitute a different selected file [40.92ms]
+(pass) worker stdout and stderr overruns fail closed with no usable capture [72.77ms]
+(pass) cancelling an in-flight worker waits for termination and returns no bytes [73.56ms]
+(pass) the fixed deadline terminates a stalled worker [10009.60ms]
+
+ 17 pass
+ 0 fail
+ 82 expect() calls
+Ran 17 tests across 1 file. [12.44s]

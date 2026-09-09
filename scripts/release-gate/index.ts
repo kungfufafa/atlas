@@ -264,7 +264,7 @@ async function main() {
     durationMs: 50,
     id: "resource_cleanup_audit",
     message: auditResult.passed
-      ? "All ports released, zero orphan processes, developer environment untouched"
+      ? "Tracked ports released and developer environment fingerprint unchanged; orphan processes are not independently enumerated"
       : auditResult.issues.join("; "),
     required: true,
     status: auditResult.passed ? "pass" : "fail",

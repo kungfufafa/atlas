@@ -1,0 +1,49 @@
+{
+  "at": "2026-09-06T22:59:24.304137+00:00",
+  "status": "4arm unscored livepilot completed; no quality-improvement inference",
+  "knownCredentialLiteralScan": "passed selected files only; no claim of exhaustive secret detection",
+  "files": [
+    {
+      "file": "analysis-final.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/analysis-final.json",
+      "sha256": "6c00d9419758d20b20ed88efab7ecfcaa2665746cfe599134e0cd8e0c9ec8f6b",
+      "bytes": 81776
+    },
+    {
+      "file": "attempts.jsonl",
+      "original": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/attempts.jsonl",
+      "sha256": "13b7215be01f96a39239418a0f97b43fc54b7641bb4f1d748d25eb96d8bf1470",
+      "bytes": 12142
+    },
+    {
+      "file": "completed.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/completed.json",
+      "sha256": "90212b54acd5bed7e7702d923a7e49c970192a8303ae8209cb03e276a424e4fa",
+      "bytes": 301
+    },
+    {
+      "file": "candidate-source.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/candidate-source.json",
+      "sha256": "fbe9773936f6173e7935926c863953643c8bfbf96da56cc90cff737758905253",
+      "bytes": 1166143
+    },
+    {
+      "file": "source-archives.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/source-archives.json",
+      "sha256": "b3b346f968dd290a7f7d2842da06a297d0f5054349129b5c2360d06e12eb2de6",
+      "bytes": 292
+    },
+    {
+      "file": "schedule.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/schedule.json",
+      "sha256": "9c1182a996b93957f04c9060d04d5e6e5ab4f78a9f781754e6366ee92673e04e",
+      "bytes": 1456
+    },
+    {
+      "file": "runtime-identities.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/runtime-identities.json",
+      "sha256": "72df39f2292083083010bdcfbdc439b961fc64952680615916fed83e82165847",
+      "bytes": 963
+    }
+  ]
+}

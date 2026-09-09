@@ -1,0 +1,62 @@
+{
+  "pass": false,
+  "integrityFailure": false,
+  "checks": [
+    {
+      "id": "source_preserved:input/handover.json",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "delivery_selected",
+      "pass": true,
+      "detail": "artifacts/handover.pdf"
+    },
+    {
+      "id": "deliverable_exists",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "page_count",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "fact:0",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "id": "fact:1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "fact:2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "fact:3",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "fact:4",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "fact:5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "forbidden_positive_phrase",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "scope": "Native artifact structure and required supplied facts; forbidden positive phrases are a limited diagnostic, not comprehensive supported-fact proof. No claim of visual perfection, OCR quality, or general code correctness."
+}

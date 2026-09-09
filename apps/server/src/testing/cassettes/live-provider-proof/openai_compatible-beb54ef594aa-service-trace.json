@@ -1,0 +1,53 @@
+[
+  {
+    "content": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-47a38f0a-1f5b-4071-9a3c-f15e327da28e (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions.",
+    "role": "user"
+  },
+  {
+    "content": "",
+    "role": "assistant",
+    "toolCalls": [
+      {
+        "arguments": {
+          "content": "atlas-live-47a38f0a-1f5b-4071-9a3c-f15e327da28e",
+          "cwd": ".",
+          "path": "artifacts/provider-proof.txt"
+        },
+        "id": "call_KAW84xyNhgjjdO8TRYa81YYu",
+        "name": "write_file"
+      }
+    ]
+  },
+  {
+    "content": "{\"bytesWritten\":47,\"path\":\"/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-openai_compatible-beb54ef594aa-PqtYKq/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt\",\"artifacts\":[{\"createdAt\":\"2026-09-06T08:20:19.658Z\",\"filename\":\"provider-proof.txt\",\"id\":\"HaVmC2koj35N\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/provider-proof.txt\",\"sessionId\":\"eJXOZ-guqmyJ6NMGlQd22\",\"sizeBytes\":47}]}",
+    "name": "write_file",
+    "role": "tool",
+    "toolCallId": "call_KAW84xyNhgjjdO8TRYa81YYu"
+  },
+  {
+    "content": "",
+    "role": "assistant",
+    "toolCalls": [
+      {
+        "arguments": {
+          "cwd": ".",
+          "limit": 100,
+          "offset": 1,
+          "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-openai_compatible-beb54ef594aa-PqtYKq/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt"
+        },
+        "id": "call_M4uz8DUPmKBl5TQbn7u0UX9e",
+        "name": "read_file"
+      }
+    ]
+  },
+  {
+    "content": "{\"bytesRead\":47,\"content\":\"atlas-live-47a38f0a-1f5b-4071-9a3c-f15e327da28e\",\"endLine\":1,\"path\":\"/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-openai_compatible-beb54ef594aa-PqtYKq/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt\",\"startLine\":1,\"totalLines\":1,\"truncated\":false}",
+    "name": "read_file",
+    "role": "tool",
+    "toolCallId": "call_M4uz8DUPmKBl5TQbn7u0UX9e"
+  },
+  {
+    "content": "atlas-live-47a38f0a-1f5b-4071-9a3c-f15e327da28e",
+    "role": "assistant"
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-06T16:05:25.228Z",
+  "patchSha256": "0e294227daa515ea9a2c91b3302ae3fcbf76ebda436fd0b54ecd31097890d46c",
+  "files": 2072,
+  "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "reviewedFiles": 33,
+  "verifiedExact": true,
+  "tests": {
+    "pass": 577,
+    "fail": 0,
+    "assertions": 2355,
+    "files": 70
+  },
+  "typecheck": "passed",
+  "ultracite": "passed"
+}

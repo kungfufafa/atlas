@@ -1,0 +1,54 @@
+[
+  {
+    "path": "node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/node_modules"
+  },
+  {
+    "path": "packages/core/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/node_modules"
+  },
+  {
+    "path": "packages/agent/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/node_modules"
+  },
+  {
+    "path": "packages/db/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/packages/db/node_modules"
+  },
+  {
+    "path": "packages/client/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/packages/client/node_modules"
+  },
+  {
+    "path": "apps/web/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/apps/web/node_modules"
+  },
+  {
+    "path": "apps/platform/discord/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/node_modules"
+  },
+  {
+    "path": "apps/platform/telegram/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/node_modules"
+  },
+  {
+    "path": "apps/platform/automation/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/automation/node_modules"
+  },
+  {
+    "path": "apps/platform/whatsapp/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/node_modules"
+  },
+  {
+    "path": "apps/server/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/node_modules"
+  },
+  {
+    "path": "apps/cli/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/apps/cli/node_modules"
+  },
+  {
+    "path": "apps/mobile/node_modules",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/apps/mobile/node_modules"
+  }
+]

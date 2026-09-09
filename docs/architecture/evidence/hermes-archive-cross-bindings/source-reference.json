@@ -1,0 +1,48 @@
+{
+  "preservedAt": "2026-09-06T17:15:17.911736+00:00",
+  "scope": "Byte-identical copies of the separate derived cross-archive binding reports only. No archive bundles copied or rehashed; original immutable archive, nine historical statuses, product/study sources and scores remain unchanged.",
+  "originalArchive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-06/20260906T170357Z-057d18e4465d",
+  "originalArchiveManifestSha256": "bfa842d7c59be59e9238f3e9a0193fa71153ea03fe9d0943249d2dc260d70609",
+  "files": [
+    {
+      "name": "cross-archive-report.md",
+      "originalPath": "/private/tmp/atlas-evidence-cross-bindings/cross-archive-report.md",
+      "originalSha256": "a7e9eabdca94d04f413a813397248f14fcde60d910417630c9f550cc7bf900d8",
+      "copiedPath": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-archive-cross-bindings/cross-archive-report.md",
+      "copiedSha256": "a7e9eabdca94d04f413a813397248f14fcde60d910417630c9f550cc7bf900d8",
+      "bytes": 3912,
+      "byteIdentical": true
+    },
+    {
+      "name": "cross-archive-summary.json",
+      "originalPath": "/private/tmp/atlas-evidence-cross-bindings/cross-archive-summary.json",
+      "originalSha256": "4b34d7d43109c0d9099872b1db6b4a8a3c2bb53c031773e4f35c29dadb717b04",
+      "copiedPath": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-archive-cross-bindings/cross-archive-summary.json",
+      "copiedSha256": "4b34d7d43109c0d9099872b1db6b4a8a3c2bb53c031773e4f35c29dadb717b04",
+      "bytes": 6755,
+      "byteIdentical": true
+    },
+    {
+      "name": "cross-archive-bindings.json",
+      "originalPath": "/private/tmp/atlas-evidence-cross-bindings/cross-archive-bindings.json",
+      "originalSha256": "dd479e91e991fdaa3294f96140b101b79dd40b425eaab2c5d34343c1b6e2223d",
+      "copiedPath": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-archive-cross-bindings/cross-archive-bindings.json",
+      "copiedSha256": "dd479e91e991fdaa3294f96140b101b79dd40b425eaab2c5d34343c1b6e2223d",
+      "bytes": 5018048,
+      "byteIdentical": true
+    }
+  ],
+  "derivationScript": {
+    "originalPath": "/private/tmp/atlas-evidence-cross-bindings/bind.py",
+    "previouslyRecordedSha256": "aa3fde31a0cfee6379d611dde9255378320d56072b4f76c23c36c333206cc2f2",
+    "copied": false
+  },
+  "claims": {
+    "previouslyUnverifiedMaps": 9,
+    "derivedFullyVerifiedMaps": 9,
+    "completeRegularMemberMaps": 8,
+    "exactExpectedSubsetMaps": 1,
+    "historicalStatusesModified": false,
+    "qualityScoresModified": false
+  }
+}

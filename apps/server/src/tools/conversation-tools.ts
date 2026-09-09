@@ -19,7 +19,9 @@ export const searchChatsInputSchema = z.object({
   query: z
     .string()
     .min(1)
-    .describe("Search query to find in past conversations and sessions"),
+    .describe(
+      "Keywords or a natural-language query for past conversations. Distinctive names and terms improve lexical matching."
+    ),
 });
 
 export const getConversationInputSchema = z.object({
@@ -69,6 +71,7 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
         before: parsed.before,
         excludeSuperAgent,
         limit: parsed.limit,
+        matchMode: "keywords",
         profileId: parsed.profileId,
         userId: principal.userId,
       });

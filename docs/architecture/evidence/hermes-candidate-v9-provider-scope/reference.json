@@ -1,0 +1,74 @@
+{
+  "at": "2026-09-07T07:40:25.300473+00:00",
+  "status": "Exact closed provider-scope memo package preserved for contributors",
+  "sourceManifestSha256": "1096ccf8969b6dcea69e1c8c7c5672762aa7f79a08f47fdc06db5346a3014f42",
+  "sourceSealSha256": "11b1b5fce27e071f2a76dccb1f2a9b01402431c30c95d426c4a28776d7e8b1e4",
+  "originalManifestSelectedMembers": 6,
+  "copiedOriginalFiles": 8,
+  "files": {
+    "closed-evidence-bindings.json": {
+      "source": "/private/tmp/atlas-c9-provider-experience-claim-scope/closed-evidence-bindings.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-provider-scope/closed-evidence-bindings.json",
+      "sha256": "74156b1075e864e8387c894f882a94ba88f66d8609ec25cf37134724a380947f",
+      "bytes": 2981,
+      "mode": "0o644"
+    },
+    "memo.md": {
+      "source": "/private/tmp/atlas-c9-provider-experience-claim-scope/memo.md",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-provider-scope/memo.md",
+      "sha256": "0170bdbe3a5e4f84c657090c446faca57971eba95dd3b0ff16508a8c8af5120a",
+      "bytes": 8435,
+      "mode": "0o644"
+    },
+    "registration.json": {
+      "source": "/private/tmp/atlas-c9-provider-experience-claim-scope/registration.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-provider-scope/registration.json",
+      "sha256": "1052d0153c276235c7b9c2a88eb3d184f0daf24c5c90a38d87d3fb15ce32d47e",
+      "bytes": 919,
+      "mode": "0o644"
+    },
+    "review.json": {
+      "source": "/private/tmp/atlas-c9-provider-experience-claim-scope/review.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-provider-scope/review.json",
+      "sha256": "c3b999e39336158fd843c4bf3152cd71be864e5702deaf24a5865e6107002b42",
+      "bytes": 1184,
+      "mode": "0o644"
+    },
+    "seal_memo.py": {
+      "source": "/private/tmp/atlas-c9-provider-experience-claim-scope/seal_memo.py",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-provider-scope/seal_memo.py",
+      "sha256": "ef1f99b93a7274b77f74d4886479004f3bf75084216d830ef136cd78ad65498f",
+      "bytes": 13744,
+      "mode": "0o644"
+    },
+    "source-bindings.json": {
+      "source": "/private/tmp/atlas-c9-provider-experience-claim-scope/source-bindings.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-provider-scope/source-bindings.json",
+      "sha256": "32eececb308ac28823d6cc6cc1c6f2a0c602633af8935e8376e721e8582b6cb6",
+      "bytes": 15540,
+      "mode": "0o644"
+    },
+    "manifest.json": {
+      "source": "/private/tmp/atlas-c9-provider-experience-claim-scope/manifest.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-provider-scope/manifest.json",
+      "sha256": "1096ccf8969b6dcea69e1c8c7c5672762aa7f79a08f47fdc06db5346a3014f42",
+      "bytes": 1038,
+      "mode": "0o644"
+    },
+    "seal.json": {
+      "source": "/private/tmp/atlas-c9-provider-experience-claim-scope/seal.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-provider-scope/seal.json",
+      "sha256": "11b1b5fce27e071f2a76dccb1f2a9b01402431c30c95d426c4a28776d7e8b1e4",
+      "bytes": 723,
+      "mode": "0o644"
+    }
+  },
+  "originalSourcesPreserved": true,
+  "bytesHashesModesVerified": true,
+  "knownCredentialScan": {
+    "clean": true,
+    "utilitySha256": "bd0d84d300ab58396588b139cfc6854afb4ee251f0d7a03613fb3a82dd90fb60",
+    "finiteKnownValuesOnly": true
+  },
+  "scope": "Opaque byte-preserving copy of the six manifest-selected memo/metadata files plus manifest and seal. The original static/live/native/fallback/unknown qualifications and reviewer authorship remain unchanged. This receipt is copy verification, not an additional substantive independent review. No product files or large archives copied; no memo rewrite, progress append, tests, provider calls or active confirmation inspection."
+}

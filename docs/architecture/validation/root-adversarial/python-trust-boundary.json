@@ -1,0 +1,7 @@
+{
+  "caseId": "PY06",
+  "expected": "profile-filesystem-isolation",
+  "outsideReadSucceeded": true,
+  "boundary": "host-process",
+  "status": "unsupported"
+}

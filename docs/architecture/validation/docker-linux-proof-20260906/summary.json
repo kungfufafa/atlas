@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-06",
+  "evidenceClass": "Actual native Linux ARM64 Docker build and disposable container execution",
+  "image": {
+    "tag": "atlas-file-verification:20260906155034-45112",
+    "id": "sha256:63a8977614e07b14a1cb2af2828d35dee5e798b29032953a27c40d9a1f8e0a67",
+    "repoDigest": "atlas-file-verification@sha256:63a8977614e07b14a1cb2af2828d35dee5e798b29032953a27c40d9a1f8e0a67",
+    "platform": "linux/arm64",
+    "inspectSizeBytes": 923623579,
+    "created": "2026-09-06T15:56:37.140694204+07:00",
+    "retainedAfterCleanup": true
+  },
+  "environment": {
+    "containerOS": "Debian GNU/Linux 13 (trixie), Debian 13.4",
+    "daemonOS": "Ubuntu 24.04.4 LTS",
+    "kernel": "6.8.0-117-generic",
+    "architecture": "aarch64",
+    "bun": "1.3.14",
+    "containerUID": 1000,
+    "dockerEngine": "29.5.2",
+    "containerd": "2.2.4",
+    "runc": "1.3.5",
+    "dockerClient": "28.5.1 darwin/arm64",
+    "buildx": "0.37.0",
+    "colima": "0.10.3",
+    "lima": "2.2.0"
+  },
+  "vm": {
+    "profile": "atlas-verification",
+    "backend": "VZ",
+    "cpus": 2,
+    "memoryGiB": 3,
+    "dataDiskGiB": 16,
+    "rootDiskGiB": 10,
+    "swapGiB": 3,
+    "hostMounts": false,
+    "defaultContextChanged": false,
+    "finalStatus": "Stopped",
+    "guestFilesystemBeforeStop": {
+      "rootUsed": "4.2G",
+      "rootAvailable": "4.5G",
+      "dataUsed": "3.4G",
+      "dataAvailable": "12G"
+    },
+    "hostAvailableAfterStop": "17Gi"
+  },
+  "fullGate": {
+    "exitCode": 0,
+    "testsPassed": 77,
+    "testsFailed": 0,
+    "expectCalls": 412,
+    "testFiles": [
+      "apps/server/src/tools/process-filesystem-isolation.test.ts",
+      "apps/server/src/tools/python-execute-tool.test.ts",
+      "apps/server/src/tools/python-execute-deep.test.ts",
+      "apps/server/src/tools/bash.test.ts",
+      "packages/core/src/tools/paths.test.ts",
+      "packages/core/src/tools/filesystem.test.ts",
+      "packages/core/src/tools/search-files.test.ts",
+      "packages/core/src/office-document/office-document.test.ts",
+      "packages/core/src/office-document/revisions.test.ts",
+      "packages/core/src/tools/spreadsheet-ooxml.test.ts",
+      "packages/core/src/tools/spreadsheet-features.test.ts"
+    ],
+    "testsDurationSeconds": 14.65,
+    "filesystemPythonBashTests": 51,
+    "officeTests": 26,
+    "logReference": "arm64-production-final.log",
+    "containerConstraints": {
+      "network": "none",
+      "rootFilesystem": "read-only",
+      "hostBinds": false,
+      "workspaceTmpfs": "rw,exec,nosuid",
+      "temporaryTmpfs": "rw,exec,nosuid"
+    }
+  },
+  "filesystemAndFormats": {
+    "status": "passed",
+    "bashSiblingReadDeniedErrno": 13,
+    "bashSiblingWriteDeniedErrno": 13,
+    "pythonSiblingRead": "denied",
+    "formatFixtures": ["docx", "pptx", "xlsx", "csv", "pdf"],
+    "coveredBoundaries": [
+      "sibling tenant and profile files",
+      "configuration and home directories",
+      "symlinks, hardlinks and inherited descriptors",
+      "allowed workspace read and write",
+      "secret environment filtering",
+      "forbidden runtime roots",
+      "cancellation, timeout and background process cleanup",
+      "bounded output and partial artifacts",
+      "first write through an absent aliased workspace"
+    ],
+    "pythonLibraries": {
+      "pandas": "3.0.5",
+      "openpyxl": "3.1.5",
+      "python-docx": "1.2.0",
+      "python-pptx": "1.0.2",
+      "pypdf": "6.17.0",
+      "reportlab": "5.0.1",
+      "fonttools": "4.64.0",
+      "uharfbuzz": "0.56.1",
+      "python-bidi": "0.6.11"
+    }
+  },
+  "office": {
+    "status": "passed",
+    "tests": 26,
+    "coverage": [
+      "Word tracked revisions and acceptance/rejection semantics",
+      "existing chart workbook edit and XML preservation",
+      "workbook protection and supported feature preservation"
+    ]
+  },
+  "pdf": {
+    "status": "passed",
+    "ocr": {
+      "text": "SCAN REVIEW 8642",
+      "method": "ocr",
+      "language": "eng",
+      "confidence": 96.46494566666667,
+      "reviewRequired": false
+    },
+    "merge": {
+      "navigationTargets": [1, 3],
+      "outlines": 4,
+      "attachments": 2,
+      "sourceUnchanged": true
+    },
+    "regularFontBytes": 759720,
+    "largeMultilingualFont": {
+      "status": "passed",
+      "bytes": 23278008,
+      "sha256": "876af2cd4854644e7f3e7feb2f688997fdb3343c6df6693611209c9dfb47ccec",
+      "exactExtractedText": "Révision approuvée — تمت المراجعة — 東京",
+      "inputTransport": "stdin to disposable container temporary filesystem",
+      "committedOrShippedInImage": false,
+      "logReference": "arm64-production-large-font.log"
+    }
+  },
+  "startup": {
+    "status": "passed",
+    "entrypoint": "Image default ENTRYPOINT and CMD without override",
+    "health": {
+      "status": 200,
+      "apiVersion": 1,
+      "requiresJSON": true,
+      "requiresOkTrue": true,
+      "bytes": 129,
+      "sha256": "4ce44f28350a168d9b029d70222bf6d5a2b9e98ac53cc8fda2165f0e7d924498"
+    },
+    "index": {
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 1448,
+      "sha256": "91ea07cbccad758a3d9fc7a7ddfd302388f1bb241bf63bd3078f40d83207be6c"
+    },
+    "healthBoundSeconds": 45,
+    "perHealthRequestBoundSeconds": 1,
+    "indexRequestBoundSeconds": 5,
+    "logReference": "arm64-production-startup-strict.log"
+  },
+  "channelEntrypoints": {
+    "scope": "Module loading through empty-configuration validation only; no live channel connection or delivery",
+    "telegram": {
+      "exitCode": 1,
+      "result": "expected unconfigured rejection"
+    },
+    "discord": {
+      "exitCode": 1,
+      "result": "expected unconfigured rejection"
+    },
+    "whatsapp": {
+      "exitCode": 1,
+      "result": "expected unconfigured rejection"
+    },
+    "network": "none"
+  },
+  "provenance": {
+    "sourceFilesVerifiedInsideImage": 36,
+    "sourceFilesVerifiedAgainstFinalHost": 36,
+    "sourceManifest": "final-source-hashes.sha256",
+    "buildAndHostVerifierManifest": "final-build-input-hashes.sha256",
+    "logHashReferences": "log-references.json",
+    "rawLogsDirectory": "/private/tmp/atlas-docker-proof",
+    "rawLogsIncludedInRepository": false
+  },
+  "fixesExposedByActualRuns": [
+    {
+      "problem": "Bun cc sandbox launcher could not link libc in the production image.",
+      "change": "Install libc6-dev in the runtime Docker stage."
+    },
+    {
+      "problem": "Default source entrypoint could not resolve repository TypeScript aliases.",
+      "change": "Copy root tsconfig.json into the runtime image."
+    },
+    {
+      "problem": "Default server startup could not import Playwright.",
+      "change": "Declare playwright ^1.62.1 in apps/server production dependencies; lockfile-only ignore-scripts install changed only the corresponding dependency line."
+    },
+    {
+      "problem": "Verification workspace tmpfs defaulted to noexec and blocked valid synthetic coding-agent executables before Atlas execution.",
+      "change": "Use explicit exec,nosuid tmpfs while retaining read-only root, no network and actual process filesystem restrictions."
+    },
+    {
+      "problem": "File-only image checks did not cover default server and dashboard startup.",
+      "change": "Permanent bounded strict health JSON and static dashboard smoke gate runs the image default entrypoint and removes its exact test container."
+    }
+  ],
+  "earlierAttemptsRetained": [
+    {
+      "logReference": "arm64-build-and-check.log",
+      "outcome": "Build OOM before image creation",
+      "resolution": "Added 3 GiB swap only to the dedicated verification VM."
+    },
+    {
+      "logReference": "arm64-build-and-check-retry1.log",
+      "outcome": "Image built, actual sandbox launcher missing libc linker files",
+      "resolution": "Runtime libc6-dev dependency."
+    },
+    {
+      "logReference": "arm64-build-and-check-retry2.log",
+      "outcome": "Own build deliberately cancelled with exit 130",
+      "resolution": "Restarted after the shared runtime path fix was frozen."
+    },
+    {
+      "logReference": "arm64-build-and-check-final.log",
+      "outcome": "49 passed, 2 failed due noexec verification tmpfs",
+      "resolution": "Direct helper diagnosis reproduced exit 126; all 51 passed after correcting the mount."
+    },
+    {
+      "logReference": "arm64-startup-retry.log",
+      "outcome": "Application exited on missing alias resolution",
+      "resolution": "Runtime root tsconfig copy."
+    },
+    {
+      "logReference": "arm64-packaging-final.log",
+      "outcome": "Intermediate image passed file checks but application exited on missing Playwright",
+      "resolution": "Server production dependency and full rebuild."
+    },
+    {
+      "logReference": "arm64-production-final.log",
+      "outcome": "Final image complete gate passed",
+      "resolution": "Rechecked strict startup, large multilingual font and source hashes against the same image digest."
+    }
+  ],
+  "cleanup": {
+    "allDisposableContainersRemoved": true,
+    "dedicatedVolumeInventoryEmpty": true,
+    "supersededVerificationImagesRemoved": true,
+    "finalImageRetained": true,
+    "dedicatedVMStopped": true,
+    "userDefaultDockerContext": "default",
+    "existingOperationalContainersOrVolumesTouched": false,
+    "rawArchiveRemoval": "Only the newly created 24 raw .log.gz files and historical-logs.json were removed from this directory; originals remain in /private/tmp."
+  },
+  "limits": [
+    "This is native linux/arm64 proof; linux/amd64 was not built or executed.",
+    "No remote CI build was run.",
+    "Live providers and live messenger delivery were not run by this Docker gate.",
+    "Channel startup checks prove module resolution and empty-configuration handling only.",
+    "The large font result covers one 23 MB Latin, Arabic and Japanese fixture; it is not universal font or layout proof.",
+    "Earlier image successes and failures are retained as history and are not counted again in the final 77-test result."
+  ]
+}

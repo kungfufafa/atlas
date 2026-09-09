@@ -20,13 +20,22 @@ const XLSM_MEDIA_TYPE = "application/vnd.ms-excel.sheet.macroEnabled.12";
 const XLSB_MEDIA_TYPE = "application/vnd.ms-excel.sheet.binary.macroEnabled.12";
 
 function decodeDocumentText(data: string): string {
-  return Buffer.from(data, "base64").toString("utf8");
+  const decoded = new TextDecoder("utf-8", { fatal: true }).decode(
+    Buffer.from(data, "base64")
+  );
+  const result = truncateUtf8(decoded, 32 * 1024);
+  return result.truncated
+    ? `${result.text}\n\n[Partial excerpt: limited to 32 KiB. Use the original file reference with file tools to read further; this excerpt does not cover the whole file.]`
+    : result.text;
 }
 
 const PLAIN_DOCUMENT_MEDIA_TYPES = new Set([
+  "application/json",
+  "application/x-ndjson",
   "text/csv",
   "text/markdown",
   "text/plain",
+  "text/tab-separated-values",
 ]);
 
 function truncateUtf8(
@@ -100,10 +109,15 @@ async function parseWithAnydoc(document: DocumentAttachment): Promise<string> {
 }
 
 const BUILTIN_DOCUMENT_TEXT_PARSERS: Record<string, DocumentTextParser> = {
+  "application/json": (document) => decodeDocumentText(document.data),
   "application/pdf": parseWithAnydoc,
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+    parseWithAnydoc,
+  "application/x-ndjson": (document) => decodeDocumentText(document.data),
   "text/csv": (document) => decodeDocumentText(document.data),
   "text/markdown": (document) => decodeDocumentText(document.data),
   "text/plain": (document) => decodeDocumentText(document.data),
+  "text/tab-separated-values": (document) => decodeDocumentText(document.data),
   [DOCX_MEDIA_TYPE]: parseWithAnydoc,
   [XLSX_MEDIA_TYPE]: parseWithAnydoc,
   [XLS_MEDIA_TYPE]: parseWithAnydoc,

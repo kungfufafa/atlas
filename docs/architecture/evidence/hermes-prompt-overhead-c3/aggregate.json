@@ -1,0 +1,2028 @@
+{
+  "at": "2026-09-06T23:02:31.302831+00:00",
+  "batch": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9",
+  "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "completed": {
+    "at": "2026-09-06T19:22:43.023Z",
+    "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+    "pairedTasks": 48,
+    "runtimeIdentitiesSha256": "e008de27cb66c8231275890d86f5e4daf9638e622a963ac5b2e9881480eb17c6",
+    "scheduledAttempts": 96,
+    "sourceUnchanged": true
+  },
+  "totalRequests": 855,
+  "countedOnlyEffectiveBody": true,
+  "byteDefinition": "UTF-8 compact JSON reconstructed with ensure_ascii=False for messages/tools/body; systemTextBytes is raw concatenated system/developer text. These are component sizes, not token estimates, literal HTTP transfer bytes, or additive disjoint fields.",
+  "initialMainDefinitions": {
+    "initialMainForArm": "First request with recognized main-agent system prefix in each scheduled arm.",
+    "initialMainConversationShape": "Main request with exactly one user message and no assistant/tool history, excluding system/developer messages. This detects conversation-opening shape, not a causal phase label."
+  },
+  "requestVersusEffective": {
+    "atlas:messages:same": 441,
+    "atlas:messages:different": 0,
+    "atlas:tools:same": 441,
+    "atlas:tools:different": 0,
+    "hermes:messages:same": 414,
+    "hermes:messages:different": 0,
+    "hermes:tools:same": 414,
+    "hermes:tools:different": 0
+  },
+  "harnesses": {
+    "atlas": {
+      "all": {
+        "requests": 441,
+        "arms": 48,
+        "status": {
+          "200": 440,
+          "None": 1
+        },
+        "promptTokens": {
+          "n": 441,
+          "known": 440,
+          "unknown": 1,
+          "sumKnown": 2938359,
+          "minKnown": 150,
+          "medianKnown": 7766.0,
+          "meanKnown": 6678.088636363636,
+          "maxKnown": 15011
+        },
+        "cachedTokens": {
+          "n": 441,
+          "known": 440,
+          "unknown": 1,
+          "sumKnown": 2077696,
+          "minKnown": 0,
+          "medianKnown": 4096.0,
+          "meanKnown": 4722.036363636364,
+          "maxKnown": 12480
+        },
+        "generatedTokens": {
+          "n": 441,
+          "known": 440,
+          "unknown": 1,
+          "sumKnown": 132185,
+          "minKnown": 37,
+          "medianKnown": 187.0,
+          "meanKnown": 300.42045454545456,
+          "maxKnown": 1394
+        },
+        "systemTextBytes": {
+          "n": 441,
+          "known": 441,
+          "unknown": 0,
+          "sumKnown": 5977179,
+          "minKnown": 427,
+          "medianKnown": 16827,
+          "meanKnown": 13553.69387755102,
+          "maxKnown": 19497
+        },
+        "messagesJsonBytes": {
+          "n": 441,
+          "known": 441,
+          "unknown": 0,
+          "sumKnown": 7380039,
+          "minKnown": 676,
+          "medianKnown": 18769,
+          "meanKnown": 16734.78231292517,
+          "maxKnown": 40346
+        },
+        "toolSchemaJsonBytes": {
+          "n": 441,
+          "known": 441,
+          "unknown": 0,
+          "sumKnown": 3852710,
+          "minKnown": 0,
+          "medianKnown": 11135,
+          "meanKnown": 8736.303854875283,
+          "maxKnown": 11135
+        },
+        "responseFormatJsonBytes": {
+          "n": 441,
+          "known": 441,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 441,
+          "known": 441,
+          "unknown": 0,
+          "sumKnown": 11280173,
+          "minKnown": 760,
+          "medianKnown": 30018,
+          "meanKnown": 25578.62358276644,
+          "maxKnown": 51595
+        },
+        "activeSkillBytes": {
+          "n": 441,
+          "known": 441,
+          "unknown": 0,
+          "sumKnown": 1277096,
+          "minKnown": 0,
+          "medianKnown": 3389,
+          "meanKnown": 2895.909297052154,
+          "maxKnown": 5985
+        }
+      },
+      "main": {
+        "requests": 346,
+        "arms": 48,
+        "status": {
+          "200": 346
+        },
+        "promptTokens": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 2916322,
+          "minKnown": 6718,
+          "medianKnown": 8131.0,
+          "meanKnown": 8428.676300578034,
+          "maxKnown": 15011
+        },
+        "cachedTokens": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 2077312,
+          "minKnown": 0,
+          "medianKnown": 7488.0,
+          "meanKnown": 6003.791907514451,
+          "maxKnown": 12480
+        },
+        "generatedTokens": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 69455,
+          "minKnown": 37,
+          "medianKnown": 155.5,
+          "meanKnown": 200.73699421965318,
+          "maxKnown": 947
+        },
+        "systemTextBytes": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 5936614,
+          "minKnown": 13420,
+          "medianKnown": 16939.0,
+          "meanKnown": 17157.843930635838,
+          "maxKnown": 19497
+        },
+        "messagesJsonBytes": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 7281388,
+          "minKnown": 13788,
+          "medianKnown": 20157.0,
+          "meanKnown": 21044.473988439306,
+          "maxKnown": 40346
+        },
+        "toolSchemaJsonBytes": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 3852710,
+          "minKnown": 11135,
+          "medianKnown": 11135.0,
+          "meanKnown": 11135,
+          "maxKnown": 11135
+        },
+        "responseFormatJsonBytes": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 11173542,
+          "minKnown": 25037,
+          "medianKnown": 31406.0,
+          "meanKnown": 32293.473988439306,
+          "maxKnown": 51595
+        },
+        "activeSkillBytes": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 1277096,
+          "minKnown": 0,
+          "medianKnown": 3389.0,
+          "meanKnown": 3691.0289017341042,
+          "maxKnown": 5985
+        }
+      },
+      "auxiliary": {
+        "requests": 95,
+        "arms": 48,
+        "status": {
+          "200": 94,
+          "None": 1
+        },
+        "promptTokens": {
+          "n": 95,
+          "known": 94,
+          "unknown": 1,
+          "sumKnown": 22037,
+          "minKnown": 150,
+          "medianKnown": 208.5,
+          "meanKnown": 234.43617021276594,
+          "maxKnown": 391
+        },
+        "cachedTokens": {
+          "n": 95,
+          "known": 94,
+          "unknown": 1,
+          "sumKnown": 384,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 4.085106382978723,
+          "maxKnown": 64
+        },
+        "generatedTokens": {
+          "n": 95,
+          "known": 94,
+          "unknown": 1,
+          "sumKnown": 62730,
+          "minKnown": 112,
+          "medianKnown": 678.5,
+          "meanKnown": 667.3404255319149,
+          "maxKnown": 1394
+        },
+        "systemTextBytes": {
+          "n": 95,
+          "known": 95,
+          "unknown": 0,
+          "sumKnown": 40565,
+          "minKnown": 427,
+          "medianKnown": 427,
+          "meanKnown": 427,
+          "maxKnown": 427
+        },
+        "messagesJsonBytes": {
+          "n": 95,
+          "known": 95,
+          "unknown": 0,
+          "sumKnown": 98651,
+          "minKnown": 676,
+          "medianKnown": 926,
+          "meanKnown": 1038.4315789473685,
+          "maxKnown": 1401
+        },
+        "toolSchemaJsonBytes": {
+          "n": 95,
+          "known": 95,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "responseFormatJsonBytes": {
+          "n": 95,
+          "known": 95,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 95,
+          "known": 95,
+          "unknown": 0,
+          "sumKnown": 106631,
+          "minKnown": 760,
+          "medianKnown": 1010,
+          "meanKnown": 1122.4315789473685,
+          "maxKnown": 1485
+        },
+        "activeSkillBytes": {
+          "n": 95,
+          "known": 95,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        }
+      },
+      "initialMainForArm": {
+        "requests": 48,
+        "arms": 48,
+        "status": {
+          "200": 48
+        },
+        "promptTokens": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 357976,
+          "minKnown": 6718,
+          "medianKnown": 7747.0,
+          "meanKnown": 7457.833333333333,
+          "maxKnown": 8157
+        },
+        "cachedTokens": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 133120,
+          "minKnown": 0,
+          "medianKnown": 2048.0,
+          "meanKnown": 2773.3333333333335,
+          "maxKnown": 4096
+        },
+        "generatedTokens": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 8463,
+          "minKnown": 62,
+          "medianKnown": 140.0,
+          "meanKnown": 176.3125,
+          "maxKnown": 684
+        },
+        "systemTextBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 793458,
+          "minKnown": 13420,
+          "medianKnown": 17728.0,
+          "meanKnown": 16530.375,
+          "maxKnown": 19423
+        },
+        "messagesJsonBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 821622,
+          "minKnown": 13788,
+          "medianKnown": 18348.5,
+          "meanKnown": 17117.125,
+          "maxKnown": 20232
+        },
+        "toolSchemaJsonBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 534480,
+          "minKnown": 11135,
+          "medianKnown": 11135.0,
+          "meanKnown": 11135,
+          "maxKnown": 11135
+        },
+        "responseFormatJsonBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 1361574,
+          "minKnown": 25037,
+          "medianKnown": 29597.5,
+          "meanKnown": 28366.125,
+          "maxKnown": 31481
+        },
+        "activeSkillBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 148830,
+          "minKnown": 0,
+          "medianKnown": 4290.0,
+          "meanKnown": 3100.625,
+          "maxKnown": 5985
+        }
+      },
+      "initialMainConversationShape": {
+        "requests": 96,
+        "arms": 48,
+        "status": {
+          "200": 96
+        },
+        "promptTokens": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 719908,
+          "minKnown": 6718,
+          "medianKnown": 7505.0,
+          "meanKnown": 7499.041666666667,
+          "maxKnown": 8157
+        },
+        "cachedTokens": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 182272,
+          "minKnown": 0,
+          "medianKnown": 2048.0,
+          "meanKnown": 1898.6666666666667,
+          "maxKnown": 4096
+        },
+        "generatedTokens": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 16721,
+          "minKnown": 62,
+          "medianKnown": 147.0,
+          "meanKnown": 174.17708333333334,
+          "maxKnown": 684
+        },
+        "systemTextBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 1606482,
+          "minKnown": 13420,
+          "medianKnown": 16827.0,
+          "meanKnown": 16734.1875,
+          "maxKnown": 19423
+        },
+        "messagesJsonBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 1667532,
+          "minKnown": 13788,
+          "medianKnown": 17516.0,
+          "meanKnown": 17370.125,
+          "maxKnown": 20232
+        },
+        "toolSchemaJsonBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 1068960,
+          "minKnown": 11135,
+          "medianKnown": 11135.0,
+          "meanKnown": 11135,
+          "maxKnown": 11135
+        },
+        "responseFormatJsonBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 2747436,
+          "minKnown": 25037,
+          "medianKnown": 28765.0,
+          "meanKnown": 28619.125,
+          "maxKnown": 31481
+        },
+        "activeSkillBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 311502,
+          "minKnown": 0,
+          "medianKnown": 3389.0,
+          "meanKnown": 3244.8125,
+          "maxKnown": 5985
+        }
+      },
+      "initialMainForArmByStratum": {
+        "cold": {
+          "requests": 8,
+          "arms": 8,
+          "status": {
+            "200": 8
+          },
+          "promptTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 59424,
+            "minKnown": 6720,
+            "medianKnown": 7428.0,
+            "meanKnown": 7428,
+            "maxKnown": 8136
+          },
+          "cachedTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 20480,
+            "minKnown": 0,
+            "medianKnown": 2048.0,
+            "meanKnown": 2560,
+            "maxKnown": 4096
+          },
+          "generatedTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 1305,
+            "minKnown": 94,
+            "medianKnown": 133.5,
+            "meanKnown": 163.125,
+            "maxKnown": 399
+          },
+          "systemTextBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 131372,
+            "minKnown": 13420,
+            "medianKnown": 16421.5,
+            "meanKnown": 16421.5,
+            "maxKnown": 19423
+          },
+          "messagesJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 136012,
+            "minKnown": 13838,
+            "medianKnown": 17001.5,
+            "meanKnown": 17001.5,
+            "maxKnown": 20165
+          },
+          "toolSchemaJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 89080,
+            "minKnown": 11135,
+            "medianKnown": 11135.0,
+            "meanKnown": 11135,
+            "maxKnown": 11135
+          },
+          "responseFormatJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 226004,
+            "minKnown": 25087,
+            "medianKnown": 28250.5,
+            "meanKnown": 28250.5,
+            "maxKnown": 31414
+          },
+          "activeSkillBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 23940,
+            "minKnown": 0,
+            "medianKnown": 2992.5,
+            "meanKnown": 2992.5,
+            "maxKnown": 5985
+          }
+        },
+        "identity": {
+          "requests": 8,
+          "arms": 8,
+          "status": {
+            "200": 8
+          },
+          "promptTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 59476,
+            "minKnown": 6733,
+            "medianKnown": 7434.5,
+            "meanKnown": 7434.5,
+            "maxKnown": 8136
+          },
+          "cachedTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 24576,
+            "minKnown": 2048,
+            "medianKnown": 3072.0,
+            "meanKnown": 3072,
+            "maxKnown": 4096
+          },
+          "generatedTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 2062,
+            "minKnown": 70,
+            "medianKnown": 176.5,
+            "meanKnown": 257.75,
+            "maxKnown": 684
+          },
+          "systemTextBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 131372,
+            "minKnown": 13420,
+            "medianKnown": 16421.5,
+            "meanKnown": 16421.5,
+            "maxKnown": 19423
+          },
+          "messagesJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 136044,
+            "minKnown": 13846,
+            "medianKnown": 17005.5,
+            "meanKnown": 17005.5,
+            "maxKnown": 20165
+          },
+          "toolSchemaJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 89080,
+            "minKnown": 11135,
+            "medianKnown": 11135.0,
+            "meanKnown": 11135,
+            "maxKnown": 11135
+          },
+          "responseFormatJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 226036,
+            "minKnown": 25095,
+            "medianKnown": 28254.5,
+            "meanKnown": 28254.5,
+            "maxKnown": 31414
+          },
+          "activeSkillBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 23940,
+            "minKnown": 0,
+            "medianKnown": 2992.5,
+            "meanKnown": 2992.5,
+            "maxKnown": 5985
+          }
+        },
+        "warm": {
+          "requests": 32,
+          "arms": 32,
+          "status": {
+            "200": 32
+          },
+          "promptTokens": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 239076,
+            "minKnown": 6718,
+            "medianKnown": 7747.0,
+            "meanKnown": 7471.125,
+            "maxKnown": 8157
+          },
+          "cachedTokens": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 88064,
+            "minKnown": 0,
+            "medianKnown": 2048.0,
+            "meanKnown": 2752,
+            "maxKnown": 4096
+          },
+          "generatedTokens": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 5096,
+            "minKnown": 62,
+            "medianKnown": 142.0,
+            "meanKnown": 159.25,
+            "maxKnown": 439
+          },
+          "systemTextBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 530714,
+            "minKnown": 13420,
+            "medianKnown": 17728.0,
+            "meanKnown": 16584.8125,
+            "maxKnown": 19423
+          },
+          "messagesJsonBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 549566,
+            "minKnown": 13788,
+            "medianKnown": 18348.5,
+            "meanKnown": 17173.9375,
+            "maxKnown": 20232
+          },
+          "toolSchemaJsonBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 356320,
+            "minKnown": 11135,
+            "medianKnown": 11135.0,
+            "meanKnown": 11135,
+            "maxKnown": 11135
+          },
+          "responseFormatJsonBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 909534,
+            "minKnown": 25037,
+            "medianKnown": 29597.5,
+            "meanKnown": 28422.9375,
+            "maxKnown": 31481
+          },
+          "activeSkillBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 100950,
+            "minKnown": 0,
+            "medianKnown": 4290.0,
+            "meanKnown": 3154.6875,
+            "maxKnown": 5985
+          }
+        }
+      },
+      "mainByCondition": {
+        "explicit-memory": {
+          "requests": 201,
+          "arms": 24,
+          "status": {
+            "200": 201
+          },
+          "promptTokens": {
+            "n": 201,
+            "known": 201,
+            "unknown": 0,
+            "sumKnown": 1790745,
+            "minKnown": 7497,
+            "medianKnown": 8498,
+            "meanKnown": 8909.179104477613,
+            "maxKnown": 15011
+          },
+          "cachedTokens": {
+            "n": 201,
+            "known": 201,
+            "unknown": 0,
+            "sumKnown": 1353600,
+            "minKnown": 0,
+            "medianKnown": 8064,
+            "meanKnown": 6734.328358208955,
+            "maxKnown": 12480
+          },
+          "generatedTokens": {
+            "n": 201,
+            "known": 201,
+            "unknown": 0,
+            "sumKnown": 39473,
+            "minKnown": 37,
+            "medianKnown": 165,
+            "meanKnown": 196.38308457711443,
+            "maxKnown": 684
+          },
+          "systemTextBytes": {
+            "n": 201,
+            "known": 201,
+            "unknown": 0,
+            "sumKnown": 3736746,
+            "minKnown": 16827,
+            "medianKnown": 19423,
+            "meanKnown": 18590.776119402984,
+            "maxKnown": 19423
+          },
+          "messagesJsonBytes": {
+            "n": 201,
+            "known": 201,
+            "unknown": 0,
+            "sumKnown": 4645762,
+            "minKnown": 17495,
+            "medianKnown": 21565,
+            "meanKnown": 23113.243781094527,
+            "maxKnown": 40346
+          },
+          "toolSchemaJsonBytes": {
+            "n": 201,
+            "known": 201,
+            "unknown": 0,
+            "sumKnown": 2238135,
+            "minKnown": 11135,
+            "medianKnown": 11135,
+            "meanKnown": 11135,
+            "maxKnown": 11135
+          },
+          "responseFormatJsonBytes": {
+            "n": 201,
+            "known": 201,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 201,
+            "known": 201,
+            "unknown": 0,
+            "sumKnown": 6906811,
+            "minKnown": 28744,
+            "medianKnown": 32814,
+            "meanKnown": 34362.24378109453,
+            "maxKnown": 51595
+          },
+          "activeSkillBytes": {
+            "n": 201,
+            "known": 201,
+            "unknown": 0,
+            "sumKnown": 1029053,
+            "minKnown": 3389,
+            "medianKnown": 5985,
+            "meanKnown": 5119.666666666667,
+            "maxKnown": 5985
+          }
+        },
+        "native-default": {
+          "requests": 145,
+          "arms": 24,
+          "status": {
+            "200": 145
+          },
+          "promptTokens": {
+            "n": 145,
+            "known": 145,
+            "unknown": 0,
+            "sumKnown": 1125577,
+            "minKnown": 6718,
+            "medianKnown": 7505,
+            "meanKnown": 7762.6,
+            "maxKnown": 12072
+          },
+          "cachedTokens": {
+            "n": 145,
+            "known": 145,
+            "unknown": 0,
+            "sumKnown": 723712,
+            "minKnown": 0,
+            "medianKnown": 6720,
+            "meanKnown": 4991.11724137931,
+            "maxKnown": 11008
+          },
+          "generatedTokens": {
+            "n": 145,
+            "known": 145,
+            "unknown": 0,
+            "sumKnown": 29982,
+            "minKnown": 43,
+            "medianKnown": 150,
+            "meanKnown": 206.77241379310345,
+            "maxKnown": 947
+          },
+          "systemTextBytes": {
+            "n": 145,
+            "known": 145,
+            "unknown": 0,
+            "sumKnown": 2199868,
+            "minKnown": 13420,
+            "medianKnown": 13420,
+            "meanKnown": 15171.503448275862,
+            "maxKnown": 19497
+          },
+          "messagesJsonBytes": {
+            "n": 145,
+            "known": 145,
+            "unknown": 0,
+            "sumKnown": 2635626,
+            "minKnown": 13788,
+            "medianKnown": 17516,
+            "meanKnown": 18176.73103448276,
+            "maxKnown": 37202
+          },
+          "toolSchemaJsonBytes": {
+            "n": 145,
+            "known": 145,
+            "unknown": 0,
+            "sumKnown": 1614575,
+            "minKnown": 11135,
+            "medianKnown": 11135,
+            "meanKnown": 11135,
+            "maxKnown": 11135
+          },
+          "responseFormatJsonBytes": {
+            "n": 145,
+            "known": 145,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 145,
+            "known": 145,
+            "unknown": 0,
+            "sumKnown": 4266731,
+            "minKnown": 25037,
+            "medianKnown": 28765,
+            "meanKnown": 29425.73103448276,
+            "maxKnown": 48451
+          },
+          "activeSkillBytes": {
+            "n": 145,
+            "known": 145,
+            "unknown": 0,
+            "sumKnown": 248043,
+            "minKnown": 0,
+            "medianKnown": 0,
+            "meanKnown": 1710.6413793103447,
+            "maxKnown": 5985
+          }
+        }
+      },
+      "toolSchemas": [
+        {
+          "names": [
+            "create_directory",
+            "edit_file",
+            "file_stat",
+            "get_conversation",
+            "list_directory",
+            "memory_delete",
+            "memory_list",
+            "memory_search",
+            "memory_update",
+            "memory_write",
+            "read_file",
+            "search_chats",
+            "search_files",
+            "write_file",
+            "todo_write",
+            "ask_user_question",
+            "org_memory_search",
+            "org_memory_list",
+            "propose_org_memory"
+          ],
+          "requests": 346
+        }
+      ],
+      "armsWithMandatoryUsageUnknown": [
+        "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas"
+      ]
+    },
+    "hermes": {
+      "all": {
+        "requests": 414,
+        "arms": 48,
+        "status": {
+          "200": 411,
+          "None": 3
+        },
+        "promptTokens": {
+          "n": 414,
+          "known": 411,
+          "unknown": 3,
+          "sumKnown": 1473508,
+          "minKnown": 258,
+          "medianKnown": 3962,
+          "meanKnown": 3585.177615571776,
+          "maxKnown": 9472
+        },
+        "cachedTokens": {
+          "n": 414,
+          "known": 411,
+          "unknown": 3,
+          "sumKnown": 984960,
+          "minKnown": 0,
+          "medianKnown": 3712,
+          "meanKnown": 2396.4963503649633,
+          "maxKnown": 9344
+        },
+        "generatedTokens": {
+          "n": 414,
+          "known": 411,
+          "unknown": 3,
+          "sumKnown": 44626,
+          "minKnown": 10,
+          "medianKnown": 77,
+          "meanKnown": 108.57907542579075,
+          "maxKnown": 671
+        },
+        "systemTextBytes": {
+          "n": 414,
+          "known": 414,
+          "unknown": 0,
+          "sumKnown": 2945798,
+          "minKnown": 942,
+          "medianKnown": 8969.0,
+          "meanKnown": 7115.454106280194,
+          "maxKnown": 9860
+        },
+        "messagesJsonBytes": {
+          "n": 414,
+          "known": 414,
+          "unknown": 0,
+          "sumKnown": 4293480,
+          "minKnown": 1118,
+          "medianKnown": 10350.5,
+          "meanKnown": 10370.72463768116,
+          "maxKnown": 30111
+        },
+        "toolSchemaJsonBytes": {
+          "n": 414,
+          "known": 414,
+          "unknown": 0,
+          "sumKnown": 1797705,
+          "minKnown": 0,
+          "medianKnown": 5707.0,
+          "meanKnown": 4342.282608695652,
+          "maxKnown": 5707
+        },
+        "responseFormatJsonBytes": {
+          "n": 414,
+          "known": 414,
+          "unknown": 0,
+          "sumKnown": 19107,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 46.15217391304348,
+          "maxKnown": 193
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 414,
+          "known": 414,
+          "unknown": 0,
+          "sumKnown": 6149784,
+          "minKnown": 1414,
+          "medianKnown": 16150.5,
+          "meanKnown": 14854.550724637682,
+          "maxKnown": 35911
+        },
+        "activeSkillBytes": {
+          "n": 414,
+          "known": 414,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        }
+      },
+      "main": {
+        "requests": 315,
+        "arms": 48,
+        "status": {
+          "200": 315
+        },
+        "promptTokens": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 1445392,
+          "minKnown": 3695,
+          "medianKnown": 4154,
+          "meanKnown": 4588.546031746032,
+          "maxKnown": 9472
+        },
+        "cachedTokens": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 978240,
+          "minKnown": 0,
+          "medianKnown": 3712,
+          "meanKnown": 3105.5238095238096,
+          "maxKnown": 9344
+        },
+        "generatedTokens": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 43038,
+          "minKnown": 13,
+          "medianKnown": 102,
+          "meanKnown": 136.62857142857143,
+          "maxKnown": 671
+        },
+        "systemTextBytes": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 2852540,
+          "minKnown": 8969,
+          "medianKnown": 8969,
+          "meanKnown": 9055.682539682539,
+          "maxKnown": 9860
+        },
+        "messagesJsonBytes": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 4162409,
+          "minKnown": 9198,
+          "medianKnown": 11407,
+          "meanKnown": 13213.996825396825,
+          "maxKnown": 30111
+        },
+        "toolSchemaJsonBytes": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 1797705,
+          "minKnown": 5707,
+          "medianKnown": 5707,
+          "meanKnown": 5707,
+          "maxKnown": 5707
+        },
+        "responseFormatJsonBytes": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 5989409,
+          "minKnown": 14998,
+          "medianKnown": 17207,
+          "meanKnown": 19013.996825396825,
+          "maxKnown": 35911
+        },
+        "activeSkillBytes": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        }
+      },
+      "auxiliary": {
+        "requests": 99,
+        "arms": 48,
+        "status": {
+          "200": 96,
+          "None": 3
+        },
+        "promptTokens": {
+          "n": 99,
+          "known": 96,
+          "unknown": 3,
+          "sumKnown": 28116,
+          "minKnown": 258,
+          "medianKnown": 296.5,
+          "meanKnown": 292.875,
+          "maxKnown": 327
+        },
+        "cachedTokens": {
+          "n": 99,
+          "known": 96,
+          "unknown": 3,
+          "sumKnown": 6720,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 70,
+          "maxKnown": 192
+        },
+        "generatedTokens": {
+          "n": 99,
+          "known": 96,
+          "unknown": 3,
+          "sumKnown": 1588,
+          "minKnown": 10,
+          "medianKnown": 16.0,
+          "meanKnown": 16.541666666666668,
+          "maxKnown": 27
+        },
+        "systemTextBytes": {
+          "n": 99,
+          "known": 99,
+          "unknown": 0,
+          "sumKnown": 93258,
+          "minKnown": 942,
+          "medianKnown": 942,
+          "meanKnown": 942,
+          "maxKnown": 942
+        },
+        "messagesJsonBytes": {
+          "n": 99,
+          "known": 99,
+          "unknown": 0,
+          "sumKnown": 131071,
+          "minKnown": 1118,
+          "medianKnown": 1365,
+          "meanKnown": 1323.949494949495,
+          "maxKnown": 1436
+        },
+        "toolSchemaJsonBytes": {
+          "n": 99,
+          "known": 99,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "responseFormatJsonBytes": {
+          "n": 99,
+          "known": 99,
+          "unknown": 0,
+          "sumKnown": 19107,
+          "minKnown": 193,
+          "medianKnown": 193,
+          "meanKnown": 193,
+          "maxKnown": 193
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 99,
+          "known": 99,
+          "unknown": 0,
+          "sumKnown": 160375,
+          "minKnown": 1414,
+          "medianKnown": 1661,
+          "meanKnown": 1619.949494949495,
+          "maxKnown": 1732
+        },
+        "activeSkillBytes": {
+          "n": 99,
+          "known": 99,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        }
+      },
+      "initialMainForArm": {
+        "requests": 48,
+        "arms": 48,
+        "status": {
+          "200": 48
+        },
+        "promptTokens": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 178793,
+          "minKnown": 3695,
+          "medianKnown": 3723.5,
+          "meanKnown": 3724.8541666666665,
+          "maxKnown": 3768
+        },
+        "cachedTokens": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 2688,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 56,
+          "maxKnown": 192
+        },
+        "generatedTokens": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 10296,
+          "minKnown": 58,
+          "medianKnown": 160.5,
+          "meanKnown": 214.5,
+          "maxKnown": 593
+        },
+        "systemTextBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 430512,
+          "minKnown": 8969,
+          "medianKnown": 8969.0,
+          "meanKnown": 8969,
+          "maxKnown": 8969
+        },
+        "messagesJsonBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 448924,
+          "minKnown": 9198,
+          "medianKnown": 9357.0,
+          "meanKnown": 9352.583333333334,
+          "maxKnown": 9516
+        },
+        "toolSchemaJsonBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 273936,
+          "minKnown": 5707,
+          "medianKnown": 5707.0,
+          "meanKnown": 5707,
+          "maxKnown": 5707
+        },
+        "responseFormatJsonBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 727324,
+          "minKnown": 14998,
+          "medianKnown": 15157.0,
+          "meanKnown": 15152.583333333334,
+          "maxKnown": 15316
+        },
+        "activeSkillBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        }
+      },
+      "initialMainConversationShape": {
+        "requests": 96,
+        "arms": 48,
+        "status": {
+          "200": 96
+        },
+        "promptTokens": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 360626,
+          "minKnown": 3695,
+          "medianKnown": 3739.0,
+          "meanKnown": 3756.5208333333335,
+          "maxKnown": 3978
+        },
+        "cachedTokens": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 15552,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 162,
+          "maxKnown": 3648
+        },
+        "generatedTokens": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 15645,
+          "minKnown": 42,
+          "medianKnown": 131.5,
+          "meanKnown": 162.96875,
+          "maxKnown": 593
+        },
+        "systemTextBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 870934,
+          "minKnown": 8969,
+          "medianKnown": 8969.0,
+          "meanKnown": 9072.229166666666,
+          "maxKnown": 9860
+        },
+        "messagesJsonBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 912601,
+          "minKnown": 9198,
+          "medianKnown": 9449.0,
+          "meanKnown": 9506.260416666666,
+          "maxKnown": 10348
+        },
+        "toolSchemaJsonBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 547872,
+          "minKnown": 5707,
+          "medianKnown": 5707.0,
+          "meanKnown": 5707,
+          "maxKnown": 5707
+        },
+        "responseFormatJsonBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        },
+        "effectiveBodyJsonBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 1469401,
+          "minKnown": 14998,
+          "medianKnown": 15249.0,
+          "meanKnown": 15306.260416666666,
+          "maxKnown": 16148
+        },
+        "activeSkillBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0.0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        }
+      },
+      "initialMainForArmByStratum": {
+        "cold": {
+          "requests": 8,
+          "arms": 8,
+          "status": {
+            "200": 8
+          },
+          "promptTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 29796,
+            "minKnown": 3697,
+            "medianKnown": 3724.0,
+            "meanKnown": 3724.5,
+            "maxKnown": 3749
+          },
+          "cachedTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 576,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 72,
+            "maxKnown": 192
+          },
+          "generatedTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 1757,
+            "minKnown": 131,
+            "medianKnown": 162.5,
+            "meanKnown": 219.625,
+            "maxKnown": 492
+          },
+          "systemTextBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 71752,
+            "minKnown": 8969,
+            "medianKnown": 8969.0,
+            "meanKnown": 8969,
+            "maxKnown": 8969
+          },
+          "messagesJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 74788,
+            "minKnown": 9248,
+            "medianKnown": 9348.5,
+            "meanKnown": 9348.5,
+            "maxKnown": 9449
+          },
+          "toolSchemaJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 45656,
+            "minKnown": 5707,
+            "medianKnown": 5707.0,
+            "meanKnown": 5707,
+            "maxKnown": 5707
+          },
+          "responseFormatJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 121188,
+            "minKnown": 15048,
+            "medianKnown": 15148.5,
+            "meanKnown": 15148.5,
+            "maxKnown": 15249
+          },
+          "activeSkillBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          }
+        },
+        "identity": {
+          "requests": 8,
+          "arms": 8,
+          "status": {
+            "200": 8
+          },
+          "promptTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 29805,
+            "minKnown": 3701,
+            "medianKnown": 3724.0,
+            "meanKnown": 3725.625,
+            "maxKnown": 3756
+          },
+          "cachedTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 576,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 72,
+            "maxKnown": 192
+          },
+          "generatedTokens": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 2230,
+            "minKnown": 58,
+            "medianKnown": 297.5,
+            "meanKnown": 278.75,
+            "maxKnown": 437
+          },
+          "systemTextBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 71752,
+            "minKnown": 8969,
+            "medianKnown": 8969.0,
+            "meanKnown": 8969,
+            "maxKnown": 8969
+          },
+          "messagesJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 74820,
+            "minKnown": 9256,
+            "medianKnown": 9352.5,
+            "meanKnown": 9352.5,
+            "maxKnown": 9449
+          },
+          "toolSchemaJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 45656,
+            "minKnown": 5707,
+            "medianKnown": 5707.0,
+            "meanKnown": 5707,
+            "maxKnown": 5707
+          },
+          "responseFormatJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 121220,
+            "minKnown": 15056,
+            "medianKnown": 15152.5,
+            "meanKnown": 15152.5,
+            "maxKnown": 15249
+          },
+          "activeSkillBytes": {
+            "n": 8,
+            "known": 8,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          }
+        },
+        "warm": {
+          "requests": 32,
+          "arms": 32,
+          "status": {
+            "200": 32
+          },
+          "promptTokens": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 119192,
+            "minKnown": 3695,
+            "medianKnown": 3723.5,
+            "meanKnown": 3724.75,
+            "maxKnown": 3768
+          },
+          "cachedTokens": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 1536,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 48,
+            "maxKnown": 192
+          },
+          "generatedTokens": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 6309,
+            "minKnown": 60,
+            "medianKnown": 148.5,
+            "meanKnown": 197.15625,
+            "maxKnown": 593
+          },
+          "systemTextBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 287008,
+            "minKnown": 8969,
+            "medianKnown": 8969.0,
+            "meanKnown": 8969,
+            "maxKnown": 8969
+          },
+          "messagesJsonBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 299316,
+            "minKnown": 9198,
+            "medianKnown": 9357.0,
+            "meanKnown": 9353.625,
+            "maxKnown": 9516
+          },
+          "toolSchemaJsonBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 182624,
+            "minKnown": 5707,
+            "medianKnown": 5707.0,
+            "meanKnown": 5707,
+            "maxKnown": 5707
+          },
+          "responseFormatJsonBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 484916,
+            "minKnown": 14998,
+            "medianKnown": 15157.0,
+            "meanKnown": 15153.625,
+            "maxKnown": 15316
+          },
+          "activeSkillBytes": {
+            "n": 32,
+            "known": 32,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          }
+        }
+      },
+      "mainByCondition": {
+        "explicit-memory": {
+          "requests": 158,
+          "arms": 24,
+          "status": {
+            "200": 158
+          },
+          "promptTokens": {
+            "n": 158,
+            "known": 158,
+            "unknown": 0,
+            "sumKnown": 712015,
+            "minKnown": 3721,
+            "medianKnown": 4117.0,
+            "meanKnown": 4506.4240506329115,
+            "maxKnown": 6758
+          },
+          "cachedTokens": {
+            "n": 158,
+            "known": 158,
+            "unknown": 0,
+            "sumKnown": 478912,
+            "minKnown": 0,
+            "medianKnown": 3712.0,
+            "meanKnown": 3031.0886075949365,
+            "maxKnown": 6400
+          },
+          "generatedTokens": {
+            "n": 158,
+            "known": 158,
+            "unknown": 0,
+            "sumKnown": 22543,
+            "minKnown": 32,
+            "medianKnown": 107.0,
+            "meanKnown": 142.6772151898734,
+            "maxKnown": 630
+          },
+          "systemTextBytes": {
+            "n": 158,
+            "known": 158,
+            "unknown": 0,
+            "sumKnown": 1434534,
+            "minKnown": 8969,
+            "medianKnown": 8969.0,
+            "meanKnown": 9079.32911392405,
+            "maxKnown": 9860
+          },
+          "messagesJsonBytes": {
+            "n": 158,
+            "known": 158,
+            "unknown": 0,
+            "sumKnown": 2035837,
+            "minKnown": 9391,
+            "medianKnown": 11274.0,
+            "meanKnown": 12885.04430379747,
+            "maxKnown": 21463
+          },
+          "toolSchemaJsonBytes": {
+            "n": 158,
+            "known": 158,
+            "unknown": 0,
+            "sumKnown": 901706,
+            "minKnown": 5707,
+            "medianKnown": 5707.0,
+            "meanKnown": 5707,
+            "maxKnown": 5707
+          },
+          "responseFormatJsonBytes": {
+            "n": 158,
+            "known": 158,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 158,
+            "known": 158,
+            "unknown": 0,
+            "sumKnown": 2952237,
+            "minKnown": 15191,
+            "medianKnown": 17074.0,
+            "meanKnown": 18685.04430379747,
+            "maxKnown": 27263
+          },
+          "activeSkillBytes": {
+            "n": 158,
+            "known": 158,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0.0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          }
+        },
+        "native-default": {
+          "requests": 157,
+          "arms": 24,
+          "status": {
+            "200": 157
+          },
+          "promptTokens": {
+            "n": 157,
+            "known": 157,
+            "unknown": 0,
+            "sumKnown": 733377,
+            "minKnown": 3695,
+            "medianKnown": 4216,
+            "meanKnown": 4671.1910828025475,
+            "maxKnown": 9472
+          },
+          "cachedTokens": {
+            "n": 157,
+            "known": 157,
+            "unknown": 0,
+            "sumKnown": 499328,
+            "minKnown": 0,
+            "medianKnown": 3712,
+            "meanKnown": 3180.433121019108,
+            "maxKnown": 9344
+          },
+          "generatedTokens": {
+            "n": 157,
+            "known": 157,
+            "unknown": 0,
+            "sumKnown": 20495,
+            "minKnown": 13,
+            "medianKnown": 92,
+            "meanKnown": 130.54140127388536,
+            "maxKnown": 671
+          },
+          "systemTextBytes": {
+            "n": 157,
+            "known": 157,
+            "unknown": 0,
+            "sumKnown": 1418006,
+            "minKnown": 8969,
+            "medianKnown": 8969,
+            "meanKnown": 9031.885350318471,
+            "maxKnown": 9501
+          },
+          "messagesJsonBytes": {
+            "n": 157,
+            "known": 157,
+            "unknown": 0,
+            "sumKnown": 2126572,
+            "minKnown": 9198,
+            "medianKnown": 11819,
+            "meanKnown": 13545.044585987262,
+            "maxKnown": 30111
+          },
+          "toolSchemaJsonBytes": {
+            "n": 157,
+            "known": 157,
+            "unknown": 0,
+            "sumKnown": 895999,
+            "minKnown": 5707,
+            "medianKnown": 5707,
+            "meanKnown": 5707,
+            "maxKnown": 5707
+          },
+          "responseFormatJsonBytes": {
+            "n": 157,
+            "known": 157,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          },
+          "effectiveBodyJsonBytes": {
+            "n": 157,
+            "known": 157,
+            "unknown": 0,
+            "sumKnown": 3037172,
+            "minKnown": 14998,
+            "medianKnown": 17619,
+            "meanKnown": 19345.04458598726,
+            "maxKnown": 35911
+          },
+          "activeSkillBytes": {
+            "n": 157,
+            "known": 157,
+            "unknown": 0,
+            "sumKnown": 0,
+            "minKnown": 0,
+            "medianKnown": 0,
+            "meanKnown": 0,
+            "maxKnown": 0
+          }
+        }
+      },
+      "toolSchemas": [
+        {
+          "names": ["memory", "tool_search", "tool_describe", "tool_call"],
+          "requests": 315
+        }
+      ],
+      "armsWithMandatoryUsageUnknown": [
+        "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes",
+        "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+        "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes"
+      ]
+    }
+  }
+}

@@ -1,0 +1,398 @@
+{
+  "createdAt": "2026-09-07T02:49:56.324593+00:00",
+  "files": [
+    {
+      "byteIdentical": true,
+      "bytes": 2016,
+      "packPath": "owner/after-reentrancy-fix.log",
+      "sha256": "a060762e0f5927a2e086ea529fdad2778bb9d253a92735ac47b6e045597975fd",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/after-reentrancy-fix.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 62680,
+      "packPath": "owner/baseline-chat.ts.txt",
+      "sha256": "daa48027534b58b02bad7372659bc59d722bd3cc075ddd528c985339793fbffc",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/baseline-chat.ts.txt"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 256435,
+      "packPath": "owner/baseline.json",
+      "sha256": "42b5edd89c8e51d1f9a399fc4b7cfae4198e9d48606b813d8ed9be6b2bc5eff3",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/baseline.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 364,
+      "packPath": "owner/chat-before-fix-binding.json",
+      "sha256": "4b68ee2b5d8b70ce489670eddf71d491be0f73b7a17e1461c61cde934bc26fb6",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/chat-before-fix-binding.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 1138,
+      "packPath": "owner/chat-before-guard-order-corrected-fixture.log",
+      "sha256": "43253193ca1aca93277a59fb4060298d2349efb1e5f7f36435f2cd6fc1c1bc2c",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/chat-before-guard-order-corrected-fixture.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 1491,
+      "packPath": "owner/chat-before-guard-order-fix.log",
+      "sha256": "2e024ad8bf50ed7eaf126b3b7d09fb3780a442d839814bc6f2ff452138505f59",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/chat-before-guard-order-fix.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 64093,
+      "packPath": "owner/chat-before-guard-order-fix.ts.txt",
+      "sha256": "eb3b4b5d3c0803235d8423ce2858bf8b379c5c7c79e27c7973f130ffc3217f1f",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/chat-before-guard-order-fix.ts.txt"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 481,
+      "packPath": "owner/chat-guard-after-fix.log",
+      "sha256": "9a413867d8c9b4c0c8aa9f083356730f9848623615e82a6b4a0f6116df84c941",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/chat-guard-after-fix.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 2381,
+      "packPath": "owner/chat-guard-before-fix.log",
+      "sha256": "d387e8288d84e55ec4a6b44a8aeca55210d21ce493380e083c7ed9a0a9c92e88",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/chat-guard-before-fix.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 224,
+      "packPath": "owner/chat-guard-order-corrected-binding.json",
+      "sha256": "791b8057bfdad2dc0f1c425e117f1004eaa58fc272a5df0161efce79ecc3715c",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/chat-guard-order-corrected-binding.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 6524,
+      "packPath": "owner/chat-guard-order-corrected-fixture.test.ts.txt",
+      "sha256": "c35e036014fb018bf79e24183d47dbea40292c9e7c65e42da0d781b26eb01838",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/chat-guard-order-corrected-fixture.test.ts.txt"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 6250,
+      "packPath": "owner/chat-guard-order-counterexample.test.ts.txt",
+      "sha256": "8f243f2815e1d15a4e9bb3285d1b07fdc5dea1e3784b4bdc567ba16c537e9289",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/chat-guard-order-counterexample.test.ts.txt"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 23591,
+      "packPath": "owner/component.patch",
+      "sha256": "441d1dba8ccc0d6e3423070b2cde236b3cdfcbe250277956c1aef8ab71750443",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/component.patch"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 0,
+      "packPath": "owner/component.patch.check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/component.patch.check.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 1024,
+      "packPath": "owner/decision.md",
+      "sha256": "92f2bb3747dcd3f306094bfbbdbbe80658078945dd76da7a2cdae2ca82943c20",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/decision.md"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 37,
+      "packPath": "owner/format-final.log",
+      "sha256": "d8d2fb5194ec76ca55b2be87d9bcbdfb49045be4ca348aa37169e620477ebf58",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/format-final.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 40,
+      "packPath": "owner/format-v3.log",
+      "sha256": "094cb49fff7a3cefa311fd6aa09de8022163cc46dbc6f55de6c19327268f750a",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/format-v3.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 43,
+      "packPath": "owner/format-v4.log",
+      "sha256": "978d39e531b208e29c5af0e7d6b9aa9e524e8d2587fb7c3b767f34f8668e8feb",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/format-v4.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 41,
+      "packPath": "owner/format.log",
+      "sha256": "c3dadde65e2ca87e847fd73c56bb1f6491d68996ef1933c74bfba50d222a1374",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/format.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 4241,
+      "packPath": "owner/implementation-notes.md",
+      "sha256": "682e0eebb0e7bb61dcd84d5d5f46c350262e3a89458dfda94f6a20abe16a3ee1",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/implementation-notes.md"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 63955,
+      "packPath": "owner/initial-per-turn-chat.ts.txt",
+      "sha256": "cf31354002f8c24eaa224c3864f8c7b7033e87e13f48f9936ba750793c82b27c",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/initial-per-turn-chat.ts.txt"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 44,
+      "packPath": "owner/lint-final.log",
+      "sha256": "3e9a2f9af240ba4803b2b6528fb81acbf2576e0d6ae6ec86ca8db0024bdc2d49",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/lint-final.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 45,
+      "packPath": "owner/lint-v3.log",
+      "sha256": "52c59fce7ca777060415755459f39459141832865023c7b6754fbb3178194dd0",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/lint-v3.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 45,
+      "packPath": "owner/lint-v4.log",
+      "sha256": "af1ef5a5de7bee651984d8e58a156aa5d2f9b9215a9f0b508447120d9f5a6520",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/lint-v4.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 275497,
+      "packPath": "owner/manifest.json",
+      "sha256": "489f3f31b7174ab9ef8e8d87e7aad60736a378b11e4785ecb261e9e7d9ab39a8",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/manifest.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 2473,
+      "packPath": "owner/platform-dependency-links.json",
+      "sha256": "8dd140bb5adf470235ec729c6b7c8b15571ed53b21934a27120bf25679bb511a",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/platform-dependency-links.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 190,
+      "packPath": "owner/principal-before-reentrancy-binding.json",
+      "sha256": "238f27cb87545bdfdd1804a181de61ded05cf295574db592257df6509b68c165",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/principal-before-reentrancy-binding.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 3036,
+      "packPath": "owner/principal-before-reentrancy-corrected-fixture.log",
+      "sha256": "86d63e18f24b1e4f8de90b63ce9aa1bbf747b3dbba47c1fe8915e37622b8ef33",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/principal-before-reentrancy-corrected-fixture.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 3994,
+      "packPath": "owner/principal-before-reentrancy-fix.log",
+      "sha256": "65b799f4ab6bfde487f227b92d07ba6dadff45781a086efd424b681de0239829",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/principal-before-reentrancy-fix.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 3161,
+      "packPath": "owner/principal-before-reentrancy-fix.ts.txt",
+      "sha256": "351c52d67a50c610e892e24abe77b0930df1ed471ff869c28eec6c8feb1c9006",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/principal-before-reentrancy-fix.ts.txt"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 7781,
+      "packPath": "owner/principal-reentrancy-counterexample.test.ts.txt",
+      "sha256": "d0f0c380cd9c231c3050b3d9cd058ea144fd6c6aa9e7a699c0e936bbbaf896b4",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/principal-reentrancy-counterexample.test.ts.txt"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 0,
+      "packPath": "owner/production-typecheck-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/production-typecheck-final.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 10831,
+      "packPath": "owner/production-typecheck-initial.log",
+      "sha256": "e1f15edbb69627735fd8af7f2f6e2e50b1e2093833f26f0074ea63b25b4f3c38",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/production-typecheck-initial.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 0,
+      "packPath": "owner/production-typecheck-v4.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/production-typecheck-v4.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 7155,
+      "packPath": "owner/production.patch",
+      "sha256": "c05be18e2d3517680a8e398eebc6e8a184cad697c961ec1d6855432611458b52",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/production.patch"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 0,
+      "packPath": "owner/production.patch.check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/production.patch.check.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 2987,
+      "packPath": "owner/readiness-before-review.json",
+      "sha256": "b2b0275d85714d9ad0aa8003c1241f5a81ae64b182462179f2c2f42d4c3335b0",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/readiness-before-review.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 754,
+      "packPath": "owner/scoped-typecheck-final.log",
+      "sha256": "e2f51a1fbfcdec40f6b6dcc4858e37d5e83028339adac67f635ca43ca4d766d0",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/scoped-typecheck-final.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 0,
+      "packPath": "owner/scoped-typecheck-initial.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/scoped-typecheck-initial.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 424,
+      "packPath": "owner/scoped-typecheck-v3.log",
+      "sha256": "fac31213d7562e57dc54175feaf515b7721dadf916fe86166af8848a8043fb5f",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/scoped-typecheck-v3.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 0,
+      "packPath": "owner/scoped-typecheck-v4.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/scoped-typecheck-v4.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 4333,
+      "packPath": "owner/seal.py",
+      "sha256": "6dc7a16e2ec669a707ee556046361df9e074d8d4b18d1a4a43a5ec0f04dff6f3",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/seal.py"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 256563,
+      "packPath": "owner/source-inventory.json",
+      "sha256": "95df831fa1be39c410064b4672efb6b47245328f3993cd0b0d33518351981ddc",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/source-inventory.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 7404,
+      "packPath": "owner/union-final.log",
+      "sha256": "9f2c7f3db94e62c5ea74560af1f917145058f2739da71a60bc31164020b97fc9",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/union-final.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 5870,
+      "packPath": "owner/union-initial.log",
+      "sha256": "2c414c0695528077a7eb2743bf6be95e341c167847e7315d5abf4d6111413e5b",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/union-initial.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 6035,
+      "packPath": "owner/union-v3.log",
+      "sha256": "d45edda5f35c0ce912748f26e24f0761721c463a49b3dbc4d2669b363acbe700",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/union-v3.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 6045,
+      "packPath": "owner/union-v4.log",
+      "sha256": "2fba5ba4b39eddd28fe41b56f77e5476760e24c52148f1d9a0230e976cd2057f",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5/union-v4.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 0,
+      "packPath": "independent-review/component.patch.check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5-independent-review/component.patch.check.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 614,
+      "packPath": "independent-review/inspection-errors.json",
+      "sha256": "c77cf4bd3aca13f9b58db5e35910d607d78a2ee47e220eb76042d62ad1e7f4ba",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5-independent-review/inspection-errors.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 445,
+      "packPath": "independent-review/owner-acknowledgment.json",
+      "sha256": "90d30c737f681ef11a6d1bd7ca407a8166be7e9c5b38ccceda80f408be289d3d",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5-independent-review/owner-acknowledgment.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 0,
+      "packPath": "independent-review/production.patch.check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5-independent-review/production.patch.check.log"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 598,
+      "packPath": "independent-review/registration.json",
+      "sha256": "5bd6e7a27960665cff7524d3b9ceb8113e30bd84b07190174dc38ffab79ee457",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5-independent-review/registration.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 2785,
+      "packPath": "independent-review/review.json",
+      "sha256": "14a37913dbf82435c3268f8fcb935e5856468bf3613585bf2e698350b6943dca",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5-independent-review/review.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 8318,
+      "packPath": "independent-review/review.md",
+      "sha256": "fde5b1ef7de35ab0b7935181453c3581d1b60fbbdad4e9d799c2a50f0732923c",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5-independent-review/review.md"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 7450,
+      "packPath": "independent-review/verification.json",
+      "sha256": "be626fdfb32a3d833c8e34345a0c17ce3ce6e6e2cfda49e7dd5c2060374c3922",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5-independent-review/verification.json"
+    },
+    {
+      "byteIdentical": true,
+      "bytes": 4127,
+      "packPath": "independent-review/verify.py",
+      "sha256": "30dd5378c48cee62a238ba140f3f016ea79f5f22e5ed4565b0cec479eb81657a",
+      "sourcePath": "/private/tmp/atlas-publication-turn-principal-c5-independent-review/verify.py"
+    }
+  ],
+  "policy": "Selected exact bytes; absolute original private paths remain source references. No reconstruction of missing historical tests."
+}

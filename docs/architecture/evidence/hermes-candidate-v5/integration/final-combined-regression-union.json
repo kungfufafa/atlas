@@ -1,0 +1,33 @@
+{
+  "name": "combined-regression-union",
+  "command": [
+    "bun",
+    "test",
+    "apps/server/src/services/session-persistence.test.ts",
+    "apps/server/src/services/task-service.test.ts",
+    "apps/server/src/services/task-stop-semantics.test.ts",
+    "apps/server/src/tools/conversation-tools.test.ts",
+    "apps/server/src/tools/memory-scope-contract.test.ts",
+    "apps/server/src/tools/memory-tools-dedup.test.ts",
+    "apps/server/src/tools/memory-tools-update.test.ts",
+    "apps/server/src/tools/memory-tools.test.ts",
+    "packages/agent/src/chat-abort.test.ts",
+    "packages/agent/src/chat-failure-rollback.test.ts",
+    "packages/agent/src/chat-harness-reliability.test.ts",
+    "packages/agent/src/chat-output-limit.test.ts",
+    "packages/agent/src/chat-runtime-tools.test.ts",
+    "packages/agent/src/chat-stop-semantics.test.ts",
+    "packages/db/src/conversation-history.test.ts",
+    "packages/db/src/conversation-keyword-search.test.ts",
+    "packages/db/src/memory-preservation.test.ts",
+    "packages/db/src/memory-search.test.ts",
+    "packages/db/src/profile-atomic.test.ts"
+  ],
+  "cwd": "/private/tmp/atlas-candidate5-integration/source",
+  "startedAt": "2026-09-06T19:23:47.817097+00:00",
+  "finishedAt": "2026-09-06T19:23:52.143857+00:00",
+  "elapsedSeconds": 4.326716374998796,
+  "exitCode": 0,
+  "log": "/private/tmp/atlas-candidate5-integration/final-combined-regression-union.log",
+  "logSha256": "b25dd3452646d87f8289f6ea647df3e024e114887d1d3b86fe135c2a2393cc1c"
+}

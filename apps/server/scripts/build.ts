@@ -5,8 +5,11 @@ const serverRoot = path.resolve(import.meta.dir, "..");
 const sourceRoot = path.join(serverRoot, "src");
 const runtimeAssetNames = [
   "javascript-tool-runner.js",
+  "skill-tool-runner.js",
   "javascript-tool-sandbox-linux.c",
   "javascript-tool-sandbox-linux.js",
+  "restricted-process-linux.c",
+  "restricted-process-linux.js",
 ] as const;
 const serverExternals = [
   "playwright",

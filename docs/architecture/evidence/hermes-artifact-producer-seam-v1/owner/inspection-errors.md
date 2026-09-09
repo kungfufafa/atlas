@@ -1,0 +1,1 @@
+Preserved initial inspection issues: unquoted browser glob in zsh; guessed nonexistent browser-session-tool.ts and tools/types.ts paths; verbose source-inventory display truncated. Corrected by actual repository inventory; no source mutation or test evidence lost.

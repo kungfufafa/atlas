@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
+import { setImmediate as nextTick } from "node:timers/promises";
 import { JsonRpcStdioClient, type JsonRpcStdioProcess } from "./jsonrpc-stdio";
 
 class FakeProcess extends EventEmitter implements JsonRpcStdioProcess {
@@ -111,5 +112,170 @@ describe("JsonRpcStdioClient", () => {
     const lateErrors: string[] = [];
     client.onClose((error) => lateErrors.push(error.message));
     expect(lateErrors).toEqual(["Runtime process is not running."]);
+  });
+});
+
+function recordResponses(child: FakeProcess): Record<string, unknown>[] {
+  const responses: Record<string, unknown>[] = [];
+  child.stdin.on("data", (chunk) => {
+    for (const line of String(chunk).trim().split("\n")) {
+      responses.push(JSON.parse(line));
+    }
+  });
+  return responses;
+}
+
+function serverRequest(
+  child: FakeProcess,
+  id: unknown,
+  params: unknown = {}
+): void {
+  child.stdout.write(
+    `${JSON.stringify({ id, method: "item/tool/call", params })}\n`
+  );
+}
+
+describe("JSON-RPC server requests", () => {
+  test("responds to string and integer ids and unregisters handlers", async () => {
+    const child = new FakeProcess();
+    const client = new JsonRpcStdioClient(child);
+    const responses = recordResponses(child);
+    const unregister = client.onRequest(
+      "item/tool/call",
+      async (params) => params
+    );
+
+    serverRequest(child, "server-1", { answer: 42 });
+    serverRequest(child, -4, { answer: 43 });
+    await nextTick();
+    expect(responses).toEqual([
+      { id: "server-1", result: { answer: 42 } },
+      { id: -4, result: { answer: 43 } },
+    ]);
+    unregister();
+    serverRequest(child, "server-2");
+    expect(responses.at(-1)).toMatchObject({
+      error: { code: -32_601 },
+      id: "server-2",
+    });
+    client.close();
+  });
+
+  test("rejects invalid ids before invoking handlers", () => {
+    const child = new FakeProcess();
+    const client = new JsonRpcStdioClient(child);
+    const responses = recordResponses(child);
+    let called = 0;
+    client.onRequest("item/tool/call", async () => {
+      called += 1;
+    });
+    for (const id of [null, {}, [], true, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+      serverRequest(child, id);
+    }
+    expect(called).toBe(0);
+    expect(responses).toHaveLength(6);
+    for (const response of responses) {
+      expect(response).toMatchObject({ error: { code: -32_600 }, id: null });
+    }
+    client.close();
+  });
+
+  test("deduplicates pending requests and replays their completed result", async () => {
+    const child = new FakeProcess();
+    const client = new JsonRpcStdioClient(child);
+    const responses = recordResponses(child);
+    let finish: (value: unknown) => void = () => undefined;
+    const result = new Promise((resolve) => {
+      finish = resolve;
+    });
+    let calls = 0;
+    client.onRequest("item/tool/call", async () => {
+      calls += 1;
+      return await result;
+    });
+    serverRequest(child, 9, { path: "one" });
+    serverRequest(child, 9, { path: "one" });
+    expect(calls).toBe(1);
+    expect(responses).toHaveLength(0);
+    finish({ written: true });
+    await nextTick();
+    serverRequest(child, 9, { path: "one" });
+    expect(calls).toBe(1);
+    expect(responses).toEqual([
+      { id: 9, result: { written: true } },
+      { id: 9, result: { written: true } },
+    ]);
+    client.close();
+  });
+
+  test("closes on conflicting duplicate ids and aborts the pending action", async () => {
+    const child = new FakeProcess();
+    const client = new JsonRpcStdioClient(child);
+    const responses = recordResponses(child);
+    let signal: AbortSignal | undefined;
+    let finish: () => void = () => undefined;
+    const wait = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    client.onRequest("item/tool/call", async (_params, requestSignal) => {
+      signal = requestSignal;
+      await wait;
+      return { written: true };
+    });
+    serverRequest(child, "duplicate", { path: "one" });
+    serverRequest(child, "duplicate", { path: "two" });
+    expect(client.isClosed()).toBe(true);
+    expect(signal?.aborted).toBe(true);
+    finish();
+    await nextTick();
+    expect(responses).toHaveLength(0);
+  });
+
+  test("contains async handler failures without returning sensitive errors", async () => {
+    const child = new FakeProcess();
+    const client = new JsonRpcStdioClient(child);
+    const responses = recordResponses(child);
+    client.onRequest("item/tool/call", async () => {
+      await nextTick();
+      throw new Error("secret-token");
+    });
+    serverRequest(child, "failure");
+    await nextTick();
+    expect(responses).toHaveLength(1);
+    expect(responses[0]).toMatchObject({
+      error: { code: -32_603 },
+      id: "failure",
+    });
+    expect(JSON.stringify(responses)).not.toContain("secret-token");
+    client.close();
+  });
+
+  test("unregistering aborts pending handlers and suppresses late responses", async () => {
+    const child = new FakeProcess();
+    const client = new JsonRpcStdioClient(child);
+    const responses = recordResponses(child);
+    let signal: AbortSignal | undefined;
+    let finish: () => void = () => undefined;
+    const wait = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const unregister = client.onRequest(
+      "item/tool/call",
+      async (_params, requestSignal) => {
+        signal = requestSignal;
+        await wait;
+      }
+    );
+    serverRequest(child, "pending");
+    unregister();
+    expect(signal?.aborted).toBe(true);
+    finish();
+    await nextTick();
+    expect(responses).toHaveLength(1);
+    expect(responses[0]).toMatchObject({
+      error: { code: -32_000 },
+      id: "pending",
+    });
+    client.close();
   });
 });

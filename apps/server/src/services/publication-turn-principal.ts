@@ -1,0 +1,98 @@
+import { AtlasApiError, type ToolContext } from "@atlas/core";
+import type { ArtifactPublicationScope } from "@atlas/core/artifact-publication";
+import type { DatabaseAdapter } from "@atlas/db";
+import type { AgentService, SessionActor } from "./agent-service";
+import { createPublicationAuthorizer } from "./artifact-publication-access";
+
+type PublicationAction = "publish" | "read" | "revoke";
+type PublicationAccess = ArtifactPublicationScope & { actorId: string };
+
+export interface PublicationTurnPrincipal {
+  /** Server-only callback for ArtifactPublicationService. */
+  authorizePublication(
+    scope: PublicationAccess,
+    action: PublicationAction
+  ): Promise<void>;
+  /** Mandatory pre-effect guard; publication lifecycle errors alone cannot deny a tool. */
+  beforeToolCall(): Promise<void>;
+  readonly effectUserId: string;
+  readonly invoker: Readonly<SessionActor>;
+  readonly scope: Readonly<PublicationAccess>;
+  validateContext(context: Readonly<ToolContext>): Promise<void>;
+}
+
+/** Inputs must come from authenticated host code, never a model or tool payload. */
+export async function createPublicationTurnPrincipal(options: {
+  actor: SessionActor;
+  agent: Pick<AgentService, "canAccessSession">;
+  db: DatabaseAdapter;
+  orgId: string;
+  sessionId: string;
+}): Promise<PublicationTurnPrincipal> {
+  const { db, agent, orgId, sessionId } = options;
+  const invoker = Object.freeze({ ...options.actor });
+  const initial = await db.getSession(sessionId);
+  if (!initial || initial.orgId !== orgId || !initial.userId) {
+    throw new AtlasApiError("Not found", 404);
+  }
+  const effectUserId = initial.userId;
+  const profileId = initial.profileId;
+  const scope = Object.freeze({
+    actorId: effectUserId,
+    orgId,
+    profileId,
+    sessionId,
+  });
+  const authorizeInvoker = createPublicationAuthorizer(db, agent, invoker);
+  const assertCurrentSession = async (): Promise<void> => {
+    const current = await db.getSession(sessionId);
+    if (
+      !current ||
+      current.orgId !== orgId ||
+      current.profileId !== profileId ||
+      current.userId !== effectUserId
+    ) {
+      throw new AtlasApiError("Not found", 404);
+    }
+  };
+  const authorizePublication = async (
+    requested: PublicationAccess,
+    action: PublicationAction
+  ): Promise<void> => {
+    if (
+      requested.actorId !== effectUserId ||
+      requested.orgId !== orgId ||
+      requested.profileId !== profileId ||
+      requested.sessionId !== sessionId
+    ) {
+      throw new AtlasApiError("Not found", 404);
+    }
+    await assertCurrentSession();
+    // The effect user can differ from the authenticated worker. The current
+    // session ACL must still receive the original trusted worker channel proof.
+    await authorizeInvoker({ ...scope, actorId: invoker.userId }, action);
+    // ACL resolution is asynchronous; its callbacks may have changed the
+    // persisted effect identity. This is a second check, not an atomic lease.
+    await assertCurrentSession();
+  };
+  const beforeToolCall = () => authorizePublication(scope, "publish");
+  await beforeToolCall();
+  return Object.freeze({
+    authorizePublication,
+    beforeToolCall,
+    effectUserId,
+    invoker,
+    scope,
+    async validateContext(context: Readonly<ToolContext>) {
+      if (
+        context.userId !== effectUserId ||
+        context.orgId !== orgId ||
+        context.profileId !== profileId ||
+        context.sessionId !== sessionId
+      ) {
+        throw new AtlasApiError("Not found", 404);
+      }
+      await beforeToolCall();
+    },
+  });
+}

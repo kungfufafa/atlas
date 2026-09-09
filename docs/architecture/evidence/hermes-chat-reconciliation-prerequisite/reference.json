@@ -1,0 +1,96 @@
+{
+  "at": "2026-09-06T23:48:11.961485+00:00",
+  "scope": "Selected source-bound reports, scripts and gate logs. Full original evidence remains at source paths; not an exhaustive archive. Existing manifest qualifications and failed attempts remain authoritative.",
+  "files": [
+    {
+      "path": "report.json",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/report.json",
+      "sha256": "2f5036ac11304cbfaf4b6defcaf0725809edab84c13463cbf4ab96fbe488f31b",
+      "bytes": 1740
+    },
+    {
+      "path": "design.md",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/design.md",
+      "sha256": "da2fe7f89096183be173a10b14979c35272ceec63c6c9fa63944ebc4861b4ca0",
+      "bytes": 15355
+    },
+    {
+      "path": "source-binding.json",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/source-binding.json",
+      "sha256": "f369df6b568bf2b37a05dde6cd80d43050438fa1d6a3ecf70021a9bcc83d8bb9",
+      "bytes": 5312
+    },
+    {
+      "path": "manifest.json",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/manifest.json",
+      "sha256": "47a3f2ca52036a56095032ee38a3dda0d98274ff62a8f9e44487d06bdb38c01a",
+      "bytes": 4365
+    },
+    {
+      "path": "probe.ts",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/probe.ts",
+      "sha256": "5313bf71d6b3cf46a68c4900611ceff54b6593b3c73c852f0812537766ffe7e0",
+      "bytes": 10654
+    },
+    {
+      "path": "probe.log",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/probe.log",
+      "sha256": "59469903fcf91388a3ee82ec2377117f5ad90444ad7b96c579325f156587fcc7",
+      "bytes": 19011
+    },
+    {
+      "path": "probe.stderr",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/probe.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "recovery-crash.ts",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/recovery-crash.ts",
+      "sha256": "a4cec4d464684bac19eb50496bbe6e5c0b87bd6c6cc30e30e4d0ab459c4ba4b6",
+      "bytes": 1395
+    },
+    {
+      "path": "run-recovery-crash.py",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/run-recovery-crash.py",
+      "sha256": "bf8cccbd00a247e3290953ff4a2da8a6ff16e73a9e31ee0687d42f9f7023f255",
+      "bytes": 2594
+    },
+    {
+      "path": "probe-XzLZa0/results.json",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/probe-XzLZa0/results.json",
+      "sha256": "9de45fe5a5c92bc58c37d17a19c614dee71a1feb1833840a86738243ad470d66",
+      "bytes": 27872
+    },
+    {
+      "path": "recovery-crash/source-reference.json",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/recovery-crash/source-reference.json",
+      "sha256": "8cbf5e9317891469e124974e40b0f9105595dd101c3f3deedff2f21b848fd928",
+      "bytes": 489
+    },
+    {
+      "path": "recovery-crash/child.stderr",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/recovery-crash/child.stderr",
+      "sha256": "e190a699a5a83b29f7d0b1dd348dc0c13988afc7162fe3b05c3df5d972123418",
+      "bytes": 856
+    },
+    {
+      "path": "recovery-crash-v2/source-reference.json",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/recovery-crash-v2/source-reference.json",
+      "sha256": "6cf70045ea44536ec28becc0638b0a047763c89c4661b8ab175bdf1768aa398a",
+      "bytes": 961
+    },
+    {
+      "path": "recovery-crash-v2/result.json",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/recovery-crash-v2/result.json",
+      "sha256": "c470be6273b01f97da2e65ce8aae0609ac2716827f69bdfe8d484fba23608c99",
+      "bytes": 1640
+    },
+    {
+      "path": "recovery-crash-v2/exit.json",
+      "source": "/private/tmp/atlas-chat-reconciliation-design-c5/recovery-crash-v2/exit.json",
+      "sha256": "ab889f1da113411c6b3f7d1677f0e01045941025b4dc64e3647e6865e7635c73",
+      "bytes": 92
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "scope": "Generalized proposal cases; no filesystem or semantic oracle lookup",
+  "cases": [
+    {
+      "name": "repeat-around-backtick-fence",
+      "text": "Delivery: `artifacts/report.txt`\n\n```\nordinary content\n```\nAgain: `artifacts/report.txt`.",
+      "expected": ["artifacts/report.txt"]
+    },
+    {
+      "name": "repeat-around-tilde-fence",
+      "text": "`artifacts/report.txt`\n\n~~~text\nordinary `content`\n~~~\n`artifacts/report.txt`",
+      "expected": ["artifacts/report.txt"]
+    },
+    {
+      "name": "longer-fence-with-inner-short-fence",
+      "text": "`artifacts/report.txt`\n\n````text\n```\nordinary content\n```\n````\n`artifacts/report.txt`",
+      "expected": ["artifacts/report.txt"]
+    },
+    {
+      "name": "literal-backtick-in-filename",
+      "text": "Deliver ``artifacts/report`draft.txt``.",
+      "expected": ["artifacts/report`draft.txt"]
+    },
+    {
+      "name": "genuinely-distinct-filenames",
+      "text": "`artifacts/first.txt` and `artifacts/second.txt`",
+      "expected": ["artifacts/first.txt", "artifacts/second.txt"],
+      "selection": null
+    },
+    {
+      "name": "invalid-escape-still-vetoes",
+      "text": "[Good](artifacts/first.txt) [Outside](../artifacts/escape.txt)",
+      "expected": ["artifacts/first.txt"],
+      "invalid": true,
+      "selection": null
+    },
+    {
+      "name": "link-title-is-not-path",
+      "text": "[Result](artifacts/report.txt \"Download report\")",
+      "expected": ["artifacts/report.txt"]
+    },
+    {
+      "name": "angle-link-with-space",
+      "text": "[Result](<artifacts/my report.txt>)",
+      "expected": ["artifacts/my report.txt"]
+    },
+    {
+      "name": "balanced-parentheses-link",
+      "text": "[Result](artifacts/report(v1).txt)",
+      "expected": ["artifacts/report(v1).txt"]
+    },
+    {
+      "name": "link-label-not-second-delivery",
+      "text": "[artifacts/old.txt](artifacts/new.txt)",
+      "expected": ["artifacts/new.txt"]
+    },
+    {
+      "name": "standalone-fenced-path",
+      "text": "Saved:\n```text\nartifacts/report.txt\n```",
+      "expected": ["artifacts/report.txt"]
+    },
+    {
+      "name": "second-standalone-fenced-path-remains-ambiguous",
+      "text": "`artifacts/first.txt`\n```text\nartifacts/second.txt\n```",
+      "expected": ["artifacts/first.txt", "artifacts/second.txt"],
+      "selection": null
+    },
+    {
+      "name": "bare-unmatched-backtick-not-silently-trimmed",
+      "text": "artifacts/report.txt`",
+      "expected": ["artifacts/report.txt`"]
+    },
+    {
+      "name": "percent-encoding-and-equivalent-path-deduplicate",
+      "text": "[Result](./artifacts/sub/../my%20report.txt) `artifacts/my report.txt`",
+      "expected": ["artifacts/my report.txt"]
+    }
+  ]
+}

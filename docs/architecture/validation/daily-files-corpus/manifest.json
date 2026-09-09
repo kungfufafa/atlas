@@ -1,0 +1,326 @@
+{
+  "declaredCases": 21,
+  "producer": "independent Python libraries",
+  "cases": [
+    {
+      "id": "D01",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/D01",
+      "expected": {
+        "allowedParts": ["word/document.xml"],
+        "text": "Résumé validé — 東京 مرحبا"
+      },
+      "sources": [
+        {
+          "path": "input.docx",
+          "sha256": "b4f8de9c4d373bc277c95ccec76f1e0e2706b12f302c148d9220013a9c07e236"
+        }
+      ]
+    },
+    {
+      "id": "D02",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/D02",
+      "expected": {
+        "allowedParts": ["word/document.xml"],
+        "text": "Inner approved"
+      },
+      "sources": [
+        {
+          "path": "input.docx",
+          "sha256": "6fb97a2994748f12445704fb5335e3f821a66cee160c0bc8891bed953ec31a19"
+        }
+      ]
+    },
+    {
+      "id": "D03",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/D03",
+      "expected": {
+        "allowedParts": ["word/document.xml"],
+        "text": "Inserted approved"
+      },
+      "sources": [
+        {
+          "path": "input.docx",
+          "sha256": "d7ba3b60bd030bd326b8b049c54c1cdb165815b04d56a65f98fdfa38ac5241e7"
+        }
+      ]
+    },
+    {
+      "id": "D04",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/D04",
+      "expected": {
+        "allowedParts": ["word/header2.xml"],
+        "text": "Second section approved"
+      },
+      "sources": [
+        {
+          "path": "input.docx",
+          "sha256": "e26fe398d48b91e227ee2d13d4daa44f630775ec0fd79e7670fa2f7967f7bf03"
+        }
+      ]
+    },
+    {
+      "id": "P01",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/P01",
+      "expected": {
+        "allowedParts": ["ppt/slides/slide1.xml"],
+        "text": "Quarter approved"
+      },
+      "sources": [
+        {
+          "path": "input.pptx",
+          "sha256": "03dd2fe042c8c35deefd346a16d0d8ccd07f8d72ee81b9e31b26b32b13bfe006"
+        }
+      ]
+    },
+    {
+      "id": "P02",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/P02",
+      "expected": {
+        "allowedParts": ["ppt/slides/slide1.xml"],
+        "text": "Grouped approved"
+      },
+      "sources": [
+        {
+          "path": "input.pptx",
+          "sha256": "5dd9454053c40bcd3035ce8c8d128d72602081ccf84da115660a7450d574277f"
+        }
+      ]
+    },
+    {
+      "id": "P03",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/P03",
+      "expected": {
+        "allowedParts": ["ppt/slides/slide1.xml"],
+        "text": "Merged approved"
+      },
+      "sources": [
+        {
+          "path": "input.pptx",
+          "sha256": "db9aee4a76f113fec3d339bedcba584b349982d97d6f91485543ff8b5ba14e5d"
+        }
+      ]
+    },
+    {
+      "id": "P04",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/P04",
+      "expected": {
+        "allowedParts": ["ppt/slides/slide1.xml"],
+        "text": "تمت المراجعة — 東京 café"
+      },
+      "sources": [
+        {
+          "path": "input.pptx",
+          "sha256": "23f92656e33567f87a33707b747ccd8c42f149ec74db5079717e80f68700f49e"
+        }
+      ]
+    },
+    {
+      "id": "X01",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/X01",
+      "expected": {},
+      "sources": [
+        {
+          "path": "input.xlsx",
+          "sha256": "731657b4f3ffb8671f1d0f1ea34358bcc99e3423f9288f8ae0103dfd609b6674"
+        }
+      ]
+    },
+    {
+      "id": "X02",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/X02",
+      "expected": {
+        "total": 19,
+        "decision": "Review",
+        "date": "2026-09-06"
+      },
+      "sources": [
+        {
+          "path": "input.xlsx",
+          "sha256": "2b5aa3176c575920722adba2c3d16cc7a2824f322f3f5b4ac65a6da36f27abc7"
+        }
+      ]
+    },
+    {
+      "id": "X03",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/X03",
+      "expected": {},
+      "sources": [
+        {
+          "path": "input.xlsx",
+          "sha256": "9d0bbd5e2f634da968f3192a2ac3c5b72d943a6e6afbea85f09196cb1bf780e1"
+        }
+      ]
+    },
+    {
+      "id": "X04",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/X04",
+      "expected": {
+        "total": 17
+      },
+      "sources": [
+        {
+          "path": "input.xlsx",
+          "sha256": "24b1ac8a7d840cc5437ebf9d61f01a7e3394ac210b6f70d517ce881ffccff5f1"
+        }
+      ]
+    },
+    {
+      "id": "C01",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/C01",
+      "expected": {
+        "delimiter": ";",
+        "rows": [
+          ["ID", "Long ID", "Description", "Code"],
+          [
+            "00012",
+            "12345678901234567890",
+            "café; 東京\nsecond line",
+            "=SUM(A1:A2)"
+          ],
+          ["00013", "00000000000000000009", "He said \"ready\"", "-0042"]
+        ]
+      },
+      "sources": [
+        {
+          "path": "input.csv",
+          "sha256": "20cb762649adb53d90b1be4d165a73493b5cf18514b4841fe207d7628e447e46"
+        }
+      ]
+    },
+    {
+      "id": "C02",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/C02",
+      "expected": {
+        "delimiter": ";",
+        "rows": [["ID", "Amount"], ["00012", "12,50"], ["00013", "-0,75"]]
+      },
+      "sources": [
+        {
+          "path": "input.csv",
+          "sha256": "14b7ff9055db73b56fff93aa24cf51158bf410d444a9403c91277f76ed63b748"
+        }
+      ]
+    },
+    {
+      "id": "C03",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/C03",
+      "expected": {
+        "delimiter": "\t",
+        "rows": [
+          ["ID", "Description", "Expression", "Trailing"],
+          ["001", "a\tb\nnext", "@SUM(A1)", ""],
+          ["002", "\"quoted\"", "+0012", ""]
+        ]
+      },
+      "sources": [
+        {
+          "path": "input.csv",
+          "sha256": "9cae011a7bdda27df3f84baf05b63c52f4ef1db385370f10e4553b7fa88be9d3"
+        }
+      ]
+    },
+    {
+      "id": "F01",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/F01",
+      "expected": {
+        "pages": [3, 2],
+        "texts": ["Page three café naïve", "Rotated beta table"]
+      },
+      "sources": [
+        {
+          "path": "input.pdf",
+          "sha256": "ba196cb72ee8d8ef322377328fa7a570061b0b4032c9d65d8f1f5a3f55dd60d5"
+        }
+      ]
+    },
+    {
+      "id": "F02",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/F02",
+      "expected": {
+        "fields": {
+          "reviewer": "Maya Synthetic",
+          "status": "Approved"
+        }
+      },
+      "sources": [
+        {
+          "path": "input.pdf",
+          "sha256": "e1536003290c3591887c128e52b77d02f575014f76dbe73800368a68d28fd3d9"
+        }
+      ]
+    },
+    {
+      "id": "F03",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/F03",
+      "expected": {
+        "text": "SCAN REVIEW 8642"
+      },
+      "sources": [
+        {
+          "path": "input.pdf",
+          "sha256": "c1ea524622a005d3d12057611bd5dfa80740e9a3e72a8baddf0bab27e947f776"
+        },
+        {
+          "path": "scan.png",
+          "sha256": "7b5ad4f31117bf090ee817196b1351e7cac17d020332e477a9441008f17da4c2"
+        }
+      ]
+    },
+    {
+      "id": "F04",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/F04",
+      "expected": {
+        "attachment": "supporting.txt",
+        "attachmentText": "Keep this exact attachment."
+      },
+      "sources": [
+        {
+          "path": "appendix.pdf",
+          "sha256": "f069ea0e23e07a11eab1c0797a1aae4b093455aa08b805a6449d8713a3fdb799"
+        },
+        {
+          "path": "input.pdf",
+          "sha256": "7b3999d80a188bf65bffbb7a0758d7bad0865658bedd66a6e95f52cb5a1c6172"
+        }
+      ]
+    },
+    {
+      "id": "F05",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/F05",
+      "expected": {
+        "text": "Révision approuvée — تمت المراجعة — 東京"
+      },
+      "sources": [
+        {
+          "path": "covering.ttf",
+          "sha256": "876af2cd4854644e7f3e7feb2f688997fdb3343c6df6693611209c9dfb47ccec"
+        }
+      ]
+    },
+    {
+      "id": "W01",
+      "directory": "/private/tmp/atlas-daily-files-corpus/inputs/W01",
+      "expected": {
+        "total": 18
+      },
+      "sources": [
+        {
+          "path": "appendix.pdf",
+          "sha256": "df113800da8cf7ea3dd4dfb56644be02c1f64222c6e7c8574e77c0f0bccd4af8"
+        },
+        {
+          "path": "records.csv",
+          "sha256": "f73a8302efe9f7d60713f0f64c141e45b2c790e30559c9b241adb6b64ac9b389"
+        },
+        {
+          "path": "report.docx",
+          "sha256": "1516ddab1311c20e0b570dd337c2bec2efd204e885a41a0dcaffa31245e21b82"
+        },
+        {
+          "path": "summary.pptx",
+          "sha256": "f01fb103b1e92d16dc17677db71467113fdbbedf11299b35245b9a59abc7003d"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "absolute": {
+    "samePath": false,
+    "originalAfter": "ORIGINAL"
+  },
+  "lineage": {
+    "before": {
+      "formatDetails": {},
+      "id": "i7HP7q2MwQ-h",
+      "mimeType": "text/plain",
+      "parentArtifactId": "Ok54CbcrqtDo",
+      "revision": 2,
+      "rootArtifactId": "Ok54CbcrqtDo",
+      "savedAt": "2026-09-06T04:04:57.913Z",
+      "sizeBytes": 3
+    },
+    "after": {
+      "formatDetails": {
+        "title": "new title"
+      },
+      "id": "i7HP7q2MwQ-h",
+      "mimeType": "text/plain",
+      "parentArtifactId": "Ok54CbcrqtDo",
+      "revision": 2,
+      "rootArtifactId": "Ok54CbcrqtDo",
+      "savedAt": "2026-09-06T04:04:57.914Z",
+      "sizeBytes": 3
+    },
+    "originalMeta": {
+      "formatDetails": {},
+      "id": "Ok54CbcrqtDo",
+      "mimeType": "text/plain",
+      "revision": 1,
+      "rootArtifactId": "Ok54CbcrqtDo",
+      "savedAt": "2026-09-06T04:04:57.912Z",
+      "sizeBytes": 8
+    },
+    "nestedMetadata": []
+  },
+  "cwd": {
+    "expected": "/private/tmp/atlas-publication-probe-Uwyt2y/a/artifacts/cwd.txt.atlas-meta.json",
+    "actual": "/private/tmp/atlas-publication-probe-Uwyt2y/a/artifacts/cwd.txt.atlas-meta.json",
+    "actuallyTargetsB": false
+  },
+  "skillSymlink": {
+    "error": "Error: Use skill_manage to create, patch, edit, delete, or manage supporting files for profile skills; writing skills/ via python_execute or bash is not allowed when skill_manage is available.",
+    "isSymlink": false,
+    "skillContent": null
+  }
+}

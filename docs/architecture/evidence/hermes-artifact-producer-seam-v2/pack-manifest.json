@@ -1,0 +1,100 @@
+{
+  "createdAt": "2026-09-07T00:43:10.101745+00:00",
+  "scope": "offline-component",
+  "candidateSourceHash": "387f0723afe934f8a8ee36b1d6e74d17fa98295d5456d9e2ee3667ae0ef961e0",
+  "files": {
+    "README.md": {
+      "sha256": "9e04fea27430db60b991d78bbd3180c3785e33bdf9996919c1f7dc5a4fb74a2f",
+      "bytes": 1978
+    },
+    "gate-summary.json": {
+      "sha256": "bb4534fdbe5d8a431bd7ffefc1128e09a598d32a61316c14cacb0dda7e33ff54",
+      "bytes": 758
+    },
+    "independent-review/patch-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "independent-review/review.json": {
+      "sha256": "e2a1b9a59b31290bcae8ec41a7e0bb1c72a80ecbd9efcb1c35b39582a4252f07",
+      "bytes": 2694
+    },
+    "owner/component.patch": {
+      "sha256": "eb2a885a4e0d51ec9c285fee71f965895ba76769d1fb3271f63c124994536fa4",
+      "bytes": 5365
+    },
+    "owner/evidence-reference.json": {
+      "sha256": "487b5dea9b6943ca085bcccb220caf98c42b0efeebb52a2380c272406b58fbb2",
+      "bytes": 1747
+    },
+    "owner/final-lint.json": {
+      "sha256": "05cc6fa8f6e38a19981a9579404981b7ceead7042786886275a20c56a6752d8a",
+      "bytes": 357
+    },
+    "owner/final-lint.log": {
+      "sha256": "b6cc38659ce53231df54d50e31b927c4ecb6dbded04a27c3344d2ee79c67e119",
+      "bytes": 44
+    },
+    "owner/final-regressions.json": {
+      "sha256": "5d248dbfd553ef151a664bd722575994f87c3852daf753e423b306f2bed152e5",
+      "bytes": 530
+    },
+    "owner/final-regressions.log": {
+      "sha256": "03167e9cfd0e7f056b9a17c832a3c8559d7d375affec24fa41d5ee708423c8c4",
+      "bytes": 8947
+    },
+    "owner/final-typecheck.json": {
+      "sha256": "8c1869f9141001209a0c48b40c69b699c9ea22598ea42a2896395c0e1e477e7d",
+      "bytes": 251
+    },
+    "owner/final-typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "owner/gates.json": {
+      "sha256": "4b8d4e8feee0836c1e097875450e7275a57dbf5db807471adf98aed3a7d5a23a",
+      "bytes": 2386
+    },
+    "owner/implementation-notes.md": {
+      "sha256": "383a9ef175401c2c59ce0c74fff9b8175f79aac3ecfe636fa7183df431f90986",
+      "bytes": 2045
+    },
+    "owner/initial-tests.log": {
+      "sha256": "c7219066053b684789a47323fc7df9a8500c91f37d981615a2cb781a801ea78e",
+      "bytes": 2252
+    },
+    "owner/patch-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "owner/production.patch": {
+      "sha256": "a04d5e77800210a29660ecc59d4e0c23de772b7a1795ed79b1fce1951bb581cd",
+      "bytes": 1644
+    },
+    "owner/readiness-before-review.json": {
+      "sha256": "98abc99f1f7d312ced806597053ab8f3718a21604f55e0b6cee63d6efb1f2c59",
+      "bytes": 2120
+    },
+    "owner/readiness-final.json": {
+      "sha256": "14a10358ee1ee9b3157908c5e1808895bdd8f6527788c8dd0fe0ee8af4f4851b",
+      "bytes": 2313
+    },
+    "owner/source-inventory.json": {
+      "sha256": "1711d5c7aa6507ad778f9521f40445ebe6278c453c7aedfe4ed897f194c8be72",
+      "bytes": 256757
+    },
+    "source-copies.json": {
+      "sha256": "fd3d58cc58051d52c25ce104f4dc22c90145f6bf6689adc996082082afe55858",
+      "bytes": 5366
+    }
+  },
+  "copiedFiles": 18,
+  "totalPayloadBytes": 297554,
+  "exactCopyHashesVerified": true,
+  "privateCredentialLiteralScan": "passed; value not copied or printed",
+  "sourceOriginalsRetained": true,
+  "sourceOrControlEdits": false,
+  "newProviderCalls": 0,
+  "testReruns": false,
+  "claimLimits": "Nested-cwd outputs remain unsupported by canonical publication. The 73-test union overlaps the v1 70-test union and must not be summed as independent evidence. No main activation or consumer cutover."
+}

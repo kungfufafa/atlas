@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "cases": [
+    "real UI authentication and scoped policy reads",
+    "all three integration cards expose shared native controls",
+    "omitted versus false versus empty array persisted",
+    "nested room/sender/action rules retained",
+    "exact speech API instance/model/voice selected; subscription excluded",
+    "save/reload",
+    "workspace switch does not display previous tenant values",
+    "Discord voice room/duration values persisted",
+    "save failure retains draft and unlocks retry",
+    "real tenant A policy response held while modal closes and user switches to B; late A result cannot replace B draft"
+  ],
+  "pageErrors": [],
+  "delayedReadRace": {
+    "status": "PASS",
+    "oldOrg": "org_native_a",
+    "currentOrg": "org_native_b",
+    "oldEnabled": true,
+    "currentEnabled": false,
+    "pageErrors": []
+  },
+  "finalSpeechScope": {
+    "status": "PASS",
+    "telegramControlsAbsent": true,
+    "whatsappControlsAbsent": true,
+    "existingSpeechPreservedOnBothSaves": true,
+    "discordProviderChoicesExcludeSubscription": true,
+    "discordExactModelVoiceSavedAndReloaded": true,
+    "scopedOrg": "org_native_a",
+    "pageErrors": []
+  },
+  "note": "Main controls/save/tenant matrix was followed by this focused final Discord-only speech correction check; screenshots ending current show the final UI.",
+  "docs": {
+    "status": "PASS",
+    "pages": ["telegram", "whatsapp", "discord"],
+    "nativeControlText": true,
+    "sampledVideoLimits": true,
+    "discordOnlySpeechGuidance": true,
+    "sidebarNavigation": true,
+    "searchDialogQuery": true,
+    "pageErrors": []
+  },
+  "discordMultipleRegression": {
+    "status": "PASS",
+    "beforePass": 4,
+    "beforeFail": 9,
+    "focusedAfterPass": 28,
+    "focusedAfterFail": 0,
+    "fullSelectedLabelsAndSnapshot": true,
+    "duplicateInvalidSenderRevocationReplayDenied": true,
+    "customAnswerPreserved": true,
+    "singleChoiceButtonsPreserved": true,
+    "over25ChoicesRejectedBeforeRender": true,
+    "networkTransport": "controlled; no live sends",
+    "fullDiscordPass": 376,
+    "fullDiscordFail": 0,
+    "fullDiscordAssertions": 1959,
+    "typecheck": "PASS",
+    "finalDiscordGuideBrowser": "PASS"
+  }
+}

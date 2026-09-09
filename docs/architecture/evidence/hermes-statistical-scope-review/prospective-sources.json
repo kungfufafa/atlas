@@ -1,0 +1,90 @@
+{
+  "createdAt": "2026-09-06T17:45:48.506320+00:00",
+  "scope": "Prospective design alternatives only, not new controls or a launched/fully powered study",
+  "globalBlindingClaim": false,
+  "newLiveMiMoScoredOutcomesRead": false,
+  "holdoutTaskContentsRead": false,
+  "inferenceCalls": 0,
+  "simulations": 0,
+  "productionOrFrozenControlsChanged": false,
+  "calculations": "Small deterministic Python standard-library binomial sums and KL inequalities, no outcome inputs",
+  "requestedFocus": [
+    "finite relevant task frame",
+    "fixed equal family weighting versus iid mixture draws",
+    "loss-only sufficient NI bound with strict5pp margin",
+    "exact heterogeneous independent fixed-quota Chernoff derivation",
+    "fixed preplanned sample size, no optional stopping",
+    "illustrative homogeneous balanced-quota power at loss probabilities.005,.01,.025",
+    "separate absolute accuracy confidence and multiplicity gates",
+    "certified-completion endpoint versus latent factual accuracy and unknown consumption"
+  ],
+  "webSources": [
+    {
+      "title": "NIST Dataplot: Exact Binomial",
+      "url": "https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/exacbino.htm",
+      "kind": "official government statistical documentation",
+      "verified": "Direct full page; one-sided/two-sided inversion",
+      "supports": "Exact binomial confidence inversion"
+    },
+    {
+      "title": "Måns Thulin (2013): The cost of using exact confidence intervals for a binomial proportion",
+      "url": "https://arxiv.org/html/1303.1288",
+      "kind": "original statistical research",
+      "verified": "Direct full HTML, section2.1 equation(5)",
+      "supports": "One-sided exact Clopper–Pearson equation and coverage distinction"
+    },
+    {
+      "title": "Wassily Hoeffding (1963): Probability Inequalities for Sums of Bounded Random Variables",
+      "url": "https://www.cs.rpi.edu/academics/courses/spring06/random/hoefding.pdf",
+      "doi": "10.1080/01621459.1963.10500830",
+      "kind": "original statistical research, university-hosted paper",
+      "verified": "Web PDF access and indexed paper text, especially Theorem2 equation(2.6) and proof equations(4.11)-(4.16); PDF screenshot tool did not expose readable images",
+      "supports": "Independent bounded-variable concentration, unequal means and ranges"
+    },
+    {
+      "title": "Carlos A. León and François Perron (2003): Extremal properties of sums of Bernoulli random variables",
+      "url": "https://www.sciencedirect.com/science/article/abs/pii/S0167715203000373",
+      "doi": "10.1016/S0167-7152(03)00037-3",
+      "kind": "original statistical research",
+      "verified": "Indexed publisher text explicitly renders Theorem2, unequal-mean independent bounded variables and MGF comparison. Subsequent direct open returned403. Author/title/DOI also checked against INIST-CNRS bibliographic record14710622.",
+      "supports": "Explicit Hoeffding KL bound and MGF domination; not used for an iid assumption"
+    },
+    {
+      "title": "ICH E9(R1) Addendum on Estimands and Sensitivity Analysis (2019)",
+      "url": "https://database.ich.org/sites/default/files/E9-R1_Step4_Guideline_2019_1203.pdf",
+      "kind": "official primary statistical guidance",
+      "verified": "Indexed official text, page8 composite-variable strategies",
+      "supports": "General distinction between including a failure event in endpoint definition and targeting a different underlying variable; software application explicitly our own analogy"
+    }
+  ],
+  "localSources": {
+    "docs/architecture/hermes-memory-mimo-preregistration.md": {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/hermes-memory-mimo-preregistration.md",
+      "sha256": "4cc1b37cc5c155284181ba0f23b7715744cf35c6a34119d791e2b4f684580914"
+    },
+    "docs/architecture/hermes-native-files-mimo-preregistration.md": {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/hermes-native-files-mimo-preregistration.md",
+      "sha256": "b6bdbd0d5a820903007fea28af1abfc72e3f7906ac7e7eeea20cdc69589766eb"
+    },
+    "scripts/harness-native-mimo-v1/product-analysis.ts": {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/product-analysis.ts",
+      "sha256": "742950ec31c46ad2ae796e5997a13f0750abe456ea2d5d9135858c2e89abac2a"
+    },
+    "scripts/harness-native-mimo-v1/memory-run.ts": {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-run.ts",
+      "sha256": "fed43ce958eb4d0efbbeea7e18e74ea461492f07b3b00a3cfa79cdf00f0e9c27"
+    },
+    "scripts/harness-native-mimo-v1/file-run.ts": {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/file-run.ts",
+      "sha256": "6168b52d96319786d0ae71662d53487d1c64b841af93a3d6bc4cf7759eb642dd"
+    }
+  },
+  "originalReviewStillByteIdentical": true,
+  "artifacts": {
+    "review.md": "edaacc68a2edf842762f8f2d77cba648fe1fd5679cc2ce5930f8daee2d4b1cd1",
+    "sources.json": "22df000bdbdbae6cfa4496490cc94ef7de035503c8fc42dadaed54a7471b4662",
+    "prospective-options.md": "605e4a212c5981886e9d4e0672ff0b10aea077c725ff6328fea9d86d867a2bda",
+    "calculate-options.py": "f9637c69202b0f46a450a1c33c698603f4941516507e9d71bc720bfac4e4d728",
+    "numeric-calculations.json": "49bbec609054d044881583e6bd6969f3353c5ad4af1485c20833e0a18e3508c9"
+  }
+}

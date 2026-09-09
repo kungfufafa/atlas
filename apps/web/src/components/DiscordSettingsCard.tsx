@@ -3,6 +3,7 @@ import type {
   UpdateDiscordSettingsRequest,
 } from "@atlas/core/contract";
 import { useEffect, useRef, useState } from "react";
+import { ChannelNativePolicyDialog } from "@/components/ChannelNativePolicyDialog";
 import {
   type AllowedDiscordUser,
   DiscordAllowedUsersDialog,
@@ -301,6 +302,7 @@ export function DiscordSettingsCard({
         <div className="space-y-2">
           <p className="text-muted-foreground text-xs">{headerSubtitle}</p>
           {content}
+          <ChannelNativePolicyDialog channel="discord" />
         </div>
         {allowedUsersDialog}
         {blockedUsersDialog}
@@ -311,6 +313,7 @@ export function DiscordSettingsCard({
   return (
     <>
       {content}
+      <ChannelNativePolicyDialog channel="discord" />
       {allowedUsersDialog}
       {blockedUsersDialog}
     </>

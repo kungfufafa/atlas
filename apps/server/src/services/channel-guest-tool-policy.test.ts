@@ -52,7 +52,7 @@ describe("channel guest chat tool policy", () => {
     expect(loadCalls).toBe(1);
   });
 
-  test("builds guest chat with no tools while preserving paired member tools", async () => {
+  test("builds guest chat with only artifact tools and fills missing paired file tools", async () => {
     const db = createInMemoryDatabaseAdapter();
     const now = new Date().toISOString();
     await db.upsertProfile({
@@ -143,9 +143,19 @@ describe("channel guest chat tool policy", () => {
       false
     );
 
-    expect(capturedOptions[0]?.tools).toEqual([]);
-    expect(capturedOptions[0]?.enableToolLoop).toBe(false);
-    expect(capturedOptions[1]?.tools).toEqual([assignedTool]);
+    expect(capturedOptions[0]?.tools?.map((tool) => tool.name).sort()).toEqual([
+      "extract_document_text",
+      "read_file",
+      "spreadsheet",
+      "write_docx",
+      "write_file",
+      "write_pptx",
+    ]);
+    expect(capturedOptions[0]?.enableToolLoop).toBe(true);
+    expect(capturedOptions[1]?.tools).toContain(assignedTool);
+    expect(capturedOptions[1]?.tools?.map((tool) => tool.name)).toContain(
+      "python_execute"
+    );
     expect(capturedOptions[1]?.enableToolLoop).toBe(true);
     expect(loadCalls).toBe(1);
   });

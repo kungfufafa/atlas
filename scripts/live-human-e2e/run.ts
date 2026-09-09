@@ -56,11 +56,26 @@ interface Issue {
 
 const RESULT_PREVIEW_CHARS = 4000;
 
-function buildJourneys(runStamp: string): JourneySpec[] {
+export function buildJourneys(
+  runStamp: string,
+  env: Record<string, string | undefined> = process.env
+): JourneySpec[] {
   const briefName = `live-e2e-${runStamp}-brief.md`;
   const sheetName = `live-e2e-${runStamp}-facts.xlsx`;
+  const destination = env.ATLAS_LIVE_WHATSAPP_TARGET?.trim();
+  const sendsAuthorized = env.ATLAS_LIVE_SEND_AUTHORIZED === "1";
+  if (sendsAuthorized !== Boolean(destination)) {
+    throw new Error(
+      "Live sends require ATLAS_LIVE_SEND_AUTHORIZED=1 and ATLAS_LIVE_WHATSAPP_TARGET naming the authorized test recipient."
+    );
+  }
+  if (destination && !/^[1-9]\d{7,14}$/.test(destination)) {
+    throw new Error(
+      "ATLAS_LIVE_WHATSAPP_TARGET must be an international phone number containing digits only."
+    );
+  }
 
-  return [
+  const journeys: JourneySpec[] = [
     {
       id: "presence",
       prompt:
@@ -101,13 +116,15 @@ function buildJourneys(runStamp: string): JourneySpec[] {
         "Buka https://www.tokopedia.com/about dengan tool browser, baca heading utama halaman itu, lalu ambil screenshot. Tutup browser sesudahnya. Kalau diblokir, captcha, timeout, atau error, laporkan error tool apa adanya — jangan klaim sukses.",
       timeoutMs: 180_000,
     },
-    {
-      id: "whatsapp_send",
-      prompt:
-        "Kirim WhatsApp dari nomor pairing workspace ini ke 6281111111111 berisi teks: Atlas live e2e ping. Jangan kirim ke nomor lain.",
-      timeoutMs: 90_000,
-    },
   ];
+  if (destination) {
+    journeys.push({
+      id: "whatsapp_send",
+      prompt: `Kirim WhatsApp dari nomor pairing workspace ini ke ${destination} berisi teks: Atlas live e2e ping ${runStamp}. Jangan kirim ke nomor lain.`,
+      timeoutMs: 90_000,
+    });
+  }
+  return journeys;
 }
 
 export async function runLiveHumanE2e(): Promise<{
@@ -115,6 +132,9 @@ export async function runLiveHumanE2e(): Promise<{
   reportPath: string;
   results: JourneyResult[];
 }> {
+  // Validate live destinations before authenticating or changing profile tools.
+  const runStartedMs = Date.now();
+  const journeys = buildJourneys(runStartedMs.toString(36));
   const authToken = await loadLocalAuthToken();
   if (!authToken) {
     throw new Error("No local auth token in ~/.atlas.");
@@ -152,13 +172,15 @@ export async function runLiveHumanE2e(): Promise<{
   );
   const wanted = [
     "browser",
-    "send_whatsapp",
     "spreadsheet",
     "web_search",
     "web_fetch",
     "write_file",
     "read_file",
   ];
+  if (journeys.some((journey) => journey.id === "whatsapp_send")) {
+    wanted.push("send_whatsapp");
+  }
   for (const name of wanted) {
     const tool = tools.tools.find((item) => item.name === name);
     if (tool && !profileTools.has(tool.id)) {
@@ -176,8 +198,6 @@ export async function runLiveHumanE2e(): Promise<{
   );
   const artifactsDir = join(soulDir, "artifacts");
   const memoryText = await readTextIfExists(join(soulDir, "MEMORY.md"));
-  const runStartedMs = Date.now();
-  const journeys = buildJourneys(runStartedMs.toString(36));
   const session = await client.createSession("cli", { profileId: profile.id });
   const results: JourneyResult[] = [];
 
@@ -265,6 +285,16 @@ export async function runLiveHumanE2e(): Promise<{
     artifactsDir,
     baseUrl,
     diskFiles,
+    evidence: {
+      liveMessengerDelivery: journeys.some(
+        (journey) => journey.id === "whatsapp_send"
+      )
+        ? "UNVERIFIED"
+        : "NOT_RUN",
+      providerInference: "UNVERIFIED",
+      scope:
+        "Configured server requests and post-run heuristics; the resolved upstream provider and live channel delivery are not independently verified.",
+    },
     health: {
       ok: health.ok,
       providerConfigured: health.providerConfigured,
@@ -389,7 +419,7 @@ async function listNewArtifactFiles(
   return files.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function collectIssues(
+export function collectIssues(
   results: JourneyResult[],
   diskFiles: DiskFile[],
   memoryText: string
@@ -430,6 +460,7 @@ function collectIssues(
 
     if (result.id === "whatsapp_send") {
       const blocked =
+        result.approvals.length > 0 ||
         result.tools.some((tool) =>
           /APPROVAL_REQUIRED/i.test(tool.resultPreview ?? "")
         ) ||
@@ -439,7 +470,7 @@ function collectIssues(
       const claimedSent =
         /(berhasil dikirim|sent successfully|message sent|ok:\s*true)/i.test(
           result.reply
-        ) && !blocked;
+        );
       if (claimedSent && blocked) {
         issues.push({
           detail:
@@ -450,7 +481,7 @@ function collectIssues(
       } else if (blocked) {
         issues.push({
           detail:
-            "send_whatsapp hit workspace approval (EXTERNAL_COMMUNICATION). No live message went out. This is policy, not a mock.",
+            "The turn reported an approval requirement. This runner did not approve it; successful delivery is not independently verified.",
           id: "whatsapp_approval_gate",
           severity: "info",
         });
@@ -553,7 +584,7 @@ function formatMarkdown(report: {
   sessionId: string;
 }): string {
   const lines = [
-    "# Atlas live human E2E (real API, no mock LLM)",
+    "# Atlas configured-server journey checks (provider inference unverified)",
     "",
     `- Server: ${report.baseUrl}`,
     `- Provider configured: ${report.health.providerConfigured}`,

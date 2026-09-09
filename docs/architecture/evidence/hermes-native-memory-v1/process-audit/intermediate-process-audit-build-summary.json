@@ -1,0 +1,145 @@
+{
+  "groups": [
+    {
+      "harness": "atlas",
+      "condition": "native-default",
+      "endedWarmArms": 14,
+      "scheduledWarmArms": 16,
+      "frozenPrimaryPass": 14,
+      "frozenStrictSuccess": 12,
+      "frozenFinalFactsCorrect": 14,
+      "frozenFinalContract": 12,
+      "accountingUncertainArms": 0,
+      "machineFlagCounts": {
+        "noStructuredTrainingTurns": 0,
+        "nonCompletedTrainingTurn": 0,
+        "zeroCompletedTrainingMutationEvents": 8,
+        "failedTrainingToolEvent": 1,
+        "failedTrainingMutationEvent": 1,
+        "writeIdReusedWithDifferentContent": 1,
+        "writeIdReusedAcrossExplicitSubjects": 0,
+        "pendingApprovalRecord": 0,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": 3,
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": 1
+      },
+      "machineUnknownCounts": {
+        "noStructuredTrainingTurns": 0,
+        "nonCompletedTrainingTurn": 0,
+        "zeroCompletedTrainingMutationEvents": 0,
+        "failedTrainingToolEvent": 0,
+        "failedTrainingMutationEvent": 0,
+        "writeIdReusedWithDifferentContent": 0,
+        "writeIdReusedAcrossExplicitSubjects": 0,
+        "pendingApprovalRecord": 0,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": 0,
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": 0
+      }
+    },
+    {
+      "harness": "atlas",
+      "condition": "explicit-memory",
+      "endedWarmArms": 13,
+      "scheduledWarmArms": 16,
+      "frozenPrimaryPass": 11,
+      "frozenStrictSuccess": 10,
+      "frozenFinalFactsCorrect": 11,
+      "frozenFinalContract": 10,
+      "accountingUncertainArms": 0,
+      "machineFlagCounts": {
+        "noStructuredTrainingTurns": 2,
+        "nonCompletedTrainingTurn": 0,
+        "zeroCompletedTrainingMutationEvents": 0,
+        "failedTrainingToolEvent": 0,
+        "failedTrainingMutationEvent": 0,
+        "writeIdReusedWithDifferentContent": 2,
+        "writeIdReusedAcrossExplicitSubjects": 1,
+        "pendingApprovalRecord": 2,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": 1,
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": 0
+      },
+      "machineUnknownCounts": {
+        "noStructuredTrainingTurns": 0,
+        "nonCompletedTrainingTurn": 2,
+        "zeroCompletedTrainingMutationEvents": 2,
+        "failedTrainingToolEvent": 2,
+        "failedTrainingMutationEvent": 2,
+        "writeIdReusedWithDifferentContent": 2,
+        "writeIdReusedAcrossExplicitSubjects": 2,
+        "pendingApprovalRecord": 0,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": 2,
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": 0
+      }
+    },
+    {
+      "harness": "hermes",
+      "condition": "native-default",
+      "endedWarmArms": 14,
+      "scheduledWarmArms": 16,
+      "frozenPrimaryPass": 0,
+      "frozenStrictSuccess": 0,
+      "frozenFinalFactsCorrect": 12,
+      "frozenFinalContract": 11,
+      "accountingUncertainArms": 13,
+      "machineFlagCounts": {
+        "noStructuredTrainingTurns": 0,
+        "nonCompletedTrainingTurn": 1,
+        "zeroCompletedTrainingMutationEvents": 9,
+        "failedTrainingToolEvent": 1,
+        "failedTrainingMutationEvent": 1,
+        "writeIdReusedWithDifferentContent": 0,
+        "writeIdReusedAcrossExplicitSubjects": 0,
+        "pendingApprovalRecord": 0,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": 6,
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": 0
+      },
+      "machineUnknownCounts": {
+        "noStructuredTrainingTurns": 0,
+        "nonCompletedTrainingTurn": 0,
+        "zeroCompletedTrainingMutationEvents": 0,
+        "failedTrainingToolEvent": 0,
+        "failedTrainingMutationEvent": 0,
+        "writeIdReusedWithDifferentContent": 0,
+        "writeIdReusedAcrossExplicitSubjects": 0,
+        "pendingApprovalRecord": 14,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": 0,
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": 0
+      }
+    },
+    {
+      "harness": "hermes",
+      "condition": "explicit-memory",
+      "endedWarmArms": 13,
+      "scheduledWarmArms": 16,
+      "frozenPrimaryPass": 0,
+      "frozenStrictSuccess": 0,
+      "frozenFinalFactsCorrect": 13,
+      "frozenFinalContract": 11,
+      "accountingUncertainArms": 13,
+      "machineFlagCounts": {
+        "noStructuredTrainingTurns": 0,
+        "nonCompletedTrainingTurn": 1,
+        "zeroCompletedTrainingMutationEvents": 2,
+        "failedTrainingToolEvent": 2,
+        "failedTrainingMutationEvent": 1,
+        "writeIdReusedWithDifferentContent": 0,
+        "writeIdReusedAcrossExplicitSubjects": 0,
+        "pendingApprovalRecord": 0,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": 1,
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": 0
+      },
+      "machineUnknownCounts": {
+        "noStructuredTrainingTurns": 0,
+        "nonCompletedTrainingTurn": 0,
+        "zeroCompletedTrainingMutationEvents": 0,
+        "failedTrainingToolEvent": 0,
+        "failedTrainingMutationEvent": 0,
+        "writeIdReusedWithDifferentContent": 0,
+        "writeIdReusedAcrossExplicitSubjects": 0,
+        "pendingApprovalRecord": 13,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": 0,
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": 0
+      }
+    }
+  ],
+  "arms": 54
+}

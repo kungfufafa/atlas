@@ -9,11 +9,43 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { resolveWhatsAppSessionKey } from "./chat-handler";
 import { SessionStore } from "./session-store";
 
 const CHANNEL_USER_ID = "628111111111@s.whatsapp.net";
 
 describe("SessionStore", () => {
+  test("isolates hot sessions by group and sender and clears only revoked identities", () => {
+    const store = new SessionStore("unused");
+    const otherSender = "628222222222@s.whatsapp.net";
+    const keys = [
+      resolveWhatsAppSessionKey("120363042000000000@g.us", CHANNEL_USER_ID),
+      resolveWhatsAppSessionKey("120363042000000000@g.us", otherSender),
+      resolveWhatsAppSessionKey("120363043000000000@g.us", CHANNEL_USER_ID),
+    ];
+    for (const [index, key] of keys.entries()) {
+      store.set(key, {
+        ...sessionRecord(`session_${index}`),
+        channelUserId: index === 1 ? otherSender : CHANNEL_USER_ID,
+      });
+      store.setHotSession(key, { id: `session_${index}` });
+    }
+    expect(keys.map((key) => store.getHotSession(key))).toEqual([
+      { id: "session_0" },
+      { id: "session_1" },
+      { id: "session_2" },
+    ]);
+    expect(store.deleteByChannelUserId(CHANNEL_USER_ID)).toEqual([
+      keys[0]!,
+      keys[2]!,
+    ]);
+    expect(keys.map((key) => store.getHotSession(key))).toEqual([
+      undefined,
+      { id: "session_1" },
+      undefined,
+    ]);
+  });
+
   test("normalizes keys and invalidates hot wrappers on replacement or deletion", () => {
     const store = new SessionStore("unused");
     const deviceJid = "628123:7@s.whatsapp.net";

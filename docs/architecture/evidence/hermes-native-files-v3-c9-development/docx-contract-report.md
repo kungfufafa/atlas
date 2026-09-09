@@ -1,0 +1,15 @@
+# Four closed C9 development DOCX failures
+
+All four original documents contain the six supplied incident facts. The two failed checks in each document concern the explicitly requested location of two facts: action and due date appear in the correct table but are absent from the top-level paragraphs. This supports a layout-contract failure, not a claim that either harness lost or fabricated these facts.
+
+The actual assigned task says: “Include all supplied incident facts in readable paragraphs.” It separately requires one Action/Due table with a single data row. These are compatible requirements. The frozen oracle checks paragraph text for all six supplied values and separately checks the complete table. Its original failures match that disclosed contract; the inspection found no contradiction requiring a new score or exclusion of this family.
+
+For both variant 0 documents, the paragraphs identify INC-2672, Nara Wijaya, 39 affected orders and the offline barcode printer. The action Replace printer cable and date 2026-10-10 appear in the table. For both variant 1 documents, the paragraphs identify INC-1932, the same owner, 33 orders and the same cause; the table contains the same action and date 2026-10-20. Hermes variant 1 combines its four paragraph facts into one prose paragraph. This difference does not change the original failed checks.
+
+Root inspected all four retained native DOCX packages after development closed. Each complete package hash matches its original end-record artifact binding. The inspection parsed only the public word/document.xml body into top-level paragraphs and tables, and retained each XML hash. The exact four assigned task turns, supplied incident JSON files, original oracle reports, original analysis and grader source are bound in source-bindings.json. All 18 selected source bindings remained unchanged after reading.
+
+The original four primary failures remain unchanged. No model, test, oracle or analyzer was executed again, and no alternative primary, factual or aggregate score was produced. Package inspection does not certify rendering, visual polish or comprehensive factuality of other outputs. This four-document finding is separate from the independent full36-arm instrumentation review and the all-eight-failure diagnosis.
+
+Before this inspection, an optional root path probe omitted the process directory in a native observation path and returned FileNotFoundError. The exact native path was subsequently obtained from the retained reference map. That unscored lookup failure did not modify or invalidate the original evidence. The registration also records the source and original-score inspection that preceded reading the DOCX package bodies; it is not represented as a preregistration made before all development results were visible.
+
+The full raw development archive is preserved separately under outputs/hermes-evidence/2026-09-07/file-v3-c9-development-raw, manifest SHA-256 1b6ea2632ad489265eccc009faecd9a47577f27221293c74f0e43fdbaba13dc0. This report changes no study controls, candidate source, task contract, confirmation schedule or original outcome.

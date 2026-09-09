@@ -98,11 +98,11 @@ The bundled Codex runtime does not currently advertise a stable subscription-bac
 The Claude runtime is bundled with Atlas. You do not install Claude Code separately.
 
 1. As a Superadmin, open **Settings → LLM providers** and choose **Claude**
-2. Select **Connect**, then finish `claude auth login` if Atlas asks for it
+2. Select **Connect**, then run the login command Atlas provides and finish the official Claude login
 3. Atlas reuses the authenticated Claude session
 4. Pick a supported model and save
 
-Claude Code owns `~/.claude` credentials. Atlas does not read those files or convert the subscription into `ANTHROPIC_API_KEY`. If a Claude API key is present in the environment, Atlas unsets it for this provider so subscription usage is not silently billed as API usage.
+Claude stores and refreshes its session in an Atlas-owned credential directory, isolated from a separate Claude Code login on the host. Use the command shown by Atlas so the login reaches that directory. Atlas does not copy host tokens, inherit a shell's Claude OAuth token, or convert the subscription into `ANTHROPIC_API_KEY`. API-key environment variables are removed from this provider so subscription usage is not silently billed as API usage.
 
 Atlas does not fall back from a subscription limit to an API key. If the plan is rate limited or exhausted, that error is shown until the subscription can run again.
 

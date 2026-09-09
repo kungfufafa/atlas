@@ -5,6 +5,7 @@ import {
   type GenerateChatInput,
   type GenerateTextInput,
   type GenerateTextResult,
+  IncompleteCompletionError,
   type LlmToolDefinition,
   normalizeBaseUrl,
   type ProviderChatOptions,
@@ -196,6 +197,9 @@ function buildThinkingBody(thinking?: ProviderChatOptions["thinking"]) {
 }
 
 function formatSdkError(error: unknown): Error {
+  if (error instanceof IncompleteCompletionError) {
+    return error;
+  }
   if (error instanceof OpenAI.APIError) {
     const body =
       typeof error.error === "string"
@@ -283,7 +287,8 @@ async function requestChatCompletion(
 
     assertChatCompletionFinishReason(
       completion.choices[0]?.finish_reason,
-      PROVIDER_LABEL
+      PROVIDER_LABEL,
+      completion
     );
     const message = completion.choices[0]?.message;
     const toolCalls = parseOpenAIToolCalls(
@@ -458,7 +463,8 @@ async function requestCompletion(
 
     assertChatCompletionFinishReason(
       completion.choices[0]?.finish_reason,
-      PROVIDER_LABEL
+      PROVIDER_LABEL,
+      completion
     );
     const content = completion.choices[0]?.message?.content?.trim();
 

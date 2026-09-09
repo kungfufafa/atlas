@@ -1,0 +1,100 @@
+[
+  {
+    "content": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4 (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions.",
+    "role": "user"
+  },
+  {
+    "content": "",
+    "role": "assistant",
+    "toolCalls": [
+      {
+        "arguments": {
+          "content": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4",
+          "path": "artifacts/provider-proof.txt"
+        },
+        "id": "call_3900910",
+        "name": "write_file"
+      }
+    ],
+    "providerContent": [
+      {
+        "functionCall": {
+          "name": "write_file",
+          "args": {
+            "content": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4",
+            "path": "artifacts/provider-proof.txt"
+          },
+          "id": "call_3900910"
+        },
+        "thoughtSignature": "Et4ECtsEARFNMg+bvusNmFiXl0Z5vVMnNpzduIGphqN4NmfJ57cafMCyIWE2oYcnyqipnC9+/ZPzobOolpT9o4t0wXX9NLNbKuq4HcbHmP+cGHUnu1oH7GFTrrdV+DKZw02ZROX4P4P5vt5Ymp3kK8TIz+NNVQaS+hcELh6wFQpyLFI4BQmBtWP0Z88okrcfogZLiNSiOoQLjyzUDoS1ZUN8JKHXUTI5s2gFI0CHQhhkhsYUgcgAc/5rAgpPBdb6SumT2W1b7D6sDLksWzWv2g5QbPjzgfgJIv6etT2+9sANkYgVuBIcujCqC6nhUhmG5S/Q/nPG44fKCJbzJ4xschVSfqIyqfVSiVhUFNyQvDtfni4n0GAm4QoN7sh4ZaIoFBirLEMZ93DWuXo+tpaEAFZYpkqwV+k8o+IZjHha83IWIMfxPJeI3nQuuKJEwa4nraw2BHsbUJl0t8HOWWcsjqALDJhu4iwK1aKFwKhovHjqmzQdWpcfJq/Z9P3rpU9INsO2i79JUbf4vYfB+R3r9N1ki5zd81kBYQHzaYwpMMo4GwSXB+MmofLVtmI4ODMysTzaGogAuBU+HY52hHPQLJPKDfFkhyjupUoAaJHgBEZv5e2o6zRmdece4gZPY2Y7jzAg++5VORf9vtBOoAK/9bcF5UCZ1eIYVV7GlX/Rr0b96FUzYoLFXIDYYSfL8hh7Eo4I47IeE2YKn7ghvRDVKjx4Lkd2f45KbcgdZc/1iy/GEujPbUFyGqpCQRnwxffgW8dRe10NJ+uKsD7UmnRX9MgUQJ/Fd/EMsA7QtAW+9J4n"
+      }
+    ],
+    "providerContentProvenance": {
+      "modelId": "gemini-3-flash-preview",
+      "providerReplayRevision": "legacy:7706de65-e956-46f6-8c6a-14f1881a10ef:2026-08-13T02:38:33.938Z",
+      "providerInstanceId": "7706de65-e956-46f6-8c6a-14f1881a10ef",
+      "protocol": "gemini-content",
+      "provider": "gemini"
+    }
+  },
+  {
+    "content": "{\"bytesWritten\":47,\"path\":\"/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-EFGHJZ/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt\",\"artifacts\":[{\"createdAt\":\"2026-09-06T08:21:27.349Z\",\"filename\":\"provider-proof.txt\",\"id\":\"cWRyH7MTiXru\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/provider-proof.txt\",\"sessionId\":\"7U5xPiP3kAItQ6HzZxuqU\",\"sizeBytes\":47}]}",
+    "name": "write_file",
+    "role": "tool",
+    "toolCallId": "call_3900910"
+  },
+  {
+    "content": "",
+    "role": "assistant",
+    "toolCalls": [
+      {
+        "arguments": {
+          "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-EFGHJZ/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt"
+        },
+        "id": "call_2596945",
+        "name": "read_file"
+      }
+    ],
+    "providerContent": [
+      {
+        "functionCall": {
+          "name": "read_file",
+          "args": {
+            "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-EFGHJZ/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt"
+          },
+          "id": "call_2596945"
+        },
+        "thoughtSignature": "EpoECpcEARFNMg+Iz42yVRuPau/S0ECQvaJG6lQTFhOUTdo/LzZIPHzD+o0EBHg3GriGA9DGjVyGCwJPS+N2gQfFQVrXPbql/xCsi16uHamj+ZklfLkNSSoVSdUDmzhNeQrjnHlrKELsd8FBIN+gHCFnRG9yNbHpBKYDcwn+tK3pfGq1HJ+0fcZ0qulUHA3yIAARZYrs86JI501cR95eL2reWgxTMUi13LJnPOJlAFS+bp2wyo5U11S0gvK+WUDLv9GNiinCYV/E9nCJTSHGobMGd9uM0ks10JjqY7ylehhwP1PFoQxZz3PWEHXoGyElBcM5zoWDjV5GuWKiJiHqUac7kumC1t7torwsDmLgpMNoY/4IOe/WJXtqjxAtbhOFZZUW+dmeqRWvxbSgzf5QzlhllLxRmfzxU5f1M9E67S00Gac4vA9dXQY3MTV4nB5R1j814uvZIw9S9gM9wDwR6R4jOOggaFm20T2vcTyH+03hT6Pq+orBQ5vC6v/FGv6BdVQNX/813A41gOrx+1QSmnaoRpYRMBC7u21NiEKZC1V98MPBp+VprXqkmO2JAunttAFlWYnUgflox55Px+tYBcZsNrsLUw2yoe63XxrPvXvAYCp8ZXTrn6BawZAnc+oHiKY+P4OXja3KYILgwmAwLXDDVIuvoRFfH2TRoIKvIkLpjA2Q/ZepJMGhSANSHh9WJ3rscwLql5lYkkFbSg=="
+      }
+    ],
+    "providerContentProvenance": {
+      "modelId": "gemini-3-flash-preview",
+      "providerReplayRevision": "legacy:7706de65-e956-46f6-8c6a-14f1881a10ef:2026-08-13T02:38:33.938Z",
+      "providerInstanceId": "7706de65-e956-46f6-8c6a-14f1881a10ef",
+      "protocol": "gemini-content",
+      "provider": "gemini"
+    }
+  },
+  {
+    "content": "{\"bytesRead\":47,\"content\":\"atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4\",\"endLine\":1,\"path\":\"/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-EFGHJZ/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt\",\"startLine\":1,\"totalLines\":1,\"truncated\":false}",
+    "name": "read_file",
+    "role": "tool",
+    "toolCallId": "call_2596945"
+  },
+  {
+    "content": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4",
+    "role": "assistant",
+    "providerContent": [
+      {
+        "text": "atlas-live-646ff49b-1e81-4c58-8c1f-c4b54802a6d4"
+      }
+    ],
+    "providerContentProvenance": {
+      "modelId": "gemini-3-flash-preview",
+      "providerReplayRevision": "legacy:7706de65-e956-46f6-8c6a-14f1881a10ef:2026-08-13T02:38:33.938Z",
+      "providerInstanceId": "7706de65-e956-46f6-8c6a-14f1881a10ef",
+      "protocol": "gemini-content",
+      "provider": "gemini"
+    }
+  }
+]

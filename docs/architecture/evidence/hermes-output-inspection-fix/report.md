@@ -31,18 +31,14 @@ Arsip mempertahankan percobaan awal yang gagal karena symlink font sistem, sandb
 
 Binding runtime sebelum/sesudah bukan snapshot atomik terhadap host yang bermusuhan. Pengecualian sistem mencakup direktori sistem eksplisit dan grant dalam `dyld-support.sb` yang hash-nya dicatat, termasuk Cryptex serta pembacaan direktori leluhur. Metadata filesystem boleh ditanyakan. Timeout memakai sinyal process group dan tidak membuktikan seluruh descendant berhenti; batas memori/disk keras juga tidak diklaim. Implementasi ini khusus layout runtime macOS yang dicatat, bukan bukti isolasi lintas OS.
 
-Receipt penerimaan, hasil tes, review sumber terpisah, pemeriksaan visual dan manifest seluruh percobaan disimpan di arsip perbaikan (arsip lokal). Petunjuk pemakaian dan reproduksi ada di [README inspector](../../../../scripts/harness-output-inspection/README.md).
+Receipt penerimaan, hasil tes, review sumber terpisah, pemeriksaan visual dan manifest seluruh percobaan disimpan di [arsip perbaikan](../../../../outputs/hermes-evidence/2026-09-09/output-inspection-fix/acceptance.json). Petunjuk pemakaian dan reproduksi ada di [README inspector](../../../../scripts/harness-output-inspection/README.md).
 
 Penilai teknis terpisah membaca sumber akhir, memeriksa ulang 894 referensi tanpa ketidakcocokan, dan melihat sendiri keenam halaman penuh. Ia adalah penulis tes dalam tim yang sama; review tersebut bukan kalibrasi semantik buta. Root juga memverifikasi seluruh 18.711 anggota reguler arsip mentah, total 489.175.591 byte. Arsip terkompresi tidak mengeksekusi isinya dan menyertakan komponen/review asli serta seluruh percobaan gagal.
 
-Salinan inspector dengan hash identik sudah dipasang di `semantic/method/output-inspection/` pada root persiapan studi C10. Receipt staging (arsip lokal) mengikat keadaan metadata sebelum/sesudah. Referensi persiapan sebelumnya dipertahankan, status hambatan lama disimpan sebagai riwayat, dan skor serta kandidat produk tetap sama. Metode belum dibekukan atau dikalibrasi; pemasangan komponen tidak menyatakan admission studi.
+Salinan inspector dengan hash identik sudah dipasang di `semantic/method/output-inspection/` pada root persiapan studi C10. [Receipt staging](../../../../outputs/hermes-evidence/2026-09-09/output-inspection-fix/study-staging.json) mengikat keadaan metadata sebelum/sesudah. Referensi persiapan sebelumnya dipertahankan, status hambatan lama disimpan sebagai riwayat, dan skor serta kandidat produk tetap sama. Metode belum dibekukan atau dikalibrasi; pemasangan komponen tidak menyatakan admission studi.
 
 ## Dampak terhadap perbandingan Hermes
 
 Hambatan inspector lama dapat ditutup berdasarkan perbaikan dan kontrol di atas. Langkah berikutnya adalah binding metode/config yang sebenarnya, kalibrasi penilai dengan kontrol yang sudah ditetapkan, preflight gabungan, lalu seluruh jadwal studi dan analisisnya. Tes sintetis ini tidak mengizinkan penggantian hasil model, pemilihan kasus menguntungkan, atau klaim kualitas baru.
 
-Hasil sah terakhir tetap C9: Atlas 44/54, Hermes 46/54, dengan gate klaim gagal. Tidak ada panggilan provider baru pada perbaikan ini. Kesetaraan DeepSeek, provider lain maupun subscription belum dibuktikan.
-
-## Paket dalam Git
-
-Commit ini menyertakan sumber inspector, fixture yang dapat dibuat ulang, tes dan [ringkasan verifikasi](verification.json). Arsip mentah `outputs/hermes-evidence/2026-09-09/output-inspection-fix/` serta metadata studi di `/private/tmp/` tetap merupakan bukti lokal; keduanya tidak disertakan dalam Git. Hash arsip tercantum dalam ringkasan. Seluruh pengujian yang dilaporkan dijalankan sebelum commit; sumber Python yang dipublikasikan identik dengan sumber yang diuji.
+Hasil sah terakhir tetap [C9: Atlas 44/54, Hermes 46/54](../hermes-native-files-v3-c9-confirmation/report.md), dengan gate klaim gagal. Tidak ada panggilan provider baru pada perbaikan ini. Kesetaraan DeepSeek, provider lain maupun subscription belum dibuktikan.

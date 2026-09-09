@@ -6,6 +6,12 @@ import type {
   OrgRole,
   ThinkingEffort,
 } from "@atlas/core";
+import type {
+  ArtifactPublication,
+  ArtifactPublicationCaptureEvidence,
+  ArtifactPublicationIdentity,
+  ArtifactPublicationScope,
+} from "@atlas/core/artifact-publication";
 
 export type { OrgRole } from "@atlas/core";
 export type ChannelType = "telegram" | "whatsapp" | "discord";
@@ -178,23 +184,29 @@ export interface StoredTaskRunRecord {
 
 export interface StoredLlmUsageStatsRecord {
   estimatedCostUsd: number;
+  estimatedInvocations?: number;
   id: string;
   inputTokens: number;
   orgId?: string | null;
   outputTokens: number;
+  reportedInvocations?: number;
   requestCount: number;
   trackedSince: string;
+  unknownInvocations?: number;
   updatedAt: string;
 }
 
 export interface StoredLlmUsageModelStatsRecord {
   estimatedCostUsd: number;
+  estimatedInvocations?: number;
   inputTokens: number;
   modelId: string;
   orgId?: string | null;
   outputTokens: number;
+  reportedInvocations?: number;
   requestCount: number;
   trackedSince: string;
+  unknownInvocations?: number;
   updatedAt: string;
 }
 
@@ -329,9 +341,12 @@ export interface StoredProfileComposioToolkitRecord {
 
 export interface LlmUsageStatsDelta {
   estimatedCostUsd: number;
+  estimatedInvocations?: number;
   inputTokens: number;
   outputTokens: number;
+  reportedInvocations?: number;
   requestCount: number;
+  unknownInvocations?: number;
 }
 
 /** Bytes one optimiser removed from one tool result before it was inserted. */
@@ -668,6 +683,17 @@ export interface StoredSkillSuggestion {
   warnings: string[] | null;
 }
 
+export interface StoredArtifactPublicationRecord extends ArtifactPublication {
+  /** Server-private selected-file evidence, never included in public publication projections. */
+  captureEvidence?: ArtifactPublicationCaptureEvidence;
+  snapshotId: string;
+}
+
+export interface ArtifactPublicationPageOptions {
+  after?: { createdAt: string; id: string };
+  limit: number;
+}
+
 export interface StoredArtifactShareRecord {
   createdAt: string;
   createdByUserId: string;
@@ -887,6 +913,12 @@ export interface DatabaseAdapter {
     userId: string,
     updatedAt: string
   ): Promise<boolean>;
+
+  /** Atomically commit the complete output set, or reuse an exactly matching execution. */
+  commitArtifactPublications(
+    identity: ArtifactPublicationIdentity,
+    records: readonly StoredArtifactPublicationRecord[]
+  ): Promise<StoredArtifactPublicationRecord[]>;
   /**
    * Atomically replaces an existing Composio connection only when its current
    * OAuth state hash matches the expected generation.
@@ -911,7 +943,6 @@ export interface DatabaseAdapter {
     orgId: string
   ): Promise<AutomationUnreadCountRecord[]>;
   countUsers(): Promise<number>;
-
   createArtifactShare(record: StoredArtifactShareRecord): Promise<void>;
   createAuditEvent(record: StoredAuditEventRecord): Promise<void>;
 
@@ -922,6 +953,9 @@ export interface DatabaseAdapter {
 
   // Scoped Memory Methods
   createMemory(record: StoredMemoryRecord): Promise<void>;
+
+  /** Atomically reuse an exact scoped fact or insert; never replace other content. */
+  createOrGetMemory(record: StoredMemoryRecord): Promise<StoredMemoryRecord>;
 
   createOrgInvite(record: StoredOrgInviteRecord): Promise<void>;
 
@@ -971,6 +1005,10 @@ export interface DatabaseAdapter {
     automationId: string
   ): Promise<StoredAutomationRunRecord | null>;
   getActiveTaskRun(taskId: string): Promise<StoredTaskRunRecord | null>;
+  getArtifactPublication(
+    scope: ArtifactPublicationScope,
+    id: string
+  ): Promise<StoredArtifactPublicationRecord | null>;
   getArtifactShareById(
     orgId: string,
     profileId: string,
@@ -1177,9 +1215,14 @@ export interface DatabaseAdapter {
     record: StoredExecutionRunRecord
   ): Promise<boolean>;
   insertTaskRun(record: StoredTaskRunRecord): Promise<void>;
+  isArtifactPublicationSnapshotReferenced(snapshotId: string): Promise<boolean>;
   listActionApprovalsForSession(
     sessionId: string
   ): Promise<StoredActionApprovalRecord[]>;
+  listArtifactPublications(
+    scope: ArtifactPublicationScope,
+    options: ArtifactPublicationPageOptions
+  ): Promise<StoredArtifactPublicationRecord[]>;
 
   listAutomationRuns(
     automationId: string,
@@ -1342,6 +1385,11 @@ export interface DatabaseAdapter {
   reserveProfileImport(
     record: StoredProfileRecord
   ): Promise<ProfileImportAdmission>;
+  revokeArtifactPublication(
+    scope: ArtifactPublicationScope,
+    id: string,
+    revokedAt: string
+  ): Promise<boolean>;
   revokeArtifactShare(id: string, revokedAt: string): Promise<boolean>;
   revokeBrowserSessionBySessionTokenHash(
     sessionTokenHash: string,
@@ -1362,13 +1410,15 @@ export interface DatabaseAdapter {
       before?: string;
       excludeSuperAgent?: boolean;
       limit?: number;
+      /** Native topic lookup opts into bounded lexical ranking; default stays literal. */
+      matchMode?: "literal" | "keywords";
       profileId?: string;
       userId?: string;
     }
   ): Promise<StoredConversationSearchResult[]>;
   searchMemories(
     orgId: string,
-    query: string,
+    query: string | readonly string[],
     scope?: string,
     ownerId?: string,
     limit?: number

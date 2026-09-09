@@ -1,0 +1,1353 @@
+{
+  "at": "2026-09-07T09:20:04.628086+00:00",
+  "scope": "Health-only released closed ordinals51\u201360; lifecycle timestamps, clock intervals and transport counters; no status/success/quality/task/tool/output/oracle fields",
+  "rows": [
+    {
+      "ordinal": 51,
+      "lifecycle": {
+        "at": "2026-09-07T08:22:46.478Z",
+        "attemptStarted": {
+          "monotonicMs": 3312739.197209,
+          "wallMs": 1788769332110
+        },
+        "deadline": {
+          "atMonotonicMs": 3612739.197209,
+          "atWallMs": 1788769632110,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 33995.52495899983,
+        "processObservationElapsedMs": 33993.41174999997,
+        "totalAttemptElapsedMs": 34367.60033300007,
+        "totalAttemptElapsedWallMs": 34368
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 8,
+        "httpStatusCounts": {
+          "200": 8
+        },
+        "requestKindCounts": {
+          "success": 8
+        },
+        "requestStatusCounts": {
+          "200": 8
+        },
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 408165,
+        "bytes": 4458,
+        "sha256": "2b3370750ef86f0c04abce8146d4bbbcf8d44154573c446d33dd2574fe149318"
+      },
+      "attemptIdSha256": "48ed0b7b76559befdefc2413a315d637b85d945f09d6ec7aa42eb5ac194ed447",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3312747.74225,
+          "wallMs": 1788769332119
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3346743.267209,
+          "wallMs": 1788769366114
+        },
+        "deadline": {
+          "atMonotonicMs": 3612739.197209,
+          "atWallMs": 1788769632110,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 33995.52495899983,
+        "outerInvocationElapsedWallMs": 33995
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3312747.790292,
+          "wallMs": 1788769332119
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3346741.973542,
+          "wallMs": 1788769366113
+        },
+        "processHelperElapsedMs": 33994.183250000235,
+        "processHelperElapsedWallMs": 33994,
+        "attemptStarted": {
+          "monotonicMs": 3312739.197209,
+          "wallMs": 1788769332110
+        },
+        "deadline": {
+          "atMonotonicMs": 3612739.197209,
+          "atWallMs": 1788769632110,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3312747.942417,
+          "wallMs": 1788769332119
+        },
+        "processObservedAt": {
+          "monotonicMs": 3346741.458792,
+          "wallMs": 1788769366113
+        },
+        "elapsedMonotonicMs": 33993.41174999997,
+        "elapsedWallMs": 33993,
+        "timedOut": false,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3346740.203917,
+            "wallMs": 1788769366111
+          },
+          "code": 0,
+          "signal": null
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3346740.656584,
+              "wallMs": 1788769366112
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": 0.39966699993237853,
+        "callerWallMinusCallerMonotonic": -0.5249589998275042,
+        "processWallMinusProcessMonotonic": -0.4117499999701977,
+        "totalMonotonicMinusCallerMonotonic": 372.0753740002401,
+        "totalWallMinusCallerWall": 373
+      }
+    },
+    {
+      "ordinal": 52,
+      "lifecycle": {
+        "at": "2026-09-07T08:25:05.872Z",
+        "attemptStarted": {
+          "monotonicMs": 3347107.714584,
+          "wallMs": 1788769366479
+        },
+        "deadline": {
+          "atMonotonicMs": 3647107.714584,
+          "atWallMs": 1788769666479,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 59978.037332999986,
+        "processObservationElapsedMs": 59974.663875000086,
+        "totalAttemptElapsedMs": 60614.947540999856,
+        "totalAttemptElapsedWallMs": 139393
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 6,
+        "httpStatusCounts": {
+          "200": 5,
+          "502": 1
+        },
+        "requestKindCounts": {
+          "success": 5,
+          "transport-error": 1
+        },
+        "requestStatusCounts": {
+          "200": 5,
+          "null": 1
+        },
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 413567,
+        "bytes": 4271,
+        "sha256": "ac413e3aff3a6f5ef61bcf00d56f59910c7f7e770b381cef33f81334638c624b"
+      },
+      "attemptIdSha256": "c983ef0c75d6c9c9aab40cb8a5fc46ef821377018e15a223815acaf17ae2eca8",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3347112.724917,
+          "wallMs": 1788769366484
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3407090.76225,
+          "wallMs": 1788769505241
+        },
+        "deadline": {
+          "atMonotonicMs": 3647107.714584,
+          "atWallMs": 1788769666479,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 59978.037332999986,
+        "outerInvocationElapsedWallMs": 138757
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3347112.750167,
+          "wallMs": 1788769366484
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3407089.458459,
+          "wallMs": 1788769505240
+        },
+        "processHelperElapsedMs": 59976.708291999996,
+        "processHelperElapsedWallMs": 138756,
+        "attemptStarted": {
+          "monotonicMs": 3347107.714584,
+          "wallMs": 1788769366479
+        },
+        "deadline": {
+          "atMonotonicMs": 3647107.714584,
+          "atWallMs": 1788769666479,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3347112.848334,
+          "wallMs": 1788769366484
+        },
+        "processObservedAt": {
+          "monotonicMs": 3407088.121334,
+          "wallMs": 1788769505238
+        },
+        "elapsedMonotonicMs": 59974.663875000086,
+        "elapsedWallMs": 138754,
+        "timedOut": false,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3407085.374334,
+            "wallMs": 1788769505236
+          },
+          "code": 0,
+          "signal": null
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3407086.035542,
+              "wallMs": 1788769505236
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": 78778.05245900014,
+        "callerWallMinusCallerMonotonic": 78778.96266700001,
+        "processWallMinusProcessMonotonic": 78779.33612499991,
+        "totalMonotonicMinusCallerMonotonic": 636.9102079998702,
+        "totalWallMinusCallerWall": 636
+      }
+    },
+    {
+      "ordinal": 53,
+      "lifecycle": {
+        "at": "2026-09-07T08:25:10.473Z",
+        "attemptStarted": {
+          "monotonicMs": 3410471.213709,
+          "wallMs": 1788769508619
+        },
+        "deadline": {
+          "atMonotonicMs": 3710471.213709,
+          "atWallMs": 1788769808619,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 1845.773917000275,
+        "processObservationElapsedMs": 1844.3223339999095,
+        "totalAttemptElapsedMs": 1854.6704580001533,
+        "totalAttemptElapsedWallMs": 1854
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 1,
+        "httpStatusCounts": {
+          "502": 1
+        },
+        "requestKindCounts": {
+          "transport-error": 1
+        },
+        "requestStatusCounts": {
+          "null": 1
+        },
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 418774,
+        "bytes": 3019,
+        "sha256": "80fe7c38e418307d86c80f1b590118826d67ad1219518a300e7a9799d5940bd6"
+      },
+      "attemptIdSha256": "0c9a3350f18b30ee9ef97694f4b9fbe780a73bc761b9ea3a58fbaa75b31ae60b",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3410479.464667,
+          "wallMs": 1788769508627
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3412325.238584,
+          "wallMs": 1788769510472
+        },
+        "deadline": {
+          "atMonotonicMs": 3710471.213709,
+          "atWallMs": 1788769808619,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 1845.773917000275,
+        "outerInvocationElapsedWallMs": 1845
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3410479.512125,
+          "wallMs": 1788769508627
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3412324.470334,
+          "wallMs": 1788769510471
+        },
+        "processHelperElapsedMs": 1844.9582090000622,
+        "processHelperElapsedWallMs": 1844,
+        "attemptStarted": {
+          "monotonicMs": 3410471.213709,
+          "wallMs": 1788769508619
+        },
+        "deadline": {
+          "atMonotonicMs": 3710471.213709,
+          "atWallMs": 1788769808619,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3410479.63175,
+          "wallMs": 1788769508628
+        },
+        "processObservedAt": {
+          "monotonicMs": 3412324.002459,
+          "wallMs": 1788769510471
+        },
+        "elapsedMonotonicMs": 1844.3223339999095,
+        "elapsedWallMs": 1843,
+        "timedOut": false,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3412323.480417,
+            "wallMs": 1788769510470
+          },
+          "code": 1,
+          "signal": null
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3412323.680042,
+              "wallMs": 1788769510470
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": -0.6704580001533031,
+        "callerWallMinusCallerMonotonic": -0.7739170002751052,
+        "processWallMinusProcessMonotonic": -1.3223339999094605,
+        "totalMonotonicMinusCallerMonotonic": 8.896540999878198,
+        "totalWallMinusCallerWall": 9
+      }
+    },
+    {
+      "ordinal": 54,
+      "lifecycle": {
+        "at": "2026-09-07T08:41:01.223Z",
+        "attemptStarted": {
+          "monotonicMs": 3412326.4825,
+          "wallMs": 1788769510473
+        },
+        "deadline": {
+          "atMonotonicMs": 3712326.4825,
+          "atWallMs": 1788769810473,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 8135.770415999927,
+        "processObservationElapsedMs": 8127.6680419999175,
+        "totalAttemptElapsedMs": 8141.087667000014,
+        "totalAttemptElapsedWallMs": 950750
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 5,
+        "httpStatusCounts": {
+          "502": 5
+        },
+        "requestKindCounts": {
+          "transport-error": 5
+        },
+        "requestStatusCounts": {
+          "null": 5
+        },
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 422727,
+        "bytes": 3355,
+        "sha256": "6c56874c18091862f1feae429bd7858836adbba7101e0534b1a0a40bc4f98421"
+      },
+      "attemptIdSha256": "b8ca61e684c56fe05ac7470fbc4bbf7aaccba63c854d5770c365e5867d52a2a5",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3412331.085709,
+          "wallMs": 1788769510478
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3420466.856125,
+          "wallMs": 1788770461223
+        },
+        "deadline": {
+          "atMonotonicMs": 3712326.4825,
+          "atWallMs": 1788769810473,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 8135.770415999927,
+        "outerInvocationElapsedWallMs": 950745
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3412331.098875,
+          "wallMs": 1788769510478
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3420459.205834,
+          "wallMs": 1788770461215
+        },
+        "processHelperElapsedMs": 8128.106958999764,
+        "processHelperElapsedWallMs": 950737,
+        "attemptStarted": {
+          "monotonicMs": 3412326.4825,
+          "wallMs": 1788769510473
+        },
+        "deadline": {
+          "atMonotonicMs": 3712326.4825,
+          "atWallMs": 1788769810473,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3412331.153167,
+          "wallMs": 1788769510478
+        },
+        "processObservedAt": {
+          "monotonicMs": 3420458.842792,
+          "wallMs": 1788770461215
+        },
+        "elapsedMonotonicMs": 8127.6680419999175,
+        "elapsedWallMs": 950737,
+        "timedOut": true,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3420458.305917,
+            "wallMs": 1788770461214
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3420455.979542,
+              "wallMs": 1788770461212
+            },
+            "result": "sent",
+            "scope": "detached_process_group",
+            "signal": "SIGTERM"
+          },
+          {
+            "at": {
+              "monotonicMs": 3420458.487875,
+              "wallMs": 1788770461214
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": 942608.912333,
+        "callerWallMinusCallerMonotonic": 942609.2295840001,
+        "processWallMinusProcessMonotonic": 942609.3319580001,
+        "totalMonotonicMinusCallerMonotonic": 5.317251000087708,
+        "totalWallMinusCallerWall": 5
+      }
+    },
+    {
+      "ordinal": 55,
+      "lifecycle": {
+        "at": "2026-09-07T08:56:16.214Z",
+        "attemptStarted": {
+          "monotonicMs": 3422913.331292,
+          "wallMs": 1788770463669
+        },
+        "deadline": {
+          "atMonotonicMs": 3722913.331292,
+          "atWallMs": 1788770763669,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 2841.1397919999436,
+        "processObservationElapsedMs": 2839.3604580000974,
+        "totalAttemptElapsedMs": 2844.9825419997796,
+        "totalAttemptElapsedWallMs": 912545
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 2,
+        "httpStatusCounts": {
+          "502": 2
+        },
+        "requestKindCounts": {
+          "transport-error": 2
+        },
+        "requestStatusCounts": {
+          "null": 2
+        },
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 427028,
+        "bytes": 3016,
+        "sha256": "52af9691d08238907ad83b3e189b13a5120b345ddd597f5c4754119704a42c91"
+      },
+      "attemptIdSha256": "9831dd7257d822185bf510cffcaf670068cb5503eff3939d041f09bc85b0ba9e",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3422916.637292,
+          "wallMs": 1788770463672
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3425757.777084,
+          "wallMs": 1788771376214
+        },
+        "deadline": {
+          "atMonotonicMs": 3722913.331292,
+          "atWallMs": 1788770763669,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 2841.1397919999436,
+        "outerInvocationElapsedWallMs": 912542
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3422916.651292,
+          "wallMs": 1788770463672
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3425756.872459,
+          "wallMs": 1788771376213
+        },
+        "processHelperElapsedMs": 2840.2211670000106,
+        "processHelperElapsedWallMs": 912541,
+        "attemptStarted": {
+          "monotonicMs": 3422913.331292,
+          "wallMs": 1788770463669
+        },
+        "deadline": {
+          "atMonotonicMs": 3722913.331292,
+          "atWallMs": 1788770763669,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3422916.720334,
+          "wallMs": 1788770463672
+        },
+        "processObservedAt": {
+          "monotonicMs": 3425756.107959,
+          "wallMs": 1788771376212
+        },
+        "elapsedMonotonicMs": 2839.3604580000974,
+        "elapsedWallMs": 912540,
+        "timedOut": true,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3425755.407834,
+            "wallMs": 1788771376211
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3425752.950167,
+              "wallMs": 1788771376209
+            },
+            "result": "sent",
+            "scope": "detached_process_group",
+            "signal": "SIGTERM"
+          },
+          {
+            "at": {
+              "monotonicMs": 3425755.601917,
+              "wallMs": 1788771376212
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": 909700.0174580002,
+        "callerWallMinusCallerMonotonic": 909700.860208,
+        "processWallMinusProcessMonotonic": 909700.6395419999,
+        "totalMonotonicMinusCallerMonotonic": 3.8427499998360872,
+        "totalWallMinusCallerWall": 3
+      }
+    },
+    {
+      "ordinal": 56,
+      "lifecycle": {
+        "at": "2026-09-07T08:56:17.596Z",
+        "attemptStarted": {
+          "monotonicMs": 3425759.83375,
+          "wallMs": 1788771376216
+        },
+        "deadline": {
+          "atMonotonicMs": 3725759.83375,
+          "atWallMs": 1788771676216,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 1375.383542000316,
+        "processObservationElapsedMs": 1373.0862079998478,
+        "totalAttemptElapsedMs": 1380.1743339998648,
+        "totalAttemptElapsedWallMs": 1380
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 1,
+        "httpStatusCounts": {
+          "502": 1
+        },
+        "requestKindCounts": {
+          "transport-error": 1
+        },
+        "requestStatusCounts": {
+          "null": 1
+        },
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 430986,
+        "bytes": 3026,
+        "sha256": "7e0b7819ce394fbcd26abd549594e380b8bf4717b9f9b5147758ae43926df7e4"
+      },
+      "attemptIdSha256": "04a55d301622395cbeb2e210f8d09b7b4221a1b9114f8dae6c2262878469be11",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3425764.088042,
+          "wallMs": 1788771376220
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3427139.471584,
+          "wallMs": 1788771377595
+        },
+        "deadline": {
+          "atMonotonicMs": 3725759.83375,
+          "atWallMs": 1788771676216,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 1375.383542000316,
+        "outerInvocationElapsedWallMs": 1375
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3425764.094209,
+          "wallMs": 1788771376220
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3427138.341542,
+          "wallMs": 1788771377594
+        },
+        "processHelperElapsedMs": 1374.2473329999484,
+        "processHelperElapsedWallMs": 1374,
+        "attemptStarted": {
+          "monotonicMs": 3425759.83375,
+          "wallMs": 1788771376216
+        },
+        "deadline": {
+          "atMonotonicMs": 3725759.83375,
+          "atWallMs": 1788771676216,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3425764.142417,
+          "wallMs": 1788771376220
+        },
+        "processObservedAt": {
+          "monotonicMs": 3427137.253125,
+          "wallMs": 1788771377593
+        },
+        "elapsedMonotonicMs": 1373.0862079998478,
+        "elapsedWallMs": 1373,
+        "timedOut": false,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3427136.915042,
+            "wallMs": 1788771377593
+          },
+          "code": 1,
+          "signal": null
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3427137.022917,
+              "wallMs": 1788771377593
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": -0.17433399986475706,
+        "callerWallMinusCallerMonotonic": -0.38354200031608343,
+        "processWallMinusProcessMonotonic": -0.08620799984782934,
+        "totalMonotonicMinusCallerMonotonic": 4.790791999548674,
+        "totalWallMinusCallerWall": 5
+      }
+    },
+    {
+      "ordinal": 57,
+      "lifecycle": {
+        "at": "2026-09-07T08:56:20.655Z",
+        "attemptStarted": {
+          "monotonicMs": 3429287.1635,
+          "wallMs": 1788771379742
+        },
+        "deadline": {
+          "atMonotonicMs": 3729287.1635,
+          "atWallMs": 1788771679742,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 909.3559159999713,
+        "processObservationElapsedMs": 908.1106659998186,
+        "totalAttemptElapsedMs": 913.0535840000957,
+        "totalAttemptElapsedWallMs": 913
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 1,
+        "httpStatusCounts": {
+          "502": 1
+        },
+        "requestKindCounts": {
+          "transport-error": 1
+        },
+        "requestStatusCounts": {
+          "null": 1
+        },
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 434932,
+        "bytes": 2996,
+        "sha256": "426a098ba5ea541b9633e8ca8a352238ad4a562b517dceaf57ad356b3c0ce93d"
+      },
+      "attemptIdSha256": "361295e6b371ecb37352c4ae6e92cdb473a54714780a7085a95fd5cb51ccf458",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3429290.303709,
+          "wallMs": 1788771379746
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3430199.659625,
+          "wallMs": 1788771380655
+        },
+        "deadline": {
+          "atMonotonicMs": 3729287.1635,
+          "atWallMs": 1788771679742,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 909.3559159999713,
+        "outerInvocationElapsedWallMs": 909
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3429290.329042,
+          "wallMs": 1788771379746
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3430198.933459,
+          "wallMs": 1788771380654
+        },
+        "processHelperElapsedMs": 908.6044169999659,
+        "processHelperElapsedWallMs": 908,
+        "attemptStarted": {
+          "monotonicMs": 3429287.1635,
+          "wallMs": 1788771379742
+        },
+        "deadline": {
+          "atMonotonicMs": 3729287.1635,
+          "atWallMs": 1788771679742,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3429290.419584,
+          "wallMs": 1788771379746
+        },
+        "processObservedAt": {
+          "monotonicMs": 3430198.577667,
+          "wallMs": 1788771380654
+        },
+        "elapsedMonotonicMs": 908.1106659998186,
+        "elapsedWallMs": 908,
+        "timedOut": false,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3430198.056667,
+            "wallMs": 1788771380653
+          },
+          "code": 1,
+          "signal": null
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3430198.264167,
+              "wallMs": 1788771380653
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": -0.05358400009572506,
+        "callerWallMinusCallerMonotonic": -0.35591599997133017,
+        "processWallMinusProcessMonotonic": -0.11066599981859326,
+        "totalMonotonicMinusCallerMonotonic": 3.697668000124395,
+        "totalWallMinusCallerWall": 4
+      }
+    },
+    {
+      "ordinal": 58,
+      "lifecycle": {
+        "at": "2026-09-07T09:07:40.386Z",
+        "attemptStarted": {
+          "monotonicMs": 3430200.431375,
+          "wallMs": 1788771380655
+        },
+        "deadline": {
+          "atMonotonicMs": 3730200.431375,
+          "atWallMs": 1788771680655,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 2030.9705409999005,
+        "processObservationElapsedMs": 2030.058834000025,
+        "totalAttemptElapsedMs": 2035.0339589999057,
+        "totalAttemptElapsedWallMs": 679731
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 0,
+        "httpStatusCounts": {},
+        "requestKindCounts": {},
+        "requestStatusCounts": {},
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 438854,
+        "bytes": 2733,
+        "sha256": "aca3aaf3cbae9b1faed8ec7a2430eb2a2a4b3e8708b00b5aa7a9e62589602710"
+      },
+      "attemptIdSha256": "1a1c461a7c0d585a7106b59fc73e744d59b998feb82c228e6828be50a4928387",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3430203.714709,
+          "wallMs": 1788771380659
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3432234.68525,
+          "wallMs": 1788772060386
+        },
+        "deadline": {
+          "atMonotonicMs": 3730200.431375,
+          "atWallMs": 1788771680655,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 2030.9705409999005,
+        "outerInvocationElapsedWallMs": 679727
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3430203.727417,
+          "wallMs": 1788771380659
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3432234.129209,
+          "wallMs": 1788772060385
+        },
+        "processHelperElapsedMs": 2030.4017920000479,
+        "processHelperElapsedWallMs": 679726,
+        "attemptStarted": {
+          "monotonicMs": 3430200.431375,
+          "wallMs": 1788771380655
+        },
+        "deadline": {
+          "atMonotonicMs": 3730200.431375,
+          "atWallMs": 1788771680655,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3430203.7755,
+          "wallMs": 1788771380659
+        },
+        "processObservedAt": {
+          "monotonicMs": 3432233.8535,
+          "wallMs": 1788772060385
+        },
+        "elapsedMonotonicMs": 2030.058834000025,
+        "elapsedWallMs": 679726,
+        "timedOut": true,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3432233.502167,
+            "wallMs": 1788772060384
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3432232.13525,
+              "wallMs": 1788772060383
+            },
+            "result": "sent",
+            "scope": "detached_process_group",
+            "signal": "SIGTERM"
+          },
+          {
+            "at": {
+              "monotonicMs": 3432233.645542,
+              "wallMs": 1788772060385
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": 677695.9660410001,
+        "callerWallMinusCallerMonotonic": 677696.0294590001,
+        "processWallMinusProcessMonotonic": 677695.941166,
+        "totalMonotonicMinusCallerMonotonic": 4.063418000005186,
+        "totalWallMinusCallerWall": 4
+      }
+    },
+    {
+      "ordinal": 59,
+      "lifecycle": {
+        "at": "2026-09-07T09:13:40.914Z",
+        "attemptStarted": {
+          "monotonicMs": 3433182.115334,
+          "wallMs": 1788772061333
+        },
+        "deadline": {
+          "atMonotonicMs": 3733182.115334,
+          "atWallMs": 1788772361333,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 9951.436792000197,
+        "processObservationElapsedMs": 9935.53037500009,
+        "totalAttemptElapsedMs": 9966.789249999914,
+        "totalAttemptElapsedWallMs": 359581
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 5,
+        "httpStatusCounts": {
+          "502": 5
+        },
+        "requestKindCounts": {
+          "transport-error": 5
+        },
+        "requestStatusCounts": {
+          "null": 5
+        },
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 442533,
+        "bytes": 3366,
+        "sha256": "bd140d3bf97bb9597e48c7a2ab82557fea32d13f00e468d87b31b74343ee9cae"
+      },
+      "attemptIdSha256": "b61ff080b30441cb449ea8d8deaabb893837c0c1d1026f0ea269b6693c4872f3",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3433185.196542,
+          "wallMs": 1788772061336
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3443136.633334,
+          "wallMs": 1788772420902
+        },
+        "deadline": {
+          "atMonotonicMs": 3733182.115334,
+          "atWallMs": 1788772361333,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 9951.436792000197,
+        "outerInvocationElapsedWallMs": 359566
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3433185.200625,
+          "wallMs": 1788772061336
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3443127.124959,
+          "wallMs": 1788772420893
+        },
+        "processHelperElapsedMs": 9941.924333999865,
+        "processHelperElapsedWallMs": 359557,
+        "attemptStarted": {
+          "monotonicMs": 3433182.115334,
+          "wallMs": 1788772061333
+        },
+        "deadline": {
+          "atMonotonicMs": 3733182.115334,
+          "atWallMs": 1788772361333,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3433185.255334,
+          "wallMs": 1788772061336
+        },
+        "processObservedAt": {
+          "monotonicMs": 3443120.821625,
+          "wallMs": 1788772420886
+        },
+        "elapsedMonotonicMs": 9935.53037500009,
+        "elapsedWallMs": 359550,
+        "timedOut": true,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3443116.635375,
+            "wallMs": 1788772420882
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3443075.429709,
+              "wallMs": 1788772420841
+            },
+            "result": "sent",
+            "scope": "detached_process_group",
+            "signal": "SIGTERM"
+          },
+          {
+            "at": {
+              "monotonicMs": 3443120.519917,
+              "wallMs": 1788772420886
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": 349614.2107500001,
+        "callerWallMinusCallerMonotonic": 349614.5632079998,
+        "processWallMinusProcessMonotonic": 349614.4696249999,
+        "totalMonotonicMinusCallerMonotonic": 15.352457999717444,
+        "totalWallMinusCallerWall": 15
+      }
+    },
+    {
+      "ordinal": 60,
+      "lifecycle": {
+        "at": "2026-09-07T09:14:27.040Z",
+        "attemptStarted": {
+          "monotonicMs": 3443150.843125,
+          "wallMs": 1788772420916
+        },
+        "deadline": {
+          "atMonotonicMs": 3743150.843125,
+          "atWallMs": 1788772720916,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 45495.08391700033,
+        "processObservationElapsedMs": 45491.81570800021,
+        "totalAttemptElapsedMs": 46154.057541999966,
+        "totalAttemptElapsedWallMs": 46124
+      },
+      "transportCounters": {
+        "reportedProviderRequests": 5,
+        "httpStatusCounts": {
+          "200": 5
+        },
+        "requestKindCounts": {
+          "success": 5
+        },
+        "requestStatusCounts": {
+          "200": 5
+        },
+        "inFlightRequestsAtFinalization": 0,
+        "observationError": false,
+        "finalized": true
+      },
+      "originalLedgerLine": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl",
+        "byteOffset": 446843,
+        "bytes": 4136,
+        "sha256": "568414611e0d68bb9177779ddd101423aa0a91a393ac3bb0f1b0619b7ec43b94"
+      },
+      "attemptIdSha256": "8eca7fffbc86523e15c1ff07a8d30a21fd374362e62a0681756ceb34192428b0",
+      "callerTiming": {
+        "callerInvocationStarted": {
+          "monotonicMs": 3443167.6215,
+          "wallMs": 1788772420933
+        },
+        "callerInvocationReturned": {
+          "monotonicMs": 3488662.705417,
+          "wallMs": 1788772466398
+        },
+        "deadline": {
+          "atMonotonicMs": 3743150.843125,
+          "atWallMs": 1788772720916,
+          "scope": "scheduled_attempt"
+        },
+        "outerInvocationElapsedMs": 45495.08391700033,
+        "outerInvocationElapsedWallMs": 45465
+      },
+      "helperTiming": {
+        "invocationStarted": {
+          "monotonicMs": 3443167.632667,
+          "wallMs": 1788772420933
+        },
+        "processHelperReturned": {
+          "monotonicMs": 3488660.224167,
+          "wallMs": 1788772466395
+        },
+        "processHelperElapsedMs": 45492.5915000001,
+        "processHelperElapsedWallMs": 45462,
+        "attemptStarted": {
+          "monotonicMs": 3443150.843125,
+          "wallMs": 1788772420916
+        },
+        "deadline": {
+          "atMonotonicMs": 3743150.843125,
+          "atWallMs": 1788772720916,
+          "scope": "scheduled_attempt"
+        }
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3443167.708292,
+          "wallMs": 1788772420933
+        },
+        "processObservedAt": {
+          "monotonicMs": 3488659.793167,
+          "wallMs": 1788772466395
+        },
+        "elapsedMonotonicMs": 45491.81570800021,
+        "elapsedWallMs": 45462,
+        "timedOut": false,
+        "closed": true,
+        "exit": {
+          "at": {
+            "monotonicMs": 3488658.036959,
+            "wallMs": 1788772466393
+          },
+          "code": 0,
+          "signal": null
+        },
+        "signals": [
+          {
+            "at": {
+              "monotonicMs": 3488658.491209,
+              "wallMs": 1788772466394
+            },
+            "result": "ESRCH",
+            "scope": "detached_process_group",
+            "signal": "SIGKILL"
+          }
+        ]
+      },
+      "derivedTimingDifferencesMs": {
+        "totalWallMinusTotalMonotonic": -30.057541999965906,
+        "callerWallMinusCallerMonotonic": -30.083917000330985,
+        "processWallMinusProcessMonotonic": -29.815708000212908,
+        "totalMonotonicMinusCallerMonotonic": 658.9736249996349,
+        "totalWallMinusCallerWall": 659
+      }
+    }
+  ],
+  "metadataBindings": {
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-hermes/caller-return.json": {
+      "bytes": 588,
+      "sha256": "76b7f93ec89985d7f60915d8d15bd09338b4e097046a7dc81272acc9c597e457"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-hermes/invocation.json": {
+      "bytes": 2129,
+      "sha256": "eb6b108ef0202e8b2dc0b2adb47422dc6a0ee0016fa45de9d5906970a35499ee"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-hermes/process/process-outcome.json": {
+      "bytes": 3523,
+      "sha256": "7a3f88792c943501004cdcf3043a212655a6542bb37f54166abbe363293ef52d"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/caller-return.json": {
+      "bytes": 590,
+      "sha256": "2520e3a20dafb039bbd246fee6fd034cba6ee250957185f3877a041d294da27d"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/invocation.json": {
+      "bytes": 2130,
+      "sha256": "15854234219c891d7cdda691f152e5a635970a22c4fd75c63d56b4988e8e4360"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/process/process-outcome.json": {
+      "bytes": 3500,
+      "sha256": "983689b6115e9835d44855782742b2084344ff09c45a1e8dc1b521bcb7ff9f53"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas/caller-return.json": {
+      "bytes": 588,
+      "sha256": "2ad425cdb179eab55dcfefbc3fd9bc4095c74167861bd3b85c3e3bdd5083de4a"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas/invocation.json": {
+      "bytes": 2119,
+      "sha256": "d60dd68d25150fe7fa034416dcc81c8722f17708289f6c4c59289829d7181a01"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas/process/process-outcome.json": {
+      "bytes": 3529,
+      "sha256": "6106ab7b606a5a0f80e6bc5720006d761f3902a865246de90920963b78def88b"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/caller-return.json": {
+      "bytes": 588,
+      "sha256": "5d279b8c8f7c63dcbce7d456f586a87f198f71cdd334013c4d9f51afd7db4d9d"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/invocation.json": {
+      "bytes": 2115,
+      "sha256": "a7b2ec38bbb96331879663a9ece3dfc5b6e6806733f8f48f65ec4e373cfd4ac0"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/process/process-outcome.json": {
+      "bytes": 3831,
+      "sha256": "8fdebada41ffe9a8ad9b59138067dd7eb7933a31be3dedb563fb6f49f8d1ec63"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/caller-return.json": {
+      "bytes": 591,
+      "sha256": "08a23ef699f5fdca836b1f4234e2ce8ba9057429fc6c2db44922cc5ffc7772d0"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/invocation.json": {
+      "bytes": 2126,
+      "sha256": "f2c5b5dc253d43cd3ad77af68a4ff41828c78d7be654db171ec6a2c388e20bca"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/process/process-outcome.json": {
+      "bytes": 3834,
+      "sha256": "24e3b982134b82913c4adfa1ce990dc4a765c1c689246c1a8aa8029c3bc915ee"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas/caller-return.json": {
+      "bytes": 587,
+      "sha256": "6fa785679888ca7a9c262d31be2324f6737ce0d7828a278f510ed98f4193fe5d"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas/invocation.json": {
+      "bytes": 2123,
+      "sha256": "e63eb8ea701738341e59087089fb1f04903ccebb5fd968b12db2207d24a1349e"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas/process/process-outcome.json": {
+      "bytes": 3528,
+      "sha256": "05e76592426577fd5b3c3c4685c3e3d70c2bce7e83add4de34bd9dd38c50108f"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas/caller-return.json": {
+      "bytes": 585,
+      "sha256": "cc2ce90f31ef69e1d9daf089a55ad0420553ba902918e2bbcb27f5d4177c5c27"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas/invocation.json": {
+      "bytes": 2104,
+      "sha256": "d70baf1f1f4b7302a28dd25dee3bf5ceeb17ba1e11e262d2a22ee02fd46d468e"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas/process/process-outcome.json": {
+      "bytes": 3518,
+      "sha256": "1fd1f634a0d6e720a563023ce693ae8d573952949e7a2285d0402af425ed7d6b"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/caller-return.json": {
+      "bytes": 590,
+      "sha256": "9390c4ffb7c842924e08e0d2136c8f8107b818aa7853f9f979f615aa3cbd5037"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/invocation.json": {
+      "bytes": 2111,
+      "sha256": "7b59a87b7f8e8afd64ffd704116d881f8bdcd5393a43c432bcd4ddb212a72c11"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/process/process-outcome.json": {
+      "bytes": 3823,
+      "sha256": "264680f76e6a9a4c8abd855950af30664221494f2d26df2a9dcbeaabd74f8772"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/caller-return.json": {
+      "bytes": 590,
+      "sha256": "d53c24eb5db70e129bcc50c0b05d0d8ef9a9cf4e2d55a89895fab0d1a0d80bca"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/invocation.json": {
+      "bytes": 2125,
+      "sha256": "70f14696a192a9f78c76ae483c8d70d1a47a74b24b8e17f115e4502123f493f0"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/process/process-outcome.json": {
+      "bytes": 3833,
+      "sha256": "733d9943c14a4856cd3b8d495d9a5af2efb37f1fe96c386b4102275a0eb656ec"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-atlas/caller-return.json": {
+      "bytes": 587,
+      "sha256": "5a86dcccd0144d8f3888d3f19b948ce9726e9d9e07535f60f7a91cd3d185f00f"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-atlas/invocation.json": {
+      "bytes": 2125,
+      "sha256": "7f5a05bd3f144347d06c4b6eb3e2c01c28fde0fe5887b341b15c4b2f92be0bc8"
+    },
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-atlas/process/process-outcome.json": {
+      "bytes": 3489,
+      "sha256": "c5e028d1972b42be4dd3803848f848918d96b04b0b2183895b1f6aac528ae797"
+    }
+  },
+  "ledgerBindingNote": "Active append-only ledger is bound by each selected original line byte offset, size and SHA; no claim of immutable full active ledger",
+  "derivedNote": "Differences subtract original recorded intervals; different interval boundaries remain explicit. No provider/network/sleep/validity conclusion is implied."
+}

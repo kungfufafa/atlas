@@ -1,0 +1,53 @@
+[
+  {
+    "content": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-504340b5-7573-46bc-b03c-6c66f760cea7 (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions.",
+    "role": "user"
+  },
+  {
+    "content": "",
+    "role": "assistant",
+    "toolCalls": [
+      {
+        "arguments": {
+          "content": "atlas-live-504340b5-7573-46bc-b03c-6c66f760cea7",
+          "cwd": ".",
+          "path": "artifacts/provider-proof.txt"
+        },
+        "id": "call_QpwdQ6bIoPTKrjkNKZn2jjV5",
+        "name": "write_file"
+      }
+    ]
+  },
+  {
+    "content": "{\"bytesWritten\":47,\"path\":\"/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-openai_compatible-beb54ef594aa-gPH7y1/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt\",\"artifacts\":[{\"createdAt\":\"2026-09-06T08:20:12.310Z\",\"filename\":\"provider-proof.txt\",\"id\":\"PaOSJtahHZHK\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/provider-proof.txt\",\"sizeBytes\":47}]}",
+    "name": "write_file",
+    "role": "tool",
+    "toolCallId": "call_QpwdQ6bIoPTKrjkNKZn2jjV5"
+  },
+  {
+    "content": "",
+    "role": "assistant",
+    "toolCalls": [
+      {
+        "arguments": {
+          "cwd": ".",
+          "limit": 1000,
+          "offset": 1,
+          "path": "/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-openai_compatible-beb54ef594aa-gPH7y1/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt"
+        },
+        "id": "call_RXh3w2NO4MzBwNGMNmLd8DFU",
+        "name": "read_file"
+      }
+    ]
+  },
+  {
+    "content": "{\"bytesRead\":47,\"content\":\"atlas-live-504340b5-7573-46bc-b03c-6c66f760cea7\",\"endLine\":1,\"path\":\"/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-openai_compatible-beb54ef594aa-gPH7y1/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt\",\"startLine\":1,\"totalLines\":1,\"truncated\":false}",
+    "name": "read_file",
+    "role": "tool",
+    "toolCallId": "call_RXh3w2NO4MzBwNGMNmLd8DFU"
+  },
+  {
+    "content": "atlas-live-504340b5-7573-46bc-b03c-6c66f760cea7",
+    "role": "assistant"
+  }
+]

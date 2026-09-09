@@ -1,0 +1,127 @@
+{
+  "derivedReport": "/private/tmp/atlas-evidence-cross-bindings/cross-archive-bindings.json",
+  "derivedReportSha256": "dd479e91e991fdaa3294f96140b101b79dd40b425eaab2c5d34343c1b6e2223d",
+  "binderSha256": "aa3fde31a0cfee6379d611dde9255378320d56072b4f76c23c36c333206cc2f2",
+  "originalArchiveManifestSha256": "bfa842d7c59be59e9238f3e9a0193fa71153ea03fe9d0943249d2dc260d70609",
+  "counts": {
+    "expectedInventoryChecks": 9,
+    "fullyVerified": 9,
+    "stillUnverified": 0
+  },
+  "checks": [
+    {
+      "index": "evaluation/runs/development-2026-09-06T12-18-54-546Z-700c14/candidate-source.json",
+      "inventoryField": "files",
+      "inventorySha256": "39eabf0e3865e44b5fc12f4fae3fd4de52bb823797800c5bb70c5b0b005a82d5",
+      "status": "verified_all_expected_members",
+      "bindingKind": "exact_complete_regular_member_map",
+      "expectedMemberCount": 2054,
+      "matchedMemberCount": 2054,
+      "matchedArchive": "evaluation/frozen-v1/atlas-baseline-source.tar.gz",
+      "archiveSha256": "737e75aa21344ea0fc3b3ba28d91800d610008392c94e5264e2f225adaa170da",
+      "archiveExtraRegularMemberCount": 0
+    },
+    {
+      "index": "evaluation/runs/development-2026-09-06T12-59-29-080Z-f1ae48/candidate-source.json",
+      "inventoryField": "files",
+      "inventorySha256": "38c11d0a4675e7f6e9437f4d59daeb7a40eaca5641790aa6454dc914d16cfad6",
+      "status": "verified_all_expected_members",
+      "bindingKind": "exact_complete_regular_member_map",
+      "expectedMemberCount": 2057,
+      "matchedMemberCount": 2057,
+      "matchedArchive": "evaluation/candidate-v1/atlas-source.tar.gz",
+      "archiveSha256": "a5aad889fed1aca282e1a7765ecfd5097fc2688a141d447b98456e36362c00a4",
+      "archiveExtraRegularMemberCount": 0
+    },
+    {
+      "index": "evaluation/runs/pilot-2026-09-06T12-10-25-466Z-974aa5/candidate-source.json",
+      "inventoryField": "files",
+      "inventorySha256": "39eabf0e3865e44b5fc12f4fae3fd4de52bb823797800c5bb70c5b0b005a82d5",
+      "status": "verified_all_expected_members",
+      "bindingKind": "exact_complete_regular_member_map",
+      "expectedMemberCount": 2054,
+      "matchedMemberCount": 2054,
+      "matchedArchive": "evaluation/frozen-v1/atlas-baseline-source.tar.gz",
+      "archiveSha256": "737e75aa21344ea0fc3b3ba28d91800d610008392c94e5264e2f225adaa170da",
+      "archiveExtraRegularMemberCount": 0
+    },
+    {
+      "index": "evaluation/frozen-v1/manifest.json",
+      "inventoryField": "harnessHashes",
+      "inventorySha256": "88ac7eb6014a5efb6b8f1b8c22e90db63fc34e510d2e4446c54251cbfa68d233",
+      "status": "verified_all_expected_members",
+      "bindingKind": "exact_expected_member_subset",
+      "expectedMemberCount": 17,
+      "matchedMemberCount": 17,
+      "matchedArchive": "evaluation/controlled-v2/frozen/control-source.tar.gz",
+      "archiveSha256": "48e805706572f46aa8112284d139c4ba9c1714323c74d1944066c32d5e46ab10",
+      "archiveExtraRegularMemberCount": 14
+    },
+    {
+      "index": "evaluation/frozen-v1/manifest.json",
+      "inventoryField": "hermesHashes",
+      "inventorySha256": "88ac7eb6014a5efb6b8f1b8c22e90db63fc34e510d2e4446c54251cbfa68d233",
+      "status": "verified_all_expected_members",
+      "bindingKind": "exact_complete_regular_member_map",
+      "expectedMemberCount": 7481,
+      "matchedMemberCount": 7481,
+      "matchedArchive": "evaluation/controlled-v2/frozen/hermes-source.tar.gz",
+      "archiveSha256": "b2701bb0f8c8a345fce0ea905e7c44087375e8fae196f44a11c15fea52244a66",
+      "archiveExtraRegularMemberCount": 0
+    },
+    {
+      "index": "evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/candidate-source.json",
+      "inventoryField": "controlHashes",
+      "inventorySha256": "06dda3c4842aa7b6d1c6570027eec6616e46668278916f6372d82e5defed89fc",
+      "status": "verified_all_expected_members",
+      "bindingKind": "exact_complete_regular_member_map",
+      "expectedMemberCount": 18,
+      "matchedMemberCount": 18,
+      "matchedArchive": "evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/memory-protocol-source.tar.gz",
+      "archiveSha256": "514f15227caecf5f0a872e558e8af10491da95a08589331d2c0248916672ac1d",
+      "archiveExtraRegularMemberCount": 0
+    },
+    {
+      "index": "evaluation/memory-study-v1/batches/pilot-2026-09-06T14-17-12-326Z-447c2294/candidate-source.json",
+      "inventoryField": "controlHashes",
+      "inventorySha256": "06dda3c4842aa7b6d1c6570027eec6616e46668278916f6372d82e5defed89fc",
+      "status": "verified_all_expected_members",
+      "bindingKind": "exact_complete_regular_member_map",
+      "expectedMemberCount": 18,
+      "matchedMemberCount": 18,
+      "matchedArchive": "evaluation/memory-study-v1/batches/pilot-2026-09-06T14-17-12-326Z-447c2294/memory-protocol-source.tar.gz",
+      "archiveSha256": "f981ab7d52ccf51500c516154ba305b8b7bc858e67e13c08a4981765e44b15c2",
+      "archiveExtraRegularMemberCount": 0
+    },
+    {
+      "index": "evaluation/memory-study-v1/frozen/manifest.json",
+      "inventoryField": "controlHashes",
+      "inventorySha256": "9b1b2103f768e2afa2dd97942086c69e0874ed2630107266d251adf5bcce241a",
+      "status": "verified_all_expected_members",
+      "bindingKind": "exact_complete_regular_member_map",
+      "expectedMemberCount": 18,
+      "matchedMemberCount": 18,
+      "matchedArchive": "evaluation/memory-study-v1/frozen/memory-protocol-source.tar.gz",
+      "archiveSha256": "57964f6cb53ab5519d4fea272c06812abbc1fb9213c6dc305e8e85e2fb03fcff",
+      "archiveExtraRegularMemberCount": 0
+    },
+    {
+      "index": "evaluation/native-file-study-v1/frozen/manifest.json",
+      "inventoryField": "controlHashes",
+      "inventorySha256": "8236a4bdf1c7eac754ad843e5efb7a3068cd09fe444fcf9e9b0fa28a86097b65",
+      "status": "verified_all_expected_members",
+      "bindingKind": "exact_complete_regular_member_map",
+      "expectedMemberCount": 21,
+      "matchedMemberCount": 21,
+      "matchedArchive": "evaluation/native-file-study-v1/frozen/file-protocol-source.tar.gz",
+      "archiveSha256": "73e9aa131163a3c656fd1a75b3082252ce779faa00f6754d3b193819465440cd",
+      "archiveExtraRegularMemberCount": 0
+    }
+  ],
+  "limits": [
+    "This is additional provenance, not a rewrite of the original nine not_verified_archive_unavailable records.",
+    "Subset binding certifies only the named expected members, not equality of whole differently versioned control bundles or proof of runtime execution.",
+    "Previously established run/admission/completion/usage validity remains separate; no quality score or inference result is recomputed.",
+    "The original finite known-secret scan and durability limitations remain. No credential read, additional capture, native/provider job or tests occurred."
+  ]
+}
