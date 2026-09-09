@@ -92,7 +92,7 @@
     "nanoid": "^5.1.11",
     "nodemailer": "^9.0.6",
     "pdf-lib": "1.17.1",
-    "pdfjs-dist": "4.10.38",
+    "pdfjs-dist": "6.3.289",
     "pptxgenjs": "^4.0.1",
     "rehype-parse": "^9.0.1",
     "rehype-remark": "^10.0.1",
