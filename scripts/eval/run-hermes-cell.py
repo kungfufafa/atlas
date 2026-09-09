@@ -18,6 +18,40 @@ def redact(value: str, key: str) -> str:
     return out
 
 
+def classify_hermes_reply(reply: object) -> dict[str, object]:
+    if isinstance(reply, dict):
+        payload = reply
+        text = str(reply.get("final_response") or reply)
+    else:
+        text = str(reply)
+        payload = None
+        stripped = text.strip()
+        if stripped.startswith("{") and stripped.endswith("}"):
+            try:
+                parsed = json.loads(stripped.replace("'", '"'))
+            except json.JSONDecodeError:
+                parsed = None
+            if isinstance(parsed, dict):
+                payload = parsed
+                text = str(parsed.get("final_response") or text)
+
+    blob = str(payload if payload is not None else text)
+    failed = bool(payload.get("failed")) if isinstance(payload, dict) else False
+    error = str(payload.get("error") or "") if isinstance(payload, dict) else ""
+    auth_fail = (
+        failed
+        or "401" in blob
+        or "Invalid API key" in blob
+        or "AuthError" in blob
+        or "401" in error
+    )
+    if auth_fail:
+        return {"class": "auth", "ok": False, "reply": text}
+    if not str(text).strip():
+        return {"class": "empty", "ok": False, "reply": text}
+    return {"class": "ok", "ok": True, "reply": text}
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         print("usage: run-hermes-cell.py <request.json>", file=sys.stderr)
@@ -72,20 +106,20 @@ def main() -> int:
         )
         reply = agent.run_conversation(request["prompt"])
         elapsed_ms = int((time.time() - started) * 1000)
-        text = reply if isinstance(reply, str) else str(reply)
+        classified = classify_hermes_reply(reply)
         Path(request["resultPath"]).write_text(
             json.dumps(
                 {
-                    "class": "ok" if text.strip() else "empty",
+                    "class": classified["class"],
                     "elapsedMs": elapsed_ms,
-                    "ok": bool(str(text).strip()),
-                    "reply": redact(str(text), key)[:8000],
+                    "ok": classified["ok"],
+                    "reply": redact(classified["reply"], key)[:8000],
                 },
                 indent=2,
             )
             + "\n"
         )
-        return 0
+        return 0 if classified["ok"] else 1
     except Exception as exc:
         elapsed_ms = int((time.time() - started) * 1000)
         message = redact(str(exc), key)

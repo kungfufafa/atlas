@@ -1,0 +1,4 @@
+{
+  "error": "Create provider failed 500 {\"error\":\"API key or connection validation failed: OpenCode Go request failed (401): Invalid API key.\"}",
+  "ok": false
+}

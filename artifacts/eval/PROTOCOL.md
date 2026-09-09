@@ -240,4 +240,6 @@ For every cell `(harness, model, agent, rep)`:
 
 ## Amendments
 
-None at lock time.
+### 2026-09-09 — Wave 0 auth stop
+
+Wave 0 ran. `GET /models` stayed 200. Every scored chat turn (Atlas provider probe and Hermes `AIAgent`) received OpenCode Go **401 Invalid API key**. Waves 1–2 are **not** started (predeclared auth/quota stop). Hermes cells originally stored `class=ok` on the 401 payload; that is a harness bug, corrected after the run. Original run files kept.

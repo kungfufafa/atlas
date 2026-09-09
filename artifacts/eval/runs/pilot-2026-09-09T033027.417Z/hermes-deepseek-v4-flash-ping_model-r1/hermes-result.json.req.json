@@ -1,0 +1,8 @@
+{
+  "apiId": "deepseek-v4-flash",
+  "baseUrl": "https://opencode.ai/zen/go/v1",
+  "hermesHome": "/tmp/atlas-eval/hermes-home/hermes-deepseek-v4-flash-ping_model-r1",
+  "hermesRoot": "/tmp/atlas-eval/hermes-agent",
+  "prompt": "Jawab singkat: sebut timezone kamu, tanggal hari ini, dan konfirmasi kamu siap pakai tool. Jangan sebut nama model internal kalau tidak yakin.",
+  "resultPath": "/workspace/artifacts/eval/runs/pilot-2026-09-09T033027.417Z/hermes-deepseek-v4-flash-ping_model-r1/hermes-result.json"
+}

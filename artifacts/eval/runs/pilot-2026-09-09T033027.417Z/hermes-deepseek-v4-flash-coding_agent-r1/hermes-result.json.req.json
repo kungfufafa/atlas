@@ -1,0 +1,8 @@
+{
+  "apiId": "deepseek-v4-flash",
+  "baseUrl": "https://opencode.ai/zen/go/v1",
+  "hermesHome": "/tmp/atlas-eval/hermes-home/hermes-deepseek-v4-flash-coding_agent-r1",
+  "hermesRoot": "/tmp/atlas-eval/hermes-agent",
+  "prompt": "Ini tugas coding. Gunakan skill coding-agent dan CLI OpenCode (`opencode`) lewat bash — jangan hanya write_file jika opencode tersedia. Di workspace profile ini, buat artifacts/ocgo-harness-check.ts berisi `export function add(a: number, b: number) { return a + b; }` lalu jalankan dengan bun. Laporkan: (1) perintah opencode/bash yang kamu jalankan, (2) stdout, (3) apakah harness OpenCode berhasil. Kalau opencode gagal, laporkan error apa adanya.",
+  "resultPath": "/workspace/artifacts/eval/runs/pilot-2026-09-09T033027.417Z/hermes-deepseek-v4-flash-coding_agent-r1/hermes-result.json"
+}

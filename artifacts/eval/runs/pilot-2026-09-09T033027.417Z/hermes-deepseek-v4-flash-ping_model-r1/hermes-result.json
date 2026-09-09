@@ -1,0 +1,6 @@
+{
+  "class": "ok",
+  "elapsedMs": 3968,
+  "ok": true,
+  "reply": "{'final_response': 'HTTP 401: Invalid API key.', 'messages': [{'role': 'user', 'content': 'Jawab singkat: sebut timezone kamu, tanggal hari ini, dan konfirmasi kamu siap pakai tool. Jangan sebut nama model internal kalau tidak yakin.', 'timestamp': 1788924631.0520358}], 'api_calls': 1, 'completed': False, 'failed': True, 'error': 'HTTP 401: Invalid API key.'}"
+}

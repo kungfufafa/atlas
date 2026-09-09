@@ -1,0 +1,8 @@
+{
+  "apiId": "deepseek-v4-flash",
+  "baseUrl": "https://opencode.ai/zen/go/v1",
+  "hermesHome": "/tmp/atlas-eval/hermes-home/hermes-deepseek-v4-flash-presence-r1",
+  "hermesRoot": "/tmp/atlas-eval/hermes-agent",
+  "prompt": "Siapa kamu? Kamu asisten siapa? Jam berapa sekarang di timezone saya? Jawab singkat, tanpa basa-basi.",
+  "resultPath": "/workspace/artifacts/eval/runs/pilot-2026-09-09T033027.417Z/hermes-deepseek-v4-flash-presence-r1/hermes-result.json"
+}

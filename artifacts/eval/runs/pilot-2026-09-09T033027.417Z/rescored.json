@@ -1,0 +1,80 @@
+{
+  "note": "Original Hermes cells were marked ok because any non-empty reply counted. Logged replies are HTTP 401 for every Hermes cell. Atlas setup failed with the same 401. Rescored from artifacts; no live re-run.",
+  "rosterHash": "da388a47c29410f71ea719088fd7684a7e74adde62329ada43e3c3746827c188",
+  "wave": "pilot",
+  "waveId": "pilot-2026-09-09T033027.417Z",
+  "cells": [
+    {
+      "agent": "atlas",
+      "class": "auth",
+      "ok": false,
+      "originalClass": "infra",
+      "runId": "atlas-deepseek-v4-flash-ping_model-r1",
+      "taskId": "ping_model",
+      "evidence": "Create provider failed 500: OpenCode Go request failed (401): Invalid API key."
+    },
+    {
+      "agent": "hermes",
+      "class": "auth",
+      "ok": false,
+      "originalClass": "ok",
+      "runId": "hermes-deepseek-v4-flash-ping_model-r1",
+      "taskId": "ping_model",
+      "evidence": "final_response HTTP 401: Invalid API key.; failed: True"
+    },
+    {
+      "agent": "atlas",
+      "class": "auth",
+      "ok": false,
+      "originalClass": "infra",
+      "runId": "atlas-deepseek-v4-flash-presence-r1",
+      "taskId": "presence",
+      "evidence": "Atlas setup failed after provider 401; no session turn"
+    },
+    {
+      "agent": "hermes",
+      "class": "auth",
+      "ok": false,
+      "originalClass": "ok",
+      "runId": "hermes-deepseek-v4-flash-presence-r1",
+      "taskId": "presence",
+      "evidence": "HTTP 401: Invalid API key.; failed: True"
+    },
+    {
+      "agent": "atlas",
+      "class": "auth",
+      "ok": false,
+      "originalClass": "infra",
+      "runId": "atlas-deepseek-v4-flash-write_file-r1",
+      "taskId": "write_file",
+      "evidence": "Atlas setup failed after provider 401"
+    },
+    {
+      "agent": "hermes",
+      "class": "auth",
+      "ok": false,
+      "originalClass": "ok",
+      "runId": "hermes-deepseek-v4-flash-write_file-r1",
+      "taskId": "write_file",
+      "evidence": "HTTP 401: Invalid API key.; failed: True"
+    },
+    {
+      "agent": "atlas",
+      "class": "auth",
+      "ok": false,
+      "originalClass": "infra",
+      "runId": "atlas-deepseek-v4-flash-coding_agent-r1",
+      "taskId": "coding_agent",
+      "evidence": "Atlas setup failed after provider 401"
+    },
+    {
+      "agent": "hermes",
+      "class": "auth",
+      "ok": false,
+      "originalClass": "ok",
+      "runId": "hermes-deepseek-v4-flash-coding_agent-r1",
+      "taskId": "coding_agent",
+      "evidence": "HTTP 401: Invalid API key.; failed: True"
+    }
+  ]
+}

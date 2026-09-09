@@ -1,0 +1,16 @@
+{
+  "agent": "atlas",
+  "catalogId": "opencode-go/deepseek-v4-flash",
+  "class": "infra",
+  "finishedAt": "2026-09-09T03:30:31.968Z",
+  "modelApiId": "deepseek-v4-flash",
+  "ok": false,
+  "protocol": "chat",
+  "rep": 1,
+  "reply": "Atlas setup failed",
+  "rosterHash": "da388a47c29410f71ea719088fd7684a7e74adde62329ada43e3c3746827c188",
+  "runId": "atlas-deepseek-v4-flash-presence-r1",
+  "startedAt": "2026-09-09T03:30:31.968Z",
+  "taskId": "presence",
+  "wave": "pilot"
+}

@@ -1,0 +1,6 @@
+{
+  "class": "ok",
+  "elapsedMs": 1800,
+  "ok": true,
+  "reply": "{'final_response': 'HTTP 401: Invalid API key.', 'messages': [{'role': 'user', 'content': 'Tulis file artifacts/hour-eval-hermes-deepseek-v4-flash-memo.md berisi 6 kalimat tentang DeepSeek V4 Flash via OpenCode Go di Atlas. File harus benar-benar tersimpan. Jangan menulis sidecar .atlas-meta.json sendiri.', 'timestamp': 1788924635.155803}], 'api_calls': 1, 'completed': False, 'failed': True, 'error': 'HTTP 401: Invalid API key.'}"
+}

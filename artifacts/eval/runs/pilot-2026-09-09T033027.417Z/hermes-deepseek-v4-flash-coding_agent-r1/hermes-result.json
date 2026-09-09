@@ -1,0 +1,6 @@
+{
+  "class": "ok",
+  "elapsedMs": 1799,
+  "ok": true,
+  "reply": "{'final_response': 'HTTP 401: Invalid API key.', 'messages': [{'role': 'user', 'content': 'Ini tugas coding. Gunakan skill coding-agent dan CLI OpenCode (`opencode`) lewat bash \u2014 jangan hanya write_file jika opencode tersedia. Di workspace profile ini, buat artifacts/ocgo-harness-check.ts berisi `export function add(a: number, b: number) { return a + b; }` lalu jalankan dengan bun. Laporkan: (1) perintah opencode/bash yang kamu jalankan, (2) stdout, (3) apakah harness OpenCode berhasil. Kalau opencode gagal, laporkan error apa adanya.', 'timestamp': 1788924637.1190546}], 'api_calls': 1, 'completed': False, 'failed': True, 'error': 'HTTP 401: Invalid API key.'}"
+}

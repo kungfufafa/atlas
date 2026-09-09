@@ -1,0 +1,8 @@
+{
+  "apiId": "deepseek-v4-flash",
+  "baseUrl": "https://opencode.ai/zen/go/v1",
+  "hermesHome": "/tmp/atlas-eval/hermes-home/hermes-deepseek-v4-flash-write_file-r1",
+  "hermesRoot": "/tmp/atlas-eval/hermes-agent",
+  "prompt": "Tulis file artifacts/hour-eval-hermes-deepseek-v4-flash-memo.md berisi 6 kalimat tentang DeepSeek V4 Flash via OpenCode Go di Atlas. File harus benar-benar tersimpan. Jangan menulis sidecar .atlas-meta.json sendiri.",
+  "resultPath": "/workspace/artifacts/eval/runs/pilot-2026-09-09T033027.417Z/hermes-deepseek-v4-flash-write_file-r1/hermes-result.json"
+}
