@@ -1,0 +1,442 @@
+{
+  "auth": {
+    "header": "Authorization: Bearer $OPENCODE_GO_API_KEY",
+    "keyStored": false,
+    "note": "Catalog was fetched with the authorized key. The key is not stored in this file."
+  },
+  "endpoint": "https://opencode.ai/zen/go/v1/models",
+  "fetchedAt": "2026-09-09T03:25:13.579Z",
+  "httpStatus": 200,
+  "modelCount": 35,
+  "models": [
+    {
+      "apiId": "minimax-m3",
+      "catalogId": "opencode-go/minimax-m3",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "messages",
+      "request": {
+        "api": "messages",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "path": "/v1/messages"
+      }
+    },
+    {
+      "apiId": "minimax-m2.7",
+      "catalogId": "opencode-go/minimax-m2.7",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "messages",
+      "request": {
+        "api": "messages",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "path": "/v1/messages"
+      }
+    },
+    {
+      "apiId": "minimax-m2.5",
+      "catalogId": "opencode-go/minimax-m2.5",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "messages",
+      "request": {
+        "api": "messages",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "path": "/v1/messages"
+      }
+    },
+    {
+      "apiId": "kimi-k3",
+      "catalogId": "opencode-go/kimi-k3",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "kimi-k2.7-code",
+      "catalogId": "opencode-go/kimi-k2.7-code",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "kimi-k2.6",
+      "catalogId": "opencode-go/kimi-k2.6",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "longcat-2.0",
+      "catalogId": "opencode-go/longcat-2.0",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "kimi-k2.5",
+      "catalogId": "opencode-go/kimi-k2.5",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "glm-5.2",
+      "catalogId": "opencode-go/glm-5.2",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "glm-5.3-flash",
+      "catalogId": "opencode-go/glm-5.3-flash",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "glm-5.3",
+      "catalogId": "opencode-go/glm-5.3",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "glm-5.1",
+      "catalogId": "opencode-go/glm-5.1",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "glm-5",
+      "catalogId": "opencode-go/glm-5",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "deepseek-v4-pro",
+      "catalogId": "opencode-go/deepseek-v4-pro",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "deepseek-v4-flash",
+      "catalogId": "opencode-go/deepseek-v4-flash",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "deepseek-v4-flash-vision-exp",
+      "catalogId": "opencode-go/deepseek-v4-flash-vision-exp",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "qwen3.7-max",
+      "catalogId": "opencode-go/qwen3.7-max",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "messages",
+      "request": {
+        "api": "messages",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "path": "/v1/messages"
+      }
+    },
+    {
+      "apiId": "qwen3.8-max",
+      "catalogId": "opencode-go/qwen3.8-max",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "messages",
+      "request": {
+        "api": "messages",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "path": "/v1/messages"
+      }
+    },
+    {
+      "apiId": "qwen3.8-flash",
+      "catalogId": "opencode-go/qwen3.8-flash",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "messages",
+      "request": {
+        "api": "messages",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "path": "/v1/messages"
+      }
+    },
+    {
+      "apiId": "qwen3.7-plus",
+      "catalogId": "opencode-go/qwen3.7-plus",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "messages",
+      "request": {
+        "api": "messages",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "path": "/v1/messages"
+      }
+    },
+    {
+      "apiId": "qwen3.6-plus",
+      "catalogId": "opencode-go/qwen3.6-plus",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "messages",
+      "request": {
+        "api": "messages",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "path": "/v1/messages"
+      }
+    },
+    {
+      "apiId": "qwen3.5-plus",
+      "catalogId": "opencode-go/qwen3.5-plus",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "messages",
+      "request": {
+        "api": "messages",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "path": "/v1/messages"
+      }
+    },
+    {
+      "apiId": "mimo-v2-pro",
+      "catalogId": "opencode-go/mimo-v2-pro",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "mimo-v2-omni",
+      "catalogId": "opencode-go/mimo-v2-omni",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "mimo-v2.5-pro",
+      "catalogId": "opencode-go/mimo-v2.5-pro",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "mimo-v2.5",
+      "catalogId": "opencode-go/mimo-v2.5",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "hy4-preview",
+      "catalogId": "opencode-go/hy4-preview",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "hy3",
+      "catalogId": "opencode-go/hy3",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "hy3-preview",
+      "catalogId": "opencode-go/hy3-preview",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    },
+    {
+      "apiId": "gpt-5.6-luna",
+      "catalogId": "opencode-go/gpt-5.6-luna",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "responses",
+      "request": {
+        "api": "responses",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/responses"
+      }
+    },
+    {
+      "apiId": "grok-4.5",
+      "catalogId": "opencode-go/grok-4.5",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "responses",
+      "request": {
+        "api": "responses",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/responses"
+      }
+    },
+    {
+      "apiId": "grok-4.6",
+      "catalogId": "opencode-go/grok-4.6",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "responses",
+      "request": {
+        "api": "responses",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/responses"
+      }
+    },
+    {
+      "apiId": "muse-spark-1.3-contributor",
+      "catalogId": "opencode-go/muse-spark-1.3-contributor",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "responses",
+      "request": {
+        "api": "responses",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/responses"
+      }
+    },
+    {
+      "apiId": "muse-spark-1.2-contributor",
+      "catalogId": "opencode-go/muse-spark-1.2-contributor",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "responses",
+      "request": {
+        "api": "responses",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/responses"
+      }
+    },
+    {
+      "apiId": "omen-alpha",
+      "catalogId": "opencode-go/omen-alpha",
+      "created": 1788924313,
+      "ownedBy": "opencode",
+      "protocol": "chat",
+      "request": {
+        "api": "chat/completions",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "path": "/chat/completions"
+      }
+    }
+  ],
+  "pilot": {
+    "requestedCatalogId": "opencode-go/deepseek-v4-flash",
+    "snapshotApiId": "deepseek-v4-flash",
+    "present": true,
+    "mapping": "Atlas catalog IDs are opencode-go/<snapshot apiId>. This mapping is frozen before scored runs."
+  },
+  "protocolResolver": "apps/server/src/providers/opencode-go/protocol.ts#resolveOpenCodeGoApiKind",
+  "rosterHash": "da388a47c29410f71ea719088fd7684a7e74adde62329ada43e3c3746827c188",
+  "sourceObject": "list"
+}

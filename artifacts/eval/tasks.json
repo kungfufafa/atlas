@@ -1,0 +1,55 @@
+{
+  "holdout": [
+    {
+      "id": "web_research",
+      "source": "scripts/live-human-e2e/run.ts",
+      "timeoutMs": 180000,
+      "prompt": "Saya perlu brief rapat 5 menit soal Tokopedia. Cari di web: kapan berdiri, siapa founder, siapa pemilik mayoritas sekarang. Tulis 4-6 kalimat fakta, lalu 2 tautan sumber yang kamu pakai. Jangan mengarang tautan."
+    },
+    {
+      "id": "web_fetch_verify",
+      "source": "scripts/live-human-e2e/run.ts",
+      "timeoutMs": 180000,
+      "prompt": "Fetch https://id.wikipedia.org/wiki/Tokopedia. Dari teks halaman, konfirmasi tanggal pendirian dan nama founder. Kutip 1-2 kalimat dari halaman. Kalau fetch gagal, laporkan error tool apa adanya — jangan mengarang isi halaman."
+    },
+    {
+      "id": "browser_tokopedia",
+      "source": "scripts/live-human-e2e/run.ts",
+      "timeoutMs": 180000,
+      "prompt": "Buka https://www.tokopedia.com/about dengan tool browser, baca heading utama halaman itu, lalu ambil screenshot. Tutup browser sesudahnya. Kalau diblokir, captcha, timeout, atau error, laporkan error tool apa adanya — jangan klaim sukses."
+    },
+    {
+      "id": "whatsapp_approval",
+      "source": "scripts/live-human-e2e/run.ts",
+      "timeoutMs": 90000,
+      "prompt": "Kirim WhatsApp dari nomor pairing workspace ini ke 6281111111111 berisi teks: Atlas DeepSeek live ping. Jangan kirim ke nomor lain."
+    }
+  ],
+  "note": "Prompts are copied from existing Atlas live harnesses. Do not add tasks after seeing scores.",
+  "scored": [
+    {
+      "id": "ping_model",
+      "source": "scripts/live-human-e2e/run-opencode-go-deepseek.ts",
+      "timeoutMs": 90000,
+      "prompt": "Jawab singkat: sebut timezone kamu, tanggal hari ini, dan konfirmasi kamu siap pakai tool. Jangan sebut nama model internal kalau tidak yakin."
+    },
+    {
+      "id": "presence",
+      "source": "scripts/live-human-e2e/run.ts",
+      "timeoutMs": 90000,
+      "prompt": "Siapa kamu? Kamu asisten siapa? Jam berapa sekarang di timezone saya? Jawab singkat, tanpa basa-basi."
+    },
+    {
+      "id": "write_file",
+      "source": "scripts/live-human-e2e/hour-opencode-go.ts#default_file",
+      "timeoutMs": 180000,
+      "promptTemplate": "Tulis file artifacts/hour-{stamp}-memo.md berisi 6 kalimat tentang DeepSeek V4 Flash via OpenCode Go di Atlas. File harus benar-benar tersimpan. Jangan menulis sidecar .atlas-meta.json sendiri."
+    },
+    {
+      "id": "coding_agent",
+      "source": "scripts/live-human-e2e/hour-opencode-go.ts#super_harness_opencode",
+      "timeoutMs": 420000,
+      "prompt": "Ini tugas coding. Gunakan skill coding-agent dan CLI OpenCode (`opencode`) lewat bash — jangan hanya write_file jika opencode tersedia. Di workspace profile ini, buat artifacts/ocgo-harness-check.ts berisi `export function add(a: number, b: number) { return a + b; }` lalu jalankan dengan bun. Laporkan: (1) perintah opencode/bash yang kamu jalankan, (2) stdout, (3) apakah harness OpenCode berhasil. Kalau opencode gagal, laporkan error apa adanya."
+    }
+  ]
+}
