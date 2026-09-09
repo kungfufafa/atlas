@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import { join, join as joinTestTemporaryPath } from "node:path";
 import { LOCAL_CLIENT_USER_ID, type ToolContext } from "@atlas/core";
 import { createSqliteDatabase, type DatabaseAdapter } from "@atlas/db";
 import { AgentService, type SessionActor } from "./agent-service";
@@ -34,7 +35,12 @@ async function fixture(
     ): ReturnType<typeof createPublicationTurnPrincipal>;
   }) => Promise<void>
 ): Promise<void> {
-  const root = await mkdtemp("/private/tmp/atlas-turn-principal-test-");
+  const root = await mkdtemp(
+    joinTestTemporaryPath(
+      testTemporaryDirectory(),
+      "atlas-turn-principal-test-"
+    )
+  );
   const sql = await createSqliteDatabase(join(root, "state.sqlite"));
   const db = sql.adapter;
   try {

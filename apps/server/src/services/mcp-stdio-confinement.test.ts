@@ -28,12 +28,31 @@ const MCP_FIXTURE = String.raw`
 const fs = require('node:fs');
 const readline = require('node:readline');
 const denied = (f) => { try { f(); return false; } catch { return true; } };
+// Never read sensitive file contents or return proc directory entries.
+const procOpenError = (target, directory = false) => {
+  try {
+    if (directory) {
+      const dir = fs.opendirSync(target);
+      try { dir.readSync(); } finally { dir.closeSync(); }
+    } else fs.closeSync(fs.openSync(target, 'r'));
+    return null;
+  } catch (error) { return error.code; }
+};
+const procProbe = () => process.platform === 'linux' ? {
+  selfMapsReadable: !denied(() => { if (!fs.readFileSync('/proc/self/maps').length) throw new Error('Empty maps'); }),
+  selfEnvironError: procOpenError('/proc/self/environ'),
+  parentMapsError: procOpenError('/proc/' + process.env.FIXTURE_PARENT_PID + '/maps'),
+  parentEnvironError: procOpenError('/proc/' + process.env.FIXTURE_PARENT_PID + '/environ'),
+  parentDescriptorsError: procOpenError('/proc/' + process.env.FIXTURE_PARENT_PID + '/fd', true),
+} : null;
 const probe = () => ({
   readDenied: denied(() => fs.readFileSync(process.env.CANARY)),
   writeDenied: denied(() => fs.writeFileSync(process.env.CANARY, 'CHANGED')),
   linkDenied: denied(() => fs.readFileSync('linked-canary')),
   cwd: process.cwd(), home: process.env.HOME,
   custom: process.env.FIXTURE_CREDENTIAL,
+  runtime: { node: process.versions.node, bun: process.versions.bun ?? null },
+  proc: procProbe(),
 });
 const initial = probe();
 const rl = readline.createInterface({input: process.stdin});
@@ -57,7 +76,15 @@ interface Probe {
   cwd: string;
   home: string;
   linkDenied: boolean;
+  proc: {
+    parentDescriptorsError: string | null;
+    parentEnvironError: string | null;
+    parentMapsError: string | null;
+    selfEnvironError: string | null;
+    selfMapsReadable: boolean;
+  } | null;
   readDenied: boolean;
+  runtime: { node: string; bun: string | null };
   writeDenied: boolean;
 }
 
@@ -92,6 +119,7 @@ async function withFixture(
             CANARY: canary,
             FIXTURE_CREDENTIAL: "synthetic-server-token",
             FIXTURE_HOST_HOME: os.homedir(),
+            FIXTURE_PARENT_PID: String(process.pid),
           },
         },
         createdAt: now,
@@ -127,6 +155,45 @@ test("MCP discovery initialization cannot read or mutate sibling tenant files", 
     expect(await readFile(canary, "utf8")).toBe("SYNTHETIC MCP CANARY");
   });
 });
+
+if (process.platform === "linux") {
+  test("MCP Bun can read its own stack maps while sensitive and parent proc access stays denied", async () => {
+    await withFixture(async (server, _workspace, canary) => {
+      const manager = new McpClientManager();
+      try {
+        await manager.connect(server, {
+          orgId: "fixture-org",
+          profileId: "active",
+        });
+        const result = (await manager.callTool(
+          server.id,
+          "stdio",
+          "probe",
+          {},
+          "active",
+          "fixture-org"
+        )) as { initial: Probe; current: Probe };
+        for (const phase of [result.initial, result.current]) {
+          expect(phase.runtime.bun).toBe(Bun.version);
+          expect(phase.proc?.selfMapsReadable).toBe(true);
+          for (const [permission, error] of Object.entries({
+            parentDescriptors: phase.proc?.parentDescriptorsError,
+            parentEnviron: phase.proc?.parentEnvironError,
+            parentMaps: phase.proc?.parentMapsError,
+            selfEnviron: phase.proc?.selfEnvironError,
+          })) {
+            expect(["EACCES", "EPERM"], permission).toContain(error);
+          }
+          expect(phase.readDenied).toBe(true);
+          expect(phase.writeDenied).toBe(true);
+        }
+        expect(await readFile(canary, "utf8")).toBe("SYNTHETIC MCP CANARY");
+      } finally {
+        await manager.disconnectAll();
+      }
+    });
+  });
+}
 
 test("MCP connected calls keep permitted workspace effects and deny sibling bytes", async () => {
   await withFixture(async (server, workspace, canary) => {
@@ -338,6 +405,10 @@ test("MCP Node runtime preserves configured credentials and confines real file e
         "active",
         "fixture-org"
       )) as { initial: Probe; current: Probe };
+      expect(
+        result.initial.runtime,
+        "The MCP Node fixture requires genuine Node.js on PATH; a Bun shim is not Node.js."
+      ).toMatchObject({ bun: null, node: expect.any(String) });
       expect(result.initial.readDenied).toBe(true);
       expect(result.initial.writeDenied).toBe(true);
       expect(result.current.linkDenied).toBe(true);

@@ -9,7 +9,8 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import path from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import path, { join as joinTestTemporaryPath } from "node:path";
 import {
   getProfileSoulDir,
   type McpStdioConfig,
@@ -65,7 +66,11 @@ interface Fixture {
   workspace: string;
 }
 async function fixture(run: (f: Fixture) => Promise<void>) {
-  const root = await realpath(await mkdtemp("/private/tmp/mcp-admission-"));
+  const root = await realpath(
+    await mkdtemp(
+      joinTestTemporaryPath(testTemporaryDirectory(), "mcp-admission-")
+    )
+  );
   let count = 0;
   const token = randomUUID();
   const marker = path.join(root, "loopback-startup-evidence");
@@ -230,7 +235,8 @@ for (const kind of ["discovery", "profile"] as const) {
         expect(f.count()).toBe(1);
         expect(await readFile(f.marker, "utf8")).toBe("1");
         expect(initial.credential).toBe("synthetic configured credential");
-        expect(initial.outside).toEqual({ code: "EPERM", path: f.outside });
+        expect(initial.outside.path).toBe(f.outside);
+        expect(["EPERM", "EACCES"]).toContain(initial.outside.code);
         expect(initial.cwd).toBe(seen!.workspaceRoot.path);
         expect(initial.home).toBe(seen!.temporaryRoot.path);
         expect(

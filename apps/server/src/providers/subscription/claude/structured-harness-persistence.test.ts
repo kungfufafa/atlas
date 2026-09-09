@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
-import path from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import path, { join as joinTestTemporaryPath } from "node:path";
 import { createSdkMcpServer } from "@anthropic-ai/claude-agent-sdk";
 import { createAgentHarness } from "@atlas/agent";
 import {
@@ -143,7 +144,9 @@ async function seedDatabase(db: DatabaseAdapter) {
 }
 
 async function runScenario(scenario: Scenario) {
-  const directory = await mkdtemp("/private/tmp/atlas-h12-");
+  const directory = await mkdtemp(
+    joinTestTemporaryPath(testTemporaryDirectory(), "atlas-h12-")
+  );
   try {
     await runWithUserConfigDir(directory, async () => {
       const database = await createSqliteDatabase(

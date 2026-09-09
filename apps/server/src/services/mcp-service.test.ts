@@ -50,6 +50,121 @@ async function seedProfile(
 }
 
 describe("McpService", () => {
+  test.each(["disable", "configure", "delete"] as const)(
+    "a delayed startup connection cannot undo a concurrent %s",
+    async (change) => {
+      const db = createInMemoryDatabaseAdapter();
+      await seedOrg(db, ORG_A);
+      const manager = new McpClientManager();
+      let disconnects = 0;
+      manager.disconnect = async () => {
+        disconnects += 1;
+      };
+      const service = new McpService(db, manager);
+      const { server } = await service.createServer(ORG_A, {
+        config: { url: "https://original.example/mcp" },
+        connect: false,
+        name: "startup",
+        transport: "http",
+      });
+      let startupRefreshes = 0;
+      service.setStartupConnectionListener(() => {
+        startupRefreshes += 1;
+      });
+      let updatedRecord: Awaited<ReturnType<typeof db.getMcpServer>>;
+      manager.connect = async () => {
+        if (change === "delete") {
+          await service.deleteServer(ORG_A, server.id);
+        } else {
+          await service.updateServer(
+            ORG_A,
+            server.id,
+            change === "disable"
+              ? { enabled: false }
+              : { config: { url: "https://replacement.example/mcp" } }
+          );
+        }
+        updatedRecord = await db.getMcpServer(server.id);
+        return [{ name: "stale_tool" }];
+      };
+
+      await service.connectEnabledServers();
+
+      expect(await db.getMcpServer(server.id)).toEqual(updatedRecord);
+      expect(startupRefreshes).toBe(0);
+      expect(disconnects).toBeGreaterThan(0);
+    }
+  );
+
+  for (const mode of ["connect", "sync"] as const) {
+    for (const outcome of ["success", "failure"] as const) {
+      test.each(["disable", "configure", "delete"] as const)(
+        `${mode} ${outcome} cannot overwrite a concurrent %s at the metadata commit boundary`,
+        async (change) => {
+          const db = createInMemoryDatabaseAdapter();
+          await seedOrg(db, ORG_A);
+          const manager = new McpClientManager();
+          manager.disconnect = async () => {};
+          const service = new McpService(db, manager);
+          const { server } = await service.createServer(ORG_A, {
+            config: { url: "https://original.example/mcp" },
+            connect: false,
+            name: "commit-race",
+            transport: "http",
+          });
+          const started = Promise.withResolvers<void>();
+          const result = Promise.withResolvers<Array<{ name: string }>>();
+          const pending = () => {
+            started.resolve();
+            return result.promise;
+          };
+          manager.connect = pending;
+          manager.isConnected = () => true;
+          manager.listTools = pending;
+          const connection = (
+            mode === "connect"
+              ? service.connectServer(ORG_A, server.id)
+              : service.syncServer(ORG_A, server.id)
+          ).catch(() => null);
+          await started.promise;
+          const mutation =
+            change === "delete"
+              ? service.deleteServer(ORG_A, server.id)
+              : service.updateServer(
+                  ORG_A,
+                  server.id,
+                  change === "disable"
+                    ? { enabled: false }
+                    : { config: { url: "https://replacement.example/mcp" } }
+                );
+          if (outcome === "success") {
+            result.resolve([{ name: "stale_tool" }]);
+          } else {
+            result.reject(new Error("connection failed"));
+          }
+          await mutation;
+          const expected = await db.getMcpServer(server.id);
+          await connection;
+          expect(await db.getMcpServer(server.id)).toEqual(expected);
+          if (change === "delete") {
+            expect(expected).toBeNull();
+          } else {
+            expect(expected?.cachedTools).toEqual([]);
+            expect(expected?.status).toBe("disconnected");
+            expect(expected?.lastError).toBeNull();
+            if (change === "disable") {
+              expect(expected?.enabled).toBe(false);
+            } else {
+              expect(expected?.config).toMatchObject({
+                url: "https://replacement.example/mcp",
+              });
+            }
+          }
+        }
+      );
+    }
+  }
+
   test("creates and lists MCP servers", async () => {
     const db = createInMemoryDatabaseAdapter();
     await seedOrg(db, ORG_A);

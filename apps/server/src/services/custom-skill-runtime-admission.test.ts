@@ -9,7 +9,8 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import path from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import path, { join as joinTestTemporaryPath } from "node:path";
 import {
   discoverSkillDirectory,
   getProfileSoulDir,
@@ -51,7 +52,9 @@ const contextFor = (f: Fixture): ToolContext => ({
 });
 async function fixture(run: (f: Fixture) => Promise<void>) {
   const root = await realpath(
-    await mkdtemp("/private/tmp/custom-skill-admission-")
+    await mkdtemp(
+      joinTestTemporaryPath(testTemporaryDirectory(), "custom-skill-admission-")
+    )
   );
   let count = 0;
   const token = randomUUID();
@@ -179,6 +182,38 @@ for (const kind of ["custom", "skill"] as const) {
         access(path.join(f.workspace, "actual-effect.txt"))
       ).rejects.toThrow();
     }));
+  // Custom receipt evidence describes the macOS policy only. Linux still
+  // enforces its filesystem sandbox, but explicit receipt admission must fail
+  // before invoking the host authorizer or starting executable metadata.
+  if (process.platform !== "darwin") {
+    for (const requireAdmission of [false, true]) {
+      test(`${kind} unsupported host rejects ${requireAdmission ? "required" : "authorizer-only"} admission before metadata`, async () =>
+        fixture(async (f) => {
+          let authorizations = 0;
+          let receipts = 0;
+          await rejection(
+            kind,
+            load(kind, f, {
+              authorize: async () => {
+                authorizations++;
+              },
+              onAuthorized: () => {
+                receipts++;
+              },
+              requireAdmission,
+            }),
+            f
+          );
+          expect(authorizations).toBe(0);
+          expect(receipts).toBe(0);
+          expect(f.count()).toBe(0);
+          await expect(
+            access(path.join(f.workspace, "actual-effect.txt"))
+          ).rejects.toThrow();
+        }));
+    }
+    continue;
+  }
   test(`${kind} asynchronous metadata denial precedes child startup and cleans temp`, async () =>
     fixture(async (f) => {
       const entered = Promise.withResolvers<void>(),
@@ -313,72 +348,110 @@ test("legacy asynchronous observer is not promoted to an authorization gate", as
     expect(f.count()).toBe(1);
     release.resolve();
   }));
-test("captured policy and selectors resist caller mutation during awaited authorization", async () =>
-  fixture(async (f) => {
-    const entered = Promise.withResolvers<void>(),
-      release = Promise.withResolvers<void>();
-    const policy: CustomToolRuntimeAdmissionPolicy = {
-      authorize: async () => {
-        entered.resolve();
-        await release.promise;
-      },
-      requireAdmission: true,
-    };
-    const spawn = createJsonToolSpawner(policy);
-    const options = directOptions(f);
-    const pending = spawn(options);
-    await entered.promise;
-    options.modulePath = f.outside;
-    options.runnerPath = f.outside;
-    options.mode = "--run";
-    options.requireSandbox = false;
-    policy.authorize = async () => {
-      throw new Error("replacement policy");
-    };
-    policy.requireAdmission = false;
-    expect(f.count()).toBe(0);
-    release.resolve();
-    expect(await pending).toHaveProperty("parameters");
-    expect(f.count()).toBe(1);
-  }));
-test("cancellation during awaited admission cleans temp and never releases a receipt or child", async () =>
-  fixture(async (f) => {
-    const entered = Promise.withResolvers<void>(),
-      release = Promise.withResolvers<void>();
-    const controller = new AbortController();
-    let evidence: RestrictedProcessLaunchEvidence | undefined;
-    let receipts = 0;
-    const spawn = createJsonToolSpawner({
-      authorize: async (e) => {
-        evidence = e;
-        entered.resolve();
-        await release.promise;
-      },
-      onAuthorized: () => {
-        receipts++;
-      },
-      requireAdmission: true,
-    });
-    const pending = spawn({
-      ...directOptions(f),
-      context: { signal: controller.signal },
-    });
-    const outcome = pending.then(
-      (value) => ({ error: undefined, value }),
-      (error) => ({ error, value: undefined })
-    );
-    await entered.promise;
-    controller.abort(new Error("cancel fixture"));
-    expect((await outcome).error).toBeInstanceOf(Error);
-    await expect(access(evidence!.temporaryRoot.path)).rejects.toThrow();
-    expect(f.count()).toBe(0);
-    expect(receipts).toBe(0);
-    release.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(f.count()).toBe(0);
-    expect(receipts).toBe(0);
-  }));
+if (process.platform === "darwin") {
+  test("captured policy and selectors resist caller mutation during awaited authorization", async () =>
+    fixture(async (f) => {
+      const entered = Promise.withResolvers<void>(),
+        release = Promise.withResolvers<void>();
+      const policy: CustomToolRuntimeAdmissionPolicy = {
+        authorize: async () => {
+          entered.resolve();
+          await release.promise;
+        },
+        requireAdmission: true,
+      };
+      const spawn = createJsonToolSpawner(policy);
+      const options = directOptions(f);
+      const pending = spawn(options);
+      await entered.promise;
+      options.modulePath = f.outside;
+      options.runnerPath = f.outside;
+      options.mode = "--run";
+      options.requireSandbox = false;
+      policy.authorize = async () => {
+        throw new Error("replacement policy");
+      };
+      policy.requireAdmission = false;
+      expect(f.count()).toBe(0);
+      release.resolve();
+      expect(await pending).toHaveProperty("parameters");
+      expect(f.count()).toBe(1);
+    }));
+  test("cancellation during awaited admission cleans temp and never releases a receipt or child", async () =>
+    fixture(async (f) => {
+      const entered = Promise.withResolvers<void>(),
+        release = Promise.withResolvers<void>();
+      const controller = new AbortController();
+      let evidence: RestrictedProcessLaunchEvidence | undefined;
+      let receipts = 0;
+      const spawn = createJsonToolSpawner({
+        authorize: async (e) => {
+          evidence = e;
+          entered.resolve();
+          await release.promise;
+        },
+        onAuthorized: () => {
+          receipts++;
+        },
+        requireAdmission: true,
+      });
+      const pending = spawn({
+        ...directOptions(f),
+        context: { signal: controller.signal },
+      });
+      const outcome = pending.then(
+        (value) => ({ error: undefined, value }),
+        (error) => ({ error, value: undefined })
+      );
+      await entered.promise;
+      controller.abort(new Error("cancel fixture"));
+      expect((await outcome).error).toBeInstanceOf(Error);
+      await expect(access(evidence!.temporaryRoot.path)).rejects.toThrow();
+      expect(f.count()).toBe(0);
+      expect(receipts).toBe(0);
+      release.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(f.count()).toBe(0);
+      expect(receipts).toBe(0);
+    }));
+} else {
+  for (const mode of ["--inspect", "--run"] as const) {
+    test(`direct ${mode} rejects unsupported receipt admission before preparation or execution`, async () =>
+      fixture(async (f) => {
+        let authorizations = 0;
+        let receipts = 0;
+        let preparations = 0;
+        const spawn = createJsonToolSpawner({
+          authorize: async () => {
+            authorizations++;
+          },
+          onAuthorized: () => {
+            receipts++;
+          },
+          requireAdmission: true,
+        });
+        await expect(
+          spawn({
+            ...directOptions(f),
+            context: contextFor(f),
+            mode,
+            onAdmission: () => {
+              preparations++;
+            },
+            workspaceRoot: f.workspace,
+          })
+        ).rejects.toThrow();
+        expect(authorizations).toBe(0);
+        expect(receipts).toBe(0);
+        expect(preparations).toBe(0);
+        expect(f.count()).toBe(0);
+        await expect(
+          access(path.join(f.workspace, "actual-effect.txt"))
+        ).rejects.toThrow();
+      }));
+  }
+}
 test("default JS metadata cache cannot bypass a different admitted loader", async () =>
   fixture(async (f) => {
     const allowed = createJavascriptToolLoader({ requireSandbox: true });
@@ -393,42 +466,44 @@ test("default JS metadata cache cannot bypass a different admitted loader", asyn
     ).toHaveProperty("error");
     expect(f.count()).toBe(1);
   }));
-test("skill runtime snapshots owner, policy, skill path and run input/context before awaits", async () =>
-  fixture(async (f) => {
-    const skill = await discoverSkillDirectory(f.skillDirectory);
-    if (!skill) {
-      throw new Error("Fixture missing");
-    }
-    const options = {
-      orgId: "org",
-      profileId: "active",
-      requireSandbox: true,
-      runtimeAdmission: { authorize: async () => {}, requireAdmission: true },
-    };
-    const runtime = createSkillToolRuntime(options);
-    const loading = runtime.load(skill);
-    options.orgId = "other";
-    options.profileId = "other";
-    options.runtimeAdmission.authorize = async () => {
-      throw new Error("changed");
-    };
-    skill.toolPath = f.outside;
-    const tool = await loading;
-    const context = contextFor(f);
-    const input = { message: "original" };
-    const pending = tool.run(input, context);
-    context.orgId = "other";
-    context.workspaceRoot = path.dirname(f.workspace);
-    input.message = "changed";
-    expect(await pending).toMatchObject({
-      input: { message: "original" },
-      orgId: "org",
-      profileId: "active",
-      workspaceRoot: f.workspace,
-    });
-    expect(f.count()).toBe(2);
-  }));
-test("explicit admission rejects unsafe opt-out while strict sandbox still obtains approval", async () =>
+if (process.platform === "darwin") {
+  test("skill runtime snapshots owner, policy, skill path and run input/context before awaits", async () =>
+    fixture(async (f) => {
+      const skill = await discoverSkillDirectory(f.skillDirectory);
+      if (!skill) {
+        throw new Error("Fixture missing");
+      }
+      const options = {
+        orgId: "org",
+        profileId: "active",
+        requireSandbox: true,
+        runtimeAdmission: { authorize: async () => {}, requireAdmission: true },
+      };
+      const runtime = createSkillToolRuntime(options);
+      const loading = runtime.load(skill);
+      options.orgId = "other";
+      options.profileId = "other";
+      options.runtimeAdmission.authorize = async () => {
+        throw new Error("changed");
+      };
+      skill.toolPath = f.outside;
+      const tool = await loading;
+      const context = contextFor(f);
+      const input = { message: "original" };
+      const pending = tool.run(input, context);
+      context.orgId = "other";
+      context.workspaceRoot = path.dirname(f.workspace);
+      input.message = "changed";
+      expect(await pending).toMatchObject({
+        input: { message: "original" },
+        orgId: "org",
+        profileId: "active",
+        workspaceRoot: f.workspace,
+      });
+      expect(f.count()).toBe(2);
+    }));
+}
+test("explicit admission rejects unsafe opt-out and preserves the supported host boundary", async () =>
   fixture(async (f) => {
     const previous = process.env.ATLAS_ALLOW_UNSANDBOXED_CUSTOM_TOOLS;
     process.env.ATLAS_ALLOW_UNSANDBOXED_CUSTOM_TOOLS = "1";
@@ -441,8 +516,13 @@ test("explicit admission rejects unsafe opt-out while strict sandbox still obtai
         strict({ ...directOptions(f), requireSandbox: false })
       ).rejects.toThrow();
       expect(f.count()).toBe(0);
-      expect(await strict(directOptions(f))).toHaveProperty("parameters");
-      expect(f.count()).toBe(1);
+      const supportedAdmission = process.platform === "darwin";
+      if (supportedAdmission) {
+        expect(await strict(directOptions(f))).toHaveProperty("parameters");
+      } else {
+        await expect(strict(directOptions(f))).rejects.toThrow();
+      }
+      expect(f.count()).toBe(supportedAdmission ? 1 : 0);
       let mode: string | undefined;
       expect(
         await spawnJsonTool({
@@ -454,7 +534,7 @@ test("explicit admission rejects unsafe opt-out while strict sandbox still obtai
         })
       ).toHaveProperty("parameters");
       expect(mode).toBe("unsafe-host");
-      expect(f.count()).toBe(2);
+      expect(f.count()).toBe(supportedAdmission ? 2 : 1);
     } finally {
       if (previous === undefined) {
         delete process.env.ATLAS_ALLOW_UNSANDBOXED_CUSTOM_TOOLS;

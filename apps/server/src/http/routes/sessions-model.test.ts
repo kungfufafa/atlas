@@ -130,7 +130,7 @@ async function createScenario() {
     taskService,
   });
 
-  return { agent, app, db, taskService };
+  return { agent, app, authService, db, taskService };
 }
 
 async function patchModel(
@@ -324,6 +324,87 @@ describe("session model route", () => {
       )
     );
     expect(branchAttachment.status).toBe(200);
+  });
+
+  test("does not serve another member's session attachments", async () => {
+    const { app, db } = await createScenario();
+    const owner = await loginUserSession(
+      app,
+      "owner@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const member = await loginUserSession(
+      app,
+      "member@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const admin = await loginUserSession(
+      app,
+      "admin@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const outsider = await loginUserSession(
+      app,
+      "outsider@example.com",
+      PASSWORD,
+      OTHER_ORG_ID
+    );
+    const ownerSessionId = await createWebSession(app, owner);
+    const save = createAttachmentSaver(db, {
+      channel: "web",
+      orgId: ORG_ID,
+      profileId: PROFILE_ID,
+      sessionId: ownerSessionId,
+    });
+    const saved = await save({
+      bytes: Buffer.from("private image bytes"),
+      filename: "secret.png",
+      kind: "image",
+      mediaType: "image/png",
+    });
+    await db.replaceMessagesForSession(ownerSessionId, [
+      {
+        createdAt: new Date().toISOString(),
+        id: "owner-attachment-message",
+        payload: {
+          content: [
+            {
+              attachmentId: saved.attachmentId,
+              mediaType: "image/png",
+              size: saved.size,
+              type: "image_ref" as const,
+            },
+          ],
+          role: "user" as const,
+        },
+        seq: 0,
+        sessionId: ownerSessionId,
+      },
+    ]);
+
+    const fetchAttachment = (
+      session: Awaited<ReturnType<typeof loginUserSession>>
+    ) =>
+      app.fetch(
+        new Request(
+          `http://localhost:4310/v1/sessions/${ownerSessionId}/attachments/${saved.attachmentId}`,
+          { headers: session.headers() }
+        )
+      );
+
+    const ownerDownload = await fetchAttachment(owner);
+    expect(ownerDownload.status).toBe(200);
+    expect(await ownerDownload.text()).toBe("private image bytes");
+
+    expect((await fetchAttachment(member)).status).toBe(404);
+    expect((await fetchAttachment(outsider)).status).toBe(404);
+
+    const adminDownload = await fetchAttachment(admin);
+    expect(adminDownload.status).toBe(200);
+    expect(await adminDownload.text()).toBe("private image bytes");
   });
 
   test("rejects corrupt image pixels before starting a session turn", async () => {
@@ -1148,5 +1229,70 @@ describe("session model route", () => {
       )
     );
     expect(unattributedRead.status).toBe(404);
+  });
+
+  test("does not list another organization's sessions by profile id", async () => {
+    const { app, authService, db } = await createScenario();
+    const now = new Date().toISOString();
+    await seedUser(db, authService, {
+      email: "other-admin@example.com",
+      id: "user_other_admin",
+      orgId: OTHER_ORG_ID,
+      role: "admin",
+    });
+    await db.upsertProfile({
+      createdAt: now,
+      id: "profile_other_default",
+      isDefault: true,
+      isSuper: false,
+      model: null,
+      name: "Other Default",
+      orgId: OTHER_ORG_ID,
+      systemPrompt: "Test",
+      updatedAt: now,
+    });
+
+    const owner = await loginUserSession(
+      app,
+      "owner@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const sessionId = await createWebSession(app, owner);
+    await db.replaceMessagesForSession(sessionId, [
+      {
+        createdAt: now,
+        id: "msg_secret",
+        payload: { content: "Acme confidential pipeline", role: "user" },
+        seq: 0,
+        sessionId,
+      },
+    ]);
+
+    const otherAdmin = await loginUserSession(
+      app,
+      "other-admin@example.com",
+      PASSWORD,
+      OTHER_ORG_ID
+    );
+    const leaked = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/sessions?profileId=${PROFILE_ID}&channel=web`,
+        { headers: otherAdmin.headers({}, OTHER_ORG_ID) }
+      )
+    );
+
+    expect(leaked.status).toBe(404);
+    expect(await leaked.json()).toMatchObject({ error: "Profile not found." });
+
+    const own = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/sessions?profileId=${PROFILE_ID}&channel=web`,
+        { headers: owner.headers({}, ORG_ID) }
+      )
+    );
+    expect(own.status).toBe(200);
+    const body = (await own.json()) as { sessions: Array<{ id: string }> };
+    expect(body.sessions.map((session) => session.id)).toContain(sessionId);
   });
 });

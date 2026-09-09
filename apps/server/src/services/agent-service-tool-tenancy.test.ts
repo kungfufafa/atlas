@@ -20,6 +20,7 @@ import { setupTestConfigDir } from "../test-config-dir";
 import { AgentService } from "./agent-service";
 import { McpClientManager } from "./mcp-client-manager";
 import { McpService } from "./mcp-service";
+import { sessionTurnRegistry } from "./session-turn-registry";
 
 setupTestConfigDir("atlas-tool-tenancy-");
 
@@ -156,6 +157,111 @@ const calculate = ({
   );
 
 describe("AgentService tool tenancy and live authorization", () => {
+  test.each(["whatsapp", "telegram", "discord"] as const)(
+    "%s startup MCP discovery preserves the active turn and refreshes the next catalog",
+    async (channel) => {
+      const { db, options, service, sessionId } = await fixture(
+        "admin",
+        false,
+        channel
+      );
+      const manager = new McpClientManager();
+      manager.connect = async () => [{ description: "Read", name: "read" }];
+      const mcp = new McpService(db, manager);
+      const { server } = await mcp.createServer(ORG_ID, {
+        config: { url: "https://mcp.example.invalid" },
+        connect: false,
+        name: "startup",
+        transport: "http",
+      });
+      await mcp.assignServerToProfile(ORG_ID, PROFILE_ID, server.id);
+      service.setMcpClientManager(manager);
+      service.setMcpService(mcp);
+      const active = await service.resolveSession(ORG_ID, sessionId);
+      const activeTools = options();
+      expect(activeTools.tools.map((tool) => tool.name)).not.toContain(
+        "startup__read"
+      );
+      const abort = new AbortController();
+      sessionTurnRegistry.beginTurn(sessionId, ORG_ID);
+      sessionTurnRegistry.attachAbort(sessionId, abort);
+      for (const _ of [1, 2, 3]) {
+        sessionTurnRegistry.subscribe(sessionId, () => {});
+      }
+      try {
+        await mcp.connectEnabledServers();
+        expect(abort.signal.aborted).toBe(false);
+        expect(sessionTurnRegistry.isActive(sessionId)).toBe(true);
+        expect(await calculate(activeTools)).toMatchObject({ result: 3 });
+        expect(await service.resolveSession(ORG_ID, sessionId)).toBe(active);
+      } finally {
+        sessionTurnRegistry.endTurn(sessionId, { reply: "done", type: "done" });
+      }
+
+      expect(await service.resolveSession(ORG_ID, sessionId)).not.toBe(active);
+      expect(options().tools.map((tool) => tool.name)).toContain(
+        "startup__read"
+      );
+      const freshTools = options();
+      const nextAbort = new AbortController();
+      sessionTurnRegistry.beginTurn(sessionId, ORG_ID);
+      sessionTurnRegistry.attachAbort(sessionId, nextAbort);
+      try {
+        await mcp.updateServer(ORG_ID, server.id, { enabled: false });
+        expect(nextAbort.signal.aborted).toBe(true);
+        expect(sessionTurnRegistry.isActive(sessionId)).toBe(false);
+        expect(await calculate(freshTools)).toMatchObject({
+          errorCode: "CANCELLED",
+        });
+      } finally {
+        sessionTurnRegistry.cancelTurn(sessionId);
+      }
+    }
+  );
+
+  test("refreshes a session whose initial catalog was built across startup discovery", async () => {
+    const { db, options, service, sessionId } = await fixture();
+    const manager = new McpClientManager();
+    manager.connect = async () => [{ description: "Read", name: "read" }];
+    const mcp = new McpService(db, manager);
+    const { server } = await mcp.createServer(ORG_ID, {
+      config: { url: "https://mcp.example.invalid" },
+      connect: false,
+      name: "startup_race",
+      transport: "http",
+    });
+    await mcp.assignServerToProfile(ORG_ID, PROFILE_ID, server.id);
+    service.setMcpClientManager(manager);
+    service.setMcpService(mcp);
+    const listServers = db.listMcpServersForProfile.bind(db);
+    let discoveryPending = true;
+    db.listMcpServersForProfile = async (profileId) => {
+      const snapshot = await listServers(profileId);
+      if (discoveryPending) {
+        discoveryPending = false;
+        await mcp.connectEnabledServers();
+      }
+      return snapshot;
+    };
+    sessionTurnRegistry.beginTurn(sessionId, ORG_ID);
+    try {
+      const first = await service.resolveSession(ORG_ID, sessionId);
+      expect(options().tools.map((tool) => tool.name)).not.toContain(
+        "startup_race__read"
+      );
+      expect(await calculate(options())).toMatchObject({ result: 3 });
+      expect(await service.resolveSession(ORG_ID, sessionId)).toBe(first);
+      sessionTurnRegistry.endTurn(sessionId, { reply: "done", type: "done" });
+      expect(await service.resolveSession(ORG_ID, sessionId)).not.toBe(first);
+      expect(options().tools.map((tool) => tool.name)).toContain(
+        "startup_race__read"
+      );
+    } finally {
+      sessionTurnRegistry.cancelTurn(sessionId);
+      db.listMcpServersForProfile = listServers;
+    }
+  });
+
   test("an MCP service change rebuilds the next session catalog", async () => {
     const { db, options, service, sessionId } = await fixture();
     const manager = new McpClientManager();

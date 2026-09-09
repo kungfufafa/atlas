@@ -790,13 +790,15 @@ export function registerSessionRoutes(
   });
 
   app.get("/v1/sessions/:sessionId/attachments/:attachmentId", async (c) => {
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
     const attachmentId = decodeURIComponent(c.req.param("attachmentId"));
     const attachment = await agent.getSessionAttachment(
       orgId,
       sessionId,
-      attachmentId
+      attachmentId,
+      sessionActorFromAuth(auth)
     );
 
     if (!attachment) {

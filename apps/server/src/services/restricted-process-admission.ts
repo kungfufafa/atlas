@@ -27,7 +27,7 @@ export interface RestrictedProcessLaunchEvidence {
   readonly cwd: RestrictedProcessPathIdentity;
   readonly executable: RestrictedProcessPathIdentity;
   readonly executableSpelling: string;
-  /** Explicit OS rules only. Platform policy imports/bootstrap are described separately. */
+  /** Rules with identities resolved before launch; runtime-bound rules are declared by policy. */
   readonly grants: readonly RestrictedProcessGrant[];
   readonly kind: "restricted_process_prepared";
   readonly launchDigest: string;
@@ -36,13 +36,22 @@ export interface RestrictedProcessLaunchEvidence {
   readonly network: "allow" | "deny";
   readonly platform: "darwin" | "linux";
   readonly policy: {
+    /** Linux's trusted Bun bootstrap; this does not describe the selected target. */
+    readonly bootstrapStartupConfigurationSuppressed: boolean;
     readonly digest: string;
     readonly name:
       | "macos-restricted-process-v1"
-      | "linux-landlock-abi3-v1"
+      | "linux-landlock-abi3-v2"
       | "macos-custom-tool-v1";
     readonly stage: "prepared_not_executed";
+    /** Configuration suppression on the selected target runtime itself. */
     readonly startupConfigurationSuppressed: boolean;
+    /** Resolved by the launcher before same-PID exec; descendants inherit only that inode. */
+    readonly runtimeReadRules: readonly {
+      readonly path: "/proc/self/maps";
+      readonly resolvedBy: "launcher";
+      readonly scope: "same_process_inode";
+    }[];
     readonly implicitAuthority:
       | "macos-system.sb-metadata-existence"
       | "trusted-linux-launcher-bootstrap";
@@ -159,6 +168,7 @@ export async function createRestrictedProcessLaunchEvidence(
     network: input.network,
     platform: input.platform,
     policy: Object.freeze({
+      bootstrapStartupConfigurationSuppressed: input.platform === "linux",
       digest: digest(input.policySource),
       implicitAuthority:
         input.platform === "darwin"
@@ -169,11 +179,20 @@ export async function createRestrictedProcessLaunchEvidence(
           ? "macos-custom-tool-v1"
           : input.platform === "darwin"
             ? "macos-restricted-process-v1"
-            : "linux-landlock-abi3-v1",
+            : "linux-landlock-abi3-v2",
+      runtimeReadRules: Object.freeze(
+        input.platform === "linux"
+          ? [
+              Object.freeze({
+                path: "/proc/self/maps" as const,
+                resolvedBy: "launcher" as const,
+                scope: "same_process_inode" as const,
+              }),
+            ]
+          : []
+      ),
       stage: "prepared_not_executed",
-      startupConfigurationSuppressed:
-        input.launchPolicy === "custom_json" ||
-        (input.platform === "linux" && input.launchPolicy === "mcp_stdio"),
+      startupConfigurationSuppressed: input.launchPolicy === "custom_json",
     }),
     temporaryRoot,
     version: 1,

@@ -15,12 +15,77 @@ env:
   LLM_VCR_MODE: replay
 
 jobs:
+  docs:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
+      - name: Install docs dependencies
+        working-directory: docs/website
+        run: bun install --frozen-lockfile
+
+      - name: Type-check generated docs routes and MDX
+        working-directory: docs/website
+        run: bun run typecheck
+
+      - name: Build and type-check docs static export
+        working-directory: docs/website
+        env:
+          ATLAS_DOCS_GITHUB_PAGES: "true"
+        run: bun run build
+
+      - name: Verify exported docs and search index
+        working-directory: docs/website
+        run: bun run verify:export
+
+  mobile:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
+      - name: Type-check mobile with its SDK compiler
+        working-directory: apps/mobile
+        run: node node_modules/typescript/bin/tsc --noEmit
+
+      - name: Export iOS and Android bundles
+        working-directory: apps/mobile
+        env:
+          CI: "1"
+        run: node node_modules/expo/bin/cli export --platform ios --platform android --output-dir /tmp/atlas-mobile-export
+
   docker-files:
     timeout-minutes: 35
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
@@ -33,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -52,35 +117,67 @@ jobs:
       - name: Type-check file and live verification scripts
         run: bunx tsc --noEmit -p scripts/file-runtime/tsconfig.json
 
-  unit:
+  unit-shards:
+    name: unit shard ${{ matrix.shard }}/4
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.3.14
 
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
 
-      - name: Install native media codecs
+      - name: Install native media and Office test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg
+          sudo apt-get install -y --no-install-recommends ffmpeg fonts-liberation libreoffice-calc libreoffice-impress libreoffice-writer
 
       - name: Run unit tests
-        run: bun run test
+        run: |
+          # Piped core handlers ignore RLIMIT_CORE; cap dumps on this ephemeral runner.
+          cat /proc/sys/kernel/core_pattern
+          sudo sysctl -w kernel.core_pattern=core
+          ulimit -c 0
+          bun run test --shard=${{ matrix.shard }}/4
+
+      - name: Report unit runner disk usage
+        if: always()
+        run: |
+          df -h . /tmp
+          du -x -h --max-depth=1 /tmp 2>/dev/null | sort -h | tail -n 20 || true
+
+  unit:
+    if: ${{ always() }}
+    needs: [unit-shards]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every unit shard to succeed
+        env:
+          SHARD_RESULT: ${{ needs.unit-shards.result }}
+        run: test "$SHARD_RESULT" = success
 
   smoke:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -98,7 +195,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -107,6 +204,11 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
 
       - name: Install LibreOffice (office preview fidelity tests)
         run: |
@@ -128,3 +230,6 @@ jobs:
 
       - name: Run browser and office fidelity tests
         run: bun run test:heavy
+
+      - name: Verify PDF viewer interactions and recovery
+        run: node apps/web/scripts/verify-pdf-viewer.ts

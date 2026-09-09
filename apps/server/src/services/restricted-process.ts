@@ -1,12 +1,5 @@
 import { constants } from "node:fs";
-import {
-  access,
-  mkdtemp,
-  readFile,
-  realpath,
-  rm,
-  stat,
-} from "node:fs/promises";
+import { access, mkdtemp, realpath, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { getUserConfigDir } from "@atlas/core";
@@ -19,6 +12,11 @@ import {
   type RestrictedProcessLaunchEvidence,
   type RestrictedProcessLaunchPolicy,
 } from "./restricted-process-admission";
+import {
+  readRestrictedProcessLinuxPolicy,
+  restrictedProcessLinuxBootstrapArgs,
+  validateRestrictedProcessLinuxEnvironment,
+} from "./restricted-process-linux-policy";
 
 export type {
   RestrictedProcessAdmissionPolicy,
@@ -92,14 +90,10 @@ export function createRestrictedProcessPreparer(
       const env = Object.freeze({ ...plan.launch.env });
       let policySource = plan.evidenceInput.policySource;
       if (plan.evidenceInput.linuxLauncher) {
-        policySource = JSON.stringify([
+        policySource = await readRestrictedProcessLinuxPolicy(
           policySource,
-          await readFile(plan.evidenceInput.linuxLauncher, "utf8"),
-          await readFile(
-            path.join(import.meta.dir, "restricted-process-linux.c"),
-            "utf8"
-          ),
-        ]);
+          plan.evidenceInput.linuxLauncher
+        );
       }
       const evidence = await createRestrictedProcessLaunchEvidence({
         ...plan.evidenceInput,
@@ -246,6 +240,10 @@ async function prepareRestrictedProcessPlan(
   options: RestrictedProcessOptions,
   launchPolicy: RestrictedProcessLaunchPolicy
 ): Promise<RestrictedProcessPlan> {
+  const requestedEnv = { ...options.env };
+  if (process.platform === "linux") {
+    validateRestrictedProcessLinuxEnvironment(requestedEnv);
+  }
   const network = process.env.ATLAS_PROCESS_NETWORK?.trim() || "allow";
   if (network !== "allow" && network !== "deny") {
     throw new Error("ATLAS_PROCESS_NETWORK must be allow or deny.");
@@ -278,7 +276,7 @@ async function prepareRestrictedProcessPlan(
       workspaceRoot
     );
     const env: NodeJS.ProcessEnv = {
-      ...options.env,
+      ...requestedEnv,
       HOME: temporaryRoot,
       LANG: "en_US.UTF-8",
       LC_ALL: "en_US.UTF-8",
@@ -395,13 +393,7 @@ async function prepareRestrictedProcessPlan(
         env[`ATLAS_RESTRICTED_MODE_${index}`] = rule.mode;
       }
       const launch = {
-        args: [
-          ...(launchPolicy === "mcp_stdio"
-            ? ["--config=/dev/null", "--env-file=/dev/null"]
-            : []),
-          "--no-install",
-          launcher,
-        ],
+        args: restrictedProcessLinuxBootstrapArgs(launcher),
         bin: process.execPath,
         cleanup,
         cwd,
@@ -412,17 +404,20 @@ async function prepareRestrictedProcessPlan(
           ...launch,
           executable: executableTarget,
           executableSpelling: executable,
-          grants: rules.map((rule) => ({
-            kind:
-              rule.mode === "w"
-                ? "read_write_subtree"
-                : rule.mode === "e"
-                  ? "read_execute_literal"
-                  : rule.mode === "r"
-                    ? "read_subtree"
-                    : "read_literal",
-            root: rule.root,
-          })),
+          grants: [
+            ...rules.map((rule) => ({
+              kind:
+                rule.mode === "w"
+                  ? ("read_write_subtree" as const)
+                  : rule.mode === "e"
+                    ? ("read_execute_literal" as const)
+                    : rule.mode === "r"
+                      ? ("read_subtree" as const)
+                      : ("read_literal" as const),
+              root: rule.root,
+            })),
+            { kind: "read_write_literal", root: "/dev/null" },
+          ],
           launchPolicy,
           linuxLauncher: launcher,
           network,

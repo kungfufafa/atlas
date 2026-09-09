@@ -13,7 +13,7 @@ const config = {
   images: { unoptimized: true },
   output: "export",
   reactStrictMode: true,
-  trailingSlash: false,
+  trailingSlash: true,
   turbopack: {
     root: import.meta.dirname,
   },

@@ -457,6 +457,7 @@ export class AgentService {
   readonly learningPlane: LearningPlaneService;
   readonly subagents: SubagentService;
   private readonly sessions = new Map<string, StoredSession>();
+  private readonly mcpAvailabilityVersions = new Map<string, number>();
   private readonly sessionInvalidationVersions = new Map<string, number>();
   private readonly profileToolInvalidationVersions = new Map<string, number>();
   private readonly sessionTitleService: SessionTitleService;
@@ -831,6 +832,17 @@ export class AgentService {
     service.setConfigurationChangeListener((orgId) =>
       this.invalidateSessionsForOrg(orgId)
     );
+    service.setStartupConnectionListener((orgId) => {
+      this.mcpAvailabilityVersions.set(
+        orgId,
+        (this.mcpAvailabilityVersions.get(orgId) ?? 0) + 1
+      );
+      for (const [sessionId, record] of this.sessions) {
+        if (record.orgId === orgId) {
+          this.refreshSessionAfterTurn(sessionId, record);
+        }
+      }
+    });
   }
 
   setComposioService(service: ComposioService): void {
@@ -2778,6 +2790,7 @@ export class AgentService {
     }
 
     await replaceSessionHistory(this.db, sessionId, history);
+    this.sessions.delete(sessionId);
   }
 
   async runAutomation(
@@ -2883,6 +2896,7 @@ export class AgentService {
       userId: principalUserId,
     });
 
+    const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
     const session = await this.buildChatSession(
       channel,
       orgId,
@@ -2894,16 +2908,20 @@ export class AgentService {
       sessionIsPlatformAdmin
     );
 
-    this.sessions.set(sessionId, {
-      channel,
-      isPlatformAdmin: sessionIsPlatformAdmin,
-      modelOverride,
-      orgId,
-      orgRole: sessionOrgRole,
-      profileId: resolvedProfileId,
-      session,
-      userId: principalUserId,
-    });
+    this.rememberSession(
+      sessionId,
+      {
+        channel,
+        isPlatformAdmin: sessionIsPlatformAdmin,
+        modelOverride,
+        orgId,
+        orgRole: sessionOrgRole,
+        profileId: resolvedProfileId,
+        session,
+        userId: principalUserId,
+      },
+      mcpAvailabilityVersion
+    );
 
     return sessionId;
   }
@@ -3028,7 +3046,8 @@ export class AgentService {
   async getSessionAttachment(
     orgId: string,
     sessionId: string,
-    attachmentId: string
+    attachmentId: string,
+    actor: SessionActor
   ): Promise<{
     bytes: Buffer;
     filename: string | null;
@@ -3038,6 +3057,16 @@ export class AgentService {
     const sessionRecord = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!sessionRecord) {
+      return null;
+    }
+    if (
+      !(await this.canActorAccessSessionRecord(
+        orgId,
+        sessionRecord,
+        actor,
+        "read"
+      ))
+    ) {
       return null;
     }
 
@@ -3153,6 +3182,7 @@ export class AgentService {
       throw new Error("Session channel is invalid.");
     }
 
+    const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
     const session = await this.buildChatSession(
       channel,
       orgId,
@@ -3163,16 +3193,20 @@ export class AgentService {
       branchOrgRole,
       branchIsPlatformAdmin
     );
-    this.sessions.set(nextSessionId, {
-      channel,
-      isPlatformAdmin: branchIsPlatformAdmin,
-      modelOverride,
-      orgId,
-      orgRole: branchOrgRole,
-      profileId: record.profileId,
-      session,
-      userId: branchUserId,
-    });
+    this.rememberSession(
+      nextSessionId,
+      {
+        channel,
+        isPlatformAdmin: branchIsPlatformAdmin,
+        modelOverride,
+        orgId,
+        orgRole: branchOrgRole,
+        profileId: record.profileId,
+        session,
+        userId: branchUserId,
+      },
+      mcpAvailabilityVersion
+    );
 
     return { sessionId: nextSessionId };
   }
@@ -3183,7 +3217,7 @@ export class AgentService {
     channel: AgentChannel,
     actor: SessionActor
   ): Promise<ListSessionsResponse> {
-    await this.requireProfile(orgId, profileId);
+    const profile = await this.requireProfile(orgId, profileId);
 
     if (actor.workspaceWorkerChannel) {
       return { sessions: [] };
@@ -3199,7 +3233,7 @@ export class AgentService {
     const ownerUserId =
       isPlatformAdmin || orgRole === "admin" ? undefined : actorUserId;
     const sessions = await this.db.listSessionSummaries(
-      profileId,
+      profile.id,
       channel,
       ownerUserId
     );
@@ -3363,6 +3397,7 @@ export class AgentService {
       return stored.session;
     }
 
+    const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
     const session = await this.buildChatSession(
       channel,
       orgId,
@@ -3384,16 +3419,20 @@ export class AgentService {
       );
     }
 
-    this.sessions.set(sessionId, {
-      channel,
-      isPlatformAdmin,
-      modelOverride,
-      orgId,
-      orgRole,
-      profileId: record.profileId,
-      session,
-      userId: actorUserId,
-    });
+    this.rememberSession(
+      sessionId,
+      {
+        channel,
+        isPlatformAdmin,
+        modelOverride,
+        orgId,
+        orgRole,
+        profileId: record.profileId,
+        session,
+        userId: actorUserId,
+      },
+      mcpAvailabilityVersion
+    );
 
     return session;
   }
@@ -5589,16 +5628,13 @@ export class AgentService {
       if (defaultProfile) {
         return defaultProfile;
       }
+      throw new AtlasApiError("Profile not found.", 404);
     }
 
     const profile = await this.db.getProfileForOrg(profileId, orgId);
 
     if (!profile) {
-      const defaultProfile = await this.db.getDefaultProfileForOrg(orgId);
-      if (defaultProfile) {
-        return defaultProfile;
-      }
-      throw new Error("Profile not found.");
+      throw new AtlasApiError("Profile not found.", 404);
     }
 
     return profile;
@@ -5828,6 +5864,31 @@ export class AgentService {
       this.agentTodoState.clearSession(sessionId);
       this.agentQuestionnaireState.clearSession(sessionId);
     }
+  }
+
+  private rememberSession(
+    sessionId: string,
+    record: StoredSession,
+    mcpAvailabilityVersion: number
+  ): void {
+    this.sessions.set(sessionId, record);
+    if (
+      (this.mcpAvailabilityVersions.get(record.orgId) ?? 0) !==
+      mcpAvailabilityVersion
+    ) {
+      this.refreshSessionAfterTurn(sessionId, record);
+    }
+  }
+
+  private refreshSessionAfterTurn(
+    sessionId: string,
+    record: StoredSession
+  ): void {
+    sessionTurnRegistry.afterTurn(sessionId, () => {
+      if (this.sessions.get(sessionId) === record) {
+        this.sessions.delete(sessionId);
+      }
+    });
   }
 
   invalidateSessionsForOrg(orgId: string): void {

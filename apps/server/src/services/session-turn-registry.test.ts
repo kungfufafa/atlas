@@ -2,6 +2,28 @@ import { describe, expect, test } from "bun:test";
 import { SessionTurnRegistry } from "./session-turn-registry";
 
 describe("SessionTurnRegistry", () => {
+  test("runs internal maintenance once after completion or cancellation without subscriber slots", () => {
+    const registry = new SessionTurnRegistry();
+    const completed: string[] = [];
+    registry.afterTurn("idle", () => completed.push("idle"));
+    for (const sessionId of ["normal", "cancelled"]) {
+      registry.beginTurn(sessionId);
+      for (const _ of [1, 2, 3]) {
+        registry.subscribe(sessionId, () => {});
+      }
+      registry.afterTurn(sessionId, () => {
+        expect(registry.isActive(sessionId)).toBe(false);
+        completed.push(sessionId);
+      });
+    }
+    expect(completed).toEqual(["idle"]);
+    registry.endTurn("normal", { reply: "done", type: "done" });
+    registry.cancelTurn("cancelled");
+    registry.endTurn("normal", { reply: "done again", type: "done" });
+    registry.cancelTurn("cancelled");
+    expect(completed).toEqual(["idle", "normal", "cancelled"]);
+  });
+
   test("beginTurn starts once and rejects concurrent begin", () => {
     const registry = new SessionTurnRegistry();
 

@@ -273,57 +273,64 @@ test("action inputs cannot inject a destination, and failures cannot masquerade 
   ).toBe(false);
 });
 
-test("binding a guest conversation preserves ordinary tool policy while native effects remain denied", async () => {
-  const h = await harness("telegram");
-  const userId = "user_channel_guest_native_fixture";
-  const now = new Date().toISOString();
-  await h.db.createUser({
-    id: userId,
-    email: "guest-native@example.test",
-    passwordHash: "!disabled!",
-    isPlatformAdmin: false,
-    createdAt: now,
-    updatedAt: now,
-  });
-  await h.db.upsertOrgMember({
-    orgId: h.orgId,
-    userId,
-    role: "member",
-    createdAt: now,
-  });
-  await h.db.upsertChannelOrgMapping({
-    orgId: h.orgId,
-    channel: "telegram",
-    channelUserId: h.actor.channelUserId,
-    userId,
-    createdAt: now,
-  });
-  await h.db.upsertSession({
-    ...(await h.db.getSession(h.sessionId))!,
-    userId,
-  });
-  h.context.userId = userId;
-  expect((await h.request("/v1/channel-actions/context", h.actor)).status).toBe(
-    200
-  );
-  await expect(
-    h.service.authorizeTool(h.orgId, h.sessionId, "telegram", "calculator")
-  ).resolves.toBeUndefined();
-  await expect(
-    h.service.request(
-      h.context,
-      { kind: "poll", question: "No guest effects", options: ["A", "B"] },
-      () => {}
-    )
-  ).rejects.toMatchObject({ status: 403 });
-  await saveChannelIntegrationPolicy(h.orgId, "telegram", {
-    version: 1,
-    groups: { allowedTools: [] },
-  });
-  await expect(
-    h.service.authorizeTool(h.orgId, h.sessionId, "telegram", "calculator")
-  ).rejects.toMatchObject({ status: 403 });
-});
+test.each(["telegram", "whatsapp", "discord"] as const)(
+  "%s: binding a guest conversation preserves file policy while native effects remain denied",
+  async (channel) => {
+    const h = await harness(channel);
+    const userId = "user_channel_guest_native_fixture";
+    const now = new Date().toISOString();
+    await h.db.createUser({
+      id: userId,
+      email: "guest-native@example.test",
+      passwordHash: "!disabled!",
+      isPlatformAdmin: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await h.db.upsertOrgMember({
+      orgId: h.orgId,
+      userId,
+      role: "member",
+      createdAt: now,
+    });
+    await h.db.upsertChannelOrgMapping({
+      orgId: h.orgId,
+      channel,
+      channelUserId: h.actor.channelUserId,
+      userId,
+      createdAt: now,
+    });
+    await h.db.upsertSession({
+      ...(await h.db.getSession(h.sessionId))!,
+      userId,
+    });
+    h.context.userId = userId;
+    expect(
+      (await h.request("/v1/channel-actions/context", h.actor)).status
+    ).toBe(200);
+    await expect(
+      h.service.authorizeTool(h.orgId, h.sessionId, channel, "calculator")
+    ).resolves.toBeUndefined();
+    let published = false;
+    await expect(
+      h.service.request(
+        h.context,
+        { kind: "poll", question: "No guest effects", options: ["A", "B"] },
+        () => {
+          published = true;
+        }
+      )
+    ).rejects.toMatchObject({ status: 403 });
+    expect(published).toBe(false);
+    await saveChannelIntegrationPolicy(h.orgId, channel, {
+      version: 1,
+      groups: { allowedTools: [] },
+    });
+    await expect(
+      h.service.authorizeTool(h.orgId, h.sessionId, channel, "calculator")
+    ).rejects.toMatchObject({ status: 403 });
+  }
+);
 
 for (const channel of ["telegram", "whatsapp", "discord"] as const) {
   test(`${channel}: a real pending approval cannot be decided from another room or topic`, async () => {

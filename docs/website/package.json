@@ -6,28 +6,30 @@
     "build": "bun run generate-mirrors && next build",
     "dev": "bun run generate-mirrors && next dev -p 3004",
     "generate-mirrors": "bun run scripts/postbuild.ts",
-    "preview": "bunx serve out -p 3004 -c serve.json",
+    "preview": "bun run scripts/preview.ts",
     "screenshots": "./scripts/capture-setup-screenshots.sh",
     "screenshots:chat": "./scripts/capture-chat-screenshots.sh",
     "screenshots:self-improving-skills": "./scripts/capture-self-improving-skills-screenshots.sh",
-    "screenshots:telegram": "./scripts/capture-telegram-screenshots.sh"
+    "screenshots:telegram": "./scripts/capture-telegram-screenshots.sh",
+    "typecheck": "fumadocs-mdx && next typegen && tsc --noEmit",
+    "verify:export": "bun run scripts/verify-export.ts"
   },
   "dependencies": {
     "@paper-design/shaders-react": "0.0.77",
     "fumadocs-core": "^16.15.4",
-    "fumadocs-mdx": "^14.0.0",
+    "fumadocs-mdx": "^15.4.0",
     "fumadocs-ui": "^16.15.4",
     "hugeicons-react": "^0.4.0",
-    "next": "^16.3.3",
+    "next": "^16.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^26.4.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.2.5",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^7.0.2"
   }
 }

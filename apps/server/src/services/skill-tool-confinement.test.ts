@@ -1,5 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import {
+  chmod,
+  copyFile,
   mkdir,
   mkdtemp,
   readFile,
@@ -289,16 +291,64 @@ test("metadata dependency cannot escape through a symlink", async () => {
   expect(await readFile(target, "utf8")).toBe("private canary");
 });
 
-test("run code and descendants cannot access sibling profile or private snapshots through aliases", async () => {
+const ACCESS_DENIAL = /^(?:EACCES|EPERM)$/;
+const ACCESS_PROBE = `
+const { readFileSync, writeFileSync } = require("node:fs");
+const attempt = (target) => {
+  let readError = null; let writeError = null;
+  try { readFileSync(target); } catch (error) {
+    if (error.code !== "EACCES" && error.code !== "EPERM") throw error;
+    readError = error.code;
+  }
+  try { writeFileSync(target, "changed"); } catch (error) {
+    if (error.code !== "EACCES" && error.code !== "EPERM") throw error;
+    writeError = error.code;
+  }
+  return { readError, writeError };
+};`;
+const DESCENDANT_PROBE = `${ACCESS_PROBE}
+const input = JSON.parse(process.argv[1]);
+writeFileSync(input.marker, "child executed");
+process.stdout.write(JSON.stringify({
+  accesses: input.targets.map(attempt),
+  marker: readFileSync(input.marker, "utf8"),
+  pid: process.pid,
+  runtime: { node: process.versions.node, bun: process.versions.bun ?? null },
+}));`;
+
+interface AccessResult {
+  readError: string | null;
+  writeError: string | null;
+}
+
+interface DescendantResult {
+  accesses: AccessResult[];
+  marker: string;
+  pid: number;
+  runtime: { node: string; bun: string | null };
+}
+
+interface DescendantRun {
+  child?: { code: number; stdout: string; stderr: string };
+  direct: AccessResult[];
+  pid: number;
+  spawnDenied?: string;
+}
+
+async function descendantFixture() {
   const { skillDir, target, workspaceRoot } = await fixture(
-    () => `import { readFileSync, writeFileSync } from "node:fs";
-export async function run(input, context) {
-  const attempt = (target) => { let read = false; let wrote = false; try { readFileSync(target); read = true; } catch {} try { writeFileSync(target, "changed"); wrote = true; } catch {} return { read, wrote }; };
+    () => `${ACCESS_PROBE}
+export async function run(input) {
   const direct = input.targets.map(attempt);
-  let child; try { child = Bun.spawn([process.execPath, "--no-install", "--no-addons", "-e", "const attempt = " + attempt.toString() + "; const { readFileSync, writeFileSync } = require('node:fs'); process.stdout.write(JSON.stringify(" + JSON.stringify(input.targets) + ".map(attempt)));"], { stdout: "pipe", stderr: "pipe" }); } catch (error) { if (error.code === "EPERM" || error.code === "EACCES") return { direct, descendant: { spawnDenied: true } }; throw error; }
-  const text = await new Response(child.stdout).text();
-  if (await child.exited) throw new Error(await new Response(child.stderr).text());
-  return { direct, descendant: JSON.parse(text) };
+  let child;
+  try {
+    child = Bun.spawn([input.runtime, ...input.runtimeArgs, "-e", ${JSON.stringify(DESCENDANT_PROBE)}, JSON.stringify(input)], { stdin: "ignore", stdout: "pipe", stderr: "pipe" });
+  } catch (error) {
+    if (error.code === "EPERM" || error.code === "EACCES") return { direct, pid: process.pid, spawnDenied: error.code };
+    throw error;
+  }
+  const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
+  return { direct, pid: process.pid, child: { stdout, stderr, code } };
 }`
   );
   const sibling = path.join(
@@ -313,27 +363,116 @@ export async function run(input, context) {
   await writeFile(sibling, "sibling canary");
   const alias = path.join(workspaceRoot, "snapshot-alias");
   await symlink(target, alias);
+  const siblingAlias = path.join(workspaceRoot, "sibling-alias");
+  await symlink(sibling, siblingAlias);
+  const marker = path.join(workspaceRoot, "descendant-started.txt");
+  const targets = [target, sibling, alias, siblingAlias];
   const tool = await strictTool(skillDir);
-  expect(
-    await tool.run(
-      { targets: [target, sibling, alias] },
-      context(workspaceRoot)
-    )
-  ).toEqual({
-    descendant:
-      process.platform === "darwin"
-        ? { spawnDenied: true }
-        : [
-            { read: false, wrote: false },
-            { read: false, wrote: false },
-            { read: false, wrote: false },
-          ],
-    direct: [
-      { read: false, wrote: false },
-      { read: false, wrote: false },
-      { read: false, wrote: false },
+  return { marker, sibling, target, targets, tool, workspaceRoot };
+}
+
+test("run code and genuine Node descendants deny sibling and private file accesses through aliases", async () => {
+  const { marker, sibling, target, targets, tool, workspaceRoot } =
+    await descendantFixture();
+  const installedNode = Bun.which("node");
+  if (!installedNode) {
+    throw new Error("The descendant fixture requires genuine Node.js on PATH.");
+  }
+  // The profile workspace already permits execution. Copying the fixture binary
+  // avoids granting a host runtime directory to the confined skill.
+  const runtime = path.join(workspaceRoot, "fixture-node");
+  await copyFile(await realpath(installedNode), runtime);
+  await chmod(runtime, 0o755);
+  const identity = Bun.spawn(
+    [
+      runtime,
+      "-p",
+      "JSON.stringify({node:process.versions.node,bun:process.versions.bun??null})",
     ],
-  });
+    { env: {}, stderr: "pipe", stdin: "ignore", stdout: "pipe" }
+  );
+  const [identityText, identityError, identityCode] = await Promise.all([
+    new Response(identity.stdout).text(),
+    new Response(identity.stderr).text(),
+    identity.exited,
+  ]);
+  expect(identityCode, identityError).toBe(0);
+  expect(
+    JSON.parse(identityText),
+    "The descendant fixture requires genuine Node.js, not a Bun shim."
+  ).toEqual({ bun: null, node: expect.any(String) });
+  const result = (await tool.run(
+    { marker, runtime, runtimeArgs: [], targets },
+    context(workspaceRoot)
+  )) as DescendantRun;
+  const denials = targets.map(() => ({
+    readError: expect.stringMatching(ACCESS_DENIAL),
+    writeError: expect.stringMatching(ACCESS_DENIAL),
+  }));
+  expect(result.direct).toEqual(denials);
+  if (process.platform === "darwin") {
+    expect(result.spawnDenied).toMatch(ACCESS_DENIAL);
+    expect(result.child).toBeUndefined();
+    expect(await Bun.file(marker).exists()).toBe(false);
+  } else {
+    expect(result.spawnDenied).toBeUndefined();
+    expect(result.child?.code, result.child?.stderr).toBe(0);
+    const child = JSON.parse(result.child!.stdout) as DescendantResult;
+    expect(child.runtime).toEqual({ bun: null, node: expect.any(String) });
+    expect(child.pid).not.toBe(result.pid);
+    expect(child.accesses).toEqual(denials);
+    expect(child.marker).toBe("child executed");
+    expect(await readFile(marker, "utf8")).toBe("child executed");
+  }
+  expect(await readFile(target, "utf8")).toBe("private canary");
+  expect(await readFile(sibling, "utf8")).toBe("sibling canary");
+});
+
+test("nested Bun either proves confined execution or stops before JavaScript with its known startup limitation", async () => {
+  const { marker, sibling, target, targets, tool, workspaceRoot } =
+    await descendantFixture();
+  const result = (await tool.run(
+    {
+      marker,
+      runtime: process.execPath,
+      runtimeArgs: [
+        "--config=/dev/null",
+        "--env-file=/dev/null",
+        "--no-install",
+        "--no-addons",
+      ],
+      targets,
+    },
+    context(workspaceRoot)
+  )) as DescendantRun;
+  const denials = targets.map(() => ({
+    readError: expect.stringMatching(ACCESS_DENIAL),
+    writeError: expect.stringMatching(ACCESS_DENIAL),
+  }));
+  expect(result.direct).toEqual(denials);
+  if (process.platform === "darwin") {
+    expect(result.spawnDenied).toMatch(ACCESS_DENIAL);
+    expect(result.child).toBeUndefined();
+    expect(await Bun.file(marker).exists()).toBe(false);
+  } else if (result.child?.code === 0) {
+    const child = JSON.parse(result.child.stdout) as DescendantResult;
+    expect(child.runtime).toEqual({
+      bun: Bun.version,
+      node: expect.any(String),
+    });
+    expect(child.pid).not.toBe(result.pid);
+    expect(child.accesses).toEqual(denials);
+    expect(child.marker).toBe("child executed");
+    expect(await readFile(marker, "utf8")).toBe("child executed");
+  } else {
+    // Bun 1.3.14's fresh JSC VM aborts when inherited Landlock denies the new
+    // process's /proc/self/maps inode. This is a startup limitation, not proof
+    // that JavaScript access probes executed. The Node test proves that above.
+    expect(result.spawnDenied).toBeUndefined();
+    expect(result.child?.code, result.child?.stderr).toBe(134);
+    expect(result.child?.stdout).toBe("");
+    expect(await Bun.file(marker).exists()).toBe(false);
+  }
   expect(await readFile(target, "utf8")).toBe("private canary");
   expect(await readFile(sibling, "utf8")).toBe("sibling canary");
 });

@@ -14,7 +14,7 @@ import { getProfileSoulDir } from "../soul/resolve";
 import {
   refuseProfileSkillMarkdownWrite,
   refuseSkillLocalToolFileWrite,
-} from "./builtin";
+} from "./file-write-policy";
 import {
   getCustomToolsDir,
   guardFilePath,

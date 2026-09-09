@@ -1,7 +1,3 @@
-import type {
-  CanonicalPrincipal,
-  ChannelPrincipalAuthorizationInput,
-} from "@atlas/core";
 import { AtlasApiError, readApiErrorMessage } from "@atlas/core/api-error";
 import type {
   AcceptOrgInviteRequest,
@@ -231,6 +227,10 @@ import type {
   WhatsAppSettingsResponse,
   WorkerLogsResponse,
 } from "@atlas/core/contract";
+import type {
+  CanonicalPrincipal,
+  ChannelPrincipalAuthorizationInput,
+} from "@atlas/core/identity/principal";
 import { loadLocalAuthToken } from "@atlas/core/local-auth";
 import { resolveServerUrl } from "@atlas/core/runtime";
 import { readBrowserOrigin, readCookie } from "./browser";
