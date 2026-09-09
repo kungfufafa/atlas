@@ -328,6 +328,16 @@ describe("resolvePrimaryModelVisionSupport", () => {
         "fireworks-static::accounts/fireworks/models/kimi-k2p6"
       )
     ).toBe(false);
+
+    config.providers[0]!.customModels = [
+      { id: "accounts/fireworks/models/kimi-k2p5", supportsVision: false },
+    ];
+    expect(
+      resolvePrimaryModelVisionSupport(
+        config,
+        "fireworks-static::accounts/fireworks/models/kimi-k2p5"
+      )
+    ).toBe(false);
   });
 });
 

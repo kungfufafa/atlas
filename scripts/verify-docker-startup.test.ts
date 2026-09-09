@@ -1,165 +1,145 @@
-import { afterEach, expect, test } from "bun:test";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { expect, test } from "bun:test";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ATLAS_API_VERSION } from "../packages/core/src/contract";
 
-const temporaryDirectories: string[] = [];
-const projectRoot = join(import.meta.dir, "..");
+const script = join(import.meta.dir, "verify-docker-startup.sh");
+const smokeContainerId = "isolated-smoke-container";
+const image = "atlas:startup-test";
 
-afterEach(async () => {
-  for (const directory of temporaryDirectories.splice(0)) {
-    await rm(directory, { force: true, recursive: true });
-  }
-});
+type Scenario =
+  | "healthy"
+  | "daemon-unavailable"
+  | "image-missing"
+  | "unhealthy"
+  | "exited"
+  | "api-failure"
+  | "cleanup-failure"
+  | "api-cleanup-failure";
 
-interface ProbeOptions {
-  execExitCode?: number;
-  healthMode?: string;
-  indexStalls?: boolean;
-  removalFails?: boolean;
-}
-
-async function runControlledDocker(options: ProbeOptions = {}) {
-  const directory = await mkdtemp(join(tmpdir(), "atlas-docker-startup-test-"));
-  temporaryDirectories.push(directory);
-  const eventsPath = join(directory, "events.jsonl");
-  const dockerPath = join(directory, "docker");
-  // Exercise the actual shell script and its exact inline verifier. Only Docker
-  // transport and HTTP responses are controlled here; this is not image proof.
-  const fetchFixture = `
-import { appendFileSync } from "node:fs";
-const record = event => appendFileSync(${JSON.stringify(eventsPath)}, JSON.stringify(event) + "\\n");
-const options = ${JSON.stringify(options)};
-const realNow = Date.now;
-let ticks = 0;
-Date.now = () => realNow() + (ticks++ * 10000);
-const stalled = signal => new Promise((resolve, reject) => {
-  if (!signal) return;
-  signal.addEventListener("abort", () => { record({kind:"abort"}); reject(signal.reason); }, {once:true});
-});
-globalThis.fetch = async (url, init) => {
-  record({kind:"request", url:String(url), hasAbortSignal:!!init?.signal});
-  if (String(url).endsWith("/health")) {
-    if (options.healthMode === "stalled") return await stalled(init?.signal);
-    if (options.healthMode === "html") return new Response("<html>/assets/fake.js</html>", {headers:{"content-type":"text/html"}});
-    const status = options.healthMode === "401" ? 401 : options.healthMode === "404" ? 404 : 200;
-    return Response.json({ok:true, apiVersion:options.healthMode === "wrong-version" ? ${ATLAS_API_VERSION + 1} : ${ATLAS_API_VERSION}}, {status});
-  }
-  if (options.indexStalls) return await stalled(init?.signal);
-  return new Response("<html><script src=/assets/dashboard.js></script></html>", {headers:{"content-type":"text/html"}});
-};
-`;
+async function runSmoke(scenario: Scenario, platform = "linux/amd64") {
+  const directory = await mkdtemp(join(tmpdir(), "atlas-docker-smoke-test-"));
+  const callsPath = join(directory, "calls.jsonl");
   await writeFile(
-    dockerPath,
+    join(directory, "docker"),
     `#!${process.execPath}
 import { appendFileSync } from "node:fs";
-const command = process.argv[2];
-appendFileSync(${JSON.stringify(eventsPath)}, JSON.stringify({kind:"docker", command}) + "\\n");
-const options = ${JSON.stringify(options)};
-if (command === "exec") {
-  if (options.execExitCode) process.exit(options.execExitCode);
-  const child = Bun.spawn([process.execPath, "-e", ${JSON.stringify(fetchFixture)} + process.argv.at(-1)], {cwd:${JSON.stringify(projectRoot)}, stdout:"inherit", stderr:"inherit"});
-  process.exit(await child.exited);
+const args = process.argv.slice(2);
+appendFileSync(process.env.SMOKE_TEST_CALLS, JSON.stringify(args) + "\\n");
+const scenario = process.env.SMOKE_TEST_SCENARIO;
+switch (args[0]) {
+  case "info": process.exit(scenario === "daemon-unavailable" ? 1 : 0);
+  case "image": process.exit(scenario === "image-missing" ? 1 : 0);
+  case "run": console.log("${smokeContainerId}"); break;
+  case "inspect":
+    if (scenario === "unhealthy") console.log("running unhealthy");
+    else if (scenario === "exited") console.log("exited unhealthy");
+    else console.log("running healthy");
+    break;
+  case "exec": process.exit(scenario.startsWith("api-") ? 3 : 0);
+  case "logs": console.log("test startup logs"); break;
+  case "rm": process.exit(scenario.endsWith("cleanup-failure") ? 1 : 0);
+  default: process.exit(2);
 }
-if (command === "rm" && options.removalFails) process.exit(19);
-process.exit(0);
-`
+`,
+    { mode: 0o755 }
   );
-  await chmod(dockerPath, 0o700);
-  const child = Bun.spawn(
-    [
-      "bash",
-      join(projectRoot, "scripts/verify-docker-startup.sh"),
-      "controlled-image",
-    ],
-    {
-      cwd: projectRoot,
-      env: { ...process.env, PATH: `${directory}:${process.env.PATH ?? ""}` },
+  try {
+    const process = Bun.spawn(["bash", script, image], {
+      env: {
+        ...Bun.env,
+        ATLAS_DOCKER_PLATFORM: platform,
+        ATLAS_DOCKER_STARTUP_TIMEOUT: "1",
+        PATH: `${directory}:${Bun.env.PATH}`,
+        SMOKE_TEST_CALLS: callsPath,
+        SMOKE_TEST_SCENARIO: scenario,
+      },
       stderr: "pipe",
       stdout: "pipe",
-    }
-  );
-  const deadline = setTimeout(() => child.kill("SIGKILL"), 9000);
-  try {
+    });
     const [exitCode, stdout, stderr] = await Promise.all([
-      child.exited,
-      new Response(child.stdout).text(),
-      new Response(child.stderr).text(),
+      process.exited,
+      new Response(process.stdout).text(),
+      new Response(process.stderr).text(),
     ]);
-    const events = (await readFile(eventsPath, "utf8"))
+    const calls = (await readFile(callsPath, "utf8"))
       .trim()
       .split("\n")
-      .map((line) => JSON.parse(line) as Record<string, unknown>);
-    return { events, exitCode, stderr, stdout };
+      .map((line) => JSON.parse(line) as string[]);
+    return { calls, exitCode, stderr, stdout };
   } finally {
-    clearTimeout(deadline);
+    await rm(directory, { force: true, recursive: true });
   }
 }
 
-test("host startup verifier accepts exact health JSON and cleans its container", async () => {
-  const result = await runControlledDocker();
+test("Docker smoke isolates data and cleans up only its own container on success", async () => {
+  const result = await runSmoke("healthy");
   expect(result.exitCode).toBe(0);
-  const evidence = JSON.parse(result.stdout.trim());
-  expect(evidence.health.apiVersion).toBe(ATLAS_API_VERSION);
-  expect(evidence.health.status).toBe(200);
-  expect(result.events.filter((event) => event.kind === "request")).toEqual([
-    {
-      hasAbortSignal: true,
-      kind: "request",
-      url: "http://127.0.0.1:4310/health",
-    },
-    { hasAbortSignal: true, kind: "request", url: "http://127.0.0.1:4310/" },
+  const run = result.calls.find((call) => call[0] === "run");
+  expect(run).toBeDefined();
+  expect(run?.slice(-1)).toEqual([image]);
+  expect(run?.slice(2, 4)).toEqual(["--platform", "linux/amd64"]);
+  expect(run?.slice(4, 8)).toEqual([
+    "--network",
+    "none",
+    "--tmpfs",
+    "/atlas/data:rw,uid=1000,gid=1000,mode=0700",
   ]);
-  expect(result.events.slice(-2)).toEqual([
-    { command: "stop", kind: "docker" },
-    { command: "rm", kind: "docker" },
+  expect(run).not.toContain("--volume");
+  expect(run).not.toContain("-v");
+  expect(run).not.toContain("--publish");
+  expect(run).not.toContain("-p");
+  const exec = result.calls.find((call) => call[0] === "exec");
+  expect(exec?.slice(0, 3)).toEqual([
+    "exec",
+    "--interactive",
+    smokeContainerId,
   ]);
+  expect(result.calls.filter((call) => call[0] === "rm")).toEqual([
+    ["rm", "--force", "--volumes", smokeContainerId],
+  ]);
+  expect(result.calls.some((call) => call[0] === "logs")).toBe(false);
 });
 
-test.each(["html", "401", "404", "wrong-version", "stalled"])(
-  "host startup verifier rejects %s health and still removes its container",
-  async (healthMode) => {
-    const startedAt = Date.now();
-    const result = await runControlledDocker({ healthMode });
+test("Docker smoke runs without an optional platform override", async () => {
+  const result = await runSmoke("healthy", "");
+  expect(result.exitCode).toBe(0);
+  expect(result.calls.find((call) => call[0] === "run")).not.toContain(
+    "--platform"
+  );
+});
+
+test.each(["daemon-unavailable", "image-missing"] as const)(
+  "Docker smoke fails before creating resources when %s",
+  async (scenario) => {
+    const result = await runSmoke(scenario);
     expect(result.exitCode).not.toBe(0);
-    expect(Date.now() - startedAt).toBeLessThan(4000);
-    expect(result.stdout.trim()).toBe("");
-    expect(result.events.at(-1)).toEqual({ command: "rm", kind: "docker" });
-    expect(result.events).toContainEqual({
-      hasAbortSignal: true,
-      kind: "request",
-      url: "http://127.0.0.1:4310/health",
-    });
-    if (healthMode === "stalled") {
-      expect(result.events).toContainEqual({ kind: "abort" });
-    }
+    expect(result.calls.some((call) => call[0] === "run")).toBe(false);
+    expect(result.calls.some((call) => call[0] === "rm")).toBe(false);
   }
 );
 
-test("host startup verifier bounds a stalled dashboard request", async () => {
-  const startedAt = Date.now();
-  const result = await runControlledDocker({ indexStalls: true });
-  expect(result.exitCode).not.toBe(0);
-  expect(Date.now() - startedAt).toBeLessThan(8000);
-  expect(result.events).toContainEqual({ kind: "abort" });
-  expect(result.events.at(-1)).toEqual({ command: "rm", kind: "docker" });
-}, 10_000);
+test.each(["unhealthy", "exited", "api-failure"] as const)(
+  "Docker smoke reports diagnostics and removes its container after %s",
+  async (scenario) => {
+    const result = await runSmoke(scenario);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.calls.filter((call) => call[0] === "logs")).toEqual([
+      ["logs", "--tail", "100", smokeContainerId],
+    ]);
+    expect(result.calls.filter((call) => call[0] === "rm")).toEqual([
+      ["rm", "--force", "--volumes", smokeContainerId],
+    ]);
+    expect(result.calls.some((call) => call[0] === "exec")).toBe(
+      scenario === "api-failure"
+    );
+  }
+);
 
-test("container removal failure makes an otherwise successful gate fail", async () => {
-  const result = await runControlledDocker({ removalFails: true });
-  expect(result.exitCode).toBe(1);
-  expect(JSON.parse(result.stdout.trim()).status).toBe("passed");
-  expect(result.events.at(-1)).toEqual({ command: "rm", kind: "docker" });
-  expect(result.stderr.length).toBeGreaterThan(0);
+test("Docker smoke fails if cleanup fails after successful verification", async () => {
+  expect((await runSmoke("cleanup-failure")).exitCode).toBe(1);
 });
 
-test("container cleanup failure preserves the original command failure status", async () => {
-  const result = await runControlledDocker({
-    execExitCode: 23,
-    removalFails: true,
-  });
-  expect(result.exitCode).toBe(23);
-  expect(result.events.at(-1)).toEqual({ command: "rm", kind: "docker" });
-  expect(result.stderr.length).toBeGreaterThan(0);
+test("Docker smoke preserves the original failure when cleanup also fails", async () => {
+  expect((await runSmoke("api-cleanup-failure")).exitCode).toBe(3);
 });

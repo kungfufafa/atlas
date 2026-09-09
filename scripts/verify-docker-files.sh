@@ -90,5 +90,6 @@ console.log(JSON.stringify({
   status: "passed"
 }));
 '
+bash "$repository/scripts/verify-docker-health.sh" "$image"
 bash "$repository/scripts/verify-docker-startup.sh" "$image"
 printf 'PASS: built and exercised %s; no host data mounted or messenger traffic sent.\n' "$image"

@@ -69,7 +69,7 @@ const openaiInstance = makeInstance({
 
 const anthropicInstance = makeInstance({
   apiKey: ANTHROPIC_KEY,
-  // Explicit fixture configuration; transport support alone is not model evidence.
+  // Explicit fixture configuration; transport support is not model evidence.
   customModels: [{ id: CLAUDE_CHAT_MODEL, supportsVision: true }],
   id: "prov-anthropic",
   label: "Anthropic",
@@ -236,23 +236,66 @@ describe("capability routing with mixed credentials", () => {
       config
     );
     expect(selection.instance.id).toBe(anthropicInstance.id);
+    expect(selection.model).toBe(CLAUDE_CHAT_MODEL);
     expect(selection.apiKey).toBe(ANTHROPIC_KEY);
   });
 
-  test("Anthropic vision does not inherit support from a model name or installed transport", () => {
-    const config = makeConfig({
-      bindings: {
-        [PROVIDER_CAPABILITY_IDS.imageUnderstanding]: binding({
-          modelId: CLAUDE_CHAT_MODEL,
-          providerId: anthropicInstance.id,
-        }),
-      },
-      providers: [{ ...anthropicInstance, customModels: undefined }],
-    });
-    expect(() =>
-      resolveCapability(PROVIDER_CAPABILITY_IDS.imageUnderstanding, config)
-    ).toThrow(ProviderCapabilityError);
-  });
+  test.each([
+    {
+      code: "CAPABILITY_UNKNOWN",
+      customModels: undefined,
+      reason: "model-unknown",
+      scenario: "missing model metadata",
+    },
+    {
+      code: "CAPABILITY_UNKNOWN",
+      customModels: [{ id: CLAUDE_CHAT_MODEL }],
+      reason: "model-unknown",
+      scenario: "id-only model metadata",
+    },
+    {
+      code: "CAPABILITY_UNSUPPORTED",
+      customModels: [{ id: CLAUDE_CHAT_MODEL, supportsVision: false }],
+      reason: "model-unsupported",
+      scenario: "explicitly disabled vision",
+    },
+  ])(
+    "rejects Anthropic vision with $scenario on the selected instance",
+    ({ code, customModels, reason }) => {
+      const selectedInstance = {
+        ...anthropicInstance,
+        customModels,
+        id: "prov-anthropic-unverified",
+      };
+      const config = makeConfig({
+        bindings: {
+          [PROVIDER_CAPABILITY_IDS.imageUnderstanding]: binding({
+            modelId: CLAUDE_CHAT_MODEL,
+            providerId: selectedInstance.id,
+          }),
+        },
+        defaultProviderId: chatgptInstance.id,
+        providers: [chatgptInstance, anthropicInstance, selectedInstance],
+      });
+
+      try {
+        resolveCapability(PROVIDER_CAPABILITY_IDS.imageUnderstanding, config);
+        throw new Error("expected image understanding resolution to fail");
+      } catch (error) {
+        expect(error).toBeInstanceOf(ProviderCapabilityError);
+        expect(error).toMatchObject({
+          attempts: [
+            {
+              modelId: CLAUDE_CHAT_MODEL,
+              providerId: selectedInstance.id,
+              reasons: [reason],
+            },
+          ],
+          code,
+        });
+      }
+    }
+  );
 
   test("subscription image generation resolves without any API key", () => {
     const config = makeConfig({
