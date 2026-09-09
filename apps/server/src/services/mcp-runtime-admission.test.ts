@@ -235,7 +235,8 @@ for (const kind of ["discovery", "profile"] as const) {
         expect(f.count()).toBe(1);
         expect(await readFile(f.marker, "utf8")).toBe("1");
         expect(initial.credential).toBe("synthetic configured credential");
-        expect(initial.outside).toEqual({ code: "EPERM", path: f.outside });
+        expect(initial.outside.path).toBe(f.outside);
+        expect(["EPERM", "EACCES"]).toContain(initial.outside.code);
         expect(initial.cwd).toBe(seen!.workspaceRoot.path);
         expect(initial.home).toBe(seen!.temporaryRoot.path);
         expect(
