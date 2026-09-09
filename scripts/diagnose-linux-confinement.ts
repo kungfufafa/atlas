@@ -84,7 +84,7 @@ async function collect(
         "-s",
         "160",
         "-e",
-        "trace=%file,%process,read,write,epoll_ctl,fcntl",
+        "trace=%file,%process,%memory,read,write,epoll_ctl,fcntl,futex,sysinfo,prctl,close,close_range,rt_sigaction,rt_sigprocmask",
         "-o",
         path.join(output, `${label}.strace`),
         command,
@@ -293,6 +293,7 @@ async function main(): Promise<void> {
   await writeFile(script, PROBE);
   const node = Bun.which("node");
   const trace = Bun.which("strace");
+  const debuggerBin = Bun.which("gdb");
   const baseEnv: NodeJS.ProcessEnv = {
     ATLAS_BUN_BIN: process.execPath,
     ATLAS_CONFIG_DIR: root,
@@ -445,6 +446,51 @@ async function main(): Promise<void> {
           traced ? trace : null
         )
       );
+    }
+    if (debuggerBin) {
+      await writeFile(canary, "synthetic-only");
+      const prepared = await prepare({
+        args: [...isolated, "-e", PROBE],
+        bin: process.execPath,
+        env: { ...baseEnv, DEBUGINFOD_URLS: "", PROBE_PROTOCOL: "0" },
+        workspaceRoot: workspace,
+      });
+      try {
+        results.push(
+          await collect(
+            "confined-bun-gdb",
+            debuggerBin,
+            [
+              "--batch",
+              "--nx",
+              "--quiet",
+              "-iex",
+              "set auto-load off",
+              "-iex",
+              "set debuginfod enabled off",
+              "-ex",
+              "set pagination off",
+              "-ex",
+              "set confirm off",
+              "-ex",
+              "handle SIGABRT stop print nopass",
+              "-ex",
+              "run",
+              "-ex",
+              "bt 32",
+              "--args",
+              prepared.bin,
+              ...prepared.args,
+            ],
+            prepared.cwd,
+            prepared.env,
+            output,
+            null
+          )
+        );
+      } finally {
+        await prepared.cleanup();
+      }
     }
     process.exitCode = results.some(
       (result) =>

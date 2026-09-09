@@ -143,7 +143,9 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg fonts-liberation libreoffice-calc libreoffice-impress libreoffice-writer
 
       - name: Run unit tests
-        run: bun run test --shard=${{ matrix.shard }}/4
+        run: |
+          ulimit -c 0
+          bun run test --shard=${{ matrix.shard }}/4
 
       - name: Report unit runner disk usage
         if: always()
@@ -247,12 +249,14 @@ jobs:
       - name: Install syscall tracer
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends strace libc6-dev
+          sudo apt-get install -y --no-install-recommends strace gdb libc6-dev
 
       - name: Trace synthetic confinement startup outside test workers
         env:
           ATLAS_CONFINEMENT_DIAGNOSTIC_DIR: ${{ runner.temp }}/atlas-confinement-diagnostic
-        run: bun --config=/dev/null --env-file=/dev/null scripts/diagnose-linux-confinement.ts
+        run: |
+          ulimit -c 0
+          bun --config=/dev/null --env-file=/dev/null scripts/diagnose-linux-confinement.ts
 
       - name: Retain synthetic startup results and syscall traces
         if: always()

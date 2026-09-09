@@ -1,9 +1,13 @@
 import { expect, test } from "bun:test";
-import type { StoredMcpServerRecord } from "@atlas/db";
+import {
+  createInMemoryDatabaseAdapter,
+  type StoredMcpServerRecord,
+} from "@atlas/db";
 import {
   McpClientManager,
   McpConnectionSupersededError,
 } from "./mcp-client-manager";
+import { McpService } from "./mcp-service";
 
 function endpoint(name: string) {
   const listing = Promise.withResolvers<void>();
@@ -61,8 +65,8 @@ function record(url: string): StoredMcpServerRecord {
   };
 }
 
-test.each(["server", "all", "endpoint"] as const)(
-  "disconnecting a pending %s connection prevents it from becoming available",
+test.each(["server", "all", "endpoint", "configuration"] as const)(
+  "disconnecting a pending %s connection closes discovery before its peer replies",
   async (kind) => {
     const remote = endpoint("late");
     const manager = new McpClientManager();
@@ -78,12 +82,16 @@ test.each(["server", "all", "endpoint"] as const)(
         await manager.disconnectAll();
       } else if (kind === "endpoint") {
         await manager.disconnectHttpEndpoint(server.id);
+      } else if (kind === "configuration") {
+        await manager.disconnectIfConfigurationMatches(server);
       } else {
         await manager.disconnect(server.id);
       }
-      remote.release();
+      // The peer is still holding tools/list. Disconnect must settle the
+      // attempt itself instead of waiting for an unresponsive server to reply.
       expect(await pending).toBeInstanceOf(McpConnectionSupersededError);
       expect(manager.getConnectedCount()).toBe(0);
+      remote.release();
     } finally {
       remote.release();
       await pending;
@@ -107,10 +115,10 @@ test("a late connection and stale cleanup cannot replace or close a newer endpoi
     await older.listing;
     newPending = manager.connect(newServer);
     await newer.listing;
+    expect(await oldPending).toBeInstanceOf(McpConnectionSupersededError);
     newer.release();
     await newPending;
     older.release();
-    expect(await oldPending).toBeInstanceOf(McpConnectionSupersededError);
     await manager.disconnectIfConfigurationMatches(oldServer);
     expect(manager.isConnected(newServer.id, "http")).toBe(true);
     expect(
@@ -123,5 +131,33 @@ test("a late connection and stale cleanup cannot replace or close a newer endpoi
     await manager.disconnectAll();
     await older.server.stop(true);
     await newer.server.stop(true);
+  }
+});
+
+test("disabling a server terminates pending discovery and persists the revocation before the peer replies", async () => {
+  const remote = endpoint("disabled");
+  const manager = new McpClientManager();
+  const db = createInMemoryDatabaseAdapter();
+  const service = new McpService(db, manager);
+  const server = record(remote.server.url.toString());
+  await db.upsertMcpServer(server);
+  const pending = service
+    .connectServer("org_pending", server.id)
+    .catch((error: unknown) => error);
+  try {
+    await remote.listing;
+    await service.updateServer("org_pending", server.id, { enabled: false });
+    expect(await pending).toBeInstanceOf(McpConnectionSupersededError);
+    expect(await db.getMcpServer(server.id)).toMatchObject({
+      cachedTools: [],
+      enabled: false,
+      status: "disconnected",
+    });
+    expect(manager.isConnected(server.id, "http")).toBe(false);
+  } finally {
+    remote.release();
+    await pending;
+    await manager.disconnectAll();
+    await remote.server.stop(true);
   }
 });

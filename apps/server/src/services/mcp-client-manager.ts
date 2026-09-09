@@ -36,7 +36,9 @@ interface ConnectedMcpClient extends ManagedMcpTransport {
 }
 
 interface ConnectionAttempt {
+  closing?: Promise<void>;
   configuration?: string;
+  managed?: ManagedMcpTransport;
   serverId?: string;
 }
 
@@ -123,14 +125,18 @@ export class McpClientManager {
         "MCP server does not belong to the requested organization."
       );
     }
-    const attempt = {
+    const attempt: ConnectionAttempt = {
       configuration: connectionConfiguration(server),
       serverId: server.id,
     };
+    const previousAttempt = this.connectionAttempts.get(key);
     this.connectionAttempts.set(key, attempt);
     let managed: ManagedMcpTransport;
     try {
-      await this.disconnectKey(key);
+      await Promise.all([
+        this.disconnectKey(key),
+        this.closeConnectionAttempt(previousAttempt),
+      ]);
       this.requireCurrentConnectionAttempt(key, attempt);
       managed = await createTransport(
         transportKind,
@@ -138,6 +144,7 @@ export class McpClientManager {
         this.prepareStdio,
         capturedOptions
       );
+      attempt.managed = managed;
     } catch (error) {
       this.finishConnectionAttempt(key, attempt);
       throw error;
@@ -171,7 +178,11 @@ export class McpClientManager {
       });
       return tools;
     } catch (error) {
-      await closeManagedTransport(managed);
+      const superseded = this.connectionAttempts.get(key) !== attempt;
+      await this.closeConnectionAttempt(attempt);
+      if (superseded) {
+        throw new McpConnectionSupersededError();
+      }
       throw error;
     } finally {
       this.finishConnectionAttempt(key, attempt);
@@ -179,49 +190,51 @@ export class McpClientManager {
   }
 
   async disconnect(serverId: string): Promise<void> {
+    const pending: ConnectionAttempt[] = [];
     for (const [key, attempt] of this.connectionAttempts) {
       if (attempt.serverId === serverId) {
         this.connectionAttempts.delete(key);
+        pending.push(attempt);
       }
     }
     const keys = [...this.connections.keys()].filter(
       (key) => key === serverId || key.startsWith(`${serverId}:`)
     );
 
-    for (const key of keys) {
-      await this.disconnectKey(key);
-    }
+    await this.closeConnectionsAndAttempts(keys, pending);
   }
 
   async disconnectAll(): Promise<void> {
+    const pending = [...this.connectionAttempts.values()];
     this.connectionAttempts.clear();
     const keys = [...this.connections.keys()];
-
-    for (const key of keys) {
-      await this.disconnectKey(key);
-    }
+    await this.closeConnectionsAndAttempts(keys, pending);
   }
 
   async disconnectIfConfigurationMatches(
     server: StoredMcpServerRecord
   ): Promise<void> {
     const configuration = connectionConfiguration(server);
+    const pending: ConnectionAttempt[] = [];
     for (const [key, attempt] of this.connectionAttempts) {
       if (
         attempt.serverId === server.id &&
         attempt.configuration === configuration
       ) {
         this.connectionAttempts.delete(key);
+        pending.push(attempt);
       }
     }
+    const keys: string[] = [];
     for (const [key, connection] of this.connections) {
       if (
         (key === server.id || key.startsWith(`${server.id}:`)) &&
         connection.configuration === configuration
       ) {
-        await this.disconnectKey(key);
+        keys.push(key);
       }
     }
+    await this.closeConnectionsAndAttempts(keys, pending);
   }
 
   async listTools(
@@ -294,16 +307,20 @@ export class McpClientManager {
     headers?: Record<string, string>
   ): Promise<CachedMcpTool[]> {
     const attempt: ConnectionAttempt = {};
+    const previousAttempt = this.connectionAttempts.get(connectionKey);
     this.connectionAttempts.set(connectionKey, attempt);
-    let transport: StreamableHTTPClientTransport | undefined;
     try {
-      await this.disconnectKey(connectionKey);
+      await Promise.all([
+        this.disconnectKey(connectionKey),
+        this.closeConnectionAttempt(previousAttempt),
+      ]);
       this.requireCurrentConnectionAttempt(connectionKey, attempt);
-      transport = new StreamableHTTPClientTransport(new URL(url), {
+      const transport = new StreamableHTTPClientTransport(new URL(url), {
         requestInit: {
           headers,
         },
       });
+      attempt.managed = { transport };
       const client = new Client({
         name: "atlas",
         version: "1.0.0",
@@ -317,8 +334,10 @@ export class McpClientManager {
       this.connections.set(connectionKey, { client, transport });
       return tools;
     } catch (error) {
-      if (transport) {
-        await closeManagedTransport({ transport });
+      const superseded = this.connectionAttempts.get(connectionKey) !== attempt;
+      await this.closeConnectionAttempt(attempt);
+      if (superseded) {
+        throw new McpConnectionSupersededError();
       }
       throw error;
     } finally {
@@ -362,8 +381,38 @@ export class McpClientManager {
   }
 
   async disconnectHttpEndpoint(connectionKey: string): Promise<void> {
+    const pending = this.connectionAttempts.get(connectionKey);
     this.connectionAttempts.delete(connectionKey);
-    await this.disconnectKey(connectionKey);
+    await this.closeConnectionsAndAttempts(
+      [connectionKey],
+      pending ? [pending] : []
+    );
+  }
+
+  private async closeConnectionsAndAttempts(
+    keys: string[],
+    pending: ConnectionAttempt[]
+  ): Promise<void> {
+    const results = await Promise.allSettled([
+      ...keys.map((key) => this.disconnectKey(key)),
+      ...pending.map((attempt) => this.closeConnectionAttempt(attempt)),
+    ]);
+    const failure = results.find((result) => result.status === "rejected");
+    if (failure?.status === "rejected") {
+      throw failure.reason;
+    }
+  }
+
+  private async closeConnectionAttempt(
+    attempt: ConnectionAttempt | undefined
+  ): Promise<void> {
+    if (!attempt?.managed) {
+      return;
+    }
+    // Revocation and the rejected connect call await the same cleanup, without
+    // closing a later attempt's transport or closing this transport twice.
+    attempt.closing ??= closeManagedTransport(attempt.managed);
+    await attempt.closing;
   }
 
   private requireCurrentConnectionAttempt(
