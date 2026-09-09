@@ -329,8 +329,11 @@ async function runHermesCell(input: {
     )}\n`
   );
 
+  const hermesPython =
+    process.env.HERMES_PYTHON?.trim() ||
+    "/tmp/atlas-eval/hermes-agent/.venv/bin/python";
   const proc = Bun.spawn(
-    ["python3", join(ROOT, "scripts/eval/run-hermes-cell.py"), requestPath],
+    [hermesPython, join(ROOT, "scripts/eval/run-hermes-cell.py"), requestPath],
     {
       env: {
         ...process.env,
