@@ -1,7 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/atlas", "destination": "/index.html" },
-    { "source": "/atlas/", "destination": "/index.html" },
-    { "source": "/atlas/:path*", "destination": "/:path*" }
-  ]
-}

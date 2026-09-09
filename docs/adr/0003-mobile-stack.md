@@ -73,12 +73,30 @@ Expo Autolinking is on for both platforms:
 - `expo-modules-autolinking react-native-config` resolves native modules
   from the workspace root for iOS and Android.
 
-`expo-modules-autolinking verify` still warns about nested
-`expo-constants` copies (hoisted `57.0.16` vs `57.0.15` under
-`expo-asset` and `expo-linking`). That is a Bun workspace install, not a
-failed autolink. Do not hide it with LogBox, Metro `blockList` /
-`disableHierarchicalLookup`, a one-off `overrides` entry, or deleting
-`bun.lock`. Clearing it needs a workspace-wide linker migration and
-TypeScript alignment (`apps/mobile` declares `typescript ~6.0.3`; the
-repo typechecks on `5.9.3` and excludes mobile from
-`tsconfig.typecheck.json`).
+`expo-modules-autolinking verify` still reports duplicate installations for
+some modules under Bun's existing isolated linker. After the SDK 57 patch
+alignment, these copies have matching versions (including Expo `57.0.21`,
+`@expo/ui` `57.0.17`, and `expo-constants` `57.0.17`), but separate peer
+contexts can still produce distinct installation paths. Both iOS and Android
+exports complete with Expo Autolinking enabled. Keep these warnings visible;
+export success does not replace native device/build verification.
+
+Do not hide duplicates with LogBox, Metro `blockList` /
+`disableHierarchicalLookup`, one-off `overrides`, or deleting `bun.lock`.
+Further deduplication requires a coordinated workspace linker/peer dependency
+review, rather than suppressing module discovery. Mobile keeps the Expo SDK 57
+React / React DOM pair at `19.2.3` and Gesture Handler at `~2.32.0`; the web
+workspace uses its own matched `19.2.8` pair. Native dependency upgrades must
+follow `expo/bundledNativeModules.json`, including sibling Expo packages.
+
+Mobile typechecking uses its declared TypeScript `~6.0.3` independently of the
+root `5.9.3` check. Shared client types import the principal subpath and pure
+attachment interfaces, so mobile does not pull server document/process code
+into Expo's ambient environment types. Validate from `apps/mobile` with:
+
+```sh
+node node_modules/typescript/bin/tsc --noEmit
+CI=1 node node_modules/expo/bin/cli install --check
+node node_modules/expo/bin/autolinking verify
+CI=1 node node_modules/expo/bin/cli export --platform ios --platform android --output-dir /tmp/atlas-mobile-export
+```

@@ -9,7 +9,9 @@ import {
 import {
   GlobalWorkerOptions,
   getDocument,
+  type PDFDocumentLoadingTask,
   type PDFDocumentProxy,
+  type RenderTask,
 } from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { useEffect, useRef, useState } from "react";
@@ -40,28 +42,33 @@ export function PdfViewer({
 
   useEffect(() => {
     let cancelled = false;
-    let documentProxy: PDFDocumentProxy | null = null;
+    let loadingTask: PDFDocumentLoadingTask | null = null;
+    const controller = new AbortController();
     setLoadingPdf(true);
     setPdfError(null);
+    setRenderError(null);
     setPdf(null);
 
     void (async () => {
       try {
-        const response = await fetch(rawPdfUrl, { credentials: "include" });
+        const response = await fetch(rawPdfUrl, {
+          credentials: "include",
+          signal: controller.signal,
+        });
         if (!response.ok) {
           throw new Error(`Failed to load PDF (${response.status})`);
         }
         const data = await response.arrayBuffer();
-        const loadingTask = getDocument({ data });
-        documentProxy = await loadingTask.promise;
         if (cancelled) {
-          await documentProxy.destroy();
+          return;
+        }
+        loadingTask = getDocument({ data });
+        const documentProxy = await loadingTask.promise;
+        if (cancelled) {
           return;
         }
         setPageCount(documentProxy.numPages);
-        setCurrentPage((page) =>
-          Math.min(Math.max(1, page), documentProxy?.numPages ?? 1)
-        );
+        setCurrentPage(1);
         setPdf(documentProxy);
       } catch (error) {
         if (!cancelled) {
@@ -80,7 +87,11 @@ export function PdfViewer({
 
     return () => {
       cancelled = true;
-      void documentProxy?.destroy();
+      controller.abort();
+      // The loading task owns the worker, including while loading is pending.
+      void loadingTask?.destroy().catch(() => {
+        // Teardown can race a rejected load; the active load reports its error.
+      });
     };
   }, [rawPdfUrl]);
 
@@ -90,6 +101,7 @@ export function PdfViewer({
     }
 
     let cancelled = false;
+    let renderTask: RenderTask | null = null;
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
@@ -97,6 +109,7 @@ export function PdfViewer({
 
     void (async () => {
       try {
+        setRenderError(null);
         const page = await pdf.getPage(currentPage);
         if (cancelled) {
           return;
@@ -108,7 +121,8 @@ export function PdfViewer({
         }
         canvas.width = viewport.width;
         canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport }).promise;
+        renderTask = page.render({ canvas, canvasContext: context, viewport });
+        await renderTask.promise;
         if (!cancelled) {
           setRenderError(null);
         }
@@ -125,6 +139,7 @@ export function PdfViewer({
 
     return () => {
       cancelled = true;
+      renderTask?.cancel();
     };
   }, [currentPage, pdf, zoom]);
 
@@ -301,12 +316,12 @@ export function PdfViewer({
               <p className="text-muted-foreground text-sm">
                 {pdfError || renderError || "This PDF couldn't be previewed."}
               </p>
-            ) : (
-              <canvas
-                className="max-h-full max-w-full bg-background shadow-sm"
-                ref={canvasRef}
-              />
-            )}
+            ) : null}
+            <canvas
+              className="max-h-full max-w-full bg-background shadow-sm"
+              hidden={loadingPdf || Boolean(pdfError || renderError)}
+              ref={canvasRef}
+            />
           </div>
         </main>
       </div>

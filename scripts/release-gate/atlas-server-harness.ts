@@ -147,8 +147,8 @@ export class AtlasServerHarness {
     const projectRoot = join(import.meta.dir, "../..");
     const serverEntry = join(projectRoot, "apps/server/src/index.ts");
     const command = this.options.preloadPath
-      ? ["bun", "--preload", this.options.preloadPath, serverEntry]
-      : ["bun", serverEntry];
+      ? [process.execPath, "--preload", this.options.preloadPath, serverEntry]
+      : [process.execPath, serverEntry];
     try {
       const child = spawn(command, {
         cwd: projectRoot,

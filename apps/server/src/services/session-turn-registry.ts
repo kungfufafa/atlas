@@ -20,6 +20,7 @@ type Subscriber = {
 };
 
 type ActiveTurn = {
+  afterTurn: Set<() => void>;
   abort: AbortController;
   attachedAborts: Set<AbortController>;
   orgId?: string;
@@ -162,6 +163,7 @@ export class SessionTurnRegistry {
 
     this.turns.set(sessionId, {
       abort: new AbortController(),
+      afterTurn: new Set(),
       attachedAborts: new Set(),
       bufferBytes: 0,
       events: [],
@@ -184,6 +186,16 @@ export class SessionTurnRegistry {
     turn.attachedAborts.add(abort);
     if (turn.abort.signal.aborted) {
       abort.abort();
+    }
+  }
+
+  /** Internal cache maintenance runs after the turn, independently of SSE subscribers. */
+  afterTurn(sessionId: string, callback: () => void): void {
+    const turn = this.turns.get(sessionId);
+    if (turn) {
+      turn.afterTurn.add(callback);
+    } else {
+      callback();
     }
   }
 
@@ -320,6 +332,9 @@ export class SessionTurnRegistry {
     }
 
     this.turns.delete(sessionId);
+    for (const callback of turn.afterTurn) {
+      callback();
+    }
   }
 }
 

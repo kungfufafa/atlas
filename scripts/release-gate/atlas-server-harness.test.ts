@@ -35,7 +35,7 @@ Bun.serve({hostname:"127.0.0.1", port:Number(process.env.ATLAS_PORT), fetch(requ
   if (mode === "html") return new Response("<html>SPA fallback</html>", {headers:{"content-type":"text/html"}});
   return Response.json({ok:mode !== "not-ok", apiVersion:mode === "wrong-version" ? ${ATLAS_API_VERSION + 1} : ${ATLAS_API_VERSION}}, {status:mode === "401" ? 401 : mode === "404" ? 404 : 200});
 }});
-writeFileSync(${JSON.stringify(marker)}, JSON.stringify({pid:process.pid}));
+writeFileSync(${JSON.stringify(marker)}, JSON.stringify({pid:process.pid, execPath:process.execPath, version:Bun.version}));
 await new Promise(() => {});
 `
   );
@@ -97,6 +97,27 @@ test("accepts the exact health contract and waits for actual process exit", asyn
   }
   await expectChildExited(marker);
   expect(await isPortAvailable(harness.port)).toBe(true);
+});
+
+test("starts the child with the running Bun even when PATH has no bun", async () => {
+  const { harness, marker } = await createHarness("healthy");
+  const originalPath = process.env.PATH;
+  process.env.PATH = "";
+  try {
+    await harness.start(2000);
+    expect(JSON.parse(await readFile(marker, "utf8"))).toMatchObject({
+      execPath: process.execPath,
+      version: Bun.version,
+    });
+  } finally {
+    if (originalPath === undefined) {
+      delete process.env.PATH;
+    } else {
+      process.env.PATH = originalPath;
+    }
+    await harness.stop();
+  }
+  await expectChildExited(marker);
 });
 
 test("rejects an occupied preferred port before spawning and preserves its owner", async () => {

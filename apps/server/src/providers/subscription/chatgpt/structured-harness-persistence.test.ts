@@ -9,7 +9,8 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import path from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import path, { join as joinTestTemporaryPath } from "node:path";
 import { PassThrough } from "node:stream";
 import { createAgentHarness } from "@atlas/agent";
 import {
@@ -226,7 +227,9 @@ async function seedDatabase(db: DatabaseAdapter) {
 }
 
 async function runScenario(scenario: Scenario) {
-  const directory = await mkdtemp("/private/tmp/atlas-h11-");
+  const directory = await mkdtemp(
+    joinTestTemporaryPath(testTemporaryDirectory(), "atlas-h11-")
+  );
   try {
     await runWithUserConfigDir(directory, async () => {
       const database = await createSqliteDatabase(

@@ -11,7 +11,8 @@ import {
   stat,
   writeFile,
 } from "node:fs/promises";
-import path from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import path, { join as joinTestTemporaryPath } from "node:path";
 import {
   createRestrictedProcessPreparer,
   getRestrictedProcessAdmissionEvidence,
@@ -27,7 +28,11 @@ const digest = (value: string) =>
 async function fixture(
   run: (root: string, workspace: string) => Promise<void>
 ) {
-  const root = await realpath(await mkdtemp("/private/tmp/runtime-admission-"));
+  const root = await realpath(
+    await mkdtemp(
+      joinTestTemporaryPath(testTemporaryDirectory(), "runtime-admission-")
+    )
+  );
   const workspace = path.join(root, "workspace");
   await mkdir(workspace);
   try {

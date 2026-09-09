@@ -15,7 +15,8 @@ import {
   truncate,
   writeFile,
 } from "node:fs/promises";
-import { join } from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import { join, join as joinTestTemporaryPath } from "node:path";
 import type { Readable, Writable } from "node:stream";
 import { resolvePythonRuntime } from "../tools/python-execute-tool";
 import { resolveRestrictedExecutable } from "./restricted-process";
@@ -26,7 +27,12 @@ async function fixture(
   run: (profile: string, foreign: string, directory: string) => Promise<void>
 ) {
   const directory = await realpath(
-    await mkdtemp("/private/tmp/atlas-selected-capture-test-")
+    await mkdtemp(
+      joinTestTemporaryPath(
+        testTemporaryDirectory(),
+        "atlas-selected-capture-test-"
+      )
+    )
   );
   const profile = join(directory, "profile");
   const foreign = join(directory, "foreign");

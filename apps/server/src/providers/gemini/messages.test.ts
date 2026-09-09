@@ -58,6 +58,12 @@ describe("toGeminiContents", () => {
           },
         ],
       },
+      {
+        content: '{"hits":[]}',
+        name: "knowledge_base_search",
+        role: "tool",
+        toolCallId: "call_kb",
+      },
     ];
 
     const contents = await toGeminiContents(messages);
@@ -98,6 +104,12 @@ describe("toGeminiContents", () => {
             name: "write_file",
           },
         ],
+      },
+      {
+        content: '{"ok":true}',
+        name: "write_file",
+        role: "tool",
+        toolCallId: "call_sig",
       },
     ];
 
@@ -176,6 +188,128 @@ describe("toGeminiContents", () => {
       data: tinyPngBase64,
       mimeType: "image/png",
     });
+  });
+
+  test("keeps a result only next to its call and drops duplicate or orphan outputs", async () => {
+    const result: ChatMessage = {
+      content: '{"ok":true}',
+      name: "lookup",
+      role: "tool",
+      toolCallId: "call_1",
+    };
+    const contents = await toGeminiContents([
+      result,
+      {
+        content: "",
+        role: "assistant",
+        toolCalls: [{ arguments: {}, id: "call_1", name: "lookup" }],
+      },
+      result,
+      result,
+      { content: "Continue", role: "user" },
+      result,
+    ]);
+
+    expect(contents).toEqual([
+      {
+        parts: [{ functionCall: { args: {}, id: "call_1", name: "lookup" } }],
+        role: "model",
+      },
+      {
+        parts: [
+          {
+            functionResponse: {
+              id: "call_1",
+              name: "lookup",
+              response: { ok: true },
+            },
+          },
+        ],
+        role: "user",
+      },
+      { parts: [{ text: "Continue" }], role: "user" },
+    ]);
+  });
+
+  test("filters partial id-less calls without losing the retained signature", async () => {
+    const retained = {
+      functionCall: { args: { path: "keep.txt" }, name: "read_file" },
+      thoughtSignature: "signature-keep",
+    };
+    const contents = await toGeminiContents([
+      {
+        content: "",
+        providerContent: [
+          {
+            functionCall: { args: { path: "drop.txt" }, name: "read_file" },
+            thoughtSignature: "signature-drop",
+          },
+          retained,
+        ],
+        role: "assistant",
+        toolCalls: [
+          {
+            arguments: { path: "drop.txt" },
+            id: "gemini_call_drop",
+            name: "read_file",
+          },
+          {
+            arguments: { path: "keep.txt" },
+            id: "gemini_call_keep",
+            name: "read_file",
+          },
+        ],
+      },
+      {
+        content: "kept contents",
+        name: "read_file",
+        role: "tool",
+        toolCallId: "gemini_call_keep",
+      },
+    ]);
+
+    expect(contents).toEqual([
+      { parts: [retained], role: "model" },
+      {
+        parts: [
+          {
+            functionResponse: {
+              name: "read_file",
+              response: { output: "kept contents" },
+            },
+          },
+        ],
+        role: "user",
+      },
+    ]);
+  });
+
+  test("preserves assistant text and thinking when its calls have no result", async () => {
+    const contents = await toGeminiContents([
+      {
+        content: "I can continue from here.",
+        providerContent: [
+          { text: "A useful thought", thought: true },
+          { text: "I can continue from here." },
+          { functionCall: { args: {}, id: "orphan", name: "lookup" } },
+        ],
+        role: "assistant",
+        thinking: "A useful thought",
+        toolCalls: [{ arguments: {}, id: "orphan", name: "lookup" }],
+      },
+      { content: "Continue", role: "user" },
+    ]);
+
+    expect(contents).toEqual([
+      {
+        parts: [
+          { text: "A useful thought", thought: true },
+          { text: "I can continue from here." },
+        ],
+        role: "model",
+      },
+      { parts: [{ text: "Continue" }], role: "user" },
+    ]);
   });
 });
 

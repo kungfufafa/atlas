@@ -9,7 +9,8 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import path from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import path, { join as joinTestTemporaryPath } from "node:path";
 import {
   discoverSkillDirectory,
   getProfileSoulDir,
@@ -51,7 +52,9 @@ const contextFor = (f: Fixture): ToolContext => ({
 });
 async function fixture(run: (f: Fixture) => Promise<void>) {
   const root = await realpath(
-    await mkdtemp("/private/tmp/custom-skill-admission-")
+    await mkdtemp(
+      joinTestTemporaryPath(testTemporaryDirectory(), "custom-skill-admission-")
+    )
   );
   let count = 0;
   const token = randomUUID();

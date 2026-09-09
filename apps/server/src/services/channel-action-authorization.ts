@@ -2,6 +2,7 @@ import {
   AtlasApiError,
   type CanonicalPrincipal,
   type ChannelPrincipalAuthorizationInput,
+  isChannelGuestUserId,
   LOCAL_CLIENT_USER_ID,
   PrincipalRequiredError,
 } from "@atlas/core";
@@ -100,6 +101,12 @@ export async function authorizeChannelAction(
     !principal.isPlatformAdmin
   ) {
     throw new AtlasApiError("Viewer access is read-only", 403);
+  }
+  if (input.nativeAction && isChannelGuestUserId(principal.userId)) {
+    throw new AtlasApiError(
+      "Native channel actions require a paired user",
+      403
+    );
   }
   // File persistence follows current channel authorization, independently of pairing.
   if (intent === "read" && !input.sessionId) {

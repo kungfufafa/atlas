@@ -2,7 +2,8 @@ import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import { join, join as joinTestTemporaryPath } from "node:path";
 import { LOCAL_CLIENT_USER_ID } from "@atlas/core";
 import { createSqliteDatabase, type DatabaseAdapter } from "@atlas/db";
 import { AgentService, type SessionActor } from "./agent-service";
@@ -56,7 +57,12 @@ async function fixture(
   }) => Promise<void>
 ) {
   const root = await realpath(
-    await mkdtemp("/private/tmp/atlas-publication-access-test-")
+    await mkdtemp(
+      joinTestTemporaryPath(
+        testTemporaryDirectory(),
+        "atlas-publication-access-test-"
+      )
+    )
   );
   const config = join(root, "private");
   const workspace = join(root, "workspace");

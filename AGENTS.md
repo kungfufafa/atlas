@@ -6,7 +6,8 @@ Agent platform built to work with your team — not replace them. Multi-tenant m
 
 ## Dev
 
-- Bun 1.3+: `bun install`, `bun run`, `bun test`
+- Bun 1.3.14+: `bun install`, `bun run`, `bun test`
+- Full unit suite: `bun run test` discovers the configured source scopes and passes explicit file paths to two isolated Bun workers. Focused tests should use `bun test ./path/to/file.test.ts`; bare path filters can scan the entire monorepo and exhaust file descriptors.
 - Servers: `bun run dev:server` | `dev:web` | `dev:cli` | `dev:mobile`
 - Layout: `apps/{server,web,cli,mobile}`, channel workers in `apps/platform/{telegram,whatsapp,discord,automation}`
 - Writing Tests: assert behavior, not prompt/description/error copy.
@@ -15,14 +16,16 @@ Agent platform built to work with your team — not replace them. Multi-tenant m
 
 Expo SDK 57 in the Bun workspace. Metro and native builds already use Expo
 Autolinking (`autolinkingModuleResolution`; iOS `use_expo_modules!`).
-`expo-modules-autolinking verify` warns about nested `expo-constants`
-(`57.0.16` at the workspace root vs `57.0.15` under `expo-asset` and
-`expo-linking`). Do **not** hide that with LogBox, Metro `blockList` /
-`disableHierarchicalLookup`, a one-off `overrides` entry, or deleting
-`bun.lock`. It is not a broken autolink; clearing it needs a
-workspace-wide Bun linker migration and TypeScript alignment (mobile
-declares `typescript ~6.0.3`; root typecheck uses `5.9.3` and excludes
-`apps/mobile`). See `docs/adr/0003-mobile-stack.md`.
+`expo-modules-autolinking verify` reports duplicate same-version installations
+under Bun's existing isolated linker and separate peer contexts. Keep the
+warnings visible; do **not** hide them with LogBox, Metro `blockList` /
+`disableHierarchicalLookup`, one-off `overrides`, or deleting `bun.lock`.
+Follow `expo/bundledNativeModules.json` when updating native dependencies.
+Mobile keeps React / React DOM `19.2.3` and Gesture Handler `~2.32.0` while web
+uses its own matched React pair. Mobile has a separate TypeScript `~6.0.3`
+check; root `5.9.3` still excludes `apps/mobile`. Shared client types must use
+pure type modules rather than importing the core runtime barrel. See
+`docs/adr/0003-mobile-stack.md` for validation and linker limitations.
 
 ## LLM cassette tests (MSW)
 
@@ -193,6 +196,8 @@ Always build context with `buildToolExecutionContext()` (`packages/core/src/tool
 | Tool loop | `packages/agent/src/tool-loop.ts` → `executeToolCall()`; parallel batching in `packages/agent/src/chat.ts` when every call in the turn is `parallelSafe` |
 
 **Parallel tool calls:** Built-in read/search/fetch tools (`read_file`, `search_files`, `knowledge_base_search`, `web_search`, `web_fetch`) set `parallelSafe: true` on `ToolDefinition`. Mutating, shell, delegation, and session-state tools stay sequential. Custom JS tools default to sequential; export `parallelSafe: true` from the module to opt in. When a turn mixes parallel-safe and sequential tools, the whole turn runs sequentially.
+
+**MCP startup discovery:** Background startup connections refresh cached tool catalogs after an active turn finishes. Explicit configuration changes and revocations still invalidate and cancel immediately. Keep these notifications separate so optional-service startup cannot interrupt a channel file job; late connection results must not overwrite newer configuration or restore revoked transports.
 
 **Incomplete API responses:** Chat Completions `length` errors retain diagnostic fragments and reported usage in `IncompleteCompletionError`; fragments are never executable tool calls or valid conversation history. The chat loop permits one concise continuation from completed history across the whole turn, including forced finalization. It refuses recovery after visible response/tool-draft output, native runtime dispatch or context management, cancellation, transport failure, or a second truncation. `onIncompleteCompletion` on send/stream options is diagnostic only. Known failed usage is counted; missing usage is not guessed. This recovery covers the OpenAI wire adapters; Responses, subscription runtimes, Anthropic and Gemini retain their existing retry behavior.
 

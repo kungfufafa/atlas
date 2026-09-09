@@ -9,7 +9,8 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import path from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import path, { join as joinTestTemporaryPath } from "node:path";
 import {
   getProfileSoulDir,
   type McpStdioConfig,
@@ -65,7 +66,11 @@ interface Fixture {
   workspace: string;
 }
 async function fixture(run: (f: Fixture) => Promise<void>) {
-  const root = await realpath(await mkdtemp("/private/tmp/mcp-admission-"));
+  const root = await realpath(
+    await mkdtemp(
+      joinTestTemporaryPath(testTemporaryDirectory(), "mcp-admission-")
+    )
+  );
   let count = 0;
   const token = randomUUID();
   const marker = path.join(root, "loopback-startup-evidence");

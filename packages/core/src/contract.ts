@@ -1,5 +1,5 @@
 import type { ToolArtifactPublisher } from "./artifact-publication";
-import type { LoadAttachmentBytes } from "./attachments/content";
+import type { LoadAttachmentBytes } from "./attachments/types";
 import type {
   CapabilityBindingV1,
   CapabilityClaimSource,

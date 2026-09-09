@@ -21,11 +21,14 @@ import type {
 } from "@atlas/db";
 import {
   type McpClientManager,
+  McpConnectionSupersededError,
   toCachedMcpToolSummaries,
 } from "./mcp-client-manager";
 
 export class McpService {
   private onConfigurationChanged?: (orgId: string) => void;
+  private onStartupConnectionReady?: (orgId: string) => void;
+  private readonly serverMutations = new Map<string, Promise<void>>();
 
   constructor(
     private readonly db: DatabaseAdapter,
@@ -34,6 +37,10 @@ export class McpService {
 
   setConfigurationChangeListener(listener: (orgId: string) => void): void {
     this.onConfigurationChanged = listener;
+  }
+
+  setStartupConnectionListener(listener: (orgId: string) => void): void {
+    this.onStartupConnectionReady = listener;
   }
 
   async listServers(orgId: string): Promise<ListMcpServersResponse> {
@@ -114,100 +121,107 @@ export class McpService {
     serverId: string,
     request: UpdateMcpServerRequest
   ): Promise<McpServerResponse> {
-    const server = await this.requireServer(orgId, serverId);
-    const nextName = request.name?.trim() ?? server.name;
+    return this.withServerMutation(serverId, async () => {
+      const server = await this.requireServer(orgId, serverId);
+      const nextName = request.name?.trim() ?? server.name;
 
-    if (!nextName) {
-      throw new Error("MCP server name is required.");
-    }
-
-    if (nextName !== server.name) {
-      const existing = await this.db.getMcpServerByName(nextName, orgId);
-
-      if (existing && existing.id !== serverId) {
-        throw new Error(`MCP server already exists: ${nextName}`);
+      if (!nextName) {
+        throw new Error("MCP server name is required.");
       }
-    }
 
-    const transportChanged =
-      request.transport !== undefined && request.transport !== server.transport;
-    const transport = request.transport ?? server.transport;
-    const config = request.config
-      ? transportChanged
-        ? request.config
-        : mergeMcpConfig(
-            transport,
-            resolveMcpConfig(server.transport, server.config),
-            request.config
-          )
-      : resolveMcpConfig(server.transport, server.config);
+      if (nextName !== server.name) {
+        const existing = await this.db.getMcpServerByName(nextName, orgId);
 
-    if (request.transport !== undefined) {
-      validateTransport(transport);
-    }
+        if (existing && existing.id !== serverId) {
+          throw new Error(`MCP server already exists: ${nextName}`);
+        }
+      }
 
-    validateConfig(transport, config);
+      const transportChanged =
+        request.transport !== undefined &&
+        request.transport !== server.transport;
+      const transport = request.transport ?? server.transport;
+      const config = request.config
+        ? transportChanged
+          ? request.config
+          : mergeMcpConfig(
+              transport,
+              resolveMcpConfig(server.transport, server.config),
+              request.config
+            )
+        : resolveMcpConfig(server.transport, server.config);
 
-    const updated: StoredMcpServerRecord = {
-      ...server,
-      config,
-      enabled: request.enabled ?? server.enabled,
-      name: nextName,
-      orgId,
-      transport,
-      updatedAt: new Date().toISOString(),
-    };
+      if (request.transport !== undefined) {
+        validateTransport(transport);
+      }
 
-    const configChanged =
-      JSON.stringify(server.config) !== JSON.stringify(config) ||
-      server.transport !== transport;
+      validateConfig(transport, config);
 
-    if (configChanged) {
-      await this.manager.disconnect(serverId);
-      updated.status = "disconnected";
-      updated.lastError = null;
-    }
+      const updated: StoredMcpServerRecord = {
+        ...server,
+        config,
+        enabled: request.enabled ?? server.enabled,
+        name: nextName,
+        orgId,
+        transport,
+        updatedAt: new Date().toISOString(),
+      };
 
-    await this.db.upsertMcpServer(updated);
-    this.onConfigurationChanged?.(orgId);
+      const configChanged =
+        JSON.stringify(server.config) !== JSON.stringify(config) ||
+        server.transport !== transport;
 
-    return this.getServer(orgId, serverId);
+      if (configChanged || !updated.enabled) {
+        await this.manager.disconnect(serverId);
+        updated.status = "disconnected";
+        updated.lastError = null;
+      }
+
+      await this.db.upsertMcpServer(updated);
+      this.onConfigurationChanged?.(orgId);
+
+      return this.getServer(orgId, serverId);
+    });
   }
 
   async deleteServer(orgId: string, serverId: string): Promise<void> {
-    const server = await this.requireServer(orgId, serverId);
+    return this.withServerMutation(serverId, async () => {
+      const server = await this.requireServer(orgId, serverId);
 
-    if (isPreinstalledMcpServerId(server.id)) {
-      throw new Error(
-        `Preinstalled MCP server "${server.name}" cannot be deleted.`
+      if (isPreinstalledMcpServerId(server.id)) {
+        throw new Error(
+          `Preinstalled MCP server "${server.name}" cannot be deleted.`
+        );
+      }
+
+      const profiles = await this.db.listProfilesForMcpServer(serverId);
+      const profilesInOrg = profiles.filter(
+        (profile) => profile.orgId === orgId
       );
-    }
 
-    const profiles = await this.db.listProfilesForMcpServer(serverId);
-    const profilesInOrg = profiles.filter((profile) => profile.orgId === orgId);
+      if (profilesInOrg.length > 0) {
+        const profileRefs = toProfileRefs(profilesInOrg);
+        throw new AtlasApiError(
+          formatMcpServerInUseMessage(profileRefs),
+          409,
+          undefined,
+          profileRefs
+        );
+      }
 
-    if (profilesInOrg.length > 0) {
-      const profileRefs = toProfileRefs(profilesInOrg);
-      throw new AtlasApiError(
-        formatMcpServerInUseMessage(profileRefs),
-        409,
-        undefined,
-        profileRefs
-      );
-    }
+      if (profiles.length > 0) {
+        throw new AtlasApiError("MCP server is assigned to a profile.", 409);
+      }
 
-    if (profiles.length > 0) {
-      throw new AtlasApiError("MCP server is assigned to a profile.", 409);
-    }
+      await this.manager.disconnect(serverId);
 
-    await this.manager.disconnect(serverId);
+      const deleted = await this.db.deleteMcpServer(serverId);
 
-    const deleted = await this.db.deleteMcpServer(serverId);
-
-    if (!deleted) {
-      throw new AtlasApiError("MCP server not found.", 404);
-    }
-    this.onConfigurationChanged?.(orgId);
+      if (!deleted) {
+        throw new AtlasApiError("MCP server not found.", 404);
+      }
+      this.onConfigurationChanged?.(orgId);
+    });
   }
 
   async connectServer(
@@ -228,35 +242,14 @@ export class McpService {
       return this.connectServer(orgId, serverId);
     }
 
+    let cachedTools: StoredMcpServerRecord["cachedTools"];
     try {
-      const cachedTools = await this.manager.listTools(
-        serverId,
-        server.transport
-      );
-      const updated: StoredMcpServerRecord = {
-        ...server,
-        cachedTools,
-        lastError: null,
-        status: "connected",
-        updatedAt: new Date().toISOString(),
-      };
-
-      await this.db.upsertMcpServer(updated);
-      this.onConfigurationChanged?.(orgId);
-
-      return { server: toMcpServerDetail(updated) };
+      cachedTools = await this.manager.listTools(serverId, server.transport);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const updated: StoredMcpServerRecord = {
-        ...server,
-        lastError: message,
-        status: "error",
-        updatedAt: new Date().toISOString(),
-      };
-
-      await this.db.upsertMcpServer(updated);
-      throw new Error(message);
+      await this.recordConnectionError(server, error);
+      throw error;
     }
+    return this.saveConnectedServer(server, cachedTools);
   }
 
   async testServer(
@@ -319,7 +312,7 @@ export class McpService {
       }
 
       try {
-        await this.connectServerRecord(server);
+        await this.connectServerRecord(server, true);
       } catch (error) {
         console.warn(
           `Could not connect MCP server "${server.name}":`,
@@ -407,16 +400,62 @@ export class McpService {
   }
 
   private async connectServerRecord(
-    server: StoredMcpServerRecord
+    server: StoredMcpServerRecord,
+    startup = false
   ): Promise<McpServerResponse> {
     if (!server.enabled) {
       throw new Error(`MCP server "${server.name}" is disabled.`);
     }
 
+    let cachedTools: StoredMcpServerRecord["cachedTools"];
     try {
-      const cachedTools = await this.manager.connect(server);
+      cachedTools = await this.manager.connect(server);
+    } catch (error) {
+      await this.recordConnectionError(server, error);
+      throw error;
+    }
+    return this.saveConnectedServer(server, cachedTools, startup);
+  }
+
+  private async recordConnectionError(
+    server: StoredMcpServerRecord,
+    error: unknown
+  ): Promise<void> {
+    if (error instanceof McpConnectionSupersededError) {
+      return;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    await this.withServerMutation(server.id, async () => {
+      const current = await this.db.getMcpServer(server.id);
+      if (current && sameMcpConnectionConfiguration(server, current)) {
+        await this.db.upsertMcpServer({
+          ...current,
+          lastError: message,
+          status: "error",
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    });
+  }
+
+  private async saveConnectedServer(
+    server: StoredMcpServerRecord,
+    cachedTools: StoredMcpServerRecord["cachedTools"],
+    startup = false
+  ): Promise<McpServerResponse> {
+    return this.withServerMutation(server.id, async () => {
+      const current = await this.db.getMcpServer(server.id);
+      if (!(current && sameMcpConnectionConfiguration(server, current))) {
+        // A slow startup connection must not restore configuration revoked while
+        // its transport was connecting, or publish stale tools into that workspace.
+        await this.manager.disconnectIfConfigurationMatches(server);
+        throw new AtlasApiError(
+          "MCP configuration changed while connecting.",
+          409
+        );
+      }
       const updated: StoredMcpServerRecord = {
-        ...server,
+        ...current,
         cachedTools,
         lastError: null,
         status: "connected",
@@ -425,23 +464,51 @@ export class McpService {
 
       await this.db.upsertMcpServer(updated);
       if (server.orgId) {
-        this.onConfigurationChanged?.(server.orgId);
+        if (startup) {
+          this.onStartupConnectionReady?.(server.orgId);
+        } else {
+          this.onConfigurationChanged?.(server.orgId);
+        }
       }
 
       return { server: toMcpServerDetail(updated) };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const updated: StoredMcpServerRecord = {
-        ...server,
-        lastError: message,
-        status: "error",
-        updatedAt: new Date().toISOString(),
-      };
+    });
+  }
 
-      await this.db.upsertMcpServer(updated);
-      throw new Error(message);
+  private async withServerMutation<T>(
+    serverId: string,
+    mutation: () => Promise<T>
+  ): Promise<T> {
+    // Keep the record check and write together. Transport connection itself
+    // stays outside this queue so an admin can revoke a stalled connection.
+    const previous = this.serverMutations.get(serverId);
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    this.serverMutations.set(serverId, pending);
+    try {
+      await previous;
+      return await mutation();
+    } finally {
+      release();
+      if (this.serverMutations.get(serverId) === pending) {
+        this.serverMutations.delete(serverId);
+      }
     }
   }
+}
+
+function sameMcpConnectionConfiguration(
+  expected: StoredMcpServerRecord,
+  current: StoredMcpServerRecord
+): boolean {
+  return (
+    current.enabled === expected.enabled &&
+    current.orgId === expected.orgId &&
+    current.transport === expected.transport &&
+    JSON.stringify(current.config) === JSON.stringify(expected.config)
+  );
 }
 
 function toMcpServerSummary(

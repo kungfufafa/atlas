@@ -218,6 +218,89 @@ describe("provider user content mapping", () => {
     });
   });
 
+  test("toGeminiContents drops assistant functionCall without tool results", async () => {
+    const result = await toGeminiContents([
+      { content: "Look this up", role: "user" },
+      {
+        content: "",
+        role: "assistant",
+        toolCalls: [
+          { arguments: { q: "x" }, id: "call_orphan", name: "lookup" },
+        ],
+      },
+      { content: "What did you find?", role: "user" },
+    ]);
+
+    expect(result).toEqual([
+      { parts: [{ text: "Look this up" }], role: "user" },
+      { parts: [{ text: "What did you find?" }], role: "user" },
+    ]);
+  });
+
+  test("toGeminiContents strips unmatched functionCall from providerContent replay", async () => {
+    const result = await toGeminiContents([
+      { content: "Look this up", role: "user" },
+      {
+        content: "",
+        providerContent: [
+          { text: "need both", thought: true },
+          {
+            functionCall: {
+              args: { q: "keep" },
+              id: "call_keep",
+              name: "lookup",
+            },
+          },
+          {
+            functionCall: {
+              args: { q: "drop" },
+              id: "call_drop",
+              name: "lookup",
+            },
+          },
+        ],
+        providerContentProvenance: {
+          protocol: "gemini-content",
+          provider: "gemini",
+        },
+        role: "assistant",
+        toolCalls: [
+          { arguments: { q: "keep" }, id: "call_keep", name: "lookup" },
+          { arguments: { q: "drop" }, id: "call_drop", name: "lookup" },
+        ],
+      },
+      {
+        content: '{"result":"ok"}',
+        name: "lookup",
+        role: "tool",
+        toolCallId: "call_keep",
+      },
+      { content: "Summarize", role: "user" },
+    ]);
+
+    const model = result.find((content) => content.role === "model");
+    expect(model?.parts).toEqual([
+      { text: "need both", thought: true },
+      {
+        functionCall: {
+          args: { q: "keep" },
+          id: "call_keep",
+          name: "lookup",
+        },
+      },
+    ]);
+    expect(
+      result.some((content) =>
+        content.parts?.some((part) => part.functionCall?.id === "call_drop")
+      )
+    ).toBe(false);
+    expect(
+      result.some((content) =>
+        content.parts?.some((part) => part.functionResponse?.id === "call_keep")
+      )
+    ).toBe(true);
+  });
+
   test("toOpenAIMessages maps image parts", async () => {
     const result = await toOpenAIMessages("system", [multimodalUserMessage]);
     const user = result.find((message) => message.role === "user");

@@ -9,7 +9,8 @@ import {
   utimes,
   writeFile,
 } from "node:fs/promises";
-import { join } from "node:path";
+import { tmpdir as testTemporaryDirectory } from "node:os";
+import { join, join as joinTestTemporaryPath } from "node:path";
 import type { ArtifactPublicationIdentity } from "@atlas/core/artifact-publication";
 import { getProfileSoulDir } from "@atlas/core/soul/resolve";
 import { runWithUserConfigDir } from "@atlas/core/user-config";
@@ -50,7 +51,9 @@ async function fixture(
   }) => Promise<void>
 ) {
   const config = await realpath(
-    await mkdtemp("/private/tmp/selected-publication-")
+    await mkdtemp(
+      joinTestTemporaryPath(testTemporaryDirectory(), "selected-publication-")
+    )
   );
   const sql =
     kind === "sqlite"
