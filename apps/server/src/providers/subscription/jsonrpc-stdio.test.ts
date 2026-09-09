@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import { setImmediate as nextTick } from "node:timers/promises";
-import { JsonRpcStdioClient, type JsonRpcStdioProcess } from "./jsonrpc-stdio";
+import {
+  JsonRpcResponseError,
+  JsonRpcStdioClient,
+  type JsonRpcStdioProcess,
+} from "./jsonrpc-stdio";
 
 class FakeProcess extends EventEmitter implements JsonRpcStdioProcess {
   readonly stdin = new PassThrough();
@@ -78,6 +82,69 @@ describe("JsonRpcStdioClient", () => {
     });
     client.close();
   });
+
+  test("retains structured response errors without confusing server requests", async () => {
+    const child = new FakeProcess();
+    const client = new JsonRpcStdioClient(child);
+    const outbound = recordResponses(child);
+    const data = {
+      actual_chars: 1_048_577,
+      input_error_code: "input_too_large",
+      max_chars: 1_048_576,
+    };
+    const message = "The supplied input is too large.";
+    let toolCalls = 0;
+    client.onRequest("item/tool/call", async () => {
+      toolCalls += 1;
+      return { completed: true };
+    });
+    const pending = client
+      .request("turn/start")
+      .catch((error: unknown) => error);
+    serverRequest(child, 1, { error: { code: -32_602, data, message } });
+    await nextTick();
+    expect(toolCalls).toBe(1);
+    expect(outbound.at(-1)).toEqual({ id: 1, result: { completed: true } });
+    child.stdout.write(
+      `${JSON.stringify({ error: { code: -32_602, data, message }, id: 1 })}\n`
+    );
+    const error = await pending;
+    expect(error).toBeInstanceOf(JsonRpcResponseError);
+    expect(error).toMatchObject({
+      code: -32_602,
+      data,
+      message,
+      method: "turn/start",
+    });
+    expect(client.isClosed()).toBe(false);
+    client.close();
+  });
+
+  test.each([
+    [{ message: "Provider unavailable" }, "Provider unavailable"],
+    [{ code: "invalid", data: null }, "Runtime request failed."],
+  ])(
+    "preserves existing response messages when metadata is absent or malformed",
+    async (payload, message) => {
+      const child = new FakeProcess();
+      const client = new JsonRpcStdioClient(child);
+      const pending = client
+        .request("account/read")
+        .catch((error: unknown) => error);
+      child.stdout.write(`${JSON.stringify({ error: payload, id: 1 })}\n`);
+      const error = await pending;
+      expect(error).toBeInstanceOf(JsonRpcResponseError);
+      expect(error).toMatchObject({
+        code: undefined,
+        message,
+        method: "account/read",
+      });
+      if (error instanceof JsonRpcResponseError) {
+        expect(error.data).toBe("data" in payload ? payload.data : undefined);
+      }
+      client.close();
+    }
+  );
 
   test("times out requests and reports closed clients", async () => {
     const child = new FakeProcess();

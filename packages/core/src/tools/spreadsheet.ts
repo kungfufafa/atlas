@@ -86,6 +86,14 @@ const RowsSchema = z
   );
 const CoordinateRow = z.number().int().min(1).max(MAX_SPREADSHEET_ROWS);
 const CoordinateColumn = z.number().int().min(1).max(MAX_SPREADSHEET_COLUMNS);
+const ColorSchema = z
+  .string()
+  // Unlike $, the absolute-end assertion also rejects a trailing newline.
+  .regex(/^#?[a-fA-F0-9]{6}(?![\s\S])/)
+  .transform((color) =>
+    (color.startsWith("#") ? color.slice(1) : color).toUpperCase()
+  )
+  .describe("Six-digit RGB hex, with or without # (for example #1F4E78).");
 const SpreadsheetInputSchema = z
   .object({
     action: z.enum([
@@ -118,7 +126,9 @@ const SpreadsheetInputSchema = z
       .describe("Keep the first CSV row as text when columnTypes is set."),
     csvPath: z.string().optional(),
     cwd: trimmedOptionalString,
-    data: RowsSchema.optional(),
+    data: RowsSchema.optional().describe(
+      "Rows for create/add_sheet. Also accepted as a write_range alias when values is omitted; supply only one."
+    ),
     decimalSeparator: z
       .enum([".", ","])
       .optional()
@@ -145,14 +155,8 @@ const SpreadsheetInputSchema = z
       .object({
         alignment: z.enum(["left", "center", "right"]).optional(),
         bold: z.boolean().optional(),
-        fillColor: z
-          .string()
-          .regex(/^[a-fA-F0-9]{6}$/)
-          .optional(),
-        fontColor: z
-          .string()
-          .regex(/^[a-fA-F0-9]{6}$/)
-          .optional(),
+        fillColor: ColorSchema.optional(),
+        fontColor: ColorSchema.optional(),
         italic: z.boolean().optional(),
         numberFormat: z.string().max(100).optional(),
         wrapText: z.boolean().optional(),
@@ -187,7 +191,9 @@ const SpreadsheetInputSchema = z
     startRow: CoordinateRow.optional(),
     targetCsvPath: z.string().optional(),
     targetXlsxPath: z.string().optional(),
-    values: RowsSchema.optional(),
+    values: RowsSchema.optional().describe(
+      'Cell rows for write_range, for example [["Asset", 1391]]. Must contain at least one cell; null clears a cell. Required unless data is supplied.'
+    ),
     writeMode: z
       .enum(["versioned", "inplace"])
       .default("versioned")
@@ -197,6 +203,42 @@ const SpreadsheetInputSchema = z
   })
   .strict();
 export type SpreadsheetInput = z.infer<typeof SpreadsheetInputSchema>;
+
+function invalidSpreadsheetInput(message: string): Error {
+  return Object.assign(new Error(message), {
+    code: "INVALID_ARGUMENT",
+    retryable: false,
+  });
+}
+
+function parseSpreadsheetInput(input: unknown): SpreadsheetInput {
+  const result = SpreadsheetInputSchema.safeParse(input);
+  if (!result.success) {
+    const summary = result.error.issues
+      .slice(0, 3)
+      .map((issue) => `${issue.path.join(".") || "input"}: ${issue.message}`)
+      .join("; ");
+    throw invalidSpreadsheetInput(`Invalid spreadsheet input: ${summary}`);
+  }
+  const parsed = result.data;
+  if (parsed.action !== "write_range") {
+    return parsed;
+  }
+  if (parsed.values !== undefined && parsed.data !== undefined) {
+    throw invalidSpreadsheetInput(
+      "write_range accepts either values or its data alias, not both. Supply values with the intended cell rows."
+    );
+  }
+  // Normalize only this documented alias; never replace an explicit empty values array.
+  const values = parsed.values ?? parsed.data;
+  if (!values?.some((row) => row.length > 0)) {
+    throw invalidSpreadsheetInput(
+      'write_range requires a nonempty 2D values array, for example values: [["Asset", 1391]]. Use [[null]] to clear a cell.'
+    );
+  }
+  return { ...parsed, values };
+}
+
 export interface WorkbookSheetData {
   columns?: string[];
   name: string;
@@ -690,12 +732,12 @@ function validateAction(parsed: SpreadsheetInput): void {
     );
   }
   if (
-    parsed.action === "write_range" &&
-    (!parsed.values ||
-      parsed.values.length === 0 ||
-      parsed.values.every((row) => row.length === 0))
+    parsed.action === "format_range" &&
+    (!parsed.format || Object.keys(parsed.format).length === 0)
   ) {
-    throw new Error("write_range requires nonempty values.");
+    throw invalidSpreadsheetInput(
+      'format_range requires a nonempty format object, for example format: {"fillColor":"#1F4E78","fontColor":"#FFFFFF"}.'
+    );
   }
   if (parsed.action === "delete_sheet" && !parsed.sheetName) {
     throw new Error("delete_sheet requires sheetName.");
@@ -835,12 +877,12 @@ async function mutateWorkbook(
 
 export const spreadsheetTool: ToolDefinition = {
   description:
-    "Create, read, edit, format, recalculate, and export XLSX/CSV/JSON spreadsheets. Inspect/read XLS/XLSM/XLSB inputs and export_xlsx to a new editable XLSX; legacy macros are not preserved. Edits save a new version: follow the returned path. CSV imports preserve text; formula results carry calculation status. XLS/XLSB conversion and recalculation require LibreOffice on the Atlas host.",
+    "Create, read, edit, format, recalculate, and export XLSX/CSV/JSON spreadsheets. write_range uses nonempty values rows (data is an alias); create/add_sheet use data. format_range uses a format object; colors accept RRGGBB or #RRGGBB. Inspect/read XLS/XLSM/XLSB inputs and export_xlsx to a new editable XLSX; legacy macros are not preserved. Edits save a new version: follow the returned path. CSV imports preserve text; formula results carry calculation status. XLS/XLSB conversion and recalculation require LibreOffice on the Atlas host.",
   name: "spreadsheet",
   parallelSafe: false,
   parameters: jsonSchemaFromZod(SpreadsheetInputSchema),
   async run(input: unknown, context: ToolContext) {
-    const parsed = SpreadsheetInputSchema.parse(input);
+    const parsed = parseSpreadsheetInput(input);
     validateAction(parsed);
     context.signal?.throwIfAborted();
     const requestedWorkspaceRoot =

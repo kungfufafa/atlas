@@ -33,8 +33,32 @@ const MAX_COMPLETED_SERVER_REQUESTS = 256;
 
 export type JsonRpcMessage =
   | { id: number; result: unknown }
-  | { error: { code?: number; message?: string }; id: number | null }
+  | {
+      error: { code?: number; data?: unknown; message?: string };
+      id: number | null;
+    }
   | JsonRpcNotification;
+
+export class JsonRpcResponseError extends Error {
+  readonly code: number | undefined;
+  readonly data: unknown;
+  readonly method: string;
+
+  constructor(
+    method: string,
+    error: { code?: unknown; data?: unknown; message?: unknown }
+  ) {
+    super(
+      typeof error.message === "string"
+        ? error.message
+        : "Runtime request failed."
+    );
+    this.name = "JsonRpcResponseError";
+    this.method = method;
+    this.code = typeof error.code === "number" ? error.code : undefined;
+    this.data = error.data;
+  }
+}
 
 export interface JsonRpcStdioProcess {
   kill(signal?: NodeJS.Signals): void;
@@ -53,6 +77,7 @@ export class JsonRpcStdioClient {
   private readonly pending = new Map<
     number,
     {
+      method: string;
       reject: (error: Error) => void;
       resolve: (value: unknown) => void;
       timeout: ReturnType<typeof setTimeout>;
@@ -158,7 +183,7 @@ export class JsonRpcStdioClient {
         this.pending.delete(id);
         reject(new Error(`Runtime request timed out: ${method}`));
       }, this.requestTimeoutMs);
-      this.pending.set(id, { reject, resolve, timeout });
+      this.pending.set(id, { method, reject, resolve, timeout });
     });
     try {
       this.write(payload);
@@ -246,14 +271,7 @@ export class JsonRpcStdioClient {
     this.pending.delete(record.id);
     clearTimeout(waiter.timeout);
     if (record.error && typeof record.error === "object") {
-      const error = record.error as { message?: unknown };
-      waiter.reject(
-        new Error(
-          typeof error.message === "string"
-            ? error.message
-            : "Runtime request failed."
-        )
-      );
+      waiter.reject(new JsonRpcResponseError(waiter.method, record.error));
       return;
     }
     waiter.resolve(record.result);

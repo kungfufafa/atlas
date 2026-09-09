@@ -1076,7 +1076,7 @@ async function runConversation(
             runtimeToolsStopped = true;
             metrics.duplicateToolCallPreventionsTotal.inc();
             stopReason =
-              "Repeated tool calls returned identical outcomes without observable progress.";
+              "Repeated tool calls did not make observable progress. Use the recorded results to identify the blocker.";
           }
           let success = true;
           try {
@@ -1240,7 +1240,7 @@ async function runConversation(
         typedStopReason = "no_progress";
         metrics.duplicateToolCallPreventionsTotal.inc();
         stopReason =
-          "Repeated tool calls returned identical outcomes without observable progress.";
+          "Repeated tool calls did not make observable progress. Use the recorded results to identify the blocker.";
       }
 
       if (iteration === MAX_TOOL_ITERATIONS - 1) {

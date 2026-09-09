@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { ChatMessage, ToolCall } from "@atlas/core";
 
 const MAX_IDENTICAL_OUTCOMES = 4;
+const MAX_INVALID_ARGUMENT_BATCHES = 4;
 
 function canonicalize(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -25,6 +26,16 @@ function outcomeData(content: string): unknown {
   }
 }
 
+function isInvalidArgumentFailure(value: unknown): boolean {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "errorCode" in value &&
+    value.errorCode === "INVALID_ARGUMENT" &&
+    toolResultError(value) !== undefined
+  );
+}
+
 /** Same requests can make progress (polling, reading a changed file, pagination). */
 export function createToolProgressTracker(): {
   record: (
@@ -35,6 +46,7 @@ export function createToolProgressTracker(): {
 } {
   let previous: string | undefined;
   let identicalOutcomes = 0;
+  let invalidArgumentBatches = 0;
   return {
     record(calls, results, orderIndependent = false) {
       const outcomes = calls.map((call, index) => {
@@ -45,6 +57,15 @@ export function createToolProgressTracker(): {
           result: result?.role === "tool" ? outcomeData(result.content) : null,
         };
       });
+      // Changing ranges or other arguments cannot turn repeated input rejection
+      // into progress. Any completed success or different failure allows recovery.
+      const onlyInvalidArguments =
+        outcomes.length > 0 &&
+        results.length === calls.length &&
+        outcomes.every((outcome) => isInvalidArgumentFailure(outcome.result));
+      invalidArgumentBatches = onlyInvalidArguments
+        ? invalidArgumentBatches + 1
+        : 0;
       const normalizedOutcomes = outcomes.map((outcome) =>
         JSON.stringify(canonicalize(outcome))
       );
@@ -56,7 +77,10 @@ export function createToolProgressTracker(): {
         .digest("hex");
       identicalOutcomes = signature === previous ? identicalOutcomes + 1 : 1;
       previous = signature;
-      return identicalOutcomes >= MAX_IDENTICAL_OUTCOMES;
+      return (
+        identicalOutcomes >= MAX_IDENTICAL_OUTCOMES ||
+        invalidArgumentBatches >= MAX_INVALID_ARGUMENT_BATCHES
+      );
     },
   };
 }

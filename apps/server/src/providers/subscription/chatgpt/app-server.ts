@@ -13,6 +13,7 @@ import {
   JsonRpcStdioClient,
   spawnJsonRpcProcess,
 } from "../jsonrpc-stdio";
+import { assertCodexTurnInputSize } from "./input-replay";
 
 const DEFAULT_TURN_TIMEOUT_MS = 15 * 60 * 1000;
 const LOGIN_TIMEOUT_MS = 15 * 60 * 1000;
@@ -370,6 +371,7 @@ export class CodexAppServer {
     if (options.signal?.aborted) {
       throw new Error("Turn cancelled.");
     }
+    assertCodexTurnInputSize(options.input);
     const client = await waitForTurnClient(this.ensureClient(), options.signal);
     if (options.signal?.aborted) {
       throw new Error("Turn cancelled.");

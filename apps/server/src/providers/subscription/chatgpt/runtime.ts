@@ -52,6 +52,11 @@ import {
   type CodexModel,
   type CodexTurnInput,
 } from "./app-server";
+import {
+  createCodexHistorySource,
+  MAX_HISTORY_INLINE_CHARS,
+} from "./history-source";
+import { codexTurnTextChars, MAX_CODEX_TURN_TEXT_CHARS } from "./input-replay";
 
 interface PendingLogin {
   loginId: string;
@@ -518,6 +523,20 @@ export class ChatgptSubscriptionRuntime {
       "chatgpt",
       binding?.lastMessageCount
     );
+    const transcriptInput = toCodexTurnInput(prompt.transcriptInput);
+    const historySource =
+      codexTurnTextChars(transcriptInput) > MAX_CODEX_TURN_TEXT_CHARS
+        ? createCodexHistorySource(
+            transcriptInput,
+            input.tools?.map((tool) => tool.name) ?? []
+          )
+        : undefined;
+    const nativeTools = historySource
+      ? [...(toolBridge?.tools ?? []), historySource.tool]
+      : toolBridge?.tools;
+    const toolCatalogFingerprint = historySource
+      ? codexToolCatalogFingerprint(nativeTools ?? [])
+      : toolBridge?.fingerprint;
     input.signal?.throwIfAborted();
     const selectedRuntimeModel = await this.requireRuntimeModel(
       model,
@@ -537,7 +556,7 @@ export class ChatgptSubscriptionRuntime {
         Boolean(binding.historyFingerprint) &&
         binding.historyFingerprint === prompt.previousHistoryFingerprint;
       const toolCatalogMatches =
-        binding.toolCatalogFingerprint === toolBridge?.fingerprint;
+        binding.toolCatalogFingerprint === toolCatalogFingerprint;
       if (historyMatches && toolCatalogMatches && prompt.continuation) {
         try {
           input.signal?.throwIfAborted();
@@ -556,10 +575,18 @@ export class ChatgptSubscriptionRuntime {
       }
     }
 
-    const turnInput = resume
-      ? toCodexTurnInput(prompt.continuationInput)
-      : toCodexTurnInput(prompt.transcriptInput);
-    if (turnInput.some((part) => part.type === "image")) {
+    const continuationInput = toCodexTurnInput(prompt.continuationInput);
+    const turnInput =
+      resume &&
+      codexTurnTextChars(continuationInput) <=
+        (historySource ? MAX_HISTORY_INLINE_CHARS : MAX_CODEX_TURN_TEXT_CHARS)
+        ? continuationInput
+        : (historySource?.bootstrapInput ?? transcriptInput);
+    if (
+      (historySource ? transcriptInput : turnInput).some(
+        (part) => part.type === "image"
+      )
+    ) {
       this.requireImageInputModel(selectedRuntimeModel);
     }
     const thinkingOptions = resolveThinkingTurnOptions(
@@ -574,7 +601,7 @@ export class ChatgptSubscriptionRuntime {
           cwd,
           developerInstructions: prompt.developerInstructions,
           ephemeral: false,
-          ...(toolBridge ? { dynamicTools: toolBridge.tools } : {}),
+          ...(nativeTools ? { dynamicTools: nativeTools } : {}),
           model: selectedRuntimeModel.id,
         });
         startedNewThread = true;
@@ -587,7 +614,28 @@ export class ChatgptSubscriptionRuntime {
         model: selectedRuntimeModel.id,
         onDelta: bufferText ? undefined : handlers?.onChunk,
         onThinking: handlers?.onThinking,
-        ...(toolBridge ? { onToolCall: toolBridge.execute } : {}),
+        ...(historySource || toolBridge
+          ? {
+              onToolCall: async (
+                call: CodexDynamicToolCall,
+                signal: AbortSignal
+              ) => {
+                if (historySource && call.tool === historySource.name) {
+                  input.signal?.throwIfAborted();
+                  // This private reader exposes only the already authorized
+                  // input snapshot. Its receipts are native context, not Atlas
+                  // actions, and must not alter canonical history fingerprints.
+                  return await historySource.execute(call.arguments, signal);
+                }
+                if (!toolBridge) {
+                  throw new Error(
+                    "Codex requested an unregistered Atlas tool."
+                  );
+                }
+                return await toolBridge.execute(call, signal);
+              },
+            }
+          : {}),
         signal: input.signal,
         threadId,
       });
@@ -611,9 +659,7 @@ export class ChatgptSubscriptionRuntime {
             lastMessageCount:
               toolBridge?.history.length ?? input.messages.length,
             runtimeSessionId: threadId,
-            ...(toolBridge
-              ? { toolCatalogFingerprint: toolBridge.fingerprint }
-              : {}),
+            ...(toolCatalogFingerprint ? { toolCatalogFingerprint } : {}),
           });
           sessionPersisted = true;
         } catch {
@@ -956,12 +1002,16 @@ function createCodexToolBridge(
   return {
     execute,
     failedWith: (error) => callbackFailed && error === callbackError,
-    fingerprint: createHash("sha256")
-      .update(JSON.stringify({ mode: "codex-dynamic-tools-v1", tools }))
-      .digest("base64url"),
+    fingerprint: codexToolCatalogFingerprint(tools),
     history,
     tools,
   };
+}
+
+function codexToolCatalogFingerprint(tools: CodexDynamicTool[]): string {
+  return createHash("sha256")
+    .update(JSON.stringify({ mode: "codex-dynamic-tools-v1", tools }))
+    .digest("base64url");
 }
 
 function isToolArguments(value: unknown): value is Record<string, unknown> {
