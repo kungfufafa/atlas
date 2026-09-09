@@ -1,9 +1,8 @@
 name: Unit Tests
 
 on:
-  push:
-    branches: [main]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
@@ -17,6 +16,8 @@ env:
 
 jobs:
   docker-startup:
+    # Main/tag publication builds and verifies its image after the reusable checks.
+    if: github.event_name == 'pull_request'
     timeout-minutes: 25
     runs-on: ubuntu-latest
     steps:

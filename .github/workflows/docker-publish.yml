@@ -12,7 +12,13 @@ permissions:
   packages: write
 
 jobs:
+  checks:
+    uses: ./.github/workflows/unit-tests.yml
+    permissions:
+      contents: read
+
   build-and-push:
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
