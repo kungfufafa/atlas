@@ -117,9 +117,14 @@ jobs:
       - name: Type-check file and live verification scripts
         run: bunx tsc --noEmit -p scripts/file-runtime/tsconfig.json
 
-  unit:
+  unit-shards:
+    name: unit shard ${{ matrix.shard }}/4
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -138,7 +143,18 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg fonts-liberation libreoffice-calc libreoffice-impress libreoffice-writer
 
       - name: Run unit tests
-        run: bun run test
+        run: bun run test --shard=${{ matrix.shard }}/4
+
+  unit:
+    if: ${{ always() }}
+    needs: [unit-shards]
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every unit shard to succeed
+        env:
+          SHARD_RESULT: ${{ needs.unit-shards.result }}
+        run: test "$SHARD_RESULT" = success
 
   smoke:
     timeout-minutes: 15
