@@ -2726,6 +2726,7 @@ export class AgentService {
     }
 
     await replaceSessionHistory(this.db, sessionId, history);
+    this.sessions.delete(sessionId);
   }
 
   async runAutomation(
