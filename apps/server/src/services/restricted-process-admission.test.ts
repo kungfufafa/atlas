@@ -21,7 +21,10 @@ import {
   type RestrictedProcessAdmissionPolicy,
   type RestrictedProcessLaunchEvidence,
 } from "./restricted-process";
-import { authorizeRestrictedProcessLaunch } from "./restricted-process-admission";
+import {
+  authorizeRestrictedProcessLaunch,
+  createRestrictedProcessLaunchEvidence,
+} from "./restricted-process-admission";
 
 const digest = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -77,6 +80,89 @@ async function execute(
 }
 async function absent(file: string) {
   await expect(access(file)).rejects.toThrow();
+}
+
+if (process.platform === "linux") {
+  for (const runtime of ["bash", "python"] as const) {
+    test(`standard ${runtime} blocks pre-sandbox profile startup while preserving target startup inside Landlock`, async () =>
+      fixture(async (root, workspace) => {
+        const outsideMarker = path.join(root, "outside-preload-marker");
+        await writeFile(
+          path.join(workspace, "bunfig.toml"),
+          'preload = ["./preload.ts"]\n'
+        );
+        await writeFile(
+          path.join(workspace, "preload.ts"),
+          `await Bun.write(${JSON.stringify(outsideMarker)}, "pre-sandbox execution");`
+        );
+        await writeFile(
+          path.join(workspace, ".env"),
+          "ATLAS_SYNTHETIC_STARTUP_MARKER=profile-dotenv\n"
+        );
+        const bashStartup = path.join(workspace, "target-startup.sh");
+        await writeFile(bashStartup, "printf startup > target-startup.txt\n");
+        await writeFile(
+          path.join(workspace, "target_startup.py"),
+          'from pathlib import Path\nPath("target-startup.txt").write_text("startup")\n'
+        );
+        const prepare = createRestrictedProcessPreparer({});
+        const target =
+          runtime === "bash"
+            ? {
+                args: [
+                  "-c",
+                  'if [ -n "$ATLAS_SYNTHETIC_STARTUP_MARKER" ]; then printf "%s" "$ATLAS_SYNTHETIC_STARTUP_MARKER" > target-env.txt; else printf unset > target-env.txt; fi',
+                ],
+                bin: "/bin/bash",
+                env: { BASH_ENV: bashStartup },
+              }
+            : {
+                args: [
+                  "-c",
+                  'import target_startup, os; from pathlib import Path; Path("target-env.txt").write_text(os.environ.get("ATLAS_SYNTHETIC_STARTUP_MARKER", "unset"))',
+                ],
+                bin: "/usr/bin/python3",
+                env: { PYTHONPATH: workspace },
+              };
+        const prepared = await prepare({ ...target, workspaceRoot: workspace });
+        try {
+          expect(await execute(prepared)).toEqual({ code: 0, stderr: "" });
+          await absent(outsideMarker);
+          expect(
+            await readFile(path.join(workspace, "target-env.txt"), "utf8")
+          ).toBe("unset");
+          expect(
+            await readFile(path.join(workspace, "target-startup.txt"), "utf8")
+          ).toBe("startup");
+          expect(
+            prepared.evidence.policy.bootstrapStartupConfigurationSuppressed
+          ).toBe(true);
+          expect(prepared.evidence.policy.startupConfigurationSuppressed).toBe(
+            false
+          );
+        } finally {
+          await prepared.cleanup();
+        }
+      }));
+  }
+
+  test("standard Linux preparation rejects bootstrap loader variables before releasing a launch", async () =>
+    fixture(async (_root, workspace) => {
+      for (const key of [
+        "LD_PRELOAD",
+        "BUN_OPTIONS",
+        "NODE_OPTIONS",
+        "ATLAS_RESTRICTED_ARG_0",
+      ]) {
+        await expect(
+          prepareRestrictedProcess({
+            ...command(workspace),
+            env: { [key]: "synthetic" },
+          })
+        ).rejects.toThrow();
+      }
+      await absent(path.join(workspace, "child-effect.txt"));
+    }));
 }
 
 for (const launchPolicy of ["standard", "mcp_stdio"] as const) {
@@ -141,6 +227,29 @@ for (const launchPolicy of ["standard", "mcp_stdio"] as const) {
           p.evidence
         );
         expect(p.evidence.launchPolicy).toBe(launchPolicy);
+        if (process.platform === "linux") {
+          expect(p.evidence.policy.name).toBe("linux-landlock-abi3-v2");
+          expect(
+            p.evidence.policy.bootstrapStartupConfigurationSuppressed
+          ).toBe(true);
+          expect(p.evidence.policy.startupConfigurationSuppressed).toBe(false);
+          expect(p.evidence.policy.runtimeReadRules).toEqual([
+            {
+              path: "/proc/self/maps",
+              resolvedBy: "launcher",
+              scope: "same_process_inode",
+            },
+          ]);
+          expect(p.evidence.grants).toContainEqual({
+            identity: expect.objectContaining({ path: "/dev/null" }),
+            kind: "read_write_literal",
+          });
+          expect(
+            p.evidence.grants.some((grant) =>
+              grant.identity.path.startsWith("/proc/")
+            )
+          ).toBe(false);
+        }
         expect(JSON.stringify(p.evidence)).not.toContain(
           "synthetic-secret-only-in-launch-env"
         );
@@ -381,6 +490,48 @@ test("MCP receipt binds post-extension directory grants/policy before authorizat
       await standard.cleanup();
       await p.cleanup();
     }
+  }));
+
+test("Linux prepared evidence declares launcher-bound maps authority without claiming a parent maps inode", async () =>
+  fixture(async (root, workspace) => {
+    const evidence = await createRestrictedProcessLaunchEvidence({
+      args: ["-c", "exit 0"],
+      bin: "/bin/sh",
+      cwd: workspace,
+      env: {},
+      executable: "/bin/sh",
+      executableSpelling: "/bin/sh",
+      grants: [{ kind: "read_write_subtree", root: workspace }],
+      launchPolicy: "mcp_stdio",
+      network: "allow",
+      platform: "linux",
+      policySource: "synthetic trusted policy",
+      temporaryRoot: root,
+      workspaceRoot: workspace,
+    });
+    expect(evidence.policy.name).toBe("linux-landlock-abi3-v2");
+    expect(evidence.policy.bootstrapStartupConfigurationSuppressed).toBe(true);
+    expect(evidence.policy.startupConfigurationSuppressed).toBe(false);
+    expect(evidence.policy.stage).toBe("prepared_not_executed");
+    expect(evidence.policy.runtimeReadRules).toEqual([
+      {
+        path: "/proc/self/maps",
+        resolvedBy: "launcher",
+        scope: "same_process_inode",
+      },
+    ]);
+    expect(Object.isFrozen(evidence.policy.runtimeReadRules)).toBe(true);
+    expect(Object.isFrozen(evidence.policy.runtimeReadRules[0])).toBe(true);
+    expect(evidence.grants.map((grant) => grant.identity.path)).toEqual([
+      workspace,
+    ]);
+    await expect(
+      authorizeRestrictedProcessLaunch(evidence, async (prepared) => {
+        if (prepared.policy.runtimeReadRules.length > 0) {
+          throw new Error("Host policy rejects process metadata access");
+        }
+      })
+    ).rejects.toThrow("Host policy rejects process metadata access");
   }));
 
 test("legacy standard preparation remains available without creating an admission receipt", async () =>

@@ -63,6 +63,12 @@ int atlas_restricted_process_exec(void) {
     if (atlas_add_path_rule(fd, roots[i], allowed, 1) < 0) { close(fd); return 1; }
   }
   if (atlas_add_path_rule(fd, "/dev/null", ATLAS_ACCESS_FS_READ_FILE | ATLAS_ACCESS_FS_WRITE_FILE, 1) < 0) { close(fd); return 1; }
+  // glibc discovers the main thread stack through this process's maps file.
+  // Bun/JSC aborts before executing JavaScript without those stack bounds.
+  // Bind only this launch PID's maps inode before exec: never expose a proc
+  // directory, host/tenant process maps, environ, or descriptor entries. Future
+  // descendants inherit this fixed inode rule, not access to their own maps.
+  if (atlas_add_path_rule(fd, "/proc/self/maps", ATLAS_READ_FILE_ACCESS, 1) < 0) { close(fd); return 1; }
   if (prctl(ATLAS_PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 || syscall(ATLAS_SYS_LANDLOCK_RESTRICT_SELF, fd, 0) < 0) {
     dprintf(2, "Landlock restriction failed: %s\n", strerror(ATLAS_ERRNO));
     close(fd);

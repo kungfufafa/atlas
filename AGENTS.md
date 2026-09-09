@@ -184,6 +184,8 @@ Always build context with `buildToolExecutionContext()` (`packages/core/src/tool
 
 **Python/Bash network policy:** the host can set `ATLAS_PROCESS_NETWORK=deny` to block all networking inside their existing required macOS process sandbox, including descendants. The default is `allow`. Tool-supplied environment values cannot override this host setting. Invalid values and `deny` on platforms without full enforcement fail closed. This setting covers arbitrary Python/Bash execution only; it does not restrict provider traffic, custom JS tools, dedicated document workers, or other server tools. Implementation: `apps/server/src/services/restricted-process.ts`.
 
+**Linux process startup:** the trusted Bun bootstrap suppresses workspace startup configuration before applying Landlock. The restricted launcher grants read access to its own `/proc/self/maps` inode so Bun/JSC can determine stack bounds. Policy `linux-landlock-abi3-v2` declares this launcher-resolved rule separately from paths identified by the parent and binds all compiled launcher sources. It grants no proc directory, environment, or descriptor access. Descendants inherit that fixed inode; a fresh Bun 1.3.14 descendant can abort before JavaScript because it needs its own maps inode. Keep that limitation explicit and never broaden `/proc` or silently replace a requested runtime. The descendant regression uses genuine Node to prove successful child execution with sibling/private file access denied.
+
 | | Built-in | Custom JS |
 |---|---|---|
 | Code | `packages/core/src/tools/`, `apps/server/src/tools/` | `~/.atlas/tools/*.js` |
