@@ -13,6 +13,7 @@ import uharfbuzz
 import pandas as pd
 from docx import Document
 from openpyxl import Workbook, load_workbook
+from PIL import Image, ImageChops, ImageStat
 from pptx import Presentation
 from pptx.util import Inches
 from pypdf import PdfReader, PdfWriter
@@ -22,6 +23,33 @@ from reportlab.pdfgen import canvas
 def verify():
     output = Path("artifacts/runtime-check")
     output.mkdir(parents=True, exist_ok=True)
+
+    source_path = output / "source.jpg"
+    with Image.new("RGB", (32, 24), (20, 80, 120)) as source:
+        source.paste((180, 40, 30), (0, 0, 16, 24))
+        source.save(source_path, format="JPEG", quality=95)
+    source_bytes = source_path.read_bytes()
+    with Image.open(source_path) as source:
+        source.load()
+        edited = source.crop((0, 2, 24, 22)).resize((48, 40))
+        with source.resize(edited.size) as resized_source:
+            assert ImageChops.difference(edited, resized_source).getbbox() is not None
+    with edited:
+        for extension, image_format in (("jpg", "JPEG"), ("png", "PNG")):
+            destination = output / f"edited.{extension}"
+            edited.save(destination, format=image_format)
+            with Image.open(destination) as reopened:
+                reopened.load()
+                assert reopened.format == image_format
+                assert reopened.size == (48, 40)
+                assert reopened.mode == "RGB"
+                if image_format == "PNG":
+                    assert reopened.tobytes() == edited.tobytes()
+                else:
+                    difference = ImageStat.Stat(ImageChops.difference(edited, reopened))
+                    assert max(difference.mean) < 10
+    assert source_path.read_bytes() == source_bytes
+
     doc = Document()
     doc.add_heading("Atlas daily report", 0)
     doc.add_paragraph("Jakarta: draft")
@@ -71,9 +99,9 @@ def verify():
 
     print(json.dumps({
         "status": "passed",
-        "formats": ["docx", "pptx", "xlsx", "csv", "pdf"],
+        "formats": ["docx", "pptx", "xlsx", "csv", "pdf", "jpg", "png"],
         "versions": {name: importlib.metadata.version(name) for name in
-                     ["pandas", "openpyxl", "python-docx", "python-pptx", "pypdf", "reportlab", "fonttools", "uharfbuzz", "python-bidi"]},
+                     ["Pillow", "pandas", "openpyxl", "python-docx", "python-pptx", "pypdf", "reportlab", "fonttools", "uharfbuzz", "python-bidi"]},
     }))
 
 

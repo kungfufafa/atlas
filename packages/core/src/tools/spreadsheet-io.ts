@@ -19,6 +19,9 @@ export const MAX_SPREADSHEET_CELL_BYTES = 32_767;
 export const MAX_SPREADSHEET_RESPONSE_BYTES = 256 * 1024;
 export const MAX_SPREADSHEET_READ_CELLS = 10_000;
 
+const MAX_SPREADSHEET_WRITE_ATTEMPTS = 10_000;
+const SPREADSHEET_VERSION_SUFFIX = /-v([1-9]\d*)$/;
+
 export type SpreadsheetFormat = ".csv" | ".json" | ".xlsx";
 
 export function spreadsheetFormat(filePath: string): SpreadsheetFormat {
@@ -98,6 +101,26 @@ export async function spreadsheetExists(filePath: string): Promise<boolean> {
   }
 }
 
+function spreadsheetVersionBase(name: string): {
+  name: string;
+  nextVersion: bigint;
+} {
+  let baseName = name;
+  let nextVersion = 2n;
+  let suffix = SPREADSHEET_VERSION_SUFFIX.exec(baseName);
+  while (suffix && suffix.index > 0) {
+    const version = BigInt(suffix[1]);
+    if (version < 2n) {
+      break;
+    }
+    // Legacy names stacked suffixes for each edit: -v2-v2 is the third version.
+    nextVersion += version - 1n;
+    baseName = baseName.slice(0, suffix.index);
+    suffix = SPREADSHEET_VERSION_SUFFIX.exec(baseName);
+  }
+  return { name: baseName, nextVersion };
+}
+
 /** Publish complete bytes, retaining the old file unless a revision was supplied. */
 export async function publishSpreadsheet(input: {
   bytes: Buffer;
@@ -143,11 +166,21 @@ export async function publishSpreadsheet(input: {
       return { path: input.path, revision: spreadsheetRevision(bytes) };
     }
     const parsed = path.parse(input.path);
-    for (let version = 1; version <= 10_000; version += 1) {
+    const versionBase = spreadsheetVersionBase(parsed.name);
+    // Bound collisions, not numeric suffixes supplied in existing filenames.
+    for (
+      let attempt = 0;
+      attempt < MAX_SPREADSHEET_WRITE_ATTEMPTS;
+      attempt += 1
+    ) {
+      const version = versionBase.nextVersion + BigInt(attempt) - 1n;
       const destination =
-        version === 1
+        attempt === 0
           ? input.path
-          : path.join(parsed.dir, `${parsed.name}-v${version}${parsed.ext}`);
+          : path.join(
+              parsed.dir,
+              `${versionBase.name}-v${version}${parsed.ext}`
+            );
       input.signal?.throwIfAborted();
       try {
         // link is exclusive: concurrent writers cannot replace an existing file.

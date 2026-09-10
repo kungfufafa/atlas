@@ -117,20 +117,48 @@ keeps the saved artifact available and reports its location or available link.
 Find saved results under **Files → Artifacts**. Temporary working copies of
 uploaded inputs are not automatically sent back as new deliverables.
 
+For photo edits in WhatsApp, Telegram, and Discord, Atlas instructs the agent to
+use the original image and return a verified JPG or PNG. SVG remains available
+for requested vector work, such as logos and diagrams. Raster tools can resize,
+crop, and adjust images; generative changes such as replacing a scene need a
+configured tool that accepts the source image. If that capability is unavailable,
+the agent should explain the limitation instead of presenting a simpler effect
+or an SVG wrapper as the finished photo. SVG uses the existing delivery options:
+documents in WhatsApp and Telegram, and share links or **Files → Artifacts** for
+Discord.
+
 ### Self-hosted file runtime
 
 The Docker image includes LibreOffice for Office rendering and Excel
 recalculation, Poppler and Tesseract with English and Indonesian OCR, and a managed
-Python environment for file analysis. For a
-source installation, use Python 3.11 or later and run:
+Python environment for file analysis and Pillow for raster image processing.
+For a source installation, use Python 3.11 or later. Run the installer as the
+same operating-system account that runs Atlas, with the same `ATLAS_CONFIG_DIR`
+environment setting if your service uses one:
 
 ```bash
 bash scripts/setup-file-runtime.sh
 ```
 
-The script installs the analysis libraries in Atlas's configuration directory.
-For a custom installation directory, pass its absolute path and set the printed
-`ATLAS_PYTHON_PATH` before starting Atlas. LibreOffice is installed separately;
+The script installs the libraries under `runtime/python` in Atlas's configuration
+directory (`~/.atlas` by default). It checks dependencies and verifies that Pillow
+can save and reopen both JPEG and PNG before reporting the runtime ready. Rerun
+the installer when updating an existing source installation to add these libraries.
+
+Atlas selects `ATLAS_PYTHON_PATH` first, then its managed runtime, then system
+`python3`. A configured interpreter takes precedence even if the managed runtime
+is installed. For a custom runtime directory, pass its absolute path to the
+installer and set the printed `ATLAS_PYTHON_PATH` in the Atlas service environment.
+Setting it only in an unrelated terminal does not update a running service.
+
+Restart Atlas after installing or changing the runtime. For PM2 deployments,
+reload the service with its updated environment; `bun run pm2:deploy` does not
+install the Python runtime. To check the interpreter used by an agent with
+**Python Execute** assigned, ask it to report `sys.executable`, import `PIL`, and
+save and reopen a small JPEG and PNG in its workspace. A successful check in a
+different shell or Python installation does not verify the agent's runtime.
+
+LibreOffice is installed separately;
 `ATLAS_OFFICE_CONVERTER_PATH` can select its executable. A missing calculation
 engine is reported, and cached formula values are not treated as recalculated.
 

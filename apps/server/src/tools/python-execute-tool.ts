@@ -329,7 +329,7 @@ export const pythonExecuteTool: ToolDefinition<
   PythonExecuteOutput
 > = {
   description:
-    "Execute Python with required OS filesystem isolation in the active profile workspace using Atlas's configured runtime (ATLAS_PYTHON_PATH), managed file runtime, or installed python3. Use for data transformations and generating files. Inspect installed modules before relying on them; Docker bundles pandas, openpyxl, python-docx, python-pptx, pypdf, reportlab. Save deliverables under artifacts/. stdout, stderr and generated files are captured. Host home and other profiles are inaccessible; execution fails if the sandbox is unavailable.",
+    "Execute Python with required OS filesystem isolation in the active profile workspace using Atlas's configured runtime (ATLAS_PYTHON_PATH), managed file runtime, or installed python3. Use for data transformations and generating files. Module availability depends on the selected interpreter; check and import required modules in this tool before relying on them. Pillow (PIL), when installed, supports ordinary raster processing, not generative image editing. If a required module is missing, report the unavailable capability rather than inventing a substitute deliverable. Save verified, finished deliverables under artifacts/ and keep intermediate files elsewhere. stdout, stderr and generated files are captured. Host home and other profiles are inaccessible; execution fails if the sandbox is unavailable.",
   name: "python_execute",
   parameters: jsonSchemaFromZod(pythonExecuteInputSchema),
   run(input, context) {

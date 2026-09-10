@@ -19,6 +19,7 @@ interface WriteFileResult {
   bytesWritten?: number;
   error?: string;
   path?: string;
+  sourcePath?: string;
 }
 
 interface GenerateImageResult {
@@ -79,6 +80,8 @@ function getWriteFileResult(
       typeof record.bytesWritten === "number" ? record.bytesWritten : undefined,
     error: typeof record.error === "string" ? record.error : undefined,
     path: resultPath,
+    sourcePath:
+      typeof record.sourcePath === "string" ? record.sourcePath : undefined,
   };
 }
 
@@ -546,11 +549,40 @@ const DELIVERABLE_WRITE_TOOLS = new Set([
 ]);
 
 const SPREADSHEET_NON_DELIVERABLE_ACTIONS = new Set(["inspect", "read_range"]);
+const SPREADSHEET_EDIT_ACTIONS = new Set([
+  "write_range",
+  "format_range",
+  "add_sheet",
+  "delete_sheet",
+  "import_csv",
+  "recalculate",
+]);
+
+function spreadsheetEditSourcePath(
+  message: Extract<ChatMessage, { role: "tool" }>,
+  toolInputs: Map<string, Record<string, unknown>>
+): string | null {
+  const input = toolInputs.get(message.toolCallId);
+  if (
+    message.name !== "spreadsheet" ||
+    typeof input?.action !== "string" ||
+    !SPREADSHEET_EDIT_ACTIONS.has(input.action)
+  ) {
+    return null;
+  }
+
+  const result = getWriteFileResult(message);
+  const sourcePath = result?.sourcePath ?? input.path;
+  return typeof sourcePath === "string"
+    ? toArtifactsRelativePath(sourcePath.replace(/^\.\//, ""))
+    : null;
+}
 
 /**
  * Artifacts the channel should send back after a turn: paired save-artifact
  * sidecars first, then unpaired writes under artifacts/ (spreadsheet, docx,
- * pptx, write_file without sidecar).
+ * pptx, write_file without sidecar). Successful spreadsheet edits supersede
+ * their input artifact; independent creations, exports and edit branches remain.
  */
 export function extractTurnDeliverableArtifacts(
   messages: ChatMessage[],
@@ -562,6 +594,9 @@ export function extractTurnDeliverableArtifacts(
   );
   const toolInputs = buildToolInputMap(messages);
   const turnMessages = extractLatestTurnMessages(messages);
+  const supersededPaths = new Set<string>();
+  const spreadsheetOutputPaths = new Set<string>();
+  const latestWriteSizes = new Map<string, number>();
   const hasFailedResult = turnMessages.some(
     (message) =>
       message.role === "tool" &&
@@ -574,11 +609,37 @@ export function extractTurnDeliverableArtifacts(
     }
 
     const artifact = artifactRefFromUnpairedWrite(message, toolInputs);
-    if (artifact && !artifactsByPath.has(artifact.path)) {
-      artifactsByPath.set(artifact.path, artifact);
+    if (artifact) {
+      if (message.name === "spreadsheet") {
+        spreadsheetOutputPaths.add(artifact.path);
+      }
+      if (
+        spreadsheetOutputPaths.has(artifact.path) &&
+        getWriteFileResult(message)?.bytesWritten === artifact.sizeBytes
+      ) {
+        latestWriteSizes.set(artifact.path, artifact.sizeBytes);
+      } else {
+        latestWriteSizes.delete(artifact.path);
+      }
+      // Follow successful edit provenance, never a filename suffix: similarly
+      // named workbooks and exports can be separate requested deliverables.
+      supersededPaths.delete(artifact.path);
+      const sourcePath = spreadsheetEditSourcePath(message, toolInputs);
+      if (sourcePath && sourcePath !== artifact.path) {
+        supersededPaths.add(sourcePath);
+      }
+      if (!artifactsByPath.has(artifact.path)) {
+        artifactsByPath.set(artifact.path, artifact);
+      }
     }
 
     for (const embedded of artifactRefsFromEmbeddedToolArtifacts(message)) {
+      // Other producers (for example Python) may rewrite a prior workbook.
+      // Spreadsheet payloads can also carry references to intermediate files.
+      if (message.name !== "spreadsheet") {
+        supersededPaths.delete(embedded.path);
+        latestWriteSizes.delete(embedded.path);
+      }
       if (!artifactsByPath.has(embedded.path)) {
         artifactsByPath.set(embedded.path, embedded);
       }
@@ -593,7 +654,16 @@ export function extractTurnDeliverableArtifacts(
     }
   }
 
-  return [...artifactsByPath.values()];
+  // Filter after merging progress events so an intermediate version cannot be
+  // reintroduced by a streamed artifact or a paired sidecar.
+  return [...artifactsByPath.values()]
+    .filter((artifact) => !supersededPaths.has(artifact.path))
+    .map((artifact) => {
+      // In-place edits can change channel size eligibility. Preserve paired
+      // metadata, but use the latest successful write's actual byte count.
+      const sizeBytes = latestWriteSizes.get(artifact.path);
+      return sizeBytes === undefined ? artifact : { ...artifact, sizeBytes };
+    });
 }
 
 /**
