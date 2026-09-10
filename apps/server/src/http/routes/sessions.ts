@@ -2,6 +2,7 @@ import {
   AtlasApiError,
   type BranchSessionRequest,
   type BranchSessionResponse,
+  type CancelSessionTurnResponse,
   type CompactionResponse,
   type CompactSessionRequest,
   type CreateSessionRequest,
@@ -86,6 +87,82 @@ export function registerSessionRoutes(
   const errorSchema = z
     .object({ error: z.string() })
     .openapi("ApiErrorResponse");
+  const cancelSessionTurnRequestSchema = z
+    .object({ expectedTurnId: z.string().uuid() })
+    .strict()
+    .openapi("CancelSessionTurnRequest");
+  const sessionStatusSchema = z
+    .object({
+      active: z.boolean(),
+      cancelling: z.boolean().optional(),
+      startedAt: z.string().optional(),
+      turnId: z.string().uuid().optional(),
+    })
+    .openapi("SessionStatusResponse");
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "get",
+      operationId: "getSessionStatus",
+      path: "/v1/sessions/{sessionId}/status",
+      request: { params: z.object({ sessionId: z.string() }) },
+      responses: {
+        200: {
+          content: { "application/json": { schema: sessionStatusSchema } },
+          description:
+            "Current session invocation and its unique cancellation identity",
+        },
+        404: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Session not accessible",
+        },
+      },
+      tags: ["Chat"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "post",
+      operationId: "cancelSessionTurn",
+      path: "/v1/sessions/{sessionId}/cancel",
+      request: {
+        body: {
+          content: {
+            "application/json": { schema: cancelSessionTurnRequestSchema },
+          },
+          required: true,
+        },
+        params: z.object({ sessionId: z.string() }),
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": {
+              schema: sessionStatusSchema.extend({ cancelled: z.boolean() }),
+            },
+          },
+          description:
+            "Cancellation requested; active remains true until the invocation finishes cleanup.",
+        },
+        400: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Invalid cancellation request",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Viewer cannot cancel a turn",
+        },
+        404: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Session not accessible",
+        },
+        409: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "The active turn has changed",
+        },
+      },
+      tags: ["Chat"],
+    })
+  );
   const agentChannelSchema = z
     .enum([
       "web",
@@ -843,10 +920,29 @@ export function registerSessionRoutes(
     }
 
     const status = sessionTurnRegistry.getStatus(sessionId);
-    return json<SessionStatusResponse>({
-      active: status.active,
-      ...(status.startedAt ? { startedAt: status.startedAt } : {}),
-    });
+    return json<SessionStatusResponse>(status);
+  });
+
+  app.post("/v1/sessions/:sessionId/cancel", async (c) => {
+    requireNotViewerFromContext(c);
+    const auth = getRequestAuth(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const sessionId = decodeURIComponent(c.req.param("sessionId"));
+    const body = cancelSessionTurnRequestSchema.safeParse(
+      await readJsonWithLimit<unknown>(c.req.raw, 1024)
+    );
+    if (!body.success) {
+      return errorResponse("Invalid cancellation request.", 400);
+    }
+    const result = await agent.cancelSessionTurn(
+      orgId,
+      sessionId,
+      body.data.expectedTurnId,
+      sessionActorFromAuth(auth)
+    );
+    return result
+      ? json<CancelSessionTurnResponse>(result)
+      : errorResponse("Session not found", 404);
   });
 
   app.get("/v1/sessions/:sessionId/stream", async (c) => {
@@ -863,7 +959,14 @@ export function registerSessionRoutes(
       return errorResponse("Session not found", 404);
     }
 
-    const response = streamTurnSubscribe(sessionId);
+    const expectedTurnId = c.req.query("expectedTurnId");
+    if (
+      expectedTurnId &&
+      !z.string().uuid().safeParse(expectedTurnId).success
+    ) {
+      return errorResponse("Invalid turn identity.", 400);
+    }
+    const response = streamTurnSubscribe(sessionId, expectedTurnId);
 
     if (!response) {
       return new Response(null, { status: 204 });
@@ -1020,12 +1123,17 @@ export function registerSessionRoutes(
         ...turnOptions,
         signal: turnSignal,
       });
+      turnSignal.throwIfAborted();
       const contextUsage = session.getContextUsage() ?? undefined;
-      sessionTurnRegistry.endTurn(sessionId, {
-        reply,
-        type: "done",
-        ...(contextUsage ? { contextUsage } : {}),
-      });
+      sessionTurnRegistry.endTurn(
+        sessionId,
+        {
+          reply,
+          type: "done",
+          ...(contextUsage ? { contextUsage } : {}),
+        },
+        turnAbort
+      );
       agent.scheduleSessionTitleGeneration(sessionId);
       agent.schedulePostTurnSkillReview(sessionId);
       return json<SendMessageResponse>({
@@ -1034,7 +1142,11 @@ export function registerSessionRoutes(
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      sessionTurnRegistry.endTurn(sessionId, { error: message, type: "error" });
+      sessionTurnRegistry.endTurn(
+        sessionId,
+        { error: message, type: "error" },
+        turnAbort
+      );
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }

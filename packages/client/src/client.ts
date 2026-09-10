@@ -23,6 +23,7 @@ import type {
   AutomationSchedule,
   BranchSessionRequest,
   BranchSessionResponse,
+  CancelSessionTurnResponse,
   CapabilityCatalogResponse,
   CapabilityMappingsResponse,
   CapabilityOptionsResponse,
@@ -795,23 +796,42 @@ export class AtlasClient {
     return `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/attachments/${encodeURIComponent(attachmentId)}${query}`;
   }
 
-  async getSessionStatus(sessionId: string): Promise<SessionStatusResponse> {
+  async getSessionStatus(
+    sessionId: string,
+    options?: { signal?: AbortSignal }
+  ): Promise<SessionStatusResponse> {
     return this.request<SessionStatusResponse>(
-      `/v1/sessions/${encodeURIComponent(sessionId)}/status`
+      `/v1/sessions/${encodeURIComponent(sessionId)}/status`,
+      { signal: options?.signal }
+    );
+  }
+
+  async cancelSessionTurn(
+    sessionId: string,
+    expectedTurnId: string,
+    options?: { signal?: AbortSignal }
+  ): Promise<CancelSessionTurnResponse> {
+    return this.request<CancelSessionTurnResponse>(
+      `/v1/sessions/${encodeURIComponent(sessionId)}/cancel`,
+      {
+        body: JSON.stringify({ expectedTurnId }),
+        method: "POST",
+        signal: options?.signal,
+      }
     );
   }
 
   async subscribeSessionStream(
     sessionId: string,
     handler: StreamHandler | StreamHandlers,
-    options?: SendStreamOptions
+    options?: SendStreamOptions & { expectedTurnId?: string }
   ): Promise<{ reconnected: boolean; reply?: string }> {
     const handlers = normalizeStreamHandlers(handler);
     const headers = this.buildHeaders("GET", {
       Accept: "text/event-stream",
     });
     const response = await this.fetchImpl(
-      `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/stream`,
+      `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/stream${options?.expectedTurnId ? `?expectedTurnId=${encodeURIComponent(options.expectedTurnId)}` : ""}`,
       {
         credentials: this.credentials,
         headers,

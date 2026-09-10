@@ -59,6 +59,67 @@ test("session attachment URLs encode identifiers and opt into safe image preview
   );
 });
 
+test("session cancellation targets an observed turn and retains organization authentication", async () => {
+  const calls: Request[] = [];
+  const turnId = crypto.randomUUID();
+  const client = createClient({
+    authToken: "session-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      calls.push(new Request(input, init));
+      return Response.json({
+        active: true,
+        cancelled: true,
+        cancelling: true,
+        turnId,
+      });
+    },
+    orgId: "org-one",
+    tokenAuth: true,
+  });
+  const abort = new AbortController();
+  expect(
+    await client.cancelSessionTurn("session/one", turnId, {
+      signal: abort.signal,
+    })
+  ).toMatchObject({
+    active: true,
+    cancelled: true,
+    turnId,
+  });
+  expect(calls[0]?.url).toBe(
+    "http://localhost:4310/v1/sessions/session%2Fone/cancel"
+  );
+  expect(calls[0]?.method).toBe("POST");
+  expect(calls[0]?.headers.get("X-Org-Id")).toBe("org-one");
+  expect(calls[0]?.headers.get("Authorization")).toBe("Bearer session-token");
+  expect(await calls[0]?.json()).toEqual({ expectedTurnId: turnId });
+  await client.getSessionStatus("session/one", { signal: abort.signal });
+  abort.abort();
+  expect(calls[0]?.signal.aborted).toBe(true);
+  expect(calls[1]?.signal.aborted).toBe(true);
+});
+
+test("reconnected stream subscriptions target the observed turn identity", async () => {
+  const calls: Request[] = [];
+  const client = createClient({
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      calls.push(new Request(input, init));
+      return new Response(null, { status: 204 });
+    },
+  });
+  const turnId = crypto.randomUUID();
+  expect(
+    await client.subscribeSessionStream("session/one", () => {}, {
+      expectedTurnId: turnId,
+    })
+  ).toEqual({ reconnected: false });
+  expect(calls[0]?.url).toBe(
+    `http://localhost:4310/v1/sessions/session%2Fone/stream?expectedTurnId=${turnId}`
+  );
+});
+
 test("automation run requests disable Bun fetch idle timeout", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];

@@ -161,9 +161,67 @@ describe("streamTurnSubscribe", () => {
     expect(afterCancel?.status).toBe(200);
     sessionTurnRegistry.endTurn(sessionId, { reply: "ok", type: "done" });
   });
+
+  test("replaying a terminal during cleanup releases each subscription immediately", async () => {
+    const sessionId = `session_replay_cleanup_${crypto.randomUUID()}`;
+    sessionTurnRegistry.beginTurn(sessionId);
+    sessionTurnRegistry.publish(sessionId, {
+      error: "Cancelled",
+      type: "error",
+    });
+    try {
+      for (const _ of [1, 2, 3, 4]) {
+        const response = streamTurnSubscribe(sessionId);
+        expect(response?.status).toBe(200);
+        await response?.text();
+        expect(sessionTurnRegistry.canSubscribe(sessionId)).toBe(true);
+      }
+    } finally {
+      sessionTurnRegistry.cancelTurn(sessionId);
+    }
+  });
 });
 
 describe("streamMessage cancellation", () => {
+  test("requested stop holds the session lock through asynchronous invocation cleanup", async () => {
+    const sessionId = `session_stop_cleanup_${crypto.randomUUID()}`;
+    const cleanup = Promise.withResolvers<void>();
+    const aborted = Promise.withResolvers<void>();
+    const session = {
+      getContextUsage: () => null,
+      async sendStream(
+        _input: unknown,
+        _handlers: unknown,
+        options?: { signal?: AbortSignal }
+      ) {
+        const signal = options!.signal!;
+        await new Promise<void>((resolve) =>
+          signal.addEventListener(
+            "abort",
+            () => {
+              aborted.resolve();
+              resolve();
+            },
+            { once: true }
+          )
+        );
+        await cleanup.promise;
+        signal.throwIfAborted();
+        return "unreachable";
+      },
+    } as AgentChatSession;
+    sessionTurnRegistry.beginTurn(sessionId);
+    const response = streamMessage(sessionId, session, { message: "work" });
+    const turnId = sessionTurnRegistry.getStatus(sessionId).turnId!;
+    sessionTurnRegistry.requestCancellation(sessionId, turnId);
+    await aborted.promise;
+    expect(sessionTurnRegistry.beginTurn(sessionId).started).toBe(false);
+    cleanup.resolve();
+    await new Response(response.body).text();
+    await waitForTurnToEnd(sessionId);
+    expect(sessionTurnRegistry.isActive(sessionId)).toBe(false);
+  });
+
   test("client abort ends the turn so the next message is not a 409", async () => {
     const sessionId = `session_abort_test_${Date.now()}`;
     const { session, sawSignal } = createCancellableSession();
@@ -208,6 +266,43 @@ describe("streamMessage cancellation", () => {
 });
 
 describe("streamMessage timeout", () => {
+  test("a timeout closes transport but cannot release a provider still cleaning up", async () => {
+    const sessionId = `session_timeout_cleanup_${crypto.randomUUID()}`;
+    const cleanup = Promise.withResolvers<void>();
+    let signal: AbortSignal | undefined;
+    const session = {
+      getContextUsage: () => null,
+      async sendStream(
+        _input: unknown,
+        _handlers: unknown,
+        options?: { signal?: AbortSignal }
+      ) {
+        signal = options?.signal;
+        await cleanup.promise;
+        signal?.throwIfAborted();
+        return "late";
+      },
+    } as AgentChatSession;
+    sessionTurnRegistry.beginTurn(sessionId);
+    const response = streamMessage(
+      sessionId,
+      session,
+      { message: "work" },
+      undefined,
+      undefined,
+      10,
+      0
+    );
+    try {
+      await new Response(response.body).text();
+      expect(signal?.aborted).toBe(true);
+      expect(sessionTurnRegistry.beginTurn(sessionId).started).toBe(false);
+    } finally {
+      cleanup.resolve();
+      await waitForTurnToEnd(sessionId);
+    }
+    expect(sessionTurnRegistry.isActive(sessionId)).toBe(false);
+  });
   test("a provider that goes quiet is timed out, aborted, and reported as a timeout", async () => {
     const sessionId = `session_timeout_test_${Date.now()}`;
     const { session, sawSignal } = createCancellableSession();

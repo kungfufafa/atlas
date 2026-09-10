@@ -73,6 +73,7 @@ import {
 } from "@/lib/chat-stream";
 import {
   isActiveTurnConflictError,
+  isMissingChatSessionError,
   reconnectActiveSessionStream,
   seedStreamingStateForActiveTurn,
 } from "@/lib/chat-stream-resume";
@@ -109,6 +110,11 @@ import {
   resolveFailedRetryPayload,
   shouldResetChatOnWorkspaceChange,
 } from "@/pages/chat/chat-page.shared";
+import {
+  ChatSendQueue,
+  guardChatStateUpdates,
+  stopChatSessionTurn,
+} from "./chat-send-queue";
 
 interface SendMessageOptions {
   initialMessages?: ChatListItem[];
@@ -117,9 +123,11 @@ interface SendMessageOptions {
 }
 
 interface QueuedSend {
+  conflictRetries?: number;
   files: FileUIPart[];
   id: string;
   options: SendMessageOptions;
+  readiness?: SendReadiness;
   text: string;
 }
 
@@ -168,7 +176,9 @@ export function useChatPage() {
   const [contextUsage, setContextUsage] = useState<ChatContextUsage | null>(
     null
   );
-  const [busy, setBusy] = useState(false);
+  const [streamBusy, setBusy] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const busy = streamBusy || stopping;
   const [lastSuccessfulTurnAt, setLastSuccessfulTurnAt] = useState<
     number | null
   >(null);
@@ -184,8 +194,30 @@ export function useChatPage() {
   );
   const streamAbortRef = useRef<AbortController | null>(null);
   const streamGenerationRef = useRef(0);
-  const messageQueueRef = useRef<QueuedSend[]>([]);
-  const isSendingRef = useRef(false);
+  const executeQueuedSendRef = useRef<(item: QueuedSend) => Promise<void>>(
+    async () => undefined
+  );
+  const messageQueueRef = useRef<ChatSendQueue<QueuedSend> | null>(null);
+  if (!messageQueueRef.current) {
+    messageQueueRef.current = new ChatSendQueue(
+      (item) => executeQueuedSendRef.current(item),
+      (items) =>
+        setQueuedMessages(
+          items.map((item) => ({
+            attachmentCount: item.files.length,
+            id: item.id,
+            text: item.text,
+          }))
+        ),
+      (err, item) => {
+        item.readiness?.reject(err);
+        setError(formatError(err));
+      }
+    );
+  }
+  const messageQueue = messageQueueRef.current;
+  const resumedTurnIdRef = useRef<string | null>(null);
+  const stoppingGenerationRef = useRef<number | null>(null);
   const sessionRef = useRef<RemoteChatSession | null>(null);
   const skipNextProfileSessionRef = useRef(false);
   const loadedRouteRef = useRef<string | null>(null);
@@ -211,18 +243,44 @@ export function useChatPage() {
     streamGenerationRef.current += 1;
     streamAbortRef.current?.abort();
     streamAbortRef.current = null;
-    isSendingRef.current = false;
+    resumedTurnIdRef.current = null;
+    stoppingGenerationRef.current = null;
+    setStopping(false);
     return streamGenerationRef.current;
   }, []);
+
+  const buildTurnStreamHandlers = useCallback(
+    (generation: number, onAccepted?: () => void) => {
+      const isCurrent = () => streamGenerationRef.current === generation;
+      return buildStreamHandlers(
+        guardChatStateUpdates(setMessages, isCurrent),
+        {
+          onAccepted: () => {
+            if (isCurrent()) {
+              onAccepted?.();
+            }
+          },
+          onContextUsage: guardChatStateUpdates(setContextUsage, isCurrent),
+          onQuestionnaireUpdated: guardChatStateUpdates(
+            setAgentQuestionnaire,
+            isCurrent
+          ),
+          onTodosUpdated: guardChatStateUpdates(setAgentTodos, isCurrent),
+        }
+      );
+    },
+    []
+  );
 
   useEffect(
     () => () => {
       supersedeInFlightTurn();
+      messageQueue.reset();
       // StrictMode replays effects after cancelling the first resume request.
       // Release its route claim so the replay can load persisted messages.
       loadedRouteRef.current = null;
     },
-    [supersedeInFlightTurn]
+    [messageQueue, supersedeInFlightTurn]
   );
 
   // Composer / in-page switches update profileId first; push to shared context.
@@ -441,8 +499,7 @@ export function useChatPage() {
       localStorage.removeItem(sessionStorageKey(nextProfileId));
       skipNextProfileSessionRef.current = true;
       loadedRouteRef.current = null;
-      messageQueueRef.current = [];
-      isSendingRef.current = false;
+      messageQueue.reset();
       setQueuedMessages([]);
       sessionRef.current = null;
       activeSessionIdRef.current = null;
@@ -463,7 +520,7 @@ export function useChatPage() {
         navigate(buildNewChatPath(nextProfileId), { replace: true });
       }
     },
-    [location.pathname, navigate, supersedeInFlightTurn]
+    [location.pathname, messageQueue, navigate, supersedeInFlightTurn]
   );
 
   useEffect(() => {
@@ -475,8 +532,7 @@ export function useChatPage() {
     }
 
     supersedeInFlightTurn();
-    messageQueueRef.current = [];
-    isSendingRef.current = false;
+    messageQueue.reset();
     skipNextProfileSessionRef.current = true;
     loadedRouteRef.current = null;
     setQueuedMessages([]);
@@ -500,7 +556,13 @@ export function useChatPage() {
     if (location.pathname !== buildChatBasePath()) {
       navigate(buildChatBasePath(), { replace: true });
     }
-  }, [activeOrg?.id, location.pathname, navigate, supersedeInFlightTurn]);
+  }, [
+    activeOrg?.id,
+    location.pathname,
+    messageQueue,
+    navigate,
+    supersedeInFlightTurn,
+  ]);
 
   const handleThinkingEffortChange = useCallback(
     (effort: ThinkingEffort) => {
@@ -591,9 +653,15 @@ export function useChatPage() {
 
   const resumeSession = useCallback(
     async (nextProfileId: string, sessionId: string) => {
+      if (
+        activeSessionIdRef.current !== sessionId ||
+        profileIdRef.current !== nextProfileId
+      ) {
+        messageQueue.reset();
+      }
       activeSessionIdRef.current = sessionId;
       const generation = supersedeInFlightTurn();
-      isSendingRef.current = true;
+      const releaseQueue = messageQueue.hold();
       setBusy(true);
       setError(null);
       try {
@@ -645,7 +713,7 @@ export function useChatPage() {
           }
 
           if (status.active) {
-            isSendingRef.current = true;
+            resumedTurnIdRef.current = status.turnId ?? null;
             setCanStop(true);
             setTurnStartedAt(status.startedAt ?? new Date().toISOString());
             listItems = seedStreamingStateForActiveTurn(listItems);
@@ -655,12 +723,15 @@ export function useChatPage() {
             streamAbortRef.current = abortController;
 
             const { reconnected } = await reconnectActiveSessionStream({
-              handlers: buildStreamHandlers(setMessages, {
-                onContextUsage: setContextUsage,
-                onQuestionnaireUpdated: setAgentQuestionnaire,
-                onTodosUpdated: setAgentTodos,
-              }),
+              handlers: buildTurnStreamHandlers(generation),
               messages: listItems,
+              onActiveTurn: (turnId) => {
+                if (
+                  !isSupersededChatTurn(streamGenerationRef.current, generation)
+                ) {
+                  resumedTurnIdRef.current = turnId ?? null;
+                }
+              },
               sessionId,
               signal: abortController.signal,
             });
@@ -701,6 +772,7 @@ export function useChatPage() {
             }
           }
         }
+        messageQueue.resume();
       } catch (err) {
         if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
           return;
@@ -710,6 +782,7 @@ export function useChatPage() {
           return;
         }
 
+        messageQueue.pause();
         setError(formatError(err));
       } finally {
         const superseded = isSupersededChatTurn(
@@ -718,14 +791,21 @@ export function useChatPage() {
         );
         if (!superseded) {
           streamAbortRef.current = null;
-          isSendingRef.current = false;
+          resumedTurnIdRef.current = null;
         }
         setCanStop((current) => (superseded ? current : false));
         setBusy((current) => (superseded ? current : false));
         setTurnStartedAt((current) => (superseded ? current : null));
+        releaseQueue();
       }
     },
-    [profileId, supersedeInFlightTurn, syncChatUrl]
+    [
+      buildTurnStreamHandlers,
+      messageQueue,
+      profileId,
+      supersedeInFlightTurn,
+      syncChatUrl,
+    ]
   );
 
   const handleBranchMessage = useCallback(
@@ -818,7 +898,7 @@ export function useChatPage() {
     }
     skipNextProfileSessionRef.current = true;
     loadedRouteRef.current = null;
-    messageQueueRef.current = [];
+    messageQueue.reset();
     supersedeInFlightTurn();
     setQueuedMessages([]);
     sessionRef.current = null;
@@ -845,7 +925,13 @@ export function useChatPage() {
     }
 
     navigate(buildChatBasePath(), { replace: true });
-  }, [searchParams, navigate, location.search, supersedeInFlightTurn]);
+  }, [
+    searchParams,
+    navigate,
+    location.search,
+    messageQueue,
+    supersedeInFlightTurn,
+  ]);
 
   useEffect(() => {
     if (!profileId || routeSession) {
@@ -888,8 +974,48 @@ export function useChatPage() {
   }, [loadProfiles]);
 
   const stopStreaming = useCallback(() => {
-    streamAbortRef.current?.abort();
-  }, []);
+    const generation = streamGenerationRef.current;
+    const abortController = streamAbortRef.current;
+    const sessionId = activeSessionIdRef.current;
+    if (!abortController || stoppingGenerationRef.current === generation) {
+      return;
+    }
+    if (!sessionId) {
+      abortController.abort();
+      return;
+    }
+    stoppingGenerationRef.current = generation;
+    setStopping(true);
+    const releaseQueue = messageQueue.hold();
+    const isCurrent = () => streamGenerationRef.current === generation;
+    const turnId = resumedTurnIdRef.current;
+    void (async () => {
+      try {
+        await stopChatSessionTurn({
+          abortStream: () => abortController.abort(),
+          cancelTurn: (expectedTurnId, signal) =>
+            client.cancelSessionTurn(sessionId, expectedTurnId, { signal }),
+          getStatus: (signal) => client.getSessionStatus(sessionId, { signal }),
+          isCurrent,
+          turnId,
+        });
+        if (isCurrent()) {
+          messageQueue.resume();
+        }
+      } catch (err) {
+        if (isCurrent()) {
+          messageQueue.pause();
+          setError(formatError(err));
+        }
+      } finally {
+        if (isCurrent()) {
+          stoppingGenerationRef.current = null;
+          setStopping(false);
+        }
+        releaseQueue();
+      }
+    })();
+  }, [messageQueue]);
 
   const executeSend = useCallback(
     async (
@@ -900,7 +1026,6 @@ export function useChatPage() {
       readiness?: SendReadiness
     ) => {
       const generation = ++streamGenerationRef.current;
-      isSendingRef.current = true;
       setBusy(true);
       setTurnStartedAt(new Date().toISOString());
       setError(null);
@@ -942,7 +1067,7 @@ export function useChatPage() {
 
       let activeSession = options.sessionOverride ?? sessionRef.current;
       let pendingNewSession = false;
-      let shouldDrainQueue = true;
+      let accepted = false;
 
       if (!activeSession) {
         try {
@@ -963,21 +1088,12 @@ export function useChatPage() {
             return;
           }
           setError(formatError(err));
-          shouldDrainQueue = false;
+          messageQueue.pause();
           setMessages((current) => current.slice(0, -2));
-          if (queueItem) {
-            messageQueueRef.current.unshift(queueItem);
-            setQueuedMessages((current) => [
-              {
-                attachmentCount: queueItem.files.length,
-                id: queueItem.id,
-                text: queueItem.text,
-              },
-              ...current,
-            ]);
+          if (queueItem && !readiness) {
+            messageQueue.restore(queueItem);
           }
           streamAbortRef.current = null;
-          isSendingRef.current = false;
           setCanStop(false);
           setBusy(false);
           setTurnStartedAt(null);
@@ -988,6 +1104,10 @@ export function useChatPage() {
 
       const turnSession = activeSession;
       const acceptTurn = () => {
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
+        accepted = true;
         if (pendingNewSession) {
           pendingNewSession = false;
           localStorage.setItem(sessionStorageKey(profileId), turnSession.id);
@@ -1013,12 +1133,7 @@ export function useChatPage() {
             message: text,
             relatedQuestions: true,
           },
-          buildStreamHandlers(setMessages, {
-            onAccepted: acceptTurn,
-            onContextUsage: setContextUsage,
-            onQuestionnaireUpdated: setAgentQuestionnaire,
-            onTodosUpdated: setAgentTodos,
-          }),
+          buildTurnStreamHandlers(generation, acceptTurn),
           { signal: abortController.signal }
         );
         acceptTurn();
@@ -1064,31 +1179,32 @@ export function useChatPage() {
 
         const message = formatError(err);
 
-        if (isActiveTurnConflictError(message) && activeSession) {
-          shouldDrainQueue = false;
+        if (!accepted && isActiveTurnConflictError(err) && activeSession) {
+          messageQueue.pause();
           setError("The agent is still responding to your last message.");
-          setMessages((current) => current.slice(0, -2));
+          setMessages(removeUnacceptedOutgoingMessages);
+          if (queueItem && !readiness) {
+            messageQueue.restore(queueItem);
+          }
+          if (!queueItem?.conflictRetries) {
+            if (queueItem) {
+              queueItem.conflictRetries = 1;
+            }
+            await resumeSession(profileId, activeSession.id);
+          }
           return;
         }
 
-        if (message.includes("Session not found") && profileId) {
-          shouldDrainQueue = false;
+        if (!accepted && isMissingChatSessionError(err) && profileId) {
+          messageQueue.pause();
           localStorage.removeItem(sessionStorageKey(profileId));
           activeSessionIdRef.current = null;
           sessionRef.current = null;
           setError("Chat session expired. Send again to start a new session.");
           setMessages(removeUnacceptedOutgoingMessages);
           setAgentQuestionnaire(null);
-          if (queueItem) {
-            messageQueueRef.current.unshift(queueItem);
-            setQueuedMessages((current) => [
-              {
-                attachmentCount: queueItem.files.length,
-                id: queueItem.id,
-                text: queueItem.text,
-              },
-              ...current,
-            ]);
+          if (queueItem && !readiness) {
+            messageQueue.restore(queueItem);
           }
           return;
         }
@@ -1113,29 +1229,25 @@ export function useChatPage() {
         setTurnStartedAt((current) => (superseded ? current : null));
         if (!superseded) {
           streamAbortRef.current = null;
-
-          const next = shouldDrainQueue
-            ? messageQueueRef.current.shift()
-            : null;
-          if (next) {
-            setQueuedMessages((current) =>
-              current.filter((item) => item.id !== next.id)
-            );
-            void executeSend(next.text, next.files, next.options, next);
-          } else {
-            isSendingRef.current = false;
-          }
         }
       }
     },
     [
+      buildTurnStreamHandlers,
+      messageQueue,
       profileId,
+      resumeSession,
       syncChatUrl,
       showThinking,
       activeModelSupportsVision,
       sessionModel,
     ]
   );
+
+  useLayoutEffect(() => {
+    executeQueuedSendRef.current = (item) =>
+      executeSend(item.text, item.files, item.options, item, item.readiness);
+  }, [executeSend]);
 
   const sendMessage = useCallback(
     async (
@@ -1157,22 +1269,10 @@ export function useChatPage() {
         return;
       }
 
-      if (isSendingRef.current) {
-        const queuedItem: QueuedSend = {
-          files,
-          id: nanoid(),
-          options,
-          text,
-        };
-        messageQueueRef.current.push(queuedItem);
-        setQueuedMessages((current) => [
-          ...current,
-          {
-            attachmentCount: queuedItem.files.length,
-            id: queuedItem.id,
-            text: queuedItem.text,
-          },
-        ]);
+      const queuedItem: QueuedSend = { files, id: nanoid(), options, text };
+      if (messageQueue.busy) {
+        messageQueue.enqueue(queuedItem);
+        messageQueue.resume();
         return;
       }
 
@@ -1195,12 +1295,12 @@ export function useChatPage() {
           },
         };
 
-        void executeSend(text, files, options, undefined, readiness).catch(
-          readiness.reject
-        );
+        queuedItem.readiness = readiness;
+        messageQueue.enqueue(queuedItem);
+        messageQueue.resume();
       });
     },
-    [executeSend, profileId, readOnlySession, workspaceReadOnly]
+    [messageQueue, profileId, readOnlySession, workspaceReadOnly]
   );
 
   const handleTryAgainMessage = useCallback(

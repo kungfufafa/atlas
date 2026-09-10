@@ -32,6 +32,7 @@ describe("SessionTurnRegistry", () => {
     expect(registry.getStatus("session_1")).toEqual({
       active: true,
       startedAt: expect.any(String),
+      turnId: expect.any(String),
     });
   });
 
@@ -101,6 +102,54 @@ describe("SessionTurnRegistry", () => {
     registry.cancelTurn("session_1");
     expect(abort.signal.aborted).toBe(true);
     expect(registry.isActive("session_1")).toBe(false);
+  });
+
+  test("requested cancellation keeps the lock and maintenance until the owner finishes", () => {
+    const registry = new SessionTurnRegistry();
+    const abort = new AbortController();
+    let completed = false;
+    registry.beginTurn("session");
+    registry.attachAbort("session", abort);
+    registry.afterTurn("session", () => {
+      completed = true;
+    });
+    const turnId = registry.getStatus("session").turnId!;
+
+    expect(registry.requestCancellation("session", turnId)).toBe("cancelled");
+    expect(abort.signal.aborted).toBe(true);
+    expect(registry.getStatus("session")).toMatchObject({
+      active: true,
+      cancelling: true,
+      turnId,
+    });
+    expect(registry.beginTurn("session").started).toBe(false);
+    expect(completed).toBe(false);
+    registry.endTurn("session", { error: "cancelled", type: "error" }, abort);
+    expect(completed).toBe(true);
+    expect(registry.getStatus("session")).toEqual({ active: false });
+    expect(registry.requestCancellation("session", turnId)).toBe("idle");
+
+    registry.beginTurn("session");
+    const replacement = new AbortController();
+    registry.attachAbort("session", replacement);
+    expect(registry.getStatus("session").turnId).not.toBe(turnId);
+    expect(registry.requestCancellation("session", turnId)).toBe("stale");
+    expect(replacement.signal.aborted).toBe(false);
+    registry.endTurn("session", { error: "old cleanup", type: "error" }, abort);
+    expect(registry.isActive("session")).toBe(true);
+  });
+
+  test("cancellation before transport setup aborts its later attached controller", () => {
+    const registry = new SessionTurnRegistry();
+    registry.beginTurn("session");
+    registry.requestCancellation(
+      "session",
+      registry.getStatus("session").turnId!
+    );
+    const abort = new AbortController();
+    registry.attachAbort("session", abort);
+    expect(abort.signal.aborted).toBe(true);
+    expect(registry.isActive("session")).toBe(true);
   });
 
   test("cancels only turns owned by the archived organization", () => {

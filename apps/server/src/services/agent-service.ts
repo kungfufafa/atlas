@@ -21,6 +21,7 @@ import type {
   AssignSkillRequest,
   AssignToolRequest,
   BranchSessionResponse,
+  CancelSessionTurnResponse,
   CanonicalPrincipal,
   CapabilityCatalogResponse,
   CapabilityMappingsResponse,
@@ -3505,6 +3506,35 @@ export class AgentService {
 
     await this.requireActiveOrganizationForTurn(orgId);
     return sessionTurnRegistry.beginTurn(sessionId, orgId).started;
+  }
+
+  async cancelSessionTurn(
+    orgId: string,
+    sessionId: string,
+    expectedTurnId: string,
+    actor: SessionActor
+  ): Promise<CancelSessionTurnResponse | null> {
+    if (
+      actor.workspaceWorkerChannel ||
+      !(await this.canAccessSession(orgId, sessionId, actor, "invoke"))
+    ) {
+      return null;
+    }
+    await this.requireActiveOrganizationForTurn(orgId);
+    const result = sessionTurnRegistry.requestCancellation(
+      sessionId,
+      expectedTurnId
+    );
+    if (result === "stale") {
+      throw new AtlasApiError("The active session turn has changed.", 409);
+    }
+    if (result === "cancelled") {
+      this.chatToolApprovals.cancelSession(sessionId);
+    }
+    return {
+      ...sessionTurnRegistry.getStatus(sessionId),
+      cancelled: result === "cancelled",
+    };
   }
 
   async clearSession(

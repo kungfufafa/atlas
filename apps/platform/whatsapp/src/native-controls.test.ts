@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { CHAT_TOOL_APPROVAL_TIMEOUT_MS } from "@atlas/core/chat-tool-approval-timeout";
 import type { AgentQuestionnaire, ApprovalRequest } from "@atlas/core/contract";
 import {
   parseWhatsAppNativeReaction,
@@ -58,9 +59,12 @@ function fixture() {
     ...extra,
   });
   return {
+    advance: (milliseconds: number) => {
+      now += milliseconds;
+    },
     controls,
     expire: () => {
-      now += 11 * 60_000;
+      now += CHAT_TOOL_APPROVAL_TIMEOUT_MS + 1;
     },
     reaction,
     sent,
@@ -69,6 +73,108 @@ function fixture() {
 }
 
 describe("WhatsApp controls bind reactions to the exact message, tenant session and canonical actor", () => {
+  test.each([10 * 60_000, CHAT_TOOL_APPROVAL_TIMEOUT_MS - 1])(
+    "pending approval remains actionable and deduplicated after %d milliseconds",
+    async (elapsed) => {
+      const f = fixture();
+      const decisions: string[] = [];
+      const input = {
+        approval,
+        binding,
+        decide: async (decision: string) => {
+          decisions.push(decision);
+        },
+        socket: f.socket,
+      };
+      await f.controls.approval(input);
+      f.advance(elapsed);
+      await f.controls.approval(input);
+      expect(f.sent).toHaveLength(1);
+      expect(
+        await f.controls.react(f.reaction(), async () => ({
+          userId: binding.userId,
+        }))
+      ).toBe(true);
+      expect(decisions).toEqual(["approved"]);
+    }
+  );
+
+  test("approval expires at the shared decision boundary without dispatching a decision", async () => {
+    const f = fixture();
+    let decisions = 0;
+    await f.controls.approval({
+      approval,
+      binding,
+      decide: async () => {
+        decisions += 1;
+      },
+      socket: f.socket,
+    });
+    f.advance(CHAT_TOOL_APPROVAL_TIMEOUT_MS);
+    expect(
+      await f.controls.react(f.reaction(), async () => ({
+        userId: binding.userId,
+      }))
+    ).toBe(false);
+    expect(decisions).toBe(0);
+  });
+
+  test("a retained approval card cannot bypass a server decision rejection", async () => {
+    const f = fixture();
+    let dispatched = 0;
+    const rejection = new Error("The server no longer accepts this approval.");
+    await f.controls.approval({
+      approval,
+      binding,
+      decide: async () => {
+        dispatched += 1;
+        throw rejection;
+      },
+      socket: f.socket,
+    });
+    f.advance(11 * 60_000);
+    await expect(
+      f.controls.react(f.reaction(), async () => ({ userId: binding.userId }))
+    ).rejects.toBe(rejection);
+    expect(
+      await f.controls.react(f.reaction(0, { eventId: "retry" }), async () => ({
+        userId: binding.userId,
+      }))
+    ).toBe(false);
+    expect(dispatched).toBe(1);
+  });
+
+  test("questionnaire cards still expire after ten minutes", async () => {
+    const f = fixture();
+    let answers = 0;
+    await f.controls.questionnaire({
+      answer: async () => {
+        answers += 1;
+      },
+      binding,
+      questionnaire: {
+        id: "short-lived-questionnaire",
+        questions: [
+          {
+            allowCustomAnswer: false,
+            choices: [{ id: "yes", label: "Yes" }],
+            id: "choice",
+            prompt: "Continue?",
+          },
+        ],
+        title: "Choose",
+      },
+      socket: f.socket,
+    });
+    f.advance(10 * 60_000);
+    expect(
+      await f.controls.react(f.reaction(0, { emoji: "1️⃣" }), async () => ({
+        userId: binding.userId,
+      }))
+    ).toBe(false);
+    expect(answers).toBe(0);
+  });
+
   test("multiple-selection questionnaires preserve every choice in typed fallback and never submit one reaction", async () => {
     const f = fixture();
     const answers: string[] = [];

@@ -2,6 +2,7 @@ import {
   formatAgentQuestionnaireAnswersMessage,
   formatAgentQuestionnaireMessage,
 } from "@atlas/core/agent-questionnaire";
+import { CHAT_TOOL_APPROVAL_TIMEOUT_MS } from "@atlas/core/chat-tool-approval-timeout";
 import type { AgentQuestionnaire, ApprovalRequest } from "@atlas/core/contract";
 import { normalizeWhatsAppUserJid } from "@atlas/core/whatsapp-config";
 import type { WAMessageKey, WASocket } from "@whiskeysockets/baileys";
@@ -9,7 +10,11 @@ import type { WhatsAppAccount } from "./group-message";
 import { isPrivateWhatsAppChat } from "./inbound-message";
 
 const CHOICES = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"];
-const CONTROL_TTL_MS = 10 * 60_000;
+const QUESTIONNAIRE_TTL_MS = 10 * 60_000;
+
+export function isWhatsAppApprovalDecisionEmoji(emoji: string): boolean {
+  return emoji === "✅" || emoji === "❌";
+}
 
 export interface WhatsAppNativeBinding {
   channelUserAliases: string[];
@@ -55,9 +60,12 @@ export class WhatsAppNativeControls {
     ) => Promise<void>;
     socket: WASocket;
   }): Promise<void> {
+    // The card must remain usable throughout the server's decision window.
+    // Dispatch still validates the current live approval on the server.
+    const expiresAt = this.now() + CHAT_TOOL_APPROVAL_TIMEOUT_MS;
     if (
       input.approval.status !== "pending" ||
-      !this.issue(input.binding, `approval:${input.approval.id}`)
+      !this.issue(input.binding, `approval:${input.approval.id}`, expiresAt)
     ) {
       return;
     }
@@ -70,7 +78,8 @@ export class WhatsAppNativeControls {
     const card = this.add(
       input.binding,
       message.key,
-      async (emoji) => emoji === "✅" || emoji === "❌"
+      async (emoji) => isWhatsAppApprovalDecisionEmoji(emoji),
+      expiresAt
     );
     if (card) {
       this.decisions.set(card, async (reaction) =>
@@ -169,7 +178,11 @@ export class WhatsAppNativeControls {
     }
   }
 
-  private issue(binding: WhatsAppNativeBinding, id: string): boolean {
+  private issue(
+    binding: WhatsAppNativeBinding,
+    id: string,
+    expiresAt = this.now() + QUESTIONNAIRE_TTL_MS
+  ): boolean {
     this.prune();
     const key = JSON.stringify([
       binding.orgId,
@@ -180,7 +193,7 @@ export class WhatsAppNativeControls {
     if (this.issued.has(key) || this.issued.size >= 1000) {
       return false;
     }
-    this.issued.set(key, this.now() + CONTROL_TTL_MS);
+    this.issued.set(key, expiresAt);
     return true;
   }
 
@@ -240,7 +253,8 @@ export class WhatsAppNativeControls {
   private add(
     binding: WhatsAppNativeBinding,
     key: WAMessageKey,
-    choose: ControlCard["choose"]
+    choose: ControlCard["choose"],
+    expiresAt = this.now() + QUESTIONNAIRE_TTL_MS
   ): ControlCard | undefined {
     this.prune();
     if (
@@ -260,7 +274,7 @@ export class WhatsAppNativeControls {
         destination: normalizeWhatsAppUserJid(binding.destination),
       },
       choose,
-      expiresAt: this.now() + CONTROL_TTL_MS,
+      expiresAt,
       key: { ...key },
       used: false,
     };

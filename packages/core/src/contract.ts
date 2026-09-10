@@ -1021,7 +1021,17 @@ export interface SessionMessagesResponse {
 
 export interface SessionStatusResponse {
   active: boolean;
+  cancelling?: boolean;
   startedAt?: string;
+  turnId?: string;
+}
+
+export interface CancelSessionTurnRequest {
+  expectedTurnId: string;
+}
+
+export interface CancelSessionTurnResponse extends SessionStatusResponse {
+  cancelled: boolean;
 }
 
 export interface SessionSummary {

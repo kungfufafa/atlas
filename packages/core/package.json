@@ -17,6 +17,7 @@
     "./channel-integration-policy": "./src/channel-integration-policy.ts",
     "./contract": "./src/contract.ts",
     "./chat-stream-timeout": "./src/chat-stream-timeout.ts",
+    "./chat-tool-approval-timeout": "./src/chat-tool-approval-timeout.ts",
     "./cloudflare-provider-config": "./src/cloudflare-provider-config.ts",
     "./config": "./src/config.ts",
     "./fetch-idle": "./src/fetch-idle.ts",

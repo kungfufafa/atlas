@@ -59,6 +59,7 @@ import {
   isPureWhatsAppAttachIntent,
   maybeSendRequestedWhatsAppArtifactAttachment,
 } from "./channel-artifact-flow";
+import { isStopCommand, parseCommand } from "./commands";
 import type { WhatsAppBridgeConfig } from "./config";
 import {
   isWhatsAppDeliveryRetryableError,
@@ -2224,15 +2225,6 @@ export function resolveWhatsAppSessionKey(
 
   const senderKey = chatKey(channelUserId);
   return `group:${encodeURIComponent(conversationKey)}:sender:${encodeURIComponent(senderKey)}`;
-}
-
-function parseCommand(text: string): string {
-  const token = text.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
-  return token;
-}
-
-function isStopCommand(text: string): boolean {
-  return parseCommand(text) === "/stop";
 }
 
 function looksLikePairingCodeAttempt(text: string): boolean {
