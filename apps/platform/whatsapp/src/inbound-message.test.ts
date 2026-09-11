@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { proto } from "@whiskeysockets/baileys";
 import {
   extractInboundPhoneHint,
   extractInboundText,
@@ -14,6 +15,12 @@ const ME = {
   lid: "236283431522503:0@lid",
 };
 const GROUP_JID = "120363042000000000@g.us";
+const CAPTIONLESS_CHAT_MEDIA = [
+  ["sticker", { stickerMessage: { mimetype: "image/webp" } }],
+  ["photo", { imageMessage: { caption: " \n ", mimetype: "image/jpeg" } }],
+  ["video", { videoMessage: { mimetype: "video/mp4" } }],
+  ["audio", { audioMessage: { mimetype: "audio/ogg", ptt: true } }],
+] satisfies [string, proto.IMessage][];
 
 describe("inbound message routing", () => {
   test("accepts private phone and lid chats", () => {
@@ -178,6 +185,133 @@ describe("inbound message routing", () => {
     ).toBeNull();
   });
 
+  test.each(CAPTIONLESS_CHAT_MEDIA)(
+    "ignores an unaddressed captionless group %s",
+    (_kind, message) => {
+      expect(
+        parseInboundWhatsAppMessage(
+          {
+            key: {
+              participant: "628122222222@s.whatsapp.net",
+              remoteJid: GROUP_JID,
+            },
+            message,
+          },
+          ME
+        )
+      ).toBeNull();
+    }
+  );
+
+  test.each(CAPTIONLESS_CHAT_MEDIA)(
+    "keeps a captionless %s in direct messages",
+    (_kind, message) => {
+      expect(
+        parseInboundWhatsAppMessage(
+          {
+            key: { remoteJid: "628122222222@s.whatsapp.net" },
+            message,
+          },
+          ME
+        )
+      ).toMatchObject({ isGroup: false, text: "" });
+    }
+  );
+
+  test.each(CAPTIONLESS_CHAT_MEDIA)(
+    "keeps an unaddressed group %s when group policy explicitly allows it",
+    (_kind, message) => {
+      expect(
+        parseInboundWhatsAppMessage(
+          {
+            key: {
+              participant: "628122222222@s.whatsapp.net",
+              remoteJid: GROUP_JID,
+            },
+            message,
+          },
+          ME,
+          { allowUnaddressedGroup: true }
+        )
+      ).toMatchObject({ isGroup: true, text: "" });
+    }
+  );
+
+  test.each([
+    [
+      "mention of another member",
+      { mentionedJid: ["628133333333@s.whatsapp.net"] },
+    ],
+    ["reply to another member", { participant: "628133333333@s.whatsapp.net" }],
+    [
+      "reply attributed to another group",
+      {
+        participant: ME.id,
+        quotedMessage: { conversation: "Another group's message" },
+        remoteJid: "120363099999999999@g.us",
+        stanzaId: "cross-group-message",
+      },
+    ],
+  ] satisfies [string, proto.IContextInfo][])(
+    "ignores a group sticker with a %s",
+    (_address, contextInfo) => {
+      expect(
+        parseInboundWhatsAppMessage(
+          {
+            key: {
+              participant: "628122222222@s.whatsapp.net",
+              remoteJid: GROUP_JID,
+            },
+            message: {
+              stickerMessage: { contextInfo, mimetype: "image/webp" },
+            },
+          },
+          ME
+        )
+      ).toBeNull();
+    }
+  );
+
+  test.each([
+    [
+      "mention",
+      { mentionedJid: [ME.id] },
+      { mentionedJids: ["6281379292556@s.whatsapp.net"] },
+    ],
+    [
+      "reply",
+      {
+        participant: ME.lid,
+        quotedMessage: { conversation: "Atlas reply" },
+        remoteJid: GROUP_JID,
+        stanzaId: "atlas-message",
+      },
+      {
+        quotedMessageId: "atlas-message",
+        quotedParticipant: "236283431522503@lid",
+        quotedText: "Atlas reply",
+      },
+    ],
+  ] satisfies [string, proto.IContextInfo, Record<string, unknown>][])(
+    "preserves a group sticker's bot %s metadata",
+    (_address, contextInfo, expected) => {
+      expect(
+        parseInboundWhatsAppMessage(
+          {
+            key: {
+              participant: "628122222222@s.whatsapp.net",
+              remoteJid: GROUP_JID,
+            },
+            message: {
+              stickerMessage: { contextInfo, mimetype: "image/webp" },
+            },
+          },
+          ME
+        )
+      ).toMatchObject({ ...expected, isGroup: true, text: "" });
+    }
+  );
+
   test("drops echoed outbound group commands before command handling", () => {
     expect(
       parseInboundWhatsAppMessage(
@@ -327,26 +461,61 @@ describe("inbound message routing", () => {
     expect(parsed?.text).toBe("");
   });
 
-  test("routes unmentioned group files to the authorized handler for a visible outcome", () => {
-    const parsed = parseInboundWhatsAppMessage(
-      {
-        key: {
-          participant: "628122222222@s.whatsapp.net",
-          remoteJid: GROUP_JID,
-        },
-        message: {
-          documentMessage: {
-            fileName: "report.pdf",
-            mimetype: "application/pdf",
+  test.each([
+    ["report.pdf", "application/pdf"],
+    [
+      "workbook.xlsx",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ],
+    ["photo.png", "image/png"],
+    ["photo.png", "application/octet-stream"],
+  ])(
+    "routes an unmentioned group document %s (%s) to the authorized handler",
+    (fileName, mimetype) => {
+      const parsed = parseInboundWhatsAppMessage(
+        {
+          key: {
+            participant: "628122222222@s.whatsapp.net",
+            remoteJid: GROUP_JID,
+          },
+          message: {
+            documentMessage: {
+              fileName,
+              mimetype,
+            },
           },
         },
-      },
-      ME
-    );
-    expect(parsed?.isGroup).toBe(true);
-    expect(parsed?.mentionedJids).toEqual([]);
-    expect(parsed?.text).toBe("");
-    expect(parsed?.senderJid).toBe("628122222222@s.whatsapp.net");
+        ME
+      );
+      expect(parsed?.isGroup).toBe(true);
+      expect(parsed?.mentionedJids).toEqual([]);
+      expect(parsed?.text).toBe("");
+      expect(parsed?.senderJid).toBe("628122222222@s.whatsapp.net");
+    }
+  );
+
+  test("routes an unmentioned captioned group photo to the authorized handler", () => {
+    expect(
+      parseInboundWhatsAppMessage(
+        {
+          key: {
+            participant: "628122222222@s.whatsapp.net",
+            remoteJid: GROUP_JID,
+          },
+          message: {
+            imageMessage: {
+              caption: "Read this chart",
+              mimetype: "image/jpeg",
+            },
+          },
+        },
+        ME
+      )
+    ).toMatchObject({
+      isGroup: true,
+      mentionedJids: [],
+      text: "Read this chart",
+    });
   });
 
   test.each([

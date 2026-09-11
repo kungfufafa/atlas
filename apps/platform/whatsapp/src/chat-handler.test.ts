@@ -16,6 +16,7 @@ import {
   withChatLock,
 } from "./chat-handler";
 import { WhatsAppInboundReplaySafeError } from "./delivery-error";
+import { parseInboundWhatsAppMessage } from "./inbound-message";
 import { SessionStore } from "./session-store";
 import { runClaimedInboundDelivery } from "./socket";
 import {
@@ -2827,6 +2828,195 @@ describe("bridge API integration", () => {
 });
 
 describe("createChatHandler group chats", () => {
+  test.each([
+    {
+      message: { stickerMessage: { mimetype: "image/webp" } },
+      name: "sticker",
+    },
+    { message: { imageMessage: { mimetype: "image/jpeg" } }, name: "photo" },
+    {
+      message: { imageMessage: { caption: " \n ", mimetype: "image/jpeg" } },
+      name: "photo with blank caption",
+    },
+    { message: { videoMessage: { mimetype: "video/mp4" } }, name: "video" },
+    {
+      message: { audioMessage: { mimetype: "audio/ogg", ptt: true } },
+      name: "voice note",
+    },
+    { message: { audioMessage: { mimetype: "audio/mpeg" } }, name: "audio" },
+  ])("stays silent for an unaddressed group $name", async ({ message }) => {
+    const downloads: unknown[] = [];
+    await withGroupHarness(
+      {
+        downloadMedia: async (inbound) => {
+          downloads.push(inbound);
+          return Buffer.from("unused");
+        },
+        fixedWorkspaceId: "org_test",
+        pairingCode: "ABCD1234",
+      },
+      async ({ clientMock, handleMessage, sent, sessionStore }) => {
+        for (const senderJid of [PAIRED_JID, "628199999999@s.whatsapp.net"]) {
+          await handleMessage({
+            ...groupInbound({ senderJid, text: "" }),
+            inbound: {
+              key: {
+                id: "chat-media",
+                participant: senderJid,
+                remoteJid: GROUP_JID,
+              },
+              message,
+            },
+          });
+          expect(
+            sessionStore.get(resolveWhatsAppSessionKey(GROUP_JID, senderJid))
+          ).toBeUndefined();
+        }
+        expect(sent).toEqual([]);
+        expect(downloads).toEqual([]);
+        expect(clientMock.calls.createSession).toBe(0);
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(clientMock.calls.authorizeChannelPrincipal).toEqual([]);
+      }
+    );
+  });
+
+  test.each([
+    {
+      message: {
+        documentMessage: {
+          fileName: "report.pdf",
+          mimetype: "application/pdf",
+        },
+      },
+      name: "PDF",
+    },
+    {
+      message: {
+        documentMessage: {
+          fileName: "report.xlsx",
+          mimetype:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+      },
+      name: "spreadsheet",
+    },
+    {
+      message: {
+        documentMessage: {
+          fileName: "scan.jpg",
+          mimetype: "application/octet-stream",
+        },
+      },
+      name: "image sent as a document",
+    },
+    {
+      message: {
+        imageMessage: { caption: "Read this", mimetype: "image/jpeg" },
+      },
+      name: "captioned photo",
+    },
+  ])(
+    "keeps the mention reminder for an unaddressed group $name",
+    async ({ message }) => {
+      const downloads: unknown[] = [];
+      await withGroupHarness(
+        {
+          downloadMedia: async (inbound) => {
+            downloads.push(inbound);
+            return Buffer.from("unused");
+          },
+          fixedWorkspaceId: "org_test",
+        },
+        async ({ clientMock, handleMessage, sent, sessionStore }) => {
+          const inbound = {
+            key: {
+              id: "work-file",
+              participant: PAIRED_JID,
+              remoteJid: GROUP_JID,
+            },
+            message,
+          };
+          const parsed = parseInboundWhatsAppMessage(inbound, BOT_ME);
+          if (!parsed) {
+            throw new Error("Expected work media to reach the handler");
+          }
+          await handleMessage({ ...parsed, inbound });
+          expect(sent).toHaveLength(1);
+          expect(sent[0]).toMatchObject({
+            jid: GROUP_JID,
+            quoted: inbound,
+            text: expect.any(String),
+          });
+          expect(downloads).toEqual([]);
+          expect(clientMock.calls.createSession).toBe(0);
+          expect(clientMock.calls.sendStream).toBe(0);
+          expect(
+            sessionStore.get(resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID))
+          ).toBeUndefined();
+        }
+      );
+    }
+  );
+
+  test.each([
+    {
+      contextInfo: { mentionedJid: [BOT_ME.id] },
+      jid: GROUP_JID,
+      name: "group mention",
+    },
+    {
+      contextInfo: { participant: BOT_ME.lid },
+      jid: GROUP_JID,
+      name: "group reply",
+    },
+    { contextInfo: undefined, jid: PAIRED_JID, name: "direct chat" },
+  ])("processes a sticker in a $name", async ({ jid, contextInfo }) => {
+    const sticker = Buffer.from(
+      "UklGRkgAAABXRUJQVlA4IDwAAAAQAwCdASogACAAPm00lkekIyIhKAgAgA2JZQB2AACAoKAA/vkd2//+QH/+QH/+QH/8gP/+IXeyAwAAAAA=",
+      "base64"
+    );
+    const downloads: unknown[] = [];
+    await withGroupHarness(
+      {
+        downloadMedia: async (inbound) => {
+          downloads.push(inbound);
+          return sticker;
+        },
+        fixedWorkspaceId: "org_test",
+      },
+      async ({ clientMock, handleMessage }) => {
+        const inbound = {
+          key: {
+            id: "addressed-sticker",
+            participant: PAIRED_JID,
+            remoteJid: jid,
+          },
+          message: {
+            stickerMessage: {
+              contextInfo,
+              fileLength: sticker.length,
+              mimetype: "image/webp",
+            },
+          },
+        };
+        const parsed = parseInboundWhatsAppMessage(inbound, BOT_ME);
+        if (!parsed) {
+          throw new Error(
+            "Expected addressed or direct sticker to reach the handler"
+          );
+        }
+        await handleMessage({ ...parsed, inbound });
+        expect(downloads).toEqual([inbound]);
+        expect(clientMock.calls.createSession).toBe(1);
+        expect(clientMock.calls.sendStream).toBe(1);
+        expect(clientMock.getLastStreamInput()).toMatchObject({
+          images: [{ data: expect.any(String), mediaType: "image/png" }],
+        });
+      }
+    );
+  });
+
   test.each(["source-file", "1"])(
     "recovers ignored original media when replying to %s",
     async (quotedMessageId) => {

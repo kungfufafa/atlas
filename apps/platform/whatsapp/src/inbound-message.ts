@@ -165,6 +165,19 @@ export function inspectInboundWhatsAppMedia(
   return null;
 }
 
+export function shouldRemindUnaddressedWhatsAppMedia(
+  message: proto.IMessage | null | undefined
+): boolean {
+  const content = unwrapInboundWhatsAppMessage(message);
+  // Preserve reminders for explicit file uploads, including images sent as
+  // documents. Stickers and captionless chat media should stay silent.
+  return Boolean(
+    content?.documentMessage ||
+      content?.imageMessage?.caption?.trim() ||
+      content?.videoMessage?.caption?.trim()
+  );
+}
+
 function readTextContent(
   message: Partial<proto.IMessage> | null | undefined
 ): string {
@@ -267,6 +280,7 @@ function extractContextInfo(
     content.videoMessage?.contextInfo ??
     content.documentMessage?.contextInfo ??
     content.audioMessage?.contextInfo ??
+    content.stickerMessage?.contextInfo ??
     undefined
   );
 }
@@ -386,9 +400,15 @@ export function parseInboundWhatsAppMessage(
       quotedParticipant,
       text,
     });
-    // Media must reach authorization before the handler can explain a mention
-    // requirement. Dropping it here makes an uploaded file disappear silently.
-    if (!(decision.shouldHandle || options?.allowUnaddressedGroup || media)) {
+    // Work files reach authorization for a mention reminder; ordinary chat
+    // media does not prompt unsolicited replies.
+    if (
+      !(
+        decision.shouldHandle ||
+        options?.allowUnaddressedGroup ||
+        shouldRemindUnaddressedWhatsAppMedia(msg.message)
+      )
+    ) {
       return null;
     }
   } else if (!isPrivateWhatsAppChat(normalizedRemoteJid)) {

@@ -88,6 +88,7 @@ import { allowUnaddressedWhatsAppGroup } from "./group-policy";
 import {
   inspectInboundWhatsAppMedia,
   isPrivateWhatsAppChat,
+  shouldRemindUnaddressedWhatsAppMedia,
   type WhatsAppInboundChat,
 } from "./inbound-message";
 import {
@@ -321,7 +322,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           inboundChat
         ))
     );
-    if (requiresGroupAddress && !media) {
+    if (
+      requiresGroupAddress &&
+      !shouldRemindUnaddressedWhatsAppMedia(inbound?.message)
+    ) {
       console.log(
         `Ignored WhatsApp group message reason=${groupDecision?.reason}`
       );
