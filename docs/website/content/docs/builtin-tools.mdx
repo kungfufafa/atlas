@@ -335,7 +335,9 @@ Search text in files under the profile workspace.
 
 Search uploaded knowledge base documents for relevant facts. The Knowledge tab can also show inherited URL sources, such as the Atlas documentation index at `llms.txt`; use `web_fetch` on that index and on specific `.md` pages — not `knowledge_base_search`.
 
-When this tool is assigned and ready documents exist, Atlas retrieves likely excerpts before each factual answer across web chat, CLI, Telegram, WhatsApp, and Discord. The agent uses `knowledge_base_search` again when it needs a narrower or alternative query.
+When this tool is assigned, permitted for the current sender, and ready documents exist, Atlas retrieves likely excerpts before each factual answer across web chat, CLI, Telegram, WhatsApp, and Discord. The agent uses `knowledge_base_search` again when it needs a narrower or alternative query.
+
+On WhatsApp, authorized senders listed in **Allowed numbers** can read the replying profile's ready knowledge base documents without Atlas account pairing. Their other guest tools remain limited to work files in **Artifacts**, and **Channel controls** restrictions still apply. Other channel guests do not gain knowledge base access; paired users retain their workspace role and tool restrictions. See [WhatsApp knowledge base answers](/whatsapp#knowledge-base-answers).
 
 | Parameter | Type | Required | Notes |
 |-----------|------|----------|-------|
@@ -348,7 +350,7 @@ When this tool is assigned and ready documents exist, Atlas retrieves likely exc
 
 **Scope:** Extracted text files stored under `~/.atlas/orgs/{orgId}/profiles/{profileId}/knowledge-base/`.
 
-**Availability:** When assigned **and** at least one uploaded document has `status: "ready"`. Inherited URL sources do not require `knowledge_base_search`; they require `web_fetch` or `web_search`.
+**Availability:** When assigned, permitted for the current sender, **and** at least one uploaded document has `status: "ready"`. Inherited URL sources do not require `knowledge_base_search`; they require `web_fetch` or `web_search`.
 
 ### `web_search`
 

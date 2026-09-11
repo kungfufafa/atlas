@@ -151,13 +151,17 @@ These rules let Atlas participate without interrupting ordinary group conversati
 
 Send `/stop` to cancel the current reply. Send `/pause`, or an addressed request such as “bisa diem dulu ga”, to stop and pause your replies until `/resume` (or “boleh jawab lagi”). In a group this pauses only your conversation with Atlas; other members can still use it. Pauses survive bridge restarts. Requests waiting before you resume are discarded, so send your next request after resuming.
 
-Pairing does not replace workspace permissions. Removing a member or changing their role stops their active turns and pending approvals in that workspace. In denylist mode, a blocked phone cannot use a chat access code or bypass the block through its paired account or LID.
+Pairing does not replace workspace permissions. Paired users still follow their workspace role, the profile's assigned tools, and **Channel controls**. Removing a member or changing their role stops their active turns and pending approvals in that workspace. In denylist mode, a blocked phone cannot use a chat access code or bypass the block through its paired account or LID.
 
 **Integrations → WhatsApp → Reply as** sets the default profile. Use `/profile` inside a private chat or group to override that default for that conversation. Starting a new conversation with `/new` preserves the conversation's selected profile while giving it a fresh session.
 
 ### Knowledge base answers
 
-WhatsApp uses the selected profile's knowledge base in the same way as web chat, Telegram, and Discord. Before answering a factual question, Atlas retrieves likely excerpts from ready uploaded documents. If those excerpts are not enough, the agent searches the knowledge base again with a more focused query instead of falling back to a guess.
+Add trusted senders to **Integrations → WhatsApp → Allowed numbers** so they can ask about the replying profile's uploaded references without pairing an Atlas account. Authorized senders on this list can read the profile's ready knowledge base documents when `knowledge_base_search` is assigned and permitted by **Channel controls**. This grants access to all ready uploaded documents available to that profile.
+
+An allowlisted sender without account pairing remains a channel guest. Their other tools stay limited to working with files in **Artifacts**; this does not grant memory, `send_whatsapp`, Bash, or MCP access. Other guests, including unlisted senders admitted by **Open** access, can submit supported work files but cannot search the profile's knowledge base.
+
+When the sender has knowledge base access, Atlas retrieves likely excerpts before answering a factual question. If those excerpts are not enough, the agent searches again with a more focused query instead of falling back to a guess.
 
 Knowledge base, tool, skill, MCP, prompt, and soul changes take effect on the next message while the existing channel conversation and history stay intact.
 
@@ -291,7 +295,9 @@ Open **Integrations → WhatsApp** and check the **Reply as** profile. That is t
 1. Check **Integrations → WhatsApp → Reply as** and confirm it is the same profile you tested in web chat
 2. Open that profile's **Knowledge** tab and confirm the document is ready
 3. Confirm `knowledge_base_search` is assigned to the profile
-4. Send the question again; you do not need to use `/new`
+4. For a sender without Atlas account pairing, confirm their phone number appears in **Integrations → WhatsApp → Allowed numbers**; **Open** access alone does not grant knowledge base access
+5. Check that tool restrictions in **Channel controls** permit `knowledge_base_search`; paired users must also have a workspace role that allows chatting
+6. Send the question again; you do not need to use `/new`
 
 ## Next steps
 

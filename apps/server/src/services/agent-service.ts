@@ -276,6 +276,7 @@ import {
   transcribeAudio,
 } from "./audio-transcription";
 import type { AutomationRunner } from "./automation-runner";
+import { canGuestSearchKnowledgeBase } from "./channel-guest-knowledge-base-policy";
 import { resolveExecutableToolsForPrincipal } from "./channel-guest-tool-policy";
 import { ChannelNativeActionService } from "./channel-native-action-service";
 import { isChannelWorkFileTool } from "./channel-work-file-tools";
@@ -458,6 +459,10 @@ export class AgentService {
   readonly learningPlane: LearningPlaneService;
   readonly subagents: SubagentService;
   private readonly sessions = new Map<string, StoredSession>();
+  private readonly guestKnowledgeBaseAvailability = new WeakMap<
+    AgentChatSession,
+    boolean
+  >();
   private readonly mcpAvailabilityVersions = new Map<string, number>();
   private readonly sessionInvalidationVersions = new Map<string, number>();
   private readonly profileToolInvalidationVersions = new Map<string, number>();
@@ -3386,9 +3391,23 @@ export class AgentService {
     }
 
     const stored = this.sessions.get(sessionId);
+    // Refresh capabilities after allowlist changes while preserving live
+    // context/usage state when the guest's access has not changed.
+    const guestKnowledgeBaseChanged =
+      stored &&
+      channel === "whatsapp" &&
+      isChannelGuestUserId(actorUserId) &&
+      this.guestKnowledgeBaseAvailability.get(stored.session) !==
+        (await canGuestSearchKnowledgeBase(this.db, {
+          channel,
+          orgId,
+          profileId: record.profileId,
+          userId: actorUserId,
+        }));
 
     if (
       stored &&
+      !guestKnowledgeBaseChanged &&
       stored.profileId === record.profileId &&
       stored.modelOverride === modelOverride &&
       stored.userId === actorUserId &&
@@ -5985,6 +6004,15 @@ export class AgentService {
       }
     );
     const includeSkillManageTools = channel === "web" || channel === "cli";
+    const allowGuestKnowledgeBaseSearch = await canGuestSearchKnowledgeBase(
+      this.db,
+      {
+        channel,
+        orgId,
+        profileId,
+        userId,
+      }
+    );
     let tools = await resolveExecutableToolsForPrincipal(
       userId,
       () =>
@@ -5997,7 +6025,7 @@ export class AgentService {
           },
           userConfig
         ),
-      { channel }
+      { allowKnowledgeBaseSearch: allowGuestKnowledgeBaseSearch, channel }
     );
     if (channel === "discord" && !isGuestPrincipal) {
       tools = [...tools, ...createSendDiscordArtifactTools()];
@@ -6189,7 +6217,20 @@ export class AgentService {
           }
         }
 
-        if (knowledgeBaseSearchAvailable && context?.userMessage?.trim()) {
+        const canGroundKnowledgeBase =
+          knowledgeBaseSearchAvailable &&
+          (!isGuestPrincipal ||
+            (userId &&
+              (await this.channelNativeActions.canGuestSearchKnowledgeBase(
+                orgId,
+                sessionId,
+                profileId,
+                userId
+              ))));
+        if (canGroundKnowledgeBase && context?.userMessage?.trim()) {
+          if (isGuestPrincipal) {
+            await beforeToolCall();
+          }
           const knowledgeBaseGrounding =
             await composeKnowledgeBaseTurnGrounding({
               orgId,
@@ -6268,16 +6309,40 @@ export class AgentService {
       systemPrompt: resolvedSystemPrompt,
       toolContext: buildToolExecutionContext({
         beforeToolCall: async (toolName) => {
+          const guestKnowledgeBaseCall =
+            isGuestPrincipal &&
+            allowGuestKnowledgeBaseSearch &&
+            toolName === "knowledge_base_search";
           if (
             isGuestPrincipal &&
-            !(toolName && isChannelWorkFileTool(toolName))
+            !(toolName && isChannelWorkFileTool(toolName)) &&
+            !guestKnowledgeBaseCall
           ) {
             throw new AtlasApiError(
-              "Channel guest tool is outside work-file scope",
+              "Channel guest tool is outside its authorized scope",
               403
             );
           }
           await beforeToolCall();
+          if (guestKnowledgeBaseCall) {
+            if (
+              !(
+                userId &&
+                (await this.channelNativeActions.canGuestSearchKnowledgeBase(
+                  orgId,
+                  sessionId,
+                  profileId,
+                  userId
+                ))
+              )
+            ) {
+              throw new AtlasApiError(
+                "WhatsApp knowledge base access is no longer allowed",
+                403
+              );
+            }
+            return;
+          }
           if (
             channel === "telegram" ||
             channel === "whatsapp" ||
@@ -6373,7 +6438,7 @@ export class AgentService {
       userTimezone,
     });
 
-    return wrapPersistedSession(sessionId, session, this.db, {
+    const persistedSession = wrapPersistedSession(sessionId, session, this.db, {
       beforePersist: () => this.requireActiveOrganizationForTurn(orgId),
       onBeginTurn: (id, userMessage) => {
         const attachmentTurnId = turnAttachments.beginTurn();
@@ -6400,6 +6465,11 @@ export class AgentService {
         return turnAttachments.runTurn(turnId, operation);
       },
     });
+    this.guestKnowledgeBaseAvailability.set(
+      persistedSession,
+      allowGuestKnowledgeBaseSearch
+    );
+    return persistedSession;
   }
 
   private async formatProfileAuthoringToolContext(
