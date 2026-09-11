@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { dirname } from "node:path";
 import {
+  DEFAULT_WHATSAPP_PROFILE_ID,
   getWhatsAppConfigPath,
   rememberWhatsAppLidPhone,
   saveWhatsAppConfig,
@@ -34,6 +35,7 @@ async function writeConfig(
     blocked?: string;
     mode?: string;
     owner?: string;
+    profileId?: string;
   } = {}
 ): Promise<void> {
   const file = getWhatsAppConfigPath(ORG_ID);
@@ -41,7 +43,7 @@ async function writeConfig(
     file,
     [
       "phone_number=628999999999",
-      `profile_id=${PROFILE_ID}`,
+      `profile_id=${options.profileId ?? PROFILE_ID}`,
       `access_mode=${options.mode ?? "allowlist"}`,
       `allowed_numbers=${options.allowed ?? "628111111111"}`,
       `blocked_numbers=${options.blocked ?? ""}`,
@@ -50,6 +52,33 @@ async function writeConfig(
     ].join("\n"),
     { ensureDir: dirname(file) }
   );
+}
+
+async function seedInternalFinanceProfile(
+  db: Awaited<ReturnType<typeof seed>>
+): Promise<void> {
+  await db.upsertProfile({
+    createdAt: NOW,
+    id: "internal_finance",
+    isDefault: false,
+    isSuper: false,
+    model: null,
+    name: "Internal Finance",
+    orgId: ORG_ID,
+    systemPrompt: "",
+    updatedAt: NOW,
+  });
+  await db.upsertTool({
+    createdAt: NOW,
+    description: "Finance knowledge",
+    handlerConfig: {},
+    handlerType: "builtin",
+    id: "tool_internal_finance_kb",
+    name: "knowledge_base_search",
+    orgId: ORG_ID,
+    updatedAt: NOW,
+  });
+  await db.assignToolToProfile("internal_finance", "tool_internal_finance_kb");
 }
 
 async function seed(channelUserId = PHONE) {
@@ -195,6 +224,31 @@ describe("WhatsApp guest knowledge base grants", () => {
       await canGuestSearchKnowledgeBase(db, {
         ...input,
         actor: { channelUserId: "not-a-trusted-identity" },
+      })
+    ).toBe(false);
+  });
+
+  test("does not follow /profile onto another agent with its own knowledge base", async () => {
+    const db = await seed();
+    await seedInternalFinanceProfile(db);
+    expect(await canGuestSearchKnowledgeBase(db, input)).toBe(true);
+    expect(
+      await canGuestSearchKnowledgeBase(db, {
+        ...input,
+        profileId: "internal_finance",
+      })
+    ).toBe(false);
+  });
+
+  test("resolves an unset Reply-as id to the default profile only", async () => {
+    const db = await seed();
+    await seedInternalFinanceProfile(db);
+    await writeConfig({ profileId: DEFAULT_WHATSAPP_PROFILE_ID });
+    expect(await canGuestSearchKnowledgeBase(db, input)).toBe(true);
+    expect(
+      await canGuestSearchKnowledgeBase(db, {
+        ...input,
+        profileId: "internal_finance",
       })
     ).toBe(false);
   });

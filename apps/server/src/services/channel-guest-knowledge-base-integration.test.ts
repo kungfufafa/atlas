@@ -436,6 +436,48 @@ describe("allowlisted WhatsApp guest knowledge integration", () => {
     expect(h.loadProfileTools).not.toHaveBeenCalled();
   });
 
+  test("does not grant knowledge after switching away from the Reply-as profile", async () => {
+    const h = await fixture();
+    const otherProfile = {
+      ...(await h.db.getProfileForOrg(h.profileId, h.orgId))!,
+      id: "internal_finance",
+      isDefault: false,
+      name: "Internal Finance",
+    };
+    await h.db.upsertProfile(otherProfile);
+    await h.db.assignToolToProfile(otherProfile.id, h.toolId);
+    await h.service.uploadKnowledgeBaseDocument(h.orgId, otherProfile.id, {
+      data: Buffer.from("FINANCE_SECRET: payroll table").toString("base64"),
+      filename: "payroll.txt",
+      mediaType: "text/plain",
+    });
+    const switchedSessionId = await h.service.createSession(
+      h.orgId,
+      "whatsapp",
+      otherProfile.id,
+      LOCAL_CLIENT_USER_ID,
+      {
+        externalPrincipal: { channelUserId: PHONE_JID },
+        orgRole: "member",
+      }
+    );
+    await h.service.channelNativeActions.bind(h.orgId, "whatsapp", {
+      channelChatId: PHONE_JID,
+      channelIsGroup: false,
+      channelUserId: PHONE_JID,
+      sessionId: switchedSessionId,
+    });
+    await h.service.resolveSession(h.orgId, switchedSessionId);
+    const options = h.current();
+    expect(
+      options.tools?.some((tool) => tool.name === "knowledge_base_search")
+    ).toBe(false);
+    expect(
+      await options.resolvePromptContext({ userMessage: "FINANCE_SECRET" })
+    ).toBe("");
+    expect(h.loadProfileTools).not.toHaveBeenCalled();
+  });
+
   test("preserves assigned tools and knowledge for an existing paired member", async () => {
     const h = await fixture({ open: true, paired: true });
     await h.bind();
