@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { Element } from "@xmldom/xmldom";
+import type ExcelJS from "exceljs";
 import { zipSync } from "fflate";
 import {
   attribute,
@@ -105,6 +106,40 @@ function worksheetPart(
     throw new Error("Worksheet part is missing.");
   }
   return result;
+}
+
+/** ExcelJS discards <v/> for formula strings. Restore only an explicitly
+ * serialized empty string, never a missing cache or a blank numeric result. */
+export function restoreEmptyFormulaResults(
+  workbook: ExcelJS.Workbook,
+  parts: Record<string, Uint8Array>
+): void {
+  for (const sheet of workbook.worksheets) {
+    const part = worksheetPart(parts, sheet.name);
+    const document = parseXml(parts[part]!, part);
+    for (const element of elements(document.documentElement, "c")) {
+      if (attribute(element, "t") !== "str" || !elements(element, "f").length) {
+        continue;
+      }
+      const cached = elements(element, "v");
+      if (cached.length !== 1 || cached[0]!.textContent !== "") {
+        continue;
+      }
+      const address = attribute(element, "r");
+      if (!/^[A-Z]{1,3}[1-9][0-9]*$/.test(address)) {
+        continue;
+      }
+      const cell = sheet.getCell(address);
+      const value = cell.value;
+      if (
+        value &&
+        typeof value === "object" &&
+        ("formula" in value || "sharedFormula" in value)
+      ) {
+        cell.value = { ...value, result: "" };
+      }
+    }
+  }
 }
 
 function setValue(

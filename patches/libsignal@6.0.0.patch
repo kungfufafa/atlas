@@ -1,0 +1,86 @@
+diff --git a/src/queue_job.js b/src/queue_job.js
+index baab89c48e66d4c3fb704abd35c1cfff979bb518..9a561320adf11cf283d223fa8964bbc727b4cf32 100644
+--- a/src/queue_job.js
++++ b/src/queue_job.js
+@@ -47,7 +47,7 @@ module.exports = function(bucket, awaitable) {
+         if (typeof bucket === 'string') {
+             awaitable.name = bucket;
+         } else {
+-            console.warn("Unhandled bucket type (for naming):", typeof bucket, bucket);
++            console.warn("Unhandled bucket type (for naming):", typeof bucket);
+         }
+     }
+     let inactive;
+diff --git a/src/session_cipher.js b/src/session_cipher.js
+index 0e6df11ee52cf6de3403a0c6f38254c674690312..bbffac3c50e3894b13acfc2903763aa50985d617 100644
+--- a/src/session_cipher.js
++++ b/src/session_cipher.js
+@@ -140,7 +140,6 @@ class SessionCipher {
+         if (!sessions.length) {
+             throw new errors.SessionError("No sessions available");
+         }   
+-        const errs = [];
+         for (const session of sessions) {
+             let plaintext; 
+             try {
+@@ -151,13 +150,10 @@ class SessionCipher {
+                     plaintext
+                 };
+             } catch(e) {
+-                errs.push(e);
++                // Try the remaining sessions without logging keys or raw errors.
+             }
+         }
+         console.error("Failed to decrypt message with any known session...");
+-        for (const e of errs) {
+-            console.error("Session error:" + e, e.stack);
+-        }
+         throw new errors.SessionError("No matching sessions found for message");
+     }
+ 
+diff --git a/src/session_record.js b/src/session_record.js
+index 7626a3927fadcdf7f66b3d0c9cf8c63d33da579b..5b681552c358e2bd98a72f143d599555f5ed3cf8 100644
+--- a/src/session_record.js
++++ b/src/session_record.js
+@@ -170,9 +170,7 @@ const migrations = [{
+         } else {
+             for (const key in sessions) {
+                 if (sessions[key].indexInfo.closed === -1) {
+-                    console.error('V1 session storage migration error: registrationId',
+-                                  data.registrationId, 'for open session version',
+-                                  data.version);
++                    console.error('V1 session storage migration error: missing registrationId');
+                 }
+             }
+         }
+@@ -267,10 +265,10 @@ class SessionRecord {
+ 
+     closeSession(session) {
+         if (this.isClosed(session)) {
+-            console.warn("Session already closed", session);
++            console.warn("Session already closed");
+             return;
+         }
+-        console.info("Closing session:", session);
++        // Session entries contain private ratchet keys; never send them to console.
+         session.indexInfo.closed = Date.now();
+     }
+ 
+@@ -278,7 +276,7 @@ class SessionRecord {
+         if (!this.isClosed(session)) {
+             console.warn("Session already open");
+         }
+-        console.info("Opening session:", session);
++        // Session entries contain private ratchet keys; never send them to console.
+         session.indexInfo.closed = -1;
+     }
+ 
+@@ -298,7 +296,7 @@ class SessionRecord {
+                 }
+             }
+             if (oldestKey) {
+-                console.info("Removing old closed session:", oldestSession);
++                // Do not log retired session key material.
+                 delete this.sessions[oldestKey];
+             } else {
+                 throw new Error('Corrupt sessions object');

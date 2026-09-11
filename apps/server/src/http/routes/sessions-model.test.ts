@@ -988,9 +988,29 @@ describe("session model route", () => {
         status: decision,
       });
       expect((await live).decision).toBe(decision);
-      expect((await decide(owner, approvedSessionId, approvalId)).status).toBe(
-        409
+      const savedGrant = (await db.getActionApproval(approvalId))?.grantId;
+      expect(
+        (await decide(owner, approvedSessionId, approvalId, decision)).status
+      ).toBe(200);
+      expect((await db.getActionApproval(approvalId))?.grantId).toBe(
+        savedGrant
       );
+      expect(
+        (
+          await decide(
+            owner,
+            approvedSessionId,
+            approvalId,
+            decision === "approved" ? "denied" : "approved"
+          )
+        ).status
+      ).toBe(409);
+      expect(
+        (await decide(member, approvedSessionId, approvalId, decision)).status
+      ).toBe(404);
+      expect(
+        (await decide(owner, otherOwnerSessionId, approvalId, decision)).status
+      ).toBe(404);
     }
   });
 

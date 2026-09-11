@@ -61,5 +61,8 @@
   },
   "engines": {
     "bun": ">=1.3.14"
+  },
+  "patchedDependencies": {
+    "libsignal@6.0.0": "patches/libsignal@6.0.0.patch"
   }
 }

@@ -643,13 +643,22 @@ export function buildStreamHandlers(
     },
     onApprovalRequested: (approval) => {
       setMessages((current) => {
+        const existing = current.findIndex(
+          (message) => message.approval?.id === approval.id
+        );
+        if (existing >= 0) {
+          return current.map((message, index) =>
+            index === existing ? { ...message, approval } : message
+          );
+        }
         const next = [...current];
         const last = next[next.length - 1];
-        if (last) {
+        if (last && !last.approval) {
           next[next.length - 1] = { ...last, approval };
-          return next;
+        } else {
+          next.push({ approval, content: "", id: nanoid(), role: "assistant" });
         }
-        return current;
+        return next;
       });
     },
     onArtifactCreated: (artifact) => {
@@ -839,11 +848,16 @@ export function buildStreamHandlers(
     },
     onToolStart: (event) => {
       setMessages((current) => {
-        const next = current.map((message) =>
-          message.role === "assistant" && message.streaming
-            ? { ...message, streaming: false }
-            : message
-        );
+        const next = current.map((message) => ({
+          ...message,
+          ...(message.role === "assistant" && message.streaming
+            ? { streaming: false }
+            : {}),
+          ...(message.approval?.toolCallId === event.toolCallId &&
+          message.approval.status === "pending"
+            ? { approval: { ...message.approval, status: "approved" as const } }
+            : {}),
+        }));
 
         const existingIndex = next.findIndex(
           (message) => message.toolCallId === event.toolCallId

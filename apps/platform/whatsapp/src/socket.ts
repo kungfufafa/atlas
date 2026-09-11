@@ -12,11 +12,13 @@ import {
   type WASocket,
 } from "@whiskeysockets/baileys";
 import { usePrivateMultiFileAuthState } from "./auth-state";
+import { WhatsAppProtocolCache } from "./baileys-cache";
 import {
   createBaileysLogger,
   getSafeWhatsAppErrorType,
 } from "./baileys-logger";
 import { isWhatsAppInboundReplaySafeError } from "./delivery-error";
+import { stripWhatsAppBotMention } from "./group-message";
 import { InboundDeliveryLedger } from "./inbound-delivery-ledger";
 import { WhatsAppInboundDispatcher } from "./inbound-dispatch";
 import {
@@ -35,6 +37,16 @@ import {
   type WhatsAppNativeReaction,
 } from "./native-controls";
 
+import {
+  extractDisconnectStatusCode,
+  WhatsAppReconnectPolicy,
+} from "./reconnect-policy";
+
+export {
+  extractDisconnectStatusCode,
+  whatsAppReconnectDelayMs,
+} from "./reconnect-policy";
+
 export interface WhatsAppSocketDeps {
   allowUnaddressedGroup?: (inbound: WhatsAppInboundChat) => Promise<boolean>;
   onConnected?: (me: { id: string; lid?: string | null }) => void;
@@ -43,6 +55,7 @@ export interface WhatsAppSocketDeps {
   onMessage: (
     data: WhatsAppInboundChat & {
       inbound?: WAMessage | null;
+      receivedAt?: number;
     }
   ) => Promise<void>;
   onPhoneNumberShare?: (lid: string, phoneJid: string) => void;
@@ -132,7 +145,16 @@ export async function createWhatsAppSocket(
   let socket: WASocket | null = null;
   let stopped = false;
   let generation = 0;
-  let reconnectAttempt = 0;
+  const reconnectPolicy = new WhatsAppReconnectPolicy();
+  let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  const maxMsgRetryCount = 5;
+  const msgRetryCounterCache = new WhatsAppProtocolCache({
+    retainAtRetryLimit: maxMsgRetryCount,
+    ttlMs: 60 * 60_000,
+  });
+  const placeholderResendCache = new WhatsAppProtocolCache({
+    ttlMs: 60 * 60_000,
+  });
   let loggedMissingTextPayload = false;
   const baileysLogger = createBaileysLogger();
   const inboundDeliveryLedger = new InboundDeliveryLedger(
@@ -147,14 +169,42 @@ export async function createWhatsAppSocket(
   });
   const busyReplyLimiter = new BusyReplyLimiter();
 
+  const scheduleReconnect = (waitMs: number, expectedGeneration: number) => {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(() => {
+      if (stopped || generation !== expectedGeneration) {
+        return;
+      }
+      const starting = handle.start();
+      const attemptedGeneration = generation;
+      void starting.catch((error) => {
+        if (stopped || generation !== attemptedGeneration) {
+          return;
+        }
+        const retryDelay = reconnectPolicy.closed(
+          extractDisconnectStatusCode(error)
+        );
+        console.error("WhatsApp socket reconnect failed.", {
+          errorType: getSafeWhatsAppErrorType(error),
+          retryDelayMs: retryDelay,
+        });
+        if (retryDelay !== null) {
+          scheduleReconnect(retryDelay, attemptedGeneration);
+        }
+      });
+    }, waitMs);
+  };
+
   const handle = {
     get socket() {
       return socket;
     },
     async start() {
-      if (stopped) {
+      if (stopped || reconnectPolicy.isHalted) {
         return;
       }
+      clearTimeout(reconnectTimer);
+      reconnectTimer = undefined;
 
       const myGen = ++generation;
       const previous = socket;
@@ -171,6 +221,9 @@ export async function createWhatsAppSocket(
         emitOwnEvents: false,
         logger: baileysLogger,
         markOnlineOnConnect: false,
+        maxMsgRetryCount,
+        msgRetryCounterCache,
+        placeholderResendCache,
         printQRInTerminal: false,
         retryRequestDelayMs: 2000,
         // Keep history sync disabled, but allow Baileys init queries so the
@@ -228,7 +281,7 @@ export async function createWhatsAppSocket(
         }
 
         if (connection === "open") {
-          reconnectAttempt = 0;
+          reconnectPolicy.opened();
           const me = state.creds.me;
           if (me?.id) {
             deps.onConnected?.({ id: me.id, lid: me.lid ?? null });
@@ -236,45 +289,31 @@ export async function createWhatsAppSocket(
         }
 
         if (connection === "close") {
-          generation += 1;
+          const closedGeneration = ++generation;
+          socket = null;
           detachWhatsAppSocketListeners(current);
           deps.onDisconnected?.();
           const statusCode = extractDisconnectStatusCode(lastDisconnect);
-          const loggedOut = statusCode === DisconnectReason.loggedOut;
-          const shouldReconnect = !(loggedOut || stopped);
-
-          if (loggedOut) {
-            await disposeWhatsAppSocket(socket);
-            if (socket === current) {
-              socket = null;
-            }
-          }
-
+          const waitMs = stopped ? null : reconnectPolicy.closed(statusCode);
+          await disposeWhatsAppSocket(current);
           const isRestartRequired =
-            statusCode === DisconnectReason.restartRequired ||
-            statusCode === 515;
+            statusCode === DisconnectReason.restartRequired;
           const statusText = isRestartRequired
             ? "515 - restart required"
             : String(statusCode ?? "unknown");
-
+          if (waitMs === null) {
+            console.warn(
+              `WhatsApp disconnected (code: ${statusText}). Automatic reconnect stopped; check Linked Devices and reconnect in Integrations → WhatsApp.`
+            );
+            return;
+          }
           console.log(
-            `WhatsApp disconnected (code: ${statusText}).${shouldReconnect ? " Reconnecting..." : ""}`
+            `WhatsApp disconnected (code: ${statusText}). Reconnecting in ${waitMs / 1000}s.`
           );
-
-          if (!shouldReconnect) {
+          if (stopped || generation !== closedGeneration) {
             return;
           }
-
-          const waitMs = whatsAppReconnectDelayMs(reconnectAttempt);
-          reconnectAttempt += 1;
-          await new Promise<void>((resolve) => {
-            setTimeout(resolve, waitMs);
-          });
-          if (stopped) {
-            return;
-          }
-
-          await handle.start();
+          scheduleReconnect(waitMs, closedGeneration);
         }
       });
 
@@ -335,10 +374,21 @@ export async function createWhatsAppSocket(
         const me = state.creds.me;
 
         await dispatchWhatsAppMessagesConcurrently(m.messages, async (msg) => {
+          const receivedAt = performance.timeOrigin + performance.now();
           try {
+            const candidate = parseInboundWhatsAppMessage(msg, me, {
+              allowUnaddressedGroup: true,
+            });
+            const routingText = candidate?.isGroup
+              ? stripWhatsAppBotMention({
+                  me,
+                  mentionedJids: candidate.mentionedJids,
+                  text: candidate.text,
+                })
+              : extractInboundText(msg.message);
             await inboundDispatcher.runMessage(
               msg.key.remoteJid ?? "",
-              extractInboundText(msg.message),
+              routingText,
               async () => {
                 if (myGen !== generation || socket !== current) {
                   return;
@@ -350,9 +400,6 @@ export async function createWhatsAppSocket(
                 const mediaKind = inspectInboundWhatsAppMedia(
                   msg.message
                 )?.kind;
-                const candidate = parseInboundWhatsAppMessage(msg, me, {
-                  allowUnaddressedGroup: true,
-                });
                 const allowUnaddressedGroup = Boolean(
                   candidate?.isGroup &&
                     (await deps.allowUnaddressedGroup?.(candidate))
@@ -419,6 +466,7 @@ export async function createWhatsAppSocket(
                     deps.onMessage({
                       ...inbound,
                       inbound: msg,
+                      receivedAt,
                     }),
                   deliveryId,
                   isCurrent: () =>
@@ -478,6 +526,8 @@ export async function createWhatsAppSocket(
     },
     async stop() {
       stopped = true;
+      clearTimeout(reconnectTimer);
+      reconnectTimer = undefined;
       generation += 1;
       const current = socket;
       socket = null;
@@ -654,10 +704,6 @@ export async function settleFailedInboundDelivery(input: {
   }
 }
 
-export function whatsAppReconnectDelayMs(attempt: number): number {
-  return Math.min(30_000, 1000 * 2 ** Math.min(attempt, 5));
-}
-
 function isVerboseLoggingEnabled(value: string | undefined): boolean {
   return value?.trim().toLowerCase() === "true";
 }
@@ -675,27 +721,6 @@ export function shouldRequestDevicePairingCode(input: {
     !(input.registered || input.alreadyRequested) &&
     input.phoneDigits.length >= 8
   );
-}
-
-export function extractDisconnectStatusCode(
-  lastDisconnect: unknown
-): number | undefined {
-  if (!lastDisconnect || typeof lastDisconnect !== "object") {
-    return;
-  }
-
-  const record = lastDisconnect as {
-    error?: { output?: { statusCode?: unknown }; message?: unknown };
-    statusCode?: unknown;
-  };
-  const fromError = record.error?.output?.statusCode;
-  if (typeof fromError === "number") {
-    return fromError;
-  }
-
-  if (typeof record.statusCode === "number") {
-    return record.statusCode;
-  }
 }
 
 const INBOUND_DEDUPE_TTL_MS = 5 * 60 * 1000;

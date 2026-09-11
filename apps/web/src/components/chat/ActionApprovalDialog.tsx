@@ -1,37 +1,61 @@
-import type { ApprovalRequest } from "@atlas/core";
+import type { ApprovalRequest } from "@atlas/core/contract";
 import {
   AlertCircleIcon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
 } from "hugeicons-react";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-export function ActionApprovalDialog({
+interface ActionApprovalDialogProps {
+  approval: ApprovalRequest;
+  onCancel?: (approval: ApprovalRequest) => Promise<void>;
+  onConfirm?: (approval: ApprovalRequest) => Promise<void>;
+}
+
+export function ActionApprovalDialog(props: ActionApprovalDialogProps) {
+  // Each approval owns its state, including when a stream reuses this position.
+  return <ActionApprovalCard key={props.approval.id} {...props} />;
+}
+
+function ActionApprovalCard({
   approval,
   onConfirm,
   onCancel,
-}: {
-  approval: ApprovalRequest;
-  onConfirm?: (approval: ApprovalRequest) => void;
-  onCancel?: (approval: ApprovalRequest) => void;
-}) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+}: ActionApprovalDialogProps) {
+  const submitting = useRef(false);
+  const [submission, setSubmission] = useState<"approved" | "denied" | null>(
+    null
+  );
+  const [decided, setDecided] = useState<"approved" | "denied" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const status =
+    approval.status === "pending"
+      ? (decided ?? approval.status)
+      : approval.status;
+  const isSubmitting = submission !== null;
 
-  const handleConfirm = () => {
-    if (isSubmitting || approval.status !== "pending") {
+  const submit = async (decision: "approved" | "denied") => {
+    const callback = decision === "approved" ? onConfirm : onCancel;
+    if (submitting.current || status !== "pending" || !callback) {
       return;
     }
-    setIsSubmitting(true);
-    onConfirm?.(approval);
-  };
-
-  const handleCancel = () => {
-    if (isSubmitting || approval.status !== "pending") {
-      return;
+    submitting.current = true;
+    setSubmission(decision);
+    setError(null);
+    try {
+      await callback(approval);
+      setDecided(decision);
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Could not save the approval. Try again."
+      );
+    } finally {
+      submitting.current = false;
+      setSubmission(null);
     }
-    setIsSubmitting(true);
-    onCancel?.(approval);
   };
 
   return (
@@ -49,40 +73,51 @@ export function ActionApprovalDialog({
           </p>
 
           {approval.details && Object.keys(approval.details).length > 0 ? (
-            <div className="mt-2 space-y-1 rounded-md bg-muted/40 p-2 font-mono text-[11px] text-muted-foreground">
+            <dl className="mt-2 max-h-64 space-y-2 overflow-auto rounded-md bg-muted/40 p-2 font-mono text-[11px] text-muted-foreground">
               {Object.entries(approval.details).map(([k, v]) => (
-                <div className="flex items-center justify-between" key={k}>
-                  <span className="font-medium text-foreground/80">{k}:</span>
-                  <span className="max-w-[200px] truncate">{String(v)}</span>
+                <div key={k}>
+                  <dt className="font-medium text-foreground/80">{k}:</dt>
+                  <dd className="whitespace-pre-wrap break-words">
+                    {typeof v === "string" ? v : JSON.stringify(v, null, 2)}
+                  </dd>
                 </div>
               ))}
-            </div>
+            </dl>
+          ) : null}
+          {error ? (
+            <p className="text-destructive text-xs" role="alert">
+              {error}
+            </p>
           ) : null}
 
-          {approval.status === "pending" ? (
+          {status === "pending" ? (
             <div className="flex items-center gap-2 pt-2">
               <button
                 className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 font-semibold text-primary-foreground text-xs shadow-xs transition-colors hover:bg-primary/90 disabled:opacity-50"
-                disabled={isSubmitting}
-                onClick={handleConfirm}
+                disabled={isSubmitting || !onConfirm}
+                onClick={() => {
+                  void submit("approved");
+                }}
                 type="button"
               >
                 <CheckmarkCircle02Icon className="size-3.5" />
-                {isSubmitting ? "Confirming..." : "Confirm"}
+                {submission === "approved" ? "Confirming..." : "Confirm"}
               </button>
               <button
                 className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-background px-3 py-1.5 font-medium text-xs transition-colors hover:bg-accent disabled:opacity-50"
-                disabled={isSubmitting}
-                onClick={handleCancel}
+                disabled={isSubmitting || !onCancel}
+                onClick={() => {
+                  void submit("denied");
+                }}
                 type="button"
               >
                 <Cancel01Icon className="size-3.5" />
-                Cancel
+                {submission === "denied" ? "Cancelling..." : "Cancel"}
               </button>
             </div>
           ) : (
             <div className="pt-2 font-medium text-muted-foreground text-xs">
-              Status: <span className="capitalize">{approval.status}</span>
+              Status: <span className="capitalize">{status}</span>
             </div>
           )}
         </div>

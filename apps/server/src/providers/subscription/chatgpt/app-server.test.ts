@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
+import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { PassThrough } from "node:stream";
 import { JsonRpcStdioClient, type JsonRpcStdioProcess } from "../jsonrpc-stdio";
 import { CodexAppServer } from "./app-server";
@@ -23,7 +26,8 @@ interface RpcRequest {
 
 function observeRequests(
   child: FakeProcess,
-  handler: (request: RpcRequest) => void
+  handler: (request: RpcRequest) => void,
+  options: { handleConfigRead?: boolean } = {}
 ): void {
   child.stdin.on("data", (chunk) => {
     for (const line of String(chunk).split("\n")) {
@@ -31,6 +35,10 @@ function observeRequests(
         continue;
       }
       const request = JSON.parse(line) as RpcRequest;
+      if (request.method === "config/read" && !options.handleConfigRead) {
+        send(child, { id: request.id, result: { config: {} } });
+        continue;
+      }
       if (typeof request.method === "string") {
         handler(request);
       }
@@ -98,6 +106,158 @@ describe("CodexAppServer protocol", () => {
     server.close();
   });
 
+  test("concurrent model discovery shares only the in-flight catalog and remains fresh afterward", async () => {
+    const child = new FakeProcess();
+    processes.push(child);
+    const requests: RpcRequest[] = [];
+    observeRequests(child, (request) => {
+      if (request.method === "model/list") {
+        requests.push(request);
+      }
+    });
+    const server = new CodexAppServer({
+      client: new JsonRpcStdioClient(child),
+    });
+    const first = server.listModels();
+    const concurrent = server.listModels();
+    await Promise.resolve();
+    expect(requests).toHaveLength(1);
+    send(child, {
+      id: requests[0]?.id,
+      result: {
+        data: [
+          {
+            id: "exact-model",
+            inputModalities: [],
+            supportedReasoningEfforts: [],
+          },
+        ],
+      },
+    });
+    const [left, right] = await Promise.all([first, concurrent]);
+    expect(left).toEqual([
+      { id: "exact-model", inputModalities: [], reasoningEffortValues: [] },
+    ]);
+    left[0]!.id = "changed-by-caller";
+    expect(right[0]?.id).toBe("exact-model");
+    const later = server.listModels();
+    await Promise.resolve();
+    expect(requests).toHaveLength(2);
+    send(child, {
+      id: requests[1]?.id,
+      result: { data: [{ id: "fresh-model" }] },
+    });
+    expect((await later)[0]?.id).toBe("fresh-model");
+    server.close();
+  });
+
+  test("failed discovery releases the shared request so a later attempt can succeed", async () => {
+    const child = new FakeProcess();
+    processes.push(child);
+    let count = 0;
+    observeRequests(child, (request) => {
+      if (request.method !== "model/list") {
+        return;
+      }
+      count += 1;
+      send(
+        child,
+        count === 1
+          ? {
+              error: { code: -32_000, message: "Discovery unavailable" },
+              id: request.id,
+            }
+          : { id: request.id, result: { data: [{ id: "recovered-model" }] } }
+      );
+    });
+    const server = new CodexAppServer({
+      client: new JsonRpcStdioClient(child),
+    });
+    await expect(server.listModels()).rejects.toThrow();
+    expect((await server.listModels())[0]?.id).toBe("recovered-model");
+    expect(count).toBe(2);
+    server.close();
+  });
+
+  test("an account change rejects an older in-flight catalog and starts fresh discovery", async () => {
+    const child = new FakeProcess();
+    processes.push(child);
+    const requests: RpcRequest[] = [];
+    observeRequests(child, (request) => {
+      if (request.method === "model/list") {
+        requests.push(request);
+      }
+    });
+    const server = new CodexAppServer({
+      client: new JsonRpcStdioClient(child),
+    });
+    const first = server.listModels();
+    void first.catch(() => undefined);
+    await Promise.resolve();
+    send(child, { method: "account/updated", params: { authMode: "chatgpt" } });
+    const replacement = server.listModels();
+    await Promise.resolve();
+    expect(requests).toHaveLength(2);
+    send(child, {
+      id: requests[0]?.id,
+      result: { data: [{ id: "stale-model" }] },
+    });
+    await expect(first).rejects.toThrow();
+    send(child, {
+      id: requests[1]?.id,
+      result: { data: [{ id: "current-model" }] },
+    });
+    expect((await replacement)[0]?.id).toBe("current-model");
+    server.close();
+  });
+
+  test("closing during connect rejects obsolete waiters without reviving or replacing the next connection", async () => {
+    const oldProcess = new FakeProcess();
+    const freshProcess = new FakeProcess();
+    processes.push(oldProcess, freshProcess);
+    const obsolete = new JsonRpcStdioClient(oldProcess);
+    const fresh = new JsonRpcStdioClient(freshProcess);
+    const oldConnection = Promise.withResolvers<JsonRpcStdioClient>();
+    const freshConnection = Promise.withResolvers<JsonRpcStdioClient>();
+    let connectionAttempts = 0;
+    let obsoleteRequests = 0;
+    observeRequests(oldProcess, () => {
+      obsoleteRequests += 1;
+    });
+    observeRequests(freshProcess, (request) => {
+      if (request.method === "model/list") {
+        send(freshProcess, {
+          id: request.id,
+          result: { data: [{ id: "fresh-model" }] },
+        });
+      }
+    });
+    const server = new CodexAppServer();
+    Reflect.set(server, "connect", () =>
+      ++connectionAttempts === 1
+        ? oldConnection.promise
+        : freshConnection.promise
+    );
+    const first = server.listModels();
+    void first.catch(() => undefined);
+    const shared = server.listModels();
+    void shared.catch(() => undefined);
+    server.close();
+    const replacement = server.listModels();
+    oldConnection.resolve(obsolete);
+    await expect(first).rejects.toThrow();
+    await expect(shared).rejects.toThrow();
+    expect(obsolete.isClosed()).toBe(true);
+    expect(obsoleteRequests).toBe(0);
+    const replacementShared = server.listModels();
+    freshConnection.resolve(fresh);
+    expect(await replacement).toEqual([{ id: "fresh-model" }]);
+    expect(await replacementShared).toEqual([{ id: "fresh-model" }]);
+    expect(connectionAttempts).toBe(2);
+    expect(server.isConnected()).toBe(true);
+    server.close();
+  });
+
   test("reads model-provider capabilities without inferring them", async () => {
     const child = new FakeProcess();
     processes.push(child);
@@ -141,12 +301,12 @@ describe("CodexAppServer protocol", () => {
     });
 
     await server.startThread({
-      cwd: "/tmp/atlas-subscription",
+      cwd: process.cwd(),
       developerInstructions: "Stay in Atlas.",
       model: "gpt-test",
     });
     await server.resumeThread("thread-1", {
-      cwd: "/tmp/atlas-subscription",
+      cwd: process.cwd(),
       developerInstructions: "Updated instructions.",
       model: "gpt-test-2",
     });
@@ -156,8 +316,11 @@ describe("CodexAppServer protocol", () => {
       params: {
         approvalPolicy: "never",
         config: {
-          features: { shell_tool: false, unified_exec: false },
-          mcp_servers: {},
+          features: {
+            shell_snapshot: false,
+            shell_tool: false,
+            unified_exec: false,
+          },
           web_search: "disabled",
         },
         sandbox: "read-only",
@@ -172,6 +335,153 @@ describe("CodexAppServer protocol", () => {
         threadId: "thread-1",
       },
     });
+    server.close();
+  });
+
+  test("pins native cwd and distrusts every canonical and alias ancestor on start and resume", async () => {
+    const root = await mkdtemp(join(tmpdir(), "atlas-codex-trust-"));
+    const profile = join(root, "profile");
+    const alias = join(root, "alias");
+    await mkdir(profile);
+    await symlink(profile, alias);
+    const canonical = await realpath(profile);
+    const child = new FakeProcess();
+    processes.push(child);
+    const requests: RpcRequest[] = [];
+    observeRequests(
+      child,
+      (request) => {
+        requests.push(request);
+        send(child, {
+          id: request.id,
+          result:
+            request.method === "config/read"
+              ? { config: {} }
+              : { thread: { id: "thread-1" } },
+        });
+      },
+      { handleConfigRead: true }
+    );
+    const server = new CodexAppServer({
+      client: new JsonRpcStdioClient(child),
+    });
+    try {
+      await server.startThread({ cwd: alias });
+      await server.resumeThread("thread-1", { cwd: alias });
+      expect(
+        requests.every((request) => request.params.cwd === canonical)
+      ).toBe(true);
+      for (const request of requests.filter(
+        (request) => request.method !== "config/read"
+      )) {
+        const config = request.params.config as {
+          projects: Record<string, unknown>;
+        };
+        for (const start of [canonical, resolve(alias)]) {
+          let directory = start;
+          for (;;) {
+            expect(config.projects[directory]).toEqual({
+              trust_level: "untrusted",
+            });
+            const parent = dirname(directory);
+            if (parent === directory) {
+              break;
+            }
+            directory = parent;
+          }
+        }
+      }
+    } finally {
+      server.close();
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  test("checks effective cwd configuration before every start and resume", async () => {
+    const child = new FakeProcess();
+    processes.push(child);
+    const requests: RpcRequest[] = [];
+    let config: unknown = {};
+    observeRequests(
+      child,
+      (request) => {
+        requests.push(request);
+        send(child, {
+          id: request.id,
+          result:
+            request.method === "config/read"
+              ? { config }
+              : { thread: { id: "thread-1" } },
+        });
+      },
+      { handleConfigRead: true }
+    );
+    const server = new CodexAppServer({
+      client: new JsonRpcStdioClient(child),
+    });
+    const cwd = process.cwd();
+    await server.startThread({ cwd });
+    config = {
+      mcp_servers: { fixture: { command: "/usr/bin/false", enabled: false } },
+    };
+    await expect(server.resumeThread("thread-1", { cwd })).rejects.toThrow(
+      "Native Codex MCP"
+    );
+    await expect(server.startThread({ cwd })).rejects.toThrow(
+      "Native Codex MCP"
+    );
+    expect(requests.map((request) => request.method)).toEqual([
+      "config/read",
+      "thread/start",
+      "config/read",
+      "config/read",
+    ]);
+    expect(
+      requests
+        .filter((request) => request.method === "config/read")
+        .map((request) => request.params)
+    ).toEqual([
+      { cwd, includeLayers: false },
+      { cwd, includeLayers: false },
+      { cwd, includeLayers: false },
+    ]);
+    config = {};
+    await server.resumeThread("thread-1", { cwd });
+    expect(requests.at(-1)?.method).toBe("thread/resume");
+    server.close();
+  });
+
+  test("fails closed when effective native configuration cannot be checked", async () => {
+    const child = new FakeProcess();
+    processes.push(child);
+    let configuration: unknown;
+    const requests: RpcRequest[] = [];
+    observeRequests(
+      child,
+      (request) => {
+        requests.push(request);
+        send(child, { id: request.id, result: { config: configuration } });
+      },
+      { handleConfigRead: true }
+    );
+    const server = new CodexAppServer({
+      client: new JsonRpcStdioClient(child),
+    });
+    for (const invalidConfig of [
+      undefined,
+      [],
+      "unknown",
+      { mcp_servers: [] },
+      { mcp_servers: "unknown" },
+    ]) {
+      configuration = invalidConfig;
+      await expect(
+        server.startThread({ cwd: process.cwd() })
+      ).rejects.toThrow();
+    }
+    expect(requests.every((request) => request.method === "config/read")).toBe(
+      true
+    );
     server.close();
   });
 
@@ -193,7 +503,7 @@ describe("CodexAppServer protocol", () => {
     });
 
     await server.startThread({
-      cwd: "/tmp/atlas-subscription",
+      cwd: process.cwd(),
       ephemeral: true,
       imageGeneration: true,
       model: "gpt-test",
@@ -217,7 +527,6 @@ describe("CodexAppServer protocol", () => {
             view_image: false,
             workspace_dependencies: false,
           },
-          mcp_servers: {},
           web_search: "disabled",
         },
         ephemeral: true,

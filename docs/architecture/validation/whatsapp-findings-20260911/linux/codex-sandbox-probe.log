@@ -1,0 +1,9 @@
+codex-cli 0.150.1
+bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces. On e.g. debian this can be enabled with 'sysctl kernel.unprivileged_userns_clone=1'.
+native_sandbox_exit=1
+bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces. On e.g. debian this can be enabled with 'sysctl kernel.unprivileged_userns_clone=1'.
+bundled_bwrap_exit=1
+uid=1000(bun) gid=1000(bun) groups=1000(bun)
+NoNewPrivs:	0
+Seccomp:	2
+Seccomp_filters:	1

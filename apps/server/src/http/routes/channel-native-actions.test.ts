@@ -408,8 +408,54 @@ for (const channel of ["telegram", "whatsapp", "discord"] as const) {
     expect(
       (await h.db.getActionApproval("bound-native-approval"))?.status
     ).toBe("denied");
+    // A lost HTTP response can repeat the same decision, but cannot dispatch
+    // another effect, change the decision, or bypass the current channel scope.
     expect(
       (await h.request("/v1/channel-principals/approvals/decide", body)).status
+    ).toBe(200);
+    expect(await h.db.listExecutionSteps("bound-native-run")).toHaveLength(1);
+    expect(
+      (await h.db.getActionApproval("bound-native-approval"))?.grantId
+    ).toBeNull();
+    for (const change of [
+      { channelChatId: "foreign-room" },
+      { channelThreadId: "foreign-topic" },
+      { channelIsGroup: false },
+      {
+        channelUserId:
+          channel === "whatsapp"
+            ? "6282222222222@s.whatsapp.net"
+            : "999999999999999999",
+      },
+    ]) {
+      expect(
+        (
+          await h.request("/v1/channel-principals/approvals/decide", {
+            ...body,
+            ...change,
+          })
+        ).status
+      ).toBe(403);
+    }
+    expect(
+      (
+        await h.request("/v1/channel-principals/approvals/decide", {
+          ...body,
+          decision: "approved",
+        })
+      ).status
     ).toBe(409);
+    await h.db.upsertOrgMember({
+      createdAt: new Date().toISOString(),
+      orgId: h.orgId,
+      role: "viewer",
+      userId: h.userId,
+    });
+    expect(
+      (await h.request("/v1/channel-principals/approvals/decide", body)).status
+    ).toBe(403);
+    expect(
+      (await h.db.getActionApproval("bound-native-approval"))?.status
+    ).toBe("denied");
   });
 }

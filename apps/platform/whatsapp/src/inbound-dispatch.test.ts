@@ -172,34 +172,37 @@ describe("WhatsApp socket work dispatch", () => {
     });
   });
 
-  test("stop cancels an active stream while all chat slots and the waiting queue are occupied", async () => {
-    const queue = dispatcher();
-    const ready = [deferred(), deferred(), deferred(), deferred()];
-    const turns = ready.map((started, index) => {
-      const jid = `62822${index}@s.whatsapp.net`;
-      return queue.runMessage(jid, "work", async () => {
-        const signal = registerActiveStream(jid);
-        const stopped = deferred();
-        signal.addEventListener("abort", stopped.resolve, { once: true });
-        started.resolve();
-        await stopped.promise;
-        clearActiveStream(jid, signal);
+  test.each(["  /STOP ", "bisa diem dulu ga?"])(
+    "control %s cancels an active stream while all chat slots and the waiting queue are occupied",
+    async (text) => {
+      const queue = dispatcher();
+      const ready = [deferred(), deferred(), deferred(), deferred()];
+      const turns = ready.map((started, index) => {
+        const jid = `62822${index}@s.whatsapp.net`;
+        return queue.runMessage(jid, "work", async () => {
+          const signal = registerActiveStream(jid);
+          const stopped = deferred();
+          signal.addEventListener("abort", stopped.resolve, { once: true });
+          started.resolve();
+          await stopped.promise;
+          clearActiveStream(jid, signal);
+        });
       });
-    });
-    await Promise.all(ready.map((started) => started.promise));
-    const followups = Array.from({ length: 10 }, () =>
-      queue.runMessage("628220@s.whatsapp.net", "queued", async () => {})
-    );
-    expect(queue.snapshot().messages).toEqual({ active: 4, queued: 10 });
-    for (const index of [0, 1, 2, 3]) {
-      const jid = `62822${index}@s.whatsapp.net`;
-      await queue.runMessage(jid, "  /STOP ", async () => {
-        expect(stopActiveStream(jid)).toBe(true);
-      });
+      await Promise.all(ready.map((started) => started.promise));
+      const followups = Array.from({ length: 10 }, () =>
+        queue.runMessage("628220@s.whatsapp.net", "queued", async () => {})
+      );
+      expect(queue.snapshot().messages).toEqual({ active: 4, queued: 10 });
+      for (const index of [0, 1, 2, 3]) {
+        const jid = `62822${index}@s.whatsapp.net`;
+        await queue.runMessage(jid, text, async () => {
+          expect(stopActiveStream(jid)).toBe(true);
+        });
+      }
+      await Promise.all([...turns, ...followups]);
+      expect(queue.snapshot().messages).toEqual({ active: 0, queued: 0 });
     }
-    await Promise.all([...turns, ...followups]);
-    expect(queue.snapshot().messages).toEqual({ active: 0, queued: 0 });
-  });
+  );
 
   test("questionnaire continuation turns cannot occupy approval decision slots", async () => {
     const queue = dispatcher();

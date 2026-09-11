@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
+  chmod,
   mkdir,
   mkdtemp,
   readFile,
   rm,
+  stat,
   unlink,
   writeFile,
 } from "node:fs/promises";
@@ -40,6 +42,11 @@ function createMockPm2() {
   };
 
   return mockPm2 as unknown as typeof import("pm2");
+}
+
+async function readPermissions(path: string): Promise<number> {
+  // biome-ignore lint/suspicious/noBitwiseOperators: POSIX permission bits.
+  return (await stat(path)).mode & 0o777;
 }
 
 async function readCapturedEnvironment(
@@ -669,6 +676,50 @@ describe("WorkerManagerService", () => {
   });
 
   describe("Native process management (without PM2)", () => {
+    test.each([false, true])(
+      "creates private logs and preserves old contents on startup (existing=%s)",
+      async (existing) => {
+        const tmpProject = await mkdtemp(
+          join(tmpdir(), "atlas-private-worker-log-")
+        );
+        const scriptDir = join(tmpProject, "apps/platform/whatsapp/src");
+        const logDir = join(configDir!, "logs", "workers");
+        const outPath = join(logDir, "whatsapp--org_private_logs.out.log");
+        const errPath = join(logDir, "whatsapp--org_private_logs.err.log");
+        await mkdir(scriptDir, { recursive: true });
+        await writeFile(
+          join(scriptDir, "index.ts"),
+          "setInterval(() => undefined, 1000);"
+        );
+        if (existing) {
+          await mkdir(logDir, { mode: 0o755, recursive: true });
+          await chmod(logDir, 0o755);
+          for (const path of [outPath, errPath]) {
+            await writeFile(path, "existing evidence\n", { mode: 0o644 });
+            await chmod(path, 0o644);
+          }
+        }
+        const service = new WorkerManagerService(tmpProject);
+        try {
+          await service.startWorkspaceWorker("whatsapp", "org_private_logs");
+          if (process.platform !== "win32") {
+            expect(await readPermissions(logDir)).toBe(0o700);
+            expect(await readPermissions(outPath)).toBe(0o600);
+            expect(await readPermissions(errPath)).toBe(0o600);
+          }
+          expect(await readFile(outPath, "utf8")).toBe(
+            existing ? "existing evidence\n" : ""
+          );
+          expect(await readFile(errPath, "utf8")).toBe(
+            existing ? "existing evidence\n" : ""
+          );
+        } finally {
+          await service.stopWorkspaceWorker("whatsapp", "org_private_logs");
+          await rm(tmpProject, { force: true, recursive: true });
+        }
+      }
+    );
+
     test("returns managed: true and stopped status by default", async () => {
       const service = new WorkerManagerService(projectRoot);
 

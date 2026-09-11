@@ -1,5 +1,12 @@
 import { execFile, spawn } from "node:child_process";
-import { closeSync, existsSync, mkdirSync, openSync } from "node:fs";
+import {
+  chmodSync,
+  closeSync,
+  existsSync,
+  fchmodSync,
+  mkdirSync,
+  openSync,
+} from "node:fs";
 import { open as openFile, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { WorkerLogsResponse, WorkerProcessInfo } from "@atlas/core";
@@ -14,6 +21,7 @@ import {
   setWorkerDesiredRunning,
   WORKSPACE_WORKER_AUTH_TOKEN_ENV,
 } from "@atlas/core";
+import { PRIVATE_DIR_MODE, PRIVATE_FILE_MODE } from "@atlas/core/fs";
 
 const WORKER_SCRIPTS: Record<string, string> = {
   automation: "apps/platform/automation/src/index.ts",
@@ -103,6 +111,29 @@ export interface LinuxCpuSample {
 const MAX_NATIVE_CPU_SAMPLES = 256;
 const linuxCpuSamples = new Map<number, LinuxCpuSample>();
 
+function openPrivateWorkerLog(path: string): number {
+  const fd = openSync(path, "a", PRIVATE_FILE_MODE);
+  try {
+    // Creation mode does not repair logs left by older workers. Restrict the
+    // opened inode before handing the descriptor to a child, preserving bytes.
+    fchmodSync(fd, PRIVATE_FILE_MODE);
+    return fd;
+  } catch (error) {
+    closeSync(fd);
+    throw error;
+  }
+}
+
+async function clearPrivateWorkerLog(path: string): Promise<void> {
+  const file = await openFile(path, "a", PRIVATE_FILE_MODE);
+  try {
+    await file.chmod(PRIVATE_FILE_MODE);
+    await file.truncate(0);
+  } finally {
+    await file.close();
+  }
+}
+
 function promisifyPm2<T>(
   // pm2's typed callbacks expect a non-null Error and a specific payload
   // (Proc / ProcessDescription[]); accept the widest shape here so any pm2
@@ -134,9 +165,8 @@ export class WorkerManagerService {
 
   private getWorkersLogDir(): string {
     const dir = join(getUserConfigDir(), "logs", "workers");
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
-    }
+    mkdirSync(dir, { mode: PRIVATE_DIR_MODE, recursive: true });
+    chmodSync(dir, PRIVATE_DIR_MODE);
     return dir;
   }
 
@@ -271,10 +301,11 @@ export class WorkerManagerService {
     await this.stopNativeProcess(processName);
 
     const { outPath, errPath } = this.getLogPaths(processName);
-    const outFd = openSync(outPath, "a");
-    const errFd = openSync(errPath, "a");
+    const outFd = openPrivateWorkerLog(outPath);
+    let errFd: number | undefined;
 
     try {
+      errFd = openPrivateWorkerLog(errPath);
       const execPath = process.execPath || "bun";
       const child = spawn(execPath, ["run", script], {
         cwd: this.projectRoot,
@@ -296,7 +327,9 @@ export class WorkerManagerService {
       }
     } finally {
       closeSync(outFd);
-      closeSync(errFd);
+      if (errFd !== undefined) {
+        closeSync(errFd);
+      }
     }
   }
 
@@ -661,8 +694,8 @@ export class WorkerManagerService {
 
     const { outPath, errPath } = this.getLogPaths(processName);
     await Promise.all([
-      writeFile(outPath, "", "utf8").catch(() => {}),
-      writeFile(errPath, "", "utf8").catch(() => {}),
+      clearPrivateWorkerLog(outPath).catch(() => {}),
+      clearPrivateWorkerLog(errPath).catch(() => {}),
     ]);
   }
 

@@ -31,7 +31,6 @@ import {
   registerBrowserHandler,
   writeRuntimeServerUrl,
 } from "@atlas/core";
-import { serverHasTaskChat } from "@atlas/core/ensure-server";
 import {
   createDatabase,
   type Database,
@@ -539,10 +538,7 @@ async function findRunningAtlasServerUrl(
       ok?: boolean;
       apiVersion?: number;
     };
-    const hasTaskChat = await serverHasTaskChat(serverUrl, controller.signal);
-    return payload.ok === true &&
-      payload.apiVersion === ATLAS_API_VERSION &&
-      hasTaskChat
+    return payload.ok === true && payload.apiVersion === ATLAS_API_VERSION
       ? serverUrl
       : null;
   } catch {

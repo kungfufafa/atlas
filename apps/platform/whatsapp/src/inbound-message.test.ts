@@ -218,6 +218,7 @@ describe("inbound message routing", () => {
       jid: GROUP_JID,
       me: ME,
       mentionedJids: ["6281379292556@s.whatsapp.net"],
+      quotedMessageId: null,
       quotedParticipant: null,
       quotedText: null,
       senderJid: "628122222222@s.whatsapp.net",
@@ -240,6 +241,7 @@ describe("inbound message routing", () => {
               participant: ME.lid,
               quotedMessage: { conversation: "The earlier group report" },
               remoteJid: GROUP_JID,
+              stanzaId: "local-message",
             },
             text: "please continue",
           },
@@ -250,6 +252,7 @@ describe("inbound message routing", () => {
 
     expect(parsed?.quotedParticipant).toBe("236283431522503@lid");
     expect(parsed?.quotedText).toBe("The earlier group report");
+    expect(parsed?.quotedMessageId).toBe("local-message");
   });
 
   test("does not trigger or expose a quote attributed to another group", () => {
@@ -259,6 +262,7 @@ describe("inbound message routing", () => {
           participant: ME.id,
           quotedMessage: { conversation: "Secret from another group" },
           remoteJid: "120363099999999999@g.us",
+          stanzaId: "cross-group-message",
         },
         text: "continue",
       },
@@ -298,6 +302,7 @@ describe("inbound message routing", () => {
     );
     expect(explicitlyAddressed?.quotedParticipant).toBeNull();
     expect(explicitlyAddressed?.quotedText).toBeNull();
+    expect(explicitlyAddressed?.quotedMessageId).toBeNull();
   });
 
   test("handles captionless group media when explicitly replying to the bot", () => {

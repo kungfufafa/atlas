@@ -59,8 +59,13 @@ import {
   isPureWhatsAppAttachIntent,
   maybeSendRequestedWhatsAppArtifactAttachment,
 } from "./channel-artifact-flow";
-import { isStopCommand, parseCommand } from "./commands";
+import {
+  parseCommand,
+  parseWhatsAppChatControl,
+  type WhatsAppChatControl,
+} from "./commands";
 import type { WhatsAppBridgeConfig } from "./config";
+import { DeferredWhatsAppGroupMedia } from "./deferred-group-media";
 import {
   isWhatsAppDeliveryRetryableError,
   isWhatsAppInboundReplaySafeError,
@@ -203,6 +208,7 @@ export interface ChatHandlerDeps {
 type WhatsAppHandlerInput = Pick<WhatsAppInboundChat, "jid" | "text"> &
   Partial<Omit<WhatsAppInboundChat, "jid" | "text">> & {
     inbound?: WAMessage | null;
+    receivedAt?: number;
   };
 
 type NormalizedWhatsAppHandlerInput = WhatsAppInboundChat & {
@@ -222,6 +228,11 @@ interface InboundReplayBoundary {
 }
 
 export function createChatHandler(deps: ChatHandlerDeps) {
+  const deferredGroupMedia = new DeferredWhatsAppGroupMedia();
+  const pauseStates = new Map<
+    string,
+    { paused: boolean; discardMessagesThrough: number }
+  >();
   const nativeControls = new WhatsAppNativeControls();
   const messageRegistry = new WhatsAppMessageRegistry();
   const {
@@ -273,9 +284,22 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const inboundChat = normalizeInboundChat(data);
     const { jid, text, fromMe, senderPn, inbound } = inboundChat;
     const trimmed = text.trim();
-    const media = inspectInboundWhatsAppMedia(inbound?.message);
+    let media = inspectInboundWhatsAppMedia(inbound?.message);
+    let mediaInbound = inbound;
     const isGroup = inboundChat.isGroup;
     const conversationKey = chatKey(jid);
+    const senderSessionKey = resolveWhatsAppSessionKey(
+      conversationKey,
+      inboundChat.senderJid
+    );
+    const messageText = inboundChat.isGroup
+      ? stripWhatsAppBotMention({
+          me: inboundChat.me,
+          mentionedJids: inboundChat.mentionedJids,
+          text: trimmed,
+        })
+      : trimmed;
+    const control = parseWhatsAppChatControl(messageText);
     const channelOrgKey = resolveWhatsAppChannelOrgKey(
       conversationKey,
       isGroup
@@ -317,57 +341,22 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    if (!isGroup && trimmed && isStopCommand(trimmed)) {
-      if (!authStore.isAuthorized(jid, { senderPn })) {
-        return;
-      }
-      if (
-        !(await canStopSession(conversationKey, channelOrgKey, inboundChat))
-      ) {
-        return;
-      }
-      replayBoundary.replayUnsafe = true;
-      if (!stopActiveStream(conversationKey)) {
-        await sendText(jid, "Nothing to stop.");
-      }
-
+    if (control && !requiresGroupAddress) {
+      await handleChatControl({
+        channelOrgKey,
+        control,
+        inboundChat,
+        replayBoundary,
+        sessionKey: senderSessionKey,
+      });
       return;
     }
 
-    if (isGroup && isStopCommand(trimmed)) {
-      replayBoundary.replayUnsafe = true;
-      await authStore.reload();
-      for (const senderJid of inboundChat.senderJids) {
-        await authStore.rememberSenderPn(senderJid, senderPn);
-      }
-      const fileConfig = authStore.getConfig();
-      const authorized =
-        fromMe ||
-        inboundChat.senderJids.some((senderJid) =>
-          authStore.isAuthorized(senderJid, { senderPn })
-        );
-      if (!authorized) {
-        if (
-          fileConfig?.accessMode !== "allowlist" &&
-          fileConfig?.accessMode !== "denylist"
-        ) {
-          await sendText(jid, LINK_IN_PRIVATE_REPLY);
-        }
-        return;
-      }
-
-      const senderSessionKey = resolveWhatsAppSessionKey(
-        conversationKey,
-        inboundChat.senderJid
-      );
-      if (
-        !(await canStopSession(senderSessionKey, channelOrgKey, inboundChat))
-      ) {
-        return;
-      }
-      if (!stopActiveStream(senderSessionKey)) {
-        await sendText(jid, "Nothing to stop.");
-      }
+    const pairingAttempt = !isGroup && looksLikePairingCodeAttempt(trimmed);
+    if (
+      !pairingAttempt &&
+      isPausedOrDiscarded(senderSessionKey, data.receivedAt)
+    ) {
       return;
     }
 
@@ -397,6 +386,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     await withChatLock(conversationKey, async () => {
+      if (
+        !pairingAttempt &&
+        isPausedOrDiscarded(senderSessionKey, data.receivedAt)
+      ) {
+        return;
+      }
       await authStore.reload();
       const fileConfig = authStore.getConfig();
       const senderJids = isGroup
@@ -491,26 +486,53 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
+      const mediaScope = {
+        jid,
+        orgId: fixedWorkspaceId ?? orgStore.get(channelOrgKey)?.orgId ?? "",
+        senderJid: principalChannelUserId,
+      };
       if (requiresGroupAddress) {
+        const canRecover = Boolean(
+          inbound &&
+            mediaScope.orgId &&
+            deferredGroupMedia.remember(mediaScope, inbound)
+        );
         await sendText(
           jid,
-          "This file was ignored because this group requires a mention. Resend it with an @mention of Atlas, or reply to an Atlas message."
+          canRecover
+            ? "This group requires an @mention of Atlas. Reply to this message with your request within 15 minutes to use your file, or resend the file with an @mention."
+            : "This group requires an @mention of Atlas. Resend the file with an @mention and your request.",
+          {
+            onSent: (key) => {
+              if (key.id && inbound?.key.id && mediaScope.orgId) {
+                deferredGroupMedia.bindWarning(
+                  mediaScope,
+                  inbound.key.id,
+                  key.id
+                );
+              }
+            },
+            quoted: inbound,
+          }
         );
         return;
+      }
+      if (isGroup && !media && mediaScope.orgId) {
+        const deferred = deferredGroupMedia.get(
+          mediaScope,
+          inboundChat.quotedMessageId
+        );
+        if (deferred) {
+          mediaInbound = deferred;
+          media = inspectInboundWhatsAppMedia(deferred.message);
+          inboundChat.quotedText = null;
+        }
       }
 
       const sessionKey = resolveWhatsAppSessionKey(
         conversationKey,
         principalChannelUserId
       );
-
-      const messageText = isGroup
-        ? stripWhatsAppBotMention({
-            me: inboundChat.me,
-            mentionedJids: inboundChat.mentionedJids,
-            text: trimmed,
-          })
-        : trimmed;
 
       if (isGroup && looksLikePairingCodeAttempt(messageText)) {
         await sendText(jid, GROUP_PAIRING_REPLY);
@@ -566,6 +588,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
+      if (isPausedOrDiscarded(sessionKey, data.receivedAt)) {
+        return;
+      }
       const signal = registerActiveStream(sessionKey);
       try {
         const preparedSession = media
@@ -578,11 +603,23 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           replayBoundary.replayUnsafe = true;
         }
 
+        if (mediaInbound !== inbound) {
+          await waitForAbortable(
+            authorizeInboundFile(
+              sessionKey,
+              channelOrgKey,
+              sessionPrincipal,
+              signal
+            ),
+            signal
+          );
+        }
+
         const mediaInput = await tryBuildMediaInput(
           sessionKey,
           jid,
           channelOrgKey,
-          inbound,
+          mediaInbound,
           sessionPrincipal,
           signal
         );
@@ -629,7 +666,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           const audioInput = await tryBuildAudioInput({
             caption: messageText,
             channelOrgKey,
-            inbound,
+            inbound: mediaInbound,
             jid,
             principal: sessionPrincipal,
             sessionId: preparedSession.id,
@@ -675,6 +712,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           signal
         );
       } catch (error) {
+        if (isAbortError(error) && isSessionPaused(sessionKey)) {
+          return;
+        }
         await sendText(
           jid,
           isAbortError(error) ? "Stopped." : formatError(error)
@@ -683,6 +723,104 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         clearActiveStream(sessionKey, signal);
       }
     });
+  }
+
+  function isSessionPaused(sessionKey: string): boolean {
+    return (
+      (pauseStates.get(sessionKey) ?? sessionStore.get(sessionKey))?.paused ===
+      true
+    );
+  }
+
+  function isPausedOrDiscarded(
+    sessionKey: string,
+    receivedAt?: number
+  ): boolean {
+    const state = pauseStates.get(sessionKey) ?? sessionStore.get(sessionKey);
+    return (
+      state?.paused === true ||
+      Boolean(
+        receivedAt !== undefined &&
+          state?.discardMessagesThrough !== undefined &&
+          receivedAt <= state.discardMessagesThrough
+      )
+    );
+  }
+
+  async function handleChatControl({
+    channelOrgKey,
+    control,
+    inboundChat,
+    replayBoundary,
+    sessionKey,
+  }: {
+    channelOrgKey: string;
+    control: WhatsAppChatControl;
+    inboundChat: NormalizedWhatsAppHandlerInput;
+    replayBoundary: InboundReplayBoundary;
+    sessionKey: string;
+  }): Promise<void> {
+    const { jid, senderPn, senderJids, isGroup, fromMe } = inboundChat;
+    await authStore.reload();
+    replayBoundary.replayUnsafe = true;
+    for (const senderJid of senderJids) {
+      await authStore.rememberSenderPn(senderJid, senderPn);
+    }
+    const authorized = isGroup
+      ? fromMe ||
+        senderJids.some((senderJid) =>
+          authStore.isAuthorized(senderJid, { senderPn })
+        )
+      : authStore.isAuthorized(jid, { senderPn });
+    if (
+      !(
+        authorized &&
+        (await canStopSession(sessionKey, channelOrgKey, inboundChat))
+      )
+    ) {
+      return;
+    }
+    replayBoundary.replayUnsafe = true;
+    if (control === "stop") {
+      if (!stopActiveStream(sessionKey)) {
+        await sendText(jid, "Nothing to stop.");
+      }
+      return;
+    }
+    // Establish a currently authorized session before writing a durable control.
+    if (!sessionStore.get(sessionKey)) {
+      if (!(await ensureOrgReady(channelOrgKey, "", jid))) {
+        return;
+      }
+      await resolveSession(sessionKey, {
+        channelAddressed: true,
+        channelChatId: jid,
+        channelIsGroup: isGroup,
+        channelUserAliases: senderJids.filter(
+          (id) => id !== inboundChat.senderJid
+        ),
+        channelUserId: inboundChat.senderJid,
+      });
+    }
+    const state = {
+      discardMessagesThrough: performance.timeOrigin + performance.now(),
+      paused: control === "pause",
+    };
+    pauseStates.set(sessionKey, state);
+    if (state.paused) {
+      stopActiveStream(sessionKey);
+    }
+    const record = sessionStore.get(sessionKey);
+    if (record) {
+      sessionStore.set(sessionKey, { ...record, ...state });
+      await sessionStore.save();
+    }
+    await sendText(
+      jid,
+      state.paused
+        ? "Your replies in this chat are paused. Send /resume when you want me to respond again."
+        : "Your replies in this chat are resumed. Send your next request."
+    );
   }
 
   async function shouldSilentlyIgnoreUnauthorizedPairing(
@@ -821,6 +959,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const invalidatedSessionKeys =
       sessionStore.deleteByChannelUserId(channelUserId);
     for (const sessionKey of invalidatedSessionKeys) {
+      pauseStates.delete(sessionKey);
       stopActiveStream(sessionKey);
     }
     await sessionStore.save();
@@ -1248,11 +1387,16 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const typingLoop = createTypingLoop(getSocket(), jid);
     const todoStatus = new WhatsAppTodoStatusMessage(getSocket(), jid);
     let outgoingBinding: WhatsAppNativeBinding | undefined;
-    const liveReply = createWhatsAppLiveReply(getSocket, jid, (key) => {
-      if (outgoingBinding) {
-        messageRegistry.remember(outgoingBinding, key);
-      }
-    });
+    const liveReply = createWhatsAppLiveReply(
+      getSocket,
+      jid,
+      (key) => {
+        if (outgoingBinding) {
+          messageRegistry.remember(outgoingBinding, key);
+        }
+      },
+      signal
+    );
     let reply = "";
     let earlyAck = false;
     const streamedArtifacts = new Map<string, ChannelArtifactRef>();
@@ -1261,11 +1405,17 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     let session: RemoteChatSession | undefined;
     let controlsPending = Promise.resolve();
     const enqueueControl = (operation: () => Promise<void>) => {
-      controlsPending = controlsPending.then(operation).catch((error) => {
-        console.error("WhatsApp native control failed.", {
-          errorType: getSafeWhatsAppErrorType(error),
+      controlsPending = controlsPending
+        .then(async () => {
+          if (!signal.aborted) {
+            await operation();
+          }
+        })
+        .catch((error) => {
+          console.error("WhatsApp native control failed.", {
+            errorType: getSafeWhatsAppErrorType(error),
+          });
         });
-      });
     };
 
     try {
@@ -1308,6 +1458,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       if (inbound?.key) {
         messageRegistry.remember(nativeBinding, inbound.key);
       }
+      throwIfSignalAborted(signal);
       typingLoop.start();
 
       reply = await session.sendStream(
@@ -1442,6 +1593,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
                         "WhatsApp questionnaire session has changed."
                       );
                     }
+                    if (isSessionPaused(sessionKey)) {
+                      return;
+                    }
                     const answerSignal = registerActiveStream(sessionKey);
                     try {
                       await handleChatMessage(
@@ -1505,6 +1659,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       await todoStatus.complete();
 
       if (signal.aborted) {
+        if (isSessionPaused(sessionKey)) {
+          return;
+        }
         if (reply.trim()) {
           if (!(await liveReply.replaceWithFinal(reply.trim()))) {
             await sendText(jid, reply.trim(), {
@@ -1521,6 +1678,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     } catch (error) {
       if (isAbortError(error)) {
         await todoStatus.stop();
+        if (isSessionPaused(sessionKey)) {
+          return;
+        }
         if (reply.trim()) {
           if (!(await liveReply.replaceWithFinal(reply.trim()))) {
             await sendText(jid, reply.trim(), {
@@ -1606,7 +1766,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   function createWhatsAppLiveReply(
     getSocket: () => WASocket | null,
     jid: string,
-    onSent: (key: WAMessageKey) => void
+    onSent: (key: WAMessageKey) => void,
+    signal: AbortSignal
   ) {
     let statusMessageKey: WAMessageKey | null = null;
     let statusRequested = false;
@@ -1618,7 +1779,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       const now = Date.now();
       const normalized = status.trim();
 
-      if (!normalized || normalized === lastStatusText) {
+      if (signal.aborted || !normalized || normalized === lastStatusText) {
         return;
       }
 
@@ -1635,7 +1796,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     async function sendStatus(status: string): Promise<void> {
-      if (!status) {
+      if (signal.aborted || !status) {
         return;
       }
 
@@ -1865,6 +2026,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     sessionStore.set(sessionKey, {
       channelUserId: principalUserId,
+      discardMessagesThrough: (
+        pauseStates.get(sessionKey) ?? sessionStore.get(sessionKey)
+      )?.discardMessagesThrough,
+      paused: (pauseStates.get(sessionKey) ?? sessionStore.get(sessionKey))
+        ?.paused,
       profileId: resolvedProfileId,
       profileOverride: selection.profileOverride || undefined,
       sessionId: session.id,
@@ -1883,6 +2049,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       quoted?: WAMessage | null;
       raw?: boolean;
       binding?: WhatsAppNativeBinding;
+      onSent?: (key: WAMessageKey) => void;
     }
   ): Promise<void> {
     const prepared = options?.raw ? text.trim() : prepareWhatsAppReply(text);
@@ -1901,6 +2068,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         retryBaseDelayMs: sendRetryBaseDelayMs,
         timeoutMs: sendTimeoutMs,
       });
+      if (sentKey) {
+        options?.onSent?.(sentKey);
+      }
       if (sentKey && options?.binding) {
         messageRegistry.remember(options.binding, sentKey);
       }
@@ -1911,7 +2081,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     client.isolateOrgId(async () => {
       const replayBoundary: InboundReplayBoundary = { replayUnsafe: false };
       try {
-        await handleMessage(data, replayBoundary);
+        await handleMessage(
+          {
+            ...data,
+            receivedAt:
+              data.receivedAt ?? performance.timeOrigin + performance.now(),
+          },
+          replayBoundary
+        );
       } catch (error) {
         if (
           replayBoundary.replayUnsafe ||
@@ -2168,6 +2345,7 @@ function normalizeInboundChat(
     jid,
     me: data.me,
     mentionedJids: data.mentionedJids ?? [],
+    quotedMessageId: data.quotedMessageId ?? null,
     quotedParticipant: data.quotedParticipant ?? null,
     quotedText: data.quotedText ?? null,
     senderJid,

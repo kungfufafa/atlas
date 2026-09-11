@@ -66,6 +66,7 @@ function groupInbound(options: {
   mentionedJids?: string[];
   quotedParticipant?: string | null;
   quotedText?: string | null;
+  quotedMessageId?: string | null;
   senderJid?: string;
   senderJids?: string[];
   senderPn?: string | null;
@@ -77,6 +78,7 @@ function groupInbound(options: {
     jid: options.jid ?? GROUP_JID,
     me: BOT_ME,
     mentionedJids: options.mentionedJids ?? [],
+    quotedMessageId: options.quotedMessageId ?? null,
     quotedParticipant: options.quotedParticipant ?? null,
     quotedText: options.quotedText ?? null,
     senderJid,
@@ -281,6 +283,7 @@ interface GroupHarness {
   clientMock: ReturnType<typeof createMockClient>;
   handleMessage: ReturnType<typeof createChatHandler>;
   orgStore: ReturnType<typeof createTestOrgStore>;
+  recreateHandler: () => ReturnType<typeof createChatHandler>;
   sent: ReturnType<typeof createMockSocket>["sent"];
   sessionStore: SessionStore;
 }
@@ -358,6 +361,8 @@ async function withGroupHarness(
     accessMode?: string;
     allowedNumbers?: string[];
     failCreateSession?: Error;
+    fixedWorkspaceId?: string;
+    downloadMedia?: Parameters<typeof createChatHandler>[0]["downloadMedia"];
     orgs?: ReturnType<typeof createMultiTestOrgs>;
     pairingCode?: string | null;
     pairedJid?: string | null;
@@ -390,16 +395,27 @@ async function withGroupHarness(
     const orgStore = createTestOrgStore(homeDir);
     await orgStore.load();
     const { socket, sent } = createMockSocket();
-    const handleMessage = createChatHandler({
-      authStore,
-      client: clientMock.client,
-      config: { phoneNumber: "1234567890", profileId: "default" },
-      getSocket: () => socket as any,
+    const recreateHandler = () =>
+      createChatHandler({
+        authStore,
+        client: clientMock.client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: options.downloadMedia,
+        fixedWorkspaceId: options.fixedWorkspaceId,
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+    const handleMessage = recreateHandler();
+    await run({
+      clientMock,
+      handleMessage,
       orgStore,
+      recreateHandler,
+      sent,
       sessionStore,
     });
-
-    await run({ clientMock, handleMessage, orgStore, sent, sessionStore });
   });
 }
 
@@ -2811,6 +2827,213 @@ describe("bridge API integration", () => {
 });
 
 describe("createChatHandler group chats", () => {
+  test.each(["source-file", "1"])(
+    "recovers ignored original media when replying to %s",
+    async (quotedMessageId) => {
+      const downloads: unknown[] = [];
+      await withGroupHarness(
+        {
+          downloadMedia: async (message) => {
+            downloads.push(message);
+            return Buffer.from("asset,total\nLaptop,3");
+          },
+          fixedWorkspaceId: "org_test",
+        },
+        async ({ clientMock, handleMessage, sent }) => {
+          const original = {
+            key: {
+              id: "source-file",
+              participant: PAIRED_JID,
+              remoteJid: GROUP_JID,
+            },
+            message: {
+              documentMessage: {
+                fileLength: 20,
+                fileName: "assets.csv",
+                mimetype: "text/csv",
+              },
+            },
+          };
+          await handleMessage({
+            ...groupInbound({ text: "" }),
+            inbound: original,
+          });
+          expect(downloads).toEqual([]);
+          expect(clientMock.calls.createSession).toBe(0);
+          expect(sent[0]?.quoted).toEqual(original);
+          await handleMessage(
+            groupInbound({
+              mentionedJids: [BOT_ME.id],
+              quotedMessageId,
+              quotedParticipant:
+                quotedMessageId === "1" ? BOT_ME.id : PAIRED_JID,
+              quotedText: sent[0]?.text,
+              text: "@Atlas summarize the assets",
+            })
+          );
+          expect(downloads).toEqual([original]);
+          expect(clientMock.calls.sendStream).toBe(1);
+          const input = clientMock.getLastStreamInput() as { message: string };
+          expect(input.message).toContain("assets.csv");
+          expect(input.message).toContain("summarize the assets");
+          expect(clientMock.calls.authorizeChannelPrincipal).toContainEqual(
+            expect.objectContaining({
+              channelAddressed: true,
+              channelUserId: PAIRED_JID,
+              intent: "files",
+            })
+          );
+        }
+      );
+    }
+  );
+
+  test("recovery rechecks current file authorization before downloading", async () => {
+    let downloads = 0;
+    await withGroupHarness(
+      {
+        downloadMedia: async () => {
+          downloads += 1;
+          return Buffer.from("private");
+        },
+        fixedWorkspaceId: "org_test",
+      },
+      async ({ clientMock, handleMessage }) => {
+        await handleMessage({
+          ...groupInbound({ text: "" }),
+          inbound: {
+            key: {
+              id: "private-source",
+              participant: PAIRED_JID,
+              remoteJid: GROUP_JID,
+            },
+            message: {
+              documentMessage: {
+                fileName: "private.txt",
+                mimetype: "text/plain",
+              },
+            },
+          },
+        });
+        const authorize = clientMock.client.authorizeChannelPrincipal;
+        clientMock.client.authorizeChannelPrincipal = async (input) => {
+          if (input.intent === "files") {
+            throw new Error("Access revoked");
+          }
+          return await authorize(input);
+        };
+        await handleMessage(
+          groupInbound({
+            quotedMessageId: "1",
+            quotedParticipant: BOT_ME.id,
+            text: "read this file",
+          })
+        );
+        expect(downloads).toBe(0);
+        expect(clientMock.calls.sendStream).toBe(0);
+      }
+    );
+  });
+
+  test("natural pause aborts active work, discards backlog, persists and requires resume", async () => {
+    await withGroupHarness(
+      { streaming: true },
+      async ({
+        clientMock,
+        handleMessage,
+        sessionStore,
+        sent,
+        recreateHandler,
+      }) => {
+        const work = groupInbound({
+          mentionedJids: [BOT_ME.id],
+          text: "@Atlas work on this",
+        });
+        const running = handleMessage(work);
+        const stream = await waitForStreamControl(clientMock.getStreamControl);
+        const queued = handleMessage({ ...work, receivedAt: 1 });
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas bisa diem dulu ga?",
+          })
+        );
+        await Promise.all([running, queued]);
+        expect(stream.signal?.aborted).toBe(true);
+        expect(clientMock.calls.sendStream).toBe(1);
+        const sessionKey = resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID);
+        await sessionStore.load();
+        expect(sessionStore.get(sessionKey)?.paused).toBe(true);
+        const restartedHandler = recreateHandler();
+        const sentCount = sent.length;
+        await restartedHandler(work);
+        expect(clientMock.calls.sendStream).toBe(1);
+        expect(sent.length).toBe(sentCount);
+        await restartedHandler(groupInbound({ text: "/resume" }));
+        expect(sessionStore.get(sessionKey)?.paused).toBe(false);
+        await restartedHandler({ ...work, receivedAt: 1 });
+        expect(clientMock.calls.sendStream).toBe(1);
+        const resumed = restartedHandler(work);
+        await waitForCondition(
+          () => clientMock.calls.sendStream === 2,
+          "Resume did not start a new turn"
+        );
+        clientMock.getStreamControl()?.complete();
+        await resumed;
+      }
+    );
+  });
+
+  test("revoked sender cannot pause an active authorized session", async () => {
+    await withGroupHarness(
+      { streaming: true },
+      async ({ clientMock, handleMessage, sessionStore }) => {
+        const running = handleMessage(
+          groupInbound({ mentionedJids: [BOT_ME.id], text: "@Atlas work" })
+        );
+        const stream = await waitForStreamControl(clientMock.getStreamControl);
+        clientMock.client.authorizeChannelPrincipal = async () => {
+          throw new Error("Access revoked");
+        };
+        await handleMessage(groupInbound({ text: "/pause" }));
+        expect(stream.signal?.aborted).toBe(false);
+        expect(
+          sessionStore.get(resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID))
+            ?.paused
+        ).not.toBe(true);
+        stream.complete();
+        await running;
+      }
+    );
+  });
+
+  test("pause remains scoped to the requesting sender and chat", async () => {
+    await withGroupHarness(
+      { accessMode: "open" },
+      async ({ clientMock, handleMessage, sessionStore }) => {
+        await handleMessage(groupInbound({ text: "/pause" }));
+        const pausedKey = resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID);
+        expect(sessionStore.get(pausedKey)?.paused).toBe(true);
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: "628199999999@s.whatsapp.net",
+            text: "@Atlas answer me",
+          })
+        );
+        await handleMessage(
+          groupInbound({
+            jid: OTHER_GROUP_JID,
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas answer here",
+          })
+        );
+        expect(clientMock.calls.sendStream).toBe(2);
+        expect(sessionStore.get(pausedKey)?.paused).toBe(true);
+      }
+    );
+  });
+
   test("ignores unaddressed group messages", async () => {
     await withGroupHarness({}, async ({ clientMock, handleMessage, sent }) => {
       await handleMessage(groupInbound({ text: "hello everyone" }));

@@ -335,3 +335,96 @@ test.each(["send", "stream"] as const)(
     expect(f.endings).toEqual(["cancelled"]);
   }
 );
+
+test.each([
+  [false, 1],
+  [true, 1],
+  [false, 30],
+] as const)(
+  "formatting revision budget bounds real dispatch (native=%s, calls per response=%s)",
+  async (native, callsPerResponse) => {
+    let effects = 0;
+    const reasons: string[] = [];
+    const tool: ToolDefinition = {
+      description: "Edit workbook",
+      name: "spreadsheet",
+      parameters: { type: "object" },
+      async run() {
+        effects += 1;
+        return {
+          path: `assets-v${effects + 1}.xlsx`,
+          sourcePath: `assets-v${effects}.xlsx`,
+          status: "formatted",
+        };
+      },
+    };
+    const generate = async (input: GenerateChatInput) => {
+      const end = {
+        assistantMessage: {
+          content: "Latest workbook saved; further styling is unfinished.",
+          role: "assistant" as const,
+        },
+        content: "Latest workbook saved; further styling is unfinished.",
+        toolCalls: [],
+      };
+      if (!input.tools) {
+        return end;
+      }
+      const call = () => ({
+        arguments: { action: "format_range", range: `A${effects + 1}` },
+        id: `format-${effects}`,
+        name: "spreadsheet",
+      });
+      if (native) {
+        for (let index = 0; index < 49; index += 1) {
+          await input.executeToolCall!(call());
+        }
+        return end;
+      }
+      const toolCalls = Array.from(
+        { length: callsPerResponse },
+        (_, index) => ({ ...call(), id: `format-${effects}-${index}` })
+      );
+      return {
+        assistantMessage: {
+          content: "",
+          role: "assistant" as const,
+          toolCalls,
+        },
+        content: "",
+        toolCalls,
+      };
+    };
+    const provider: ProviderClient = {
+      generateChat: generate,
+      async generateText() {
+        return { content: "" };
+      },
+      name: "openai",
+      async streamChat(input) {
+        return await generate(input);
+      },
+    };
+    const session = createAgentHarness({
+      provider,
+      tools: [tool],
+    }).createChatSession({ tools: [tool] });
+    await session.send("Format the report", {
+      onToolLoopStop: (reason) => {
+        reasons.push(reason);
+      },
+    });
+    expect(effects).toBe(8);
+    expect(reasons).toEqual(["iteration_limit"]);
+    const receipts = session
+      .getHistory()
+      .filter((message) => message.role === "tool");
+    expect(receipts).toHaveLength(callsPerResponse === 30 ? 30 : 8);
+    expect(JSON.parse(receipts[7]!.content).path).toBe("assets-v9.xlsx");
+    for (const skipped of receipts.slice(8)) {
+      expect(JSON.parse(skipped.content).errorCode).toBe(
+        "TOOL_ITERATION_LIMIT"
+      );
+    }
+  }
+);

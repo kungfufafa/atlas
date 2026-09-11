@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { ChatMessage, ToolCall } from "@atlas/core";
+import { createSpreadsheetFormattingBudget } from "./spreadsheet-progress";
 
 const MAX_IDENTICAL_OUTCOMES = 4;
 const MAX_INVALID_ARGUMENT_BATCHES = 4;
@@ -38,23 +39,38 @@ function isInvalidArgumentFailure(value: unknown): boolean {
 
 /** Same requests can make progress (polling, reading a changed file, pagination). */
 export function createToolProgressTracker(): {
+  recordFormatting: (call: ToolCall, result: unknown) => boolean;
+  stop: () => { reason: "no_progress" | "iteration_limit"; message: string };
   record: (
     calls: readonly ToolCall[],
     results: readonly ChatMessage[],
-    orderIndependent?: boolean
+    orderIndependent?: boolean,
+    formattingAlreadyRecorded?: boolean
   ) => boolean;
 } {
+  const formattingBudget = createSpreadsheetFormattingBudget();
+  let formattingLimit = false;
   let previous: string | undefined;
   let identicalOutcomes = 0;
   let invalidArgumentBatches = 0;
   return {
-    record(calls, results, orderIndependent = false) {
+    record(
+      calls,
+      results,
+      orderIndependent = false,
+      formattingAlreadyRecorded = false
+    ) {
       const outcomes = calls.map((call, index) => {
         const result = results[index];
+        const data =
+          result?.role === "tool" ? outcomeData(result.content) : null;
+        if (!formattingAlreadyRecorded) {
+          formattingLimit = formattingBudget(call, data) || formattingLimit;
+        }
         return {
           arguments: call.arguments,
           name: call.name,
-          result: result?.role === "tool" ? outcomeData(result.content) : null,
+          result: data,
         };
       });
       // Changing ranges or other arguments cannot turn repeated input rejection
@@ -78,9 +94,27 @@ export function createToolProgressTracker(): {
       identicalOutcomes = signature === previous ? identicalOutcomes + 1 : 1;
       previous = signature;
       return (
+        formattingLimit ||
         identicalOutcomes >= MAX_IDENTICAL_OUTCOMES ||
         invalidArgumentBatches >= MAX_INVALID_ARGUMENT_BATCHES
       );
+    },
+    recordFormatting(call, result) {
+      formattingLimit = formattingBudget(call, result) || formattingLimit;
+      return formattingLimit;
+    },
+    stop() {
+      return formattingLimit
+        ? {
+            message:
+              "The spreadsheet reached eight formatting revisions in one turn. Stop restyling and report the latest saved workbook and any unfinished work. For future edits, combine related writes and formatting with batch_edit.",
+            reason: "iteration_limit" as const,
+          }
+        : {
+            message:
+              "Repeated tool calls did not make observable progress. Use the recorded results to identify the blocker.",
+            reason: "no_progress" as const,
+          };
     },
   };
 }

@@ -132,6 +132,11 @@ export class ChatToolApprovalService {
       );
     }
     const pending = this.pending.get(input.approvalId);
+    // An HTTP response can be lost after the live invocation resumes. Return the
+    // recorded decision without issuing another grant or replaying the action.
+    if (!pending && stored.status === input.decision) {
+      return { resumed: true, status: input.decision };
+    }
     if (!pending) {
       throw new AtlasApiError(
         "The turn is no longer waiting for this approval. Continue the conversation to request a new action.",

@@ -1,3 +1,5 @@
+import { realpath } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import {
   ATLAS_API_VERSION,
   type ChatCompletionResult,
@@ -21,22 +23,17 @@ const ISOLATED_CODEX_FEATURES = {
   apps: false,
   browser_use: false,
   computer_use: false,
+  hooks: false,
   image_generation: false,
   in_app_browser: false,
   multi_agent: false,
   plugins: false,
+  shell_snapshot: false,
   shell_tool: false,
   skill_search: false,
   unified_exec: false,
   view_image: false,
   workspace_dependencies: false,
-} as const;
-const ISOLATED_CODEX_CONFIG = {
-  features: {
-    ...ISOLATED_CODEX_FEATURES,
-  },
-  mcp_servers: {},
-  web_search: "disabled",
 } as const;
 const DEFAULT_CODEX_IMAGE_MODEL = "gpt-image-2";
 const SUPPORTED_DYNAMIC_TOOLS_VERSION = "0.150.1";
@@ -116,7 +113,7 @@ export interface CodexTurnResult {
 
 // Matches the experimental app-server protocol shipped in @openai/codex 0.150.1.
 // Atlas registers only function tools; native shell, MCP, and other builtins
-// remain controlled by the isolated thread configuration below.
+// remain controlled by startup overrides and the effective-config guard below.
 export interface CodexDynamicTool {
   description: string;
   inputSchema: unknown;
@@ -165,10 +162,18 @@ export class CodexAppServer {
   private client: JsonRpcStdioClient | null;
   private readonly commandOverride?: string;
   private connecting: Promise<JsonRpcStdioClient> | null = null;
+  private connectionGeneration = 0;
+  private readonly initializingClients = new Set<JsonRpcStdioClient>();
   private readonly turnTimeoutMs: number;
   private toolRequestClient: JsonRpcStdioClient | null = null;
   private readonly toolCallHandlers = new Map<string, CodexToolCallHandler>();
   private readonly runtimeVersions = new WeakMap<JsonRpcStdioClient, string>();
+  private modelDiscovery: {
+    client: JsonRpcStdioClient;
+    promise: Promise<CodexModel[]>;
+  } | null = null;
+  private modelDiscoveryGeneration = 0;
+  private readonly modelDiscoveryObservers = new WeakSet<JsonRpcStdioClient>();
 
   constructor(options: CodexAppServerOptions = {}) {
     this.client = options.client ?? null;
@@ -208,6 +213,7 @@ export class CodexAppServer {
   async startLogin(
     type: "chatgpt" | "chatgptDeviceCode"
   ): Promise<CodexLoginStart> {
+    this.invalidateModelDiscovery();
     const result = await this.request("account/login/start", { type });
     const record = asRecord(result);
     const loginId =
@@ -241,7 +247,9 @@ export class CodexAppServer {
   }
 
   async logout(): Promise<void> {
+    this.invalidateModelDiscovery();
     await this.request("account/logout");
+    this.invalidateModelDiscovery();
   }
 
   async deleteThread(threadId: string): Promise<void> {
@@ -249,13 +257,42 @@ export class CodexAppServer {
   }
 
   async listModels(): Promise<CodexModel[]> {
+    const client = await this.ensureClient();
+    this.observeModelDiscoveryInvalidation(client);
+    let discovery = this.modelDiscovery;
+    if (!discovery || discovery.client !== client) {
+      discovery = {
+        client,
+        promise: this.discoverModels(client, this.modelDiscoveryGeneration),
+      };
+      this.modelDiscovery = discovery;
+    }
+    try {
+      // Share only the in-flight request, never a stale catalog or mutable array.
+      return structuredClone(await discovery.promise);
+    } finally {
+      if (this.modelDiscovery === discovery) {
+        this.modelDiscovery = null;
+      }
+    }
+  }
+
+  private async discoverModels(
+    client: JsonRpcStdioClient,
+    generation: number
+  ): Promise<CodexModel[]> {
     const models: CodexModel[] = [];
     let cursor: string | undefined;
     for (let page = 0; page < 10; page += 1) {
-      const result = await this.request("model/list", {
+      const result = await client.request("model/list", {
         ...(cursor ? { cursor } : {}),
         includeHidden: false,
       });
+      if (generation !== this.modelDiscoveryGeneration || client.isClosed()) {
+        throw new Error(
+          "The ChatGPT account or runtime changed during model discovery. Retry discovery."
+        );
+      }
       const record = asRecord(result);
       const data = Array.isArray(record.data) ? record.data : [];
       for (const entry of data) {
@@ -326,10 +363,15 @@ export class CodexAppServer {
     if (options.dynamicTools !== undefined) {
       this.assertStructuredToolsSupported(client);
     }
+    const isolation = await isolatedCodexThreadConfig(
+      options.cwd,
+      options.imageGeneration === true
+    );
+    await assertNoNativeMcpServers(client, isolation.cwd);
     const result = await client.request("thread/start", {
       approvalPolicy: "never",
-      config: isolatedCodexConfig(options.imageGeneration === true),
-      cwd: options.cwd,
+      config: isolation.config,
+      cwd: isolation.cwd,
       sandbox: "read-only",
       ...(options.dynamicTools ? { dynamicTools: options.dynamicTools } : {}),
       ...(options.developerInstructions
@@ -345,10 +387,13 @@ export class CodexAppServer {
     threadId: string,
     options: CodexThreadOptions
   ): Promise<string> {
-    const result = await this.request("thread/resume", {
+    const client = await this.ensureClient();
+    const isolation = await isolatedCodexThreadConfig(options.cwd, false);
+    await assertNoNativeMcpServers(client, isolation.cwd);
+    const result = await client.request("thread/resume", {
       approvalPolicy: "never",
-      config: ISOLATED_CODEX_CONFIG,
-      cwd: options.cwd,
+      config: isolation.config,
+      cwd: isolation.cwd,
       developerInstructions: options.developerInstructions,
       model: options.model,
       sandbox: "read-only",
@@ -763,9 +808,40 @@ export class CodexAppServer {
   }
 
   close(): void {
+    this.connectionGeneration += 1;
+    this.invalidateModelDiscovery();
+    for (const client of this.initializingClients) {
+      client.close();
+    }
+    this.initializingClients.clear();
     this.client?.close();
     this.client = null;
     this.connecting = null;
+  }
+
+  private invalidateModelDiscovery(): void {
+    this.modelDiscoveryGeneration += 1;
+    this.modelDiscovery = null;
+  }
+
+  private observeModelDiscoveryInvalidation(client: JsonRpcStdioClient): void {
+    if (this.modelDiscoveryObservers.has(client)) {
+      return;
+    }
+    this.modelDiscoveryObservers.add(client);
+    client.onNotification(({ method }) => {
+      if (
+        method === "account/updated" ||
+        method === "account/login/completed"
+      ) {
+        this.invalidateModelDiscovery();
+      }
+    });
+    client.onClose(() => {
+      if (this.modelDiscovery?.client === client) {
+        this.invalidateModelDiscovery();
+      }
+    });
   }
 
   private registerToolRequests(client: JsonRpcStdioClient): void {
@@ -805,16 +881,29 @@ export class CodexAppServer {
     if (this.connecting) {
       return this.connecting;
     }
-    this.connecting = this.connect();
+    const generation = this.connectionGeneration;
+    const connecting = this.connect().then((client) => {
+      if (generation !== this.connectionGeneration) {
+        client.close();
+        throw new Error(
+          "The Codex connection was closed during initialization."
+        );
+      }
+      this.client = client;
+      return client;
+    });
+    this.connecting = connecting;
     try {
-      this.client = await this.connecting;
-      return this.client;
+      return await connecting;
     } finally {
-      this.connecting = null;
+      if (this.connecting === connecting) {
+        this.connecting = null;
+      }
     }
   }
 
   private async connect(): Promise<JsonRpcStdioClient> {
+    const generation = this.connectionGeneration;
     const launch = this.commandOverride
       ? { command: this.commandOverride, prefixArgs: [] }
       : resolveSubscriptionLaunch("chatgpt");
@@ -824,12 +913,16 @@ export class CodexAppServer {
       );
     }
     await ensureDir(subscriptionRuntimeHome("chatgpt"));
+    if (generation !== this.connectionGeneration) {
+      throw new Error("The Codex connection was closed before initialization.");
+    }
     const child = spawnJsonRpcProcess(
       launch.command,
-      [...launch.prefixArgs, "app-server"],
+      [...launch.prefixArgs, ...codexAppServerArguments()],
       buildSubscriptionRuntimeEnv("chatgpt") as NodeJS.ProcessEnv
     );
     const client = new JsonRpcStdioClient(child);
+    this.initializingClients.add(client);
     try {
       const runtimeVersion = await initializeCodexClient(client);
       if (runtimeVersion) {
@@ -839,8 +932,27 @@ export class CodexAppServer {
     } catch (error) {
       client.close();
       throw error;
+    } finally {
+      this.initializingClients.delete(client);
     }
   }
+}
+
+/** Apply isolation before native startup work (including shell snapshots) begins. */
+export function codexAppServerArguments(): string[] {
+  const args = ["app-server"];
+  for (const [feature, enabled] of Object.entries(ISOLATED_CODEX_FEATURES)) {
+    args.push("-c", `features.${feature}=${enabled}`);
+  }
+  args.push(
+    "-c",
+    'web_search="disabled"',
+    "-c",
+    'sandbox_mode="read-only"',
+    "-c",
+    'approval_policy="never"'
+  );
+  return args;
 }
 
 export async function initializeCodexClient(
@@ -982,14 +1094,71 @@ function readInputModalities(
   return values;
 }
 
-function isolatedCodexConfig(imageGeneration: boolean) {
+async function assertNoNativeMcpServers(
+  client: JsonRpcStdioClient,
+  cwd: string
+): Promise<void> {
+  // Codex 0.150.1 merges empty TOML tables instead of clearing configured MCP
+  // servers. Read the effective cwd config before start/resume can launch them.
+  // Keep credentials and operator config intact, and fail closed on unknown
+  // responses or native MCP configuration; Atlas owns approval-gated MCP access.
+  const response = asRecord(
+    await client.request("config/read", { cwd, includeLayers: false })
+  );
+  if (
+    !response.config ||
+    typeof response.config !== "object" ||
+    Array.isArray(response.config)
+  ) {
+    throw new Error(
+      "Codex did not return an effective configuration. ChatGPT isolation could not be verified."
+    );
+  }
+  const config = asRecord(response.config);
+  const servers = config.mcp_servers;
+  if (
+    servers !== undefined &&
+    servers !== null &&
+    (typeof servers !== "object" ||
+      Array.isArray(servers) ||
+      Object.keys(servers).length > 0)
+  ) {
+    throw new Error(
+      "Native Codex MCP configuration is not supported in Atlas. Remove MCP entries from the Atlas ChatGPT runtime and workspace Codex configuration, then configure MCP through Atlas."
+    );
+  }
+}
+
+async function isolatedCodexThreadConfig(
+  requestedCwd: string,
+  imageGeneration: boolean
+) {
+  const cwd = await realpath(requestedCwd);
+  const projects: Record<string, { trust_level: "untrusted" }> = {};
+  // A concurrent Atlas tool can create project config after config/read. Native
+  // untrusted overrides suppress those layers during start/resume itself. Cover
+  // both path spellings and every ancestor; Codex trust keys are exact paths.
+  for (const start of [cwd, resolve(requestedCwd)]) {
+    let directory = start;
+    for (;;) {
+      projects[directory] = { trust_level: "untrusted" };
+      const parent = dirname(directory);
+      if (parent === directory) {
+        break;
+      }
+      directory = parent;
+    }
+  }
   return {
-    features: {
-      ...ISOLATED_CODEX_FEATURES,
-      image_generation: imageGeneration,
+    config: {
+      features: {
+        ...ISOLATED_CODEX_FEATURES,
+        image_generation: imageGeneration,
+      },
+      projects,
+      web_search: "disabled",
     },
-    mcp_servers: {},
-    web_search: "disabled",
+    cwd,
   };
 }
 

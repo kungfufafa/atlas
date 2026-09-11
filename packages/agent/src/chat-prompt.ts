@@ -283,7 +283,7 @@ export function buildChatSystemPrompt(
 
     if (tools.some((tool) => tool.name === "send_whatsapp")) {
       sections.push(
-        "When the user asks you to WhatsApp someone, use send_whatsapp with the destination phone number and the message. The workspace's paired WhatsApp number is the sender. Do not say you cannot send WhatsApp to a number."
+        "When the user asks you to WhatsApp someone, use send_whatsapp with the destination phone number and the message. For the same message to multiple recipients, pass all numbers together in one to array so they share one approval. The workspace's paired WhatsApp number is the sender. Do not say you cannot send WhatsApp to a number."
       );
     }
 

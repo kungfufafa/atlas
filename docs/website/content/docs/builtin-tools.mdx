@@ -178,6 +178,12 @@ or the host account's login files. Execution is blocked when the filesystem
 boundary is unavailable. Network access remains enabled; this boundary does
 not provide a separate virtual machine or resource quota for each organization.
 
+## Edit a spreadsheet efficiently
+
+Ask for related value and layout changes together, such as “update the asset counts, format the header, and size the columns.” Atlas can apply these changes in one saved version while preserving your original. It verifies formula results after the final edits when LibreOffice is available.
+
+If repeated restyling reaches the per-turn limit, Atlas stops and reports the latest saved workbook and unfinished work. Give concrete changes for the next request. On WhatsApp, `/stop` cancels current work and `/pause` keeps your conversation quiet until `/resume`; see [WhatsApp chat behavior](/whatsapp#chat-behavior).
+
 ## Memory workflows
 
 Profile memory is not a separate builtin. Agents use `read_file`, `write_file`, and `edit_file` with two bundled skills:

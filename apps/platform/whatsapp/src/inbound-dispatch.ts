@@ -1,5 +1,5 @@
 import { normalizeWhatsAppUserJid } from "@atlas/core/whatsapp-config";
-import { isStopCommand } from "./commands";
+import { isWhatsAppChatControlCandidate } from "./commands";
 import {
   BoundedWorkQueue,
   type BoundedWorkQueueOptions,
@@ -23,8 +23,8 @@ export class WhatsAppInboundDispatcher {
   }
 
   runMessage<T>(jid: string, text: string, work: () => Promise<T>): Promise<T> {
-    if (isStopCommand(text)) {
-      return this.controls.run(work);
+    if (isWhatsAppChatControlCandidate(text)) {
+      return this.controls.run(work, normalizeWhatsAppUserJid(jid));
     }
     return this.messages.run(work, normalizeWhatsAppUserJid(jid));
   }

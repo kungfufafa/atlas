@@ -1027,7 +1027,7 @@ async function runConversation(
           }
           if (runtimeToolsStopped || totalToolCalls >= MAX_TOOL_ITERATIONS) {
             throw new ToolExecutionLimitError(
-              runtimeToolsStopped ? "no_progress" : "iteration_limit",
+              runtimeToolsStopped ? progress.stop().reason : "iteration_limit",
               stopReason
             );
           }
@@ -1074,9 +1074,12 @@ async function runConversation(
           }
           if (progress.record([call], [toolResult])) {
             runtimeToolsStopped = true;
-            metrics.duplicateToolCallPreventionsTotal.inc();
-            stopReason =
-              "Repeated tool calls did not make observable progress. Use the recorded results to identify the blocker.";
+            if (progress.stop().reason === "iteration_limit") {
+              metrics.agentLoopLimitTotal.inc();
+            } else {
+              metrics.duplicateToolCallPreventionsTotal.inc();
+            }
+            stopReason = progress.stop().message;
           }
           let success = true;
           try {
@@ -1210,7 +1213,11 @@ async function runConversation(
           batchHistory,
           isolateToolObservers(handlers),
           toolContext,
-          hooks?.toolExecutionLifecycle
+          hooks?.toolExecutionLifecycle,
+          (call, value) =>
+            progress.recordFormatting(call, value)
+              ? progress.stop().message
+              : undefined
         );
       } catch (error) {
         batchFailure = error;
@@ -1234,13 +1241,17 @@ async function runConversation(
       const stalled = progress.record(
         result.toolCalls,
         batchHistory.slice(1),
-        canRunToolCallsInParallel(tools, result.toolCalls)
+        canRunToolCallsInParallel(tools, result.toolCalls),
+        true
       );
       if (stalled) {
-        typedStopReason = "no_progress";
-        metrics.duplicateToolCallPreventionsTotal.inc();
-        stopReason =
-          "Repeated tool calls did not make observable progress. Use the recorded results to identify the blocker.";
+        typedStopReason = progress.stop().reason;
+        if (typedStopReason === "iteration_limit") {
+          metrics.agentLoopLimitTotal.inc();
+        } else {
+          metrics.duplicateToolCallPreventionsTotal.inc();
+        }
+        stopReason = progress.stop().message;
       }
 
       if (iteration === MAX_TOOL_ITERATIONS - 1) {
@@ -1626,7 +1637,11 @@ async function executeToolCalls(
   history: ChatMessage[],
   handlers?: StreamHandlers,
   toolContext: ToolContext = {},
-  lifecycle?: ToolExecutionLifecycle
+  lifecycle?: ToolExecutionLifecycle,
+  afterSequentialResult?: (
+    call: ToolCall,
+    result: unknown
+  ) => string | undefined
 ): Promise<void> {
   const emittedArtifactPaths = new Set<string>();
   const contextForCall = (call: ToolCall): ToolContext => {
@@ -1723,18 +1738,24 @@ async function executeToolCalls(
     return;
   }
 
+  let skippedReason: string | undefined;
   for (const call of toolCalls) {
     const activity = mapToolCallToActivity(call.id, call.name, call.arguments);
     handlers?.onActivityStart?.(activity);
 
-    const result = await executeChatToolCall(
-      tools,
-      call,
-      history,
-      contextForCall(call),
-      handlers,
-      lifecycle
-    );
+    const result = skippedReason
+      ? { error: skippedReason, errorCode: "TOOL_ITERATION_LIMIT" }
+      : await executeChatToolCall(
+          tools,
+          call,
+          history,
+          contextForCall(call),
+          handlers,
+          lifecycle
+        );
+    if (!skippedReason) {
+      skippedReason = afterSequentialResult?.(call, result);
+    }
 
     history.push({
       content: serializeToolResult(result),

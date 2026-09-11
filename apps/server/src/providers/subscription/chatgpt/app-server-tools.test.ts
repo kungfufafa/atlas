@@ -44,6 +44,10 @@ function fixture(
   child.stdin.on("data", (chunk) => {
     for (const line of String(chunk).trim().split("\n")) {
       const message: RpcMessage = JSON.parse(line);
+      if (message.method === "config/read") {
+        send({ id: message.id, result: { config: {} } });
+        continue;
+      }
       messages.push(message);
       if (message.method === "turn/start" && !options.delayStart) {
         send({
@@ -132,7 +136,7 @@ describe("Codex structured Atlas tools", () => {
     async (runtimeVersion) => {
       const f = fixture({ runtimeVersion });
       await expect(
-        f.server.startThread({ cwd: "/tmp/atlas", dynamicTools: [] })
+        f.server.startThread({ cwd: process.cwd(), dynamicTools: [] })
       ).rejects.toBeInstanceOf(Error);
       await expect(
         f.server.startTurn({
@@ -155,7 +159,7 @@ describe("Codex structured Atlas tools", () => {
         type: "function" as const,
       },
     ];
-    await f.server.startThread({ cwd: "/tmp/atlas", dynamicTools });
+    await f.server.startThread({ cwd: process.cwd(), dynamicTools });
     expect(f.messages[0]).toMatchObject({
       method: "thread/start",
       params: {
@@ -168,7 +172,6 @@ describe("Codex structured Atlas tools", () => {
             shell_tool: false,
             unified_exec: false,
           },
-          mcp_servers: {},
           web_search: "disabled",
         },
         dynamicTools,

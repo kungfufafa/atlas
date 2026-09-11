@@ -265,6 +265,9 @@
       "name": "@atlas/design-tokens",
     },
   },
+  "patchedDependencies": {
+    "libsignal@6.0.0": "patches/libsignal@6.0.0.patch",
+  },
   "overrides": {
     "libsignal": "6.0.0",
   },

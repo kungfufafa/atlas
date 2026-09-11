@@ -1,0 +1,4 @@
+Populated runtime home: guarded start/resume blocked native MCP; positive control verified.
+Trusted profile workspace: guarded start/resume blocked native MCP; positive control verified.
+Concurrent profile config: native project override prevented MCP startup after preflight.
+Codex 0.150.1 isolation verified with temporary homes. No account login or provider turn was started.

@@ -12,6 +12,7 @@ import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AuthService } from "../services/auth-service";
 import { IdentityService } from "../services/identity-service";
 import { OrgService } from "../services/org-service";
+import { sessionTurnRegistry } from "../services/session-turn-registry";
 import { setupTestConfigDir } from "../test-config-dir";
 import { createHonoApp } from "./app";
 import {
@@ -72,7 +73,8 @@ function createServerOptions() {
       assignTool: async (_profileId: string, _body: unknown) => ({
         id: "default",
       }),
-      beginSessionTurn: async () => true,
+      beginSessionTurn: async (orgId: string, sessionId: string) =>
+        sessionTurnRegistry.beginTurn(sessionId, orgId).started,
       branchSession: async (_sessionId: string, messageIndex: number) => ({
         sessionId: `branched-${messageIndex}`,
       }),

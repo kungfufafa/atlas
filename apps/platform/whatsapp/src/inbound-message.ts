@@ -30,6 +30,7 @@ export interface WhatsAppInboundChat {
   jid: string;
   me?: WhatsAppAccount;
   mentionedJids: string[];
+  quotedMessageId?: string | null;
   quotedParticipant: string | null;
   quotedText: string | null;
   senderJid: string;
@@ -413,6 +414,7 @@ export function parseInboundWhatsAppMessage(
     jid: normalizedRemoteJid,
     me,
     mentionedJids,
+    quotedMessageId: contextIsLocal ? context?.stanzaId?.trim() || null : null,
     quotedParticipant,
     quotedText,
     senderJid,

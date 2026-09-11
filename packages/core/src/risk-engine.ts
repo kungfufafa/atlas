@@ -171,7 +171,10 @@ export function evaluateActionRisk(
     args.recipient ||
     args.to
   ) {
-    const recipient = String(args.to || args.recipient || "external-recipient");
+    const destination = args.to || args.recipient;
+    const recipient = Array.isArray(destination)
+      ? `${destination.length} recipients`
+      : String(destination || "external-recipient");
     const subject = String(args.subject || "Message from Atlas");
 
     return {

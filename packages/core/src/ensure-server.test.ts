@@ -3,8 +3,9 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ATLAS_API_VERSION } from "./contract";
-import { isServerHealthy } from "./ensure-server";
+import { ensureServerRunning, isServerHealthy } from "./ensure-server";
 import { loadLocalAuthToken } from "./local-auth";
+import { resolveServerUrl, writeRuntimeServerUrl } from "./runtime";
 
 const REQUIRED_TOOLS = [
   "write_file",
@@ -17,6 +18,7 @@ const REQUIRED_TOOLS = [
 
 describe("isServerHealthy", () => {
   let configDir = "";
+  const previousServerUrl = process.env.ATLAS_SERVER_URL;
   const servers: Array<ReturnType<typeof Bun.serve>> = [];
 
   afterEach(async () => {
@@ -31,19 +33,24 @@ describe("isServerHealthy", () => {
     }
 
     delete process.env.ATLAS_CONFIG_DIR;
+    if (previousServerUrl === undefined) {
+      delete process.env.ATLAS_SERVER_URL;
+    } else {
+      process.env.ATLAS_SERVER_URL = previousServerUrl;
+    }
   });
 
-  test("rejects when the tools catalog stays unauthorized", async () => {
+  test("accepts public readiness without requesting protected routes", async () => {
     await withLocalAuthConfig();
     const server = serveAtlas({
       requireAuthForTools: true,
       tools: REQUIRED_TOOLS,
     });
 
-    await expect(isServerHealthy(originOf(server))).resolves.toBe(false);
+    await expect(isServerHealthy(originOf(server))).resolves.toBe(true);
   });
 
-  test("accepts a server that lists required builtins for the local client", async () => {
+  test("accepts a ready server with a protected tool catalog", async () => {
     const token = await withLocalAuthConfig();
     const server = serveAtlas({
       requireAuthForTools: true,
@@ -54,7 +61,7 @@ describe("isServerHealthy", () => {
     await expect(isServerHealthy(originOf(server))).resolves.toBe(true);
   });
 
-  test("retries tools with a workspace header when local-token needs org context", async () => {
+  test("accepts a ready server whose tools require workspace context", async () => {
     const token = await withLocalAuthConfig();
     const server = serveAtlas({
       orgId: "org_workspace",
@@ -65,6 +72,71 @@ describe("isServerHealthy", () => {
     });
 
     await expect(isServerHealthy(originOf(server))).resolves.toBe(true);
+  });
+
+  test("explicit server URL wins over a stale runtime discovery file", async () => {
+    await withLocalAuthConfig();
+    writeRuntimeServerUrl("http://127.0.0.1:32839");
+    expect(
+      resolveServerUrl({ ATLAS_SERVER_URL: "http://127.0.0.1:4310/" })
+    ).toBe("http://127.0.0.1:4310");
+  });
+
+  test("workers reuse a ready API even with all protected routes denied", async () => {
+    let protectedRequests = 0;
+    const server = Bun.serve({
+      fetch(request) {
+        if (new URL(request.url).pathname === "/health") {
+          return Response.json({ apiVersion: ATLAS_API_VERSION, ok: true });
+        }
+        protectedRequests += 1;
+        return new Response(null, { status: 401 });
+      },
+      hostname: "127.0.0.1",
+      port: 0,
+    });
+    servers.push(server);
+    process.env.ATLAS_SERVER_URL = originOf(server);
+    expect(
+      await ensureServerRunning({ autoStart: false, timeoutMs: 10 })
+    ).toEqual({ serverUrl: originOf(server), spawnedChild: null });
+    expect(protectedRequests).toBe(0);
+  });
+
+  test("worker waits through API startup without spawning a child", async () => {
+    let probes = 0;
+    const server = Bun.serve({
+      fetch() {
+        probes += 1;
+        return probes < 3
+          ? new Response(null, { status: 503 })
+          : Response.json({ apiVersion: ATLAS_API_VERSION, ok: true });
+      },
+      hostname: "127.0.0.1",
+      port: 0,
+    });
+    servers.push(server);
+    process.env.ATLAS_SERVER_URL = originOf(server);
+    const result = await ensureServerRunning({
+      autoStart: false,
+      timeoutMs: 1500,
+    });
+    expect(probes).toBe(3);
+    expect(result.spawnedChild).toBeNull();
+  });
+
+  test("unavailable workers and incompatible existing endpoints never spawn an API", async () => {
+    const server = Bun.serve({
+      fetch: () => Response.json({ apiVersion: -1, ok: true }),
+      hostname: "127.0.0.1",
+      port: 0,
+    });
+    servers.push(server);
+    process.env.ATLAS_SERVER_URL = originOf(server);
+    await expect(
+      ensureServerRunning({ autoStart: false, timeoutMs: 0 })
+    ).rejects.toThrow();
+    await expect(ensureServerRunning()).rejects.toThrow();
   });
 
   async function withLocalAuthConfig(): Promise<string> {

@@ -405,28 +405,37 @@ function AssistantTurn({
     lastAssistantMsg?.sources,
     collectTurnWebSources(turnMessages)
   );
-  const approval = turnMessages.find((m) => m.approval)?.approval;
+  const approvals = [
+    ...new Map(
+      turnMessages.flatMap((message) =>
+        message.approval
+          ? [[message.approval.id, message.approval] as const]
+          : []
+      )
+    ).values(),
+  ];
   const memorySaved = turnMessages.find((m) => m.memorySaved)?.memorySaved;
 
   return (
     <div className="group mr-auto ml-0 flex w-full max-w-full flex-col items-start justify-start gap-3">
-      {approval ? (
+      {approvals.map((approval) => (
         <ActionApprovalDialog
           approval={approval}
-          onCancel={(item) => {
+          key={approval.id}
+          onCancel={async (item) => {
             if (!sessionId) {
-              return;
+              throw new Error("Open this conversation to decide its approval.");
             }
-            void client.decideApproval(sessionId, item.id, "denied");
+            await client.decideApproval(sessionId, item.id, "denied");
           }}
-          onConfirm={(item) => {
+          onConfirm={async (item) => {
             if (!sessionId) {
-              return;
+              throw new Error("Open this conversation to decide its approval.");
             }
-            void client.decideApproval(sessionId, item.id, "approved");
+            await client.decideApproval(sessionId, item.id, "approved");
           }}
         />
-      ) : null}
+      ))}
       {memorySaved ? (
         <div className="fade-in inline-flex animate-in items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-600 text-xs dark:text-emerald-400">
           <span>✓</span>
