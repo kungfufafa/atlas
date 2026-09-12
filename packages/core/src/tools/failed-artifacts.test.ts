@@ -147,7 +147,7 @@ test("filesystem detection cannot redeliver a failed tool's undeclared partial o
             path.join(workspaceRoot, "artifacts", "complete.csv"),
             "ID\n00123\n"
           );
-          return { ok: true };
+          return { ok: true, path: "artifacts/complete.csv" };
         },
       },
       {},

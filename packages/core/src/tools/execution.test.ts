@@ -506,13 +506,16 @@ describe("executeProtectedTool", () => {
     }
   });
 
-  test("captures files created under artifacts by any tool", async () => {
+  test("captures files created under artifacts when the tool names the path", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "atlas-tool-artifact-")
     );
 
     try {
-      const fileTool: ToolDefinition<Record<string, never>, string> = {
+      const fileTool: ToolDefinition<
+        Record<string, never>,
+        { path: string }
+      > = {
         description: "Create a deliverable without declaring metadata",
         name: "custom_file_maker",
         async run() {
@@ -523,7 +526,7 @@ describe("executeProtectedTool", () => {
             path.join(artifactsDir, "report.pdf.atlas-meta.json"),
             "{}"
           );
-          return "created";
+          return { path: "artifacts/report.pdf" };
         },
       };
 
@@ -545,6 +548,94 @@ describe("executeProtectedTool", () => {
           sizeBytes: 8,
         }),
       ]);
+    } finally {
+      await rm(workspaceRoot, { force: true, recursive: true });
+    }
+  });
+
+  test("does not stamp another session's overlapping artifact onto this result", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "atlas-tool-artifact-overlap-")
+    );
+    const artifactsDir = path.join(workspaceRoot, "artifacts");
+    let started!: () => void;
+    let release!: () => void;
+    const startedGate = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const releaseGate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    try {
+      await mkdir(artifactsDir, { recursive: true });
+      const fileTool: ToolDefinition<{ path: string }, { path: string }> = {
+        description: "Write one named deliverable",
+        name: "custom_file_maker",
+        async run(input) {
+          await writeFile(path.join(artifactsDir, "report.pdf"), "%PDF-1.4");
+          started();
+          await releaseGate;
+          return { path: input.path };
+        },
+      };
+
+      const execution = executeProtectedTool(
+        fileTool,
+        { path: "artifacts/report.pdf" },
+        {
+          sessionId: "session_guest_a",
+          workspaceRoot,
+        }
+      );
+      await startedGate;
+      await writeFile(
+        path.join(artifactsDir, "secret-contract.pdf"),
+        "%PDF-secret"
+      );
+      release();
+
+      const result = await execution;
+      expect(result.success).toBe(true);
+      expect(result.artifacts).toEqual([
+        expect.objectContaining({
+          path: "artifacts/report.pdf",
+          sessionId: "session_guest_a",
+        }),
+      ]);
+    } finally {
+      await rm(workspaceRoot, { force: true, recursive: true });
+    }
+  });
+
+  test("does not attribute undeclared artifact writes from a directory scan", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "atlas-tool-artifact-undeclared-")
+    );
+
+    try {
+      const fileTool: ToolDefinition<Record<string, never>, string> = {
+        description: "Create a deliverable without naming it",
+        name: "custom_file_maker",
+        async run() {
+          const artifactsDir = path.join(workspaceRoot, "artifacts");
+          await mkdir(artifactsDir, { recursive: true });
+          await writeFile(path.join(artifactsDir, "report.pdf"), "%PDF-1.4");
+          return "created";
+        },
+      };
+
+      const result = await executeProtectedTool(
+        fileTool,
+        {},
+        {
+          sessionId: "session_test",
+          workspaceRoot,
+        }
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.artifacts).toBeUndefined();
     } finally {
       await rm(workspaceRoot, { force: true, recursive: true });
     }
