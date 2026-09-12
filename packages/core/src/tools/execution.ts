@@ -22,7 +22,17 @@ export const DEFAULT_MAX_RETRIES = 2;
 export const DEFAULT_INITIAL_BACKOFF_MS = 250;
 
 const ARTIFACTS_DIRECTORY = "artifacts";
+const ARTIFACTS_PREFIX = `${ARTIFACTS_DIRECTORY}/`;
 const INTERNAL_ARTIFACT_PREFIXES = ["coding-agent-runs/"];
+const ARTIFACT_PATH_KEYS = new Set([
+  "csvPath",
+  "destinationPath",
+  "documentRef",
+  "path",
+  "sourcePath",
+  "targetCsvPath",
+  "targetXlsxPath",
+]);
 
 interface ArtifactFileSnapshot {
   mtimeMs: number;
@@ -96,10 +106,73 @@ async function scanArtifactFiles(
   return files;
 }
 
+function artifactAttributionPath(value: string): string | null {
+  const normalized = value.trim().replace(/\\/g, "/");
+  if (!normalized) {
+    return null;
+  }
+
+  const marker = `/${ARTIFACTS_PREFIX}`;
+  const markerIndex = normalized.indexOf(marker);
+  const relative =
+    markerIndex >= 0
+      ? normalized.slice(markerIndex + marker.length)
+      : normalized.startsWith(ARTIFACTS_PREFIX)
+        ? normalized.slice(ARTIFACTS_PREFIX.length)
+        : undefined;
+  if (
+    !relative ||
+    relative.startsWith("/") ||
+    relative.split("/").includes("..")
+  ) {
+    return null;
+  }
+
+  return `${ARTIFACTS_PREFIX}${relative}`;
+}
+
+function collectAttributedArtifactPaths(
+  value: unknown,
+  paths: Set<string>
+): void {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectAttributedArtifactPaths(item, paths);
+    }
+    return;
+  }
+  if (!value || typeof value !== "object") {
+    return;
+  }
+
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    if (ARTIFACT_PATH_KEYS.has(key)) {
+      if (typeof item === "string") {
+        const attributed = artifactAttributionPath(item);
+        if (attributed) {
+          paths.add(attributed);
+        }
+      } else if (Array.isArray(item)) {
+        for (const entry of item) {
+          if (typeof entry !== "string") {
+            continue;
+          }
+          const attributed = artifactAttributionPath(entry);
+          if (attributed) {
+            paths.add(attributed);
+          }
+        }
+      }
+    }
+    collectAttributedArtifactPaths(item, paths);
+  }
+}
+
 function changedArtifactFiles(
   before: Map<string, ArtifactFileSnapshot>,
   after: Map<string, ArtifactFileSnapshot>,
-  context: ToolContext
+  context: ToolContext,
+  attributedPaths: Set<string>
 ): ToolArtifact[] {
   const artifacts: ToolArtifact[] = [];
 
@@ -113,12 +186,20 @@ function changedArtifactFiles(
       continue;
     }
 
+    const detectedPath = `${ARTIFACTS_PREFIX}${relativePath}`;
+    // Directory mtime diffs are not session ownership. Another chat on the
+    // same Reply-as profile can write into this shared folder while the tool
+    // runs; only paths this call named may be stamped onto the result.
+    if (!attributedPaths.has(detectedPath)) {
+      continue;
+    }
+
     artifacts.push({
       createdAt: new Date().toISOString(),
       filename: path.basename(relativePath),
       id: nanoid(12),
       mimeType: inferArtifactMimeType(relativePath),
-      path: `${ARTIFACTS_DIRECTORY}/${relativePath}`,
+      path: detectedPath,
       sessionId: context.sessionId,
       sizeBytes: file.sizeBytes,
     });
@@ -629,10 +710,14 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
       shouldDetectArtifacts && !operationFailed
         ? await scanArtifactFiles(context.workspaceRoot)
         : artifactsBefore;
+    const attributedPaths = new Set<string>();
+    collectAttributedArtifactPaths(input, attributedPaths);
+    collectAttributedArtifactPaths(finalData, attributedPaths);
     const detectedArtifacts = changedArtifactFiles(
       artifactsBefore,
       artifactsAfter,
-      context
+      context,
+      attributedPaths
     );
     const artifacts = mergeToolArtifacts(declaredArtifacts, detectedArtifacts);
 
