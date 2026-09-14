@@ -556,6 +556,7 @@ const SPREADSHEET_EDIT_ACTIONS = new Set([
   "delete_sheet",
   "import_csv",
   "recalculate",
+  "batch_edit",
 ]);
 
 function spreadsheetEditSourcePath(
