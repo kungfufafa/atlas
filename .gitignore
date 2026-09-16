@@ -19,7 +19,8 @@ apps/mobile/android
 apps/mobile/expo-env.d.ts
 .agents/
 apps/data/*
-.cursor/
+.cursor/*
+!.cursor/environment.json
 docs/plans/*
 docs/brainstorms/*
 .worktrees/
