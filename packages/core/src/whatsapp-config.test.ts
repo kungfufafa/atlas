@@ -4,8 +4,10 @@ import path from "node:path";
 import { withTempHomedir } from "./testing/channel-config-fixtures";
 import {
   ensureWhatsAppOutboundToken,
+  expandWhatsAppSenderIdentities,
   generatePairingCode,
   isWhatsAppUserAuthorized,
+  listWhatsAppLidsForPhone,
   loadWhatsAppConfigFile,
   loadWhatsAppLidMap,
   lookupWhatsAppLidPhone,
@@ -13,6 +15,7 @@ import {
   normalizePairingCode,
   normalizePhoneNumberDigits,
   normalizeWhatsAppUserJid,
+  preferWhatsAppPhoneJid,
   regenerateWhatsAppPairingCode,
   rememberWhatsAppLidPhone,
   resetWhatsAppSessionForReconnect,
@@ -1214,5 +1217,22 @@ describe("WhatsApp LID phone map", () => {
         )
       ).toBe(true);
     });
+  });
+
+  test("expands a LID or phone to the mapped pair and prefers the phone JID", () => {
+    const phone = "6281234567890@s.whatsapp.net";
+    const lid = "236283431522503@lid";
+    const map = { [lid]: phone };
+
+    expect(listWhatsAppLidsForPhone(map, phone)).toEqual([lid]);
+    expect(expandWhatsAppSenderIdentities(map, [lid])).toEqual([lid, phone]);
+    expect(expandWhatsAppSenderIdentities(map, [phone])).toEqual([phone, lid]);
+    expect(preferWhatsAppPhoneJid([lid, phone], lid)).toBe(phone);
+    expect(
+      expandWhatsAppSenderIdentities(map, [lid, "628199999999@s.whatsapp.net"])
+    ).toEqual([lid, "628199999999@s.whatsapp.net"]);
+    expect(
+      preferWhatsAppPhoneJid([lid, phone, "628199999999@s.whatsapp.net"], lid)
+    ).toBe(lid);
   });
 });

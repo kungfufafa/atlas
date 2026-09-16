@@ -86,6 +86,32 @@ export class SessionStore {
     this.hotSessions.delete(jid);
   }
 
+  rekey(from: string, to: string): boolean {
+    const fromKey = normalizeSessionStoreKey(from);
+    const toKey = normalizeSessionStoreKey(to);
+    if (fromKey === toKey) {
+      return false;
+    }
+
+    const record = this.get(fromKey);
+    if (!record) {
+      return false;
+    }
+
+    const existing = this.get(toKey);
+    if (existing && existing.sessionId !== record.sessionId) {
+      return false;
+    }
+
+    const hot = this.getHotSession(fromKey);
+    this.set(toKey, existing ?? record);
+    if (hot && !this.getHotSession(toKey)) {
+      this.setHotSession(toKey, hot);
+    }
+    this.delete(fromKey);
+    return true;
+  }
+
   getHotSession<T>(jid: string): T | undefined {
     const key = normalizeSessionStoreKey(jid);
     return (this.hotSessions.get(key) ?? this.hotSessions.get(jid)) as
