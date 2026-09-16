@@ -30,7 +30,9 @@ import {
   isWhatsAppPairingCodeActive,
   normalizePairingCode,
   normalizeWhatsAppUserJid,
+  preferWhatsAppPhoneJid,
   syncWhatsAppOwnerPairing,
+  toWhatsAppPhoneJid,
 } from "@atlas/core/whatsapp-config";
 import type {
   WAMessage,
@@ -289,9 +291,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     let mediaInbound = inbound;
     const isGroup = inboundChat.isGroup;
     const conversationKey = chatKey(jid);
-    const senderSessionKey = resolveWhatsAppSessionKey(
-      conversationKey,
+    const senderIdentities = collectSenderIdentities(authStore, inboundChat);
+    const canonicalSenderId = preferWhatsAppPhoneJid(
+      senderIdentities,
       inboundChat.senderJid
+    );
+    const senderSessionKeys = listSenderSessionKeys(
+      conversationKey,
+      isGroup ? senderIdentities : [conversationKey]
     );
     const messageText = inboundChat.isGroup
       ? stripWhatsAppBotMention({
@@ -351,7 +358,6 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         control,
         inboundChat,
         replayBoundary,
-        sessionKey: senderSessionKey,
       });
       return;
     }
@@ -359,7 +365,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const pairingAttempt = !isGroup && looksLikePairingCodeAttempt(trimmed);
     if (
       !pairingAttempt &&
-      isPausedOrDiscarded(senderSessionKey, data.receivedAt)
+      isAnySessionPausedOrDiscarded(senderSessionKeys, data.receivedAt)
     ) {
       return;
     }
@@ -374,7 +380,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     const rateLimitKey = isGroup
-      ? `${conversationKey}:${inboundChat.senderJid}`
+      ? `${conversationKey}:${canonicalSenderId}`
       : conversationKey;
     // The limiter mutates its sliding window. From this point onward, replaying
     // the whole handler could consume the same inbound message more than once.
@@ -392,7 +398,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     await withChatLock(conversationKey, async () => {
       if (
         !pairingAttempt &&
-        isPausedOrDiscarded(senderSessionKey, data.receivedAt)
+        isAnySessionPausedOrDiscarded(senderSessionKeys, data.receivedAt)
       ) {
         return;
       }
@@ -405,6 +411,32 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           );
       for (const senderJid of senderJids) {
         await authStore.rememberSenderPn(senderJid, senderPn);
+      }
+      const lockedIdentities = collectSenderIdentities(authStore, inboundChat);
+      const lockedCanonicalSenderId = preferWhatsAppPhoneJid(
+        lockedIdentities,
+        inboundChat.senderJid
+      );
+      const adopted = adoptCanonicalSenderSession({
+        conversationJid: conversationKey,
+        identities: isGroup ? lockedIdentities : [conversationKey],
+        senderId: isGroup ? lockedCanonicalSenderId : conversationKey,
+      });
+      const sessionKey = adopted.sessionKey;
+      if (adopted.rekeyed) {
+        await sessionStore.save();
+      }
+      if (
+        !pairingAttempt &&
+        isAnySessionPausedOrDiscarded(
+          listSenderSessionKeys(
+            conversationKey,
+            isGroup ? lockedIdentities : [conversationKey]
+          ),
+          data.receivedAt
+        )
+      ) {
+        return;
       }
       let authorized = isGroup
         ? fromMe ||
@@ -425,13 +457,13 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       const principalChannelUserId = isGroup
-        ? inboundChat.senderJid
+        ? lockedCanonicalSenderId
         : conversationKey;
       const sessionPrincipal: WhatsAppSessionPrincipal = {
         channelAddressed: groupDecision?.shouldHandle ?? true,
         channelChatId: jid,
         channelIsGroup: isWhatsAppGroupChat(jid),
-        channelUserAliases: senderJids.filter(
+        channelUserAliases: lockedIdentities.filter(
           (senderJid) => senderJid !== principalChannelUserId
         ),
         channelUserId: principalChannelUserId,
@@ -522,21 +554,20 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
       if (isGroup && !media && mediaScope.orgId) {
-        const deferred = deferredGroupMedia.get(
-          mediaScope,
-          inboundChat.quotedMessageId
-        );
+        const deferred = [principalChannelUserId, ...lockedIdentities]
+          .map((senderJid) =>
+            deferredGroupMedia.get(
+              { ...mediaScope, senderJid },
+              inboundChat.quotedMessageId
+            )
+          )
+          .find((entry) => entry !== undefined);
         if (deferred) {
           mediaInbound = deferred;
           media = inspectInboundWhatsAppMedia(deferred.message);
           inboundChat.quotedText = null;
         }
       }
-
-      const sessionKey = resolveWhatsAppSessionKey(
-        conversationKey,
-        principalChannelUserId
-      );
 
       if (isGroup && looksLikePairingCodeAttempt(messageText)) {
         await sendText(jid, GROUP_PAIRING_REPLY);
@@ -729,6 +760,59 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     });
   }
 
+  function adoptCanonicalSenderSession(input: {
+    conversationJid: string;
+    identities: readonly string[];
+    senderId: string;
+  }): { rekeyed: boolean; sessionKey: string } {
+    const sessionKey = resolveWhatsAppSessionKey(
+      input.conversationJid,
+      input.senderId
+    );
+    let rekeyed = false;
+    for (const identity of input.identities) {
+      const alternateKey = resolveWhatsAppSessionKey(
+        input.conversationJid,
+        identity
+      );
+      if (alternateKey === sessionKey) {
+        continue;
+      }
+      const alternatePause = pauseStates.get(alternateKey);
+      if (alternatePause) {
+        const currentPause = pauseStates.get(sessionKey);
+        pauseStates.set(
+          sessionKey,
+          currentPause
+            ? mergePauseStates(currentPause, alternatePause)
+            : alternatePause
+        );
+        pauseStates.delete(alternateKey);
+      }
+      if (sessionStore.rekey(alternateKey, sessionKey)) {
+        rekeyed = true;
+      }
+    }
+    const record = sessionStore.get(sessionKey);
+    if (record && record.channelUserId !== input.senderId) {
+      sessionStore.set(sessionKey, {
+        ...record,
+        channelUserId: input.senderId,
+      });
+      rekeyed = true;
+    }
+    return { rekeyed, sessionKey };
+  }
+
+  function isAnySessionPausedOrDiscarded(
+    sessionKeys: readonly string[],
+    receivedAt?: number
+  ): boolean {
+    return sessionKeys.some((sessionKey) =>
+      isPausedOrDiscarded(sessionKey, receivedAt)
+    );
+  }
+
   function isSessionPaused(sessionKey: string): boolean {
     return (
       (pauseStates.get(sessionKey) ?? sessionStore.get(sessionKey))?.paused ===
@@ -756,13 +840,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     control,
     inboundChat,
     replayBoundary,
-    sessionKey,
   }: {
     channelOrgKey: string;
     control: WhatsAppChatControl;
     inboundChat: NormalizedWhatsAppHandlerInput;
     replayBoundary: InboundReplayBoundary;
-    sessionKey: string;
   }): Promise<void> {
     const { jid, senderPn, senderJids, isGroup, fromMe } = inboundChat;
     await authStore.reload();
@@ -770,6 +852,27 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     for (const senderJid of senderJids) {
       await authStore.rememberSenderPn(senderJid, senderPn);
     }
+    const identities = collectSenderIdentities(authStore, inboundChat);
+    const canonicalSenderId = preferWhatsAppPhoneJid(
+      identities,
+      inboundChat.senderJid
+    );
+    const adopted = adoptCanonicalSenderSession({
+      conversationJid: inboundChat.jid,
+      identities: isGroup ? identities : [inboundChat.jid],
+      senderId: isGroup ? canonicalSenderId : inboundChat.jid,
+    });
+    const sessionKey = adopted.sessionKey;
+    if (adopted.rekeyed) {
+      await sessionStore.save();
+    }
+    const controlPrincipal: WhatsAppSessionPrincipal = {
+      channelAddressed: true,
+      channelChatId: jid,
+      channelIsGroup: isGroup,
+      channelUserAliases: identities.filter((id) => id !== canonicalSenderId),
+      channelUserId: isGroup ? canonicalSenderId : inboundChat.senderJid,
+    };
     const authorized = isGroup
       ? fromMe ||
         senderJids.some((senderJid) =>
@@ -779,14 +882,23 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     if (
       !(
         authorized &&
-        (await canStopSession(sessionKey, channelOrgKey, inboundChat))
+        (await canStopSession(sessionKey, channelOrgKey, {
+          ...inboundChat,
+          senderJid: controlPrincipal.channelUserId,
+          senderJids: identities,
+        }))
       )
     ) {
       return;
     }
     replayBoundary.replayUnsafe = true;
+    const controlSessionKeys = listSenderSessionKeys(
+      inboundChat.jid,
+      isGroup ? identities : [inboundChat.jid]
+    );
     if (control === "stop") {
-      if (!stopActiveStream(sessionKey)) {
+      const stopped = controlSessionKeys.some((key) => stopActiveStream(key));
+      if (!stopped) {
         await sendText(jid, "Nothing to stop.");
       }
       return;
@@ -796,15 +908,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       if (!(await ensureOrgReady(channelOrgKey, "", jid))) {
         return;
       }
-      await resolveSession(sessionKey, {
-        channelAddressed: true,
-        channelChatId: jid,
-        channelIsGroup: isGroup,
-        channelUserAliases: senderJids.filter(
-          (id) => id !== inboundChat.senderJid
-        ),
-        channelUserId: inboundChat.senderJid,
-      });
+      await resolveSession(sessionKey, controlPrincipal);
     }
     const state = {
       discardMessagesThrough: performance.timeOrigin + performance.now(),
@@ -812,7 +916,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     };
     pauseStates.set(sessionKey, state);
     if (state.paused) {
-      stopActiveStream(sessionKey);
+      for (const key of controlSessionKeys) {
+        stopActiveStream(key);
+      }
     }
     const record = sessionStore.get(sessionKey);
     if (record) {
@@ -1960,8 +2066,17 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const existingChannelUserId = existing?.channelUserId
       ? chatKey(existing.channelUserId)
       : null;
+    const senderIdentitySet = new Set([
+      normalizedChannelUserId,
+      ...principal.channelUserAliases.map((alias) => chatKey(alias)),
+    ]);
+    const senderPhones = new Set(
+      [...senderIdentitySet]
+        .map((identity) => toWhatsAppPhoneJid(identity))
+        .filter((phone): phone is string => Boolean(phone))
+    );
     const belongsToCurrentSender = existingChannelUserId
-      ? existingChannelUserId === normalizedChannelUserId
+      ? senderIdentitySet.has(existingChannelUserId) && senderPhones.size <= 1
       : sessionKey === normalizedChannelUserId;
 
     if (
@@ -2407,6 +2522,52 @@ export function resolveWhatsAppSessionKey(
 
   const senderKey = chatKey(channelUserId);
   return `group:${encodeURIComponent(conversationKey)}:sender:${encodeURIComponent(senderKey)}`;
+}
+
+function collectSenderIdentities(
+  authStore: WhatsAppAuthStore,
+  inboundChat: Pick<
+    NormalizedWhatsAppHandlerInput,
+    "senderJid" | "senderJids" | "senderPn"
+  >
+): string[] {
+  return authStore.expandSenderIdentities([
+    inboundChat.senderJid,
+    ...inboundChat.senderJids,
+    inboundChat.senderPn,
+  ]);
+}
+
+function listSenderSessionKeys(
+  conversationJid: string,
+  identities: readonly string[]
+): string[] {
+  const keys: string[] = [];
+  const seen = new Set<string>();
+  for (const identity of identities) {
+    const key = resolveWhatsAppSessionKey(conversationJid, identity);
+    if (!seen.has(key)) {
+      seen.add(key);
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
+function mergePauseStates(
+  current: { discardMessagesThrough?: number; paused?: boolean },
+  incoming: { discardMessagesThrough?: number; paused?: boolean }
+): { discardMessagesThrough?: number; paused?: boolean } {
+  const discardCandidates = [
+    current.discardMessagesThrough,
+    incoming.discardMessagesThrough,
+  ].filter((value): value is number => value !== undefined);
+  return {
+    paused: Boolean(current.paused || incoming.paused),
+    ...(discardCandidates.length > 0
+      ? { discardMessagesThrough: Math.max(...discardCandidates) }
+      : {}),
+  };
 }
 
 function looksLikePairingCodeAttempt(text: string): boolean {

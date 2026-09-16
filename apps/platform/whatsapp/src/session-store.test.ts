@@ -46,6 +46,37 @@ describe("SessionStore", () => {
     ]);
   });
 
+  test("rekeys a sender session and refuses to overwrite a different session", () => {
+    const store = new SessionStore("unused");
+    const phoneKey = resolveWhatsAppSessionKey(
+      "120363042000000000@g.us",
+      CHANNEL_USER_ID
+    );
+    const lidKey = resolveWhatsAppSessionKey(
+      "120363042000000000@g.us",
+      "104784384290844@lid"
+    );
+    store.set(lidKey, {
+      ...sessionRecord("session_lid"),
+      channelUserId: "104784384290844@lid",
+    });
+    store.setHotSession(lidKey, { id: "session_lid" });
+
+    expect(store.rekey(lidKey, phoneKey)).toBe(true);
+    expect(store.get(lidKey)).toBeUndefined();
+    expect(store.get(phoneKey)?.sessionId).toBe("session_lid");
+    expect(store.getHotSession(phoneKey)).toEqual({ id: "session_lid" });
+    expect(store.rekey(lidKey, phoneKey)).toBe(false);
+
+    store.set(lidKey, {
+      ...sessionRecord("session_other"),
+      channelUserId: "104784384290844@lid",
+    });
+    expect(store.rekey(lidKey, phoneKey)).toBe(false);
+    expect(store.get(lidKey)?.sessionId).toBe("session_other");
+    expect(store.get(phoneKey)?.sessionId).toBe("session_lid");
+  });
+
   test("normalizes keys and invalidates hot wrappers on replacement or deletion", () => {
     const store = new SessionStore("unused");
     const deviceJid = "628123:7@s.whatsapp.net";

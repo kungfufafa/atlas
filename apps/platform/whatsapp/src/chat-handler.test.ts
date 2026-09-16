@@ -3224,6 +3224,64 @@ describe("createChatHandler group chats", () => {
     );
   });
 
+  test("keeps group pause and session when Baileys flips LID and phone metadata", async () => {
+    const senderLid = "104784384290844@lid";
+    await withGroupHarness(
+      { accessMode: "open" },
+      async ({ clientMock, handleMessage, sessionStore }) => {
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: senderLid,
+            senderJids: [senderLid],
+            text: "@Atlas start as lid",
+          })
+        );
+        const lidKey = resolveWhatsAppSessionKey(GROUP_JID, senderLid);
+        const phoneKey = resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID);
+        const originalSessionId = sessionStore.get(lidKey)?.sessionId;
+        expect(originalSessionId).toBeDefined();
+        expect(clientMock.calls.createSession).toBe(1);
+
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: PAIRED_JID,
+            senderJids: [PAIRED_JID, senderLid],
+            senderPn: PAIRED_JID,
+            text: "@Atlas continue as phone",
+          })
+        );
+        expect(clientMock.calls.createSession).toBe(1);
+        expect(sessionStore.get(lidKey)).toBeUndefined();
+        expect(sessionStore.get(phoneKey)?.sessionId).toBe(originalSessionId);
+        expect(sessionStore.get(phoneKey)?.channelUserId).toBe(PAIRED_JID);
+
+        await handleMessage(
+          groupInbound({
+            senderJid: PAIRED_JID,
+            senderJids: [PAIRED_JID, senderLid],
+            senderPn: PAIRED_JID,
+            text: "/pause",
+          })
+        );
+        expect(sessionStore.get(phoneKey)?.paused).toBe(true);
+        const streamsAfterPause = clientMock.calls.sendStream;
+
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: senderLid,
+            senderJids: [senderLid],
+            text: "@Atlas after pause",
+          })
+        );
+        expect(clientMock.calls.sendStream).toBe(streamsAfterPause);
+        expect(clientMock.calls.createSession).toBe(1);
+      }
+    );
+  });
+
   test("ignores unaddressed group messages", async () => {
     await withGroupHarness({}, async ({ clientMock, handleMessage, sent }) => {
       await handleMessage(groupInbound({ text: "hello everyone" }));
@@ -3260,10 +3318,10 @@ describe("createChatHandler group chats", () => {
             "[WhatsApp group — your reply is visible to everyone in this group.]\n@Alice please compare these",
         });
         expect(clientMock.calls.externalPrincipalIds).toEqual([
-          "104784384290844@lid",
+          "628122222222@s.whatsapp.net",
         ]);
         expect(clientMock.calls.externalPrincipalAliases).toEqual([
-          ["628122222222@s.whatsapp.net"],
+          ["104784384290844@lid"],
         ]);
         expect(sent.at(-1)?.jid).toBe(GROUP_JID);
       }

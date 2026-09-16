@@ -298,6 +298,91 @@ export function lookupWhatsAppLidPhone(
   return map[key] ?? null;
 }
 
+export function listWhatsAppLidsForPhone(
+  map: Record<string, string>,
+  phone: string
+): string[] {
+  const phoneJid = toWhatsAppPhoneJid(phone);
+  if (!phoneJid) {
+    return [];
+  }
+
+  const lids: string[] = [];
+  for (const [lidKey, mappedPhone] of Object.entries(map)) {
+    if (mappedPhone === phoneJid) {
+      lids.push(lidKey);
+    }
+  }
+  return lids;
+}
+
+export function expandWhatsAppSenderIdentities(
+  map: Record<string, string>,
+  identities: Iterable<string | null | undefined>
+): string[] {
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+
+  for (const raw of identities) {
+    const id = raw?.trim() ? normalizeWhatsAppUserJid(raw) : "";
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      normalized.push(id);
+    }
+  }
+
+  const phones = new Set<string>();
+  for (const id of normalized) {
+    const phone = toWhatsAppPhoneJid(id) ?? lookupWhatsAppLidPhone(map, id);
+    if (phone) {
+      phones.add(phone);
+    }
+  }
+  if (phones.size !== 1) {
+    return normalized;
+  }
+
+  const phoneJid = [...phones][0];
+  if (!phoneJid) {
+    return normalized;
+  }
+  if (!seen.has(phoneJid)) {
+    seen.add(phoneJid);
+    normalized.push(phoneJid);
+  }
+  for (const lid of listWhatsAppLidsForPhone(map, phoneJid)) {
+    if (!seen.has(lid)) {
+      seen.add(lid);
+      normalized.push(lid);
+    }
+  }
+  return normalized;
+}
+
+export function preferWhatsAppPhoneJid(
+  identities: readonly string[],
+  fallback: string
+): string {
+  const phones = new Set<string>();
+  for (const identity of identities) {
+    const phone = toWhatsAppPhoneJid(identity);
+    if (phone) {
+      phones.add(phone);
+    }
+  }
+  if (phones.size === 1) {
+    const phoneJid = [...phones][0];
+    if (phoneJid) {
+      return phoneJid;
+    }
+  }
+
+  const normalizedFallback = fallback.trim()
+    ? normalizeWhatsAppUserJid(fallback)
+    : "";
+  return normalizedFallback || fallback;
+}
+
 export async function loadWhatsAppLidMap(
   orgId?: string | null
 ): Promise<Record<string, string>> {
