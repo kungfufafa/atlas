@@ -34,15 +34,9 @@ Impact columns: **H** = tool-hallucination, **R** = multi-step reasoning, **C** 
 
 ### P0. OpenCode Go live path is unusable (missing `x-opencode-session`)
 
-**Iteration 1 implements this.**
+**Iteration 1 shipped this.** `createOpenCodeGoProvider` now wraps outbound fetch with `x-opencode-session` (`apps/server/src/providers/opencode-go/session.ts`). Atlas `GenerateChatInput.conversationId` (from `toolContext.sessionId` in `generateReply`) is preferred; otherwise a stable `atlas-opencode-go-{providerInstanceId}` id is used.
 
-The gateway is OpenAI-compatible but **requires** `x-opencode-session` on chat/completions (HTTP 400 `MissingSessionID` otherwise). `createOpenCodeGoProvider` (`apps/server/src/providers/opencode-go/index.ts`) routes through:
-
-- `createOpenAICompatibleProvider` (`apps/server/src/providers/openai-compatible/index.ts`) — `User-Agent` only
-- `createAnthropicProvider` (`apps/server/src/providers/anthropic/index.ts`) — no session header
-- `generateOpenAIResponsesChat` (`apps/server/src/providers/openai/responses.ts`) — `Authorization` + `User-Agent` only
-
-`GenerateChatInput.conversationId` is already threaded from `generateReply` (`packages/agent/src/chat.ts`) via `toolContext.sessionId`, but OpenCode Go never maps it onto the HTTP header.
+Before this change the gateway returned HTTP 400 `MissingSessionID` on chat/completions, so the real agent path could not be live-evaluated. Remaining quality gaps below assume transport works.
 
 | H | R | C | L | Why first |
 |---|---|---|---|---|
@@ -145,7 +139,7 @@ Atlas: bundled skills, profile SKILL.md, Composio, `skill_manage`, curator. Open
 
 ## Iteration 1 choice
 
-**Ship:** send `x-opencode-session` on every OpenCode Go HTTP call (chat, messages, responses; prefer Atlas `conversationId` when present).
+**Shipped:** send `x-opencode-session` on every OpenCode Go HTTP call (chat, messages, responses, models; prefer Atlas `conversationId` when present).
 
 This is not a prompt tweak. It is the blocker for live evaluation of every other gap on the agreed channel (OpenCode Go). After it lands, iteration 2 should attack **assigned-tool allowlist + unknown-tool learning** (highest remaining H), then **memory retrieval/summarization** (highest remaining C/L).
 

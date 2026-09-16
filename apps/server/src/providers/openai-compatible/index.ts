@@ -41,6 +41,8 @@ export interface OpenAICompatibleProviderOptions {
   baseUrl: string;
   defaultReasoningEffort?: string;
   displayName: string;
+  /** Override outbound fetch (OpenCode Go wraps this to send x-opencode-session). */
+  fetch?: typeof fetch;
   model: string;
   providerInstanceId?: string;
   providerName?: ProviderClient["name"];
@@ -67,13 +69,14 @@ export function createOpenAICompatibleProvider(
   const useResponsesApi = options.wireApi === "responses";
   const providerName = options.providerName ?? "openai_compatible";
 
+  const fetchImpl = options.fetch ?? fetchWithoutIdleTimeout;
   const client = new OpenAI({
     apiKey,
     baseURL: baseUrl,
     defaultHeaders: {
       "User-Agent": DEFAULT_USER_AGENT,
     },
-    fetch: fetchWithoutIdleTimeout,
+    fetch: fetchImpl,
     maxRetries: 0,
     timeout: 300_000,
   });
@@ -97,6 +100,7 @@ export function createOpenAICompatibleProvider(
           apiKey,
           baseUrl,
           defaultReasoningEffort: options.defaultReasoningEffort,
+          fetch: fetchImpl,
           input,
           label,
           model,
@@ -129,6 +133,7 @@ export function createOpenAICompatibleProvider(
           apiKey,
           baseUrl,
           defaultReasoningEffort: options.defaultReasoningEffort,
+          fetch: fetchImpl,
           input: {
             messages: [{ content: input.prompt, role: "user" }],
             providerOptions: input.providerOptions as
@@ -178,6 +183,7 @@ export function createOpenAICompatibleProvider(
           apiKey,
           baseUrl,
           defaultReasoningEffort: options.defaultReasoningEffort,
+          fetch: fetchImpl,
           handlers,
           input,
           label,
@@ -194,6 +200,7 @@ export function createOpenAICompatibleProvider(
       return streamChatCompletion({
         apiKey,
         baseUrl,
+        fetch: fetchImpl,
         handlers,
         label,
         messages: input.messages,
@@ -344,32 +351,31 @@ async function streamChatCompletion(options: {
   thinking?: ProviderChatOptions["thinking"];
   handlers: StreamChatHandlers;
   signal?: AbortSignal;
+  fetch?: typeof fetch;
 }): Promise<ChatCompletionResult> {
-  const response = await fetchWithoutIdleTimeout(
-    `${options.baseUrl}/chat/completions`,
-    {
-      body: JSON.stringify({
-        messages: await buildMessages(options.system, options.messages),
-        model: options.model,
-        stream: true,
-        stream_options: { include_usage: true },
-        ...buildThinkingBody(options.thinking),
-        ...(options.tools?.length
-          ? {
-              tool_choice: "auto",
-              tools: toOpenAITools(options.tools),
-            }
-          : {}),
-      }),
-      headers: {
-        Authorization: `Bearer ${options.apiKey}`,
-        "Content-Type": "application/json",
-        "User-Agent": DEFAULT_USER_AGENT,
-      },
-      method: "POST",
-      signal: options.signal,
-    }
-  );
+  const fetchImpl = options.fetch ?? fetchWithoutIdleTimeout;
+  const response = await fetchImpl(`${options.baseUrl}/chat/completions`, {
+    body: JSON.stringify({
+      messages: await buildMessages(options.system, options.messages),
+      model: options.model,
+      stream: true,
+      stream_options: { include_usage: true },
+      ...buildThinkingBody(options.thinking),
+      ...(options.tools?.length
+        ? {
+            tool_choice: "auto",
+            tools: toOpenAITools(options.tools),
+          }
+        : {}),
+    }),
+    headers: {
+      Authorization: `Bearer ${options.apiKey}`,
+      "Content-Type": "application/json",
+      "User-Agent": DEFAULT_USER_AGENT,
+    },
+    method: "POST",
+    signal: options.signal,
+  });
 
   const bodyText = response.ok ? null : await response.text();
 

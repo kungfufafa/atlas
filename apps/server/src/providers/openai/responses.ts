@@ -50,6 +50,7 @@ export async function generateOpenAIResponsesChat(options: {
   providerName?: ProviderName;
   providerInstanceId?: string;
   providerReplayRevision?: string;
+  fetch?: typeof fetch;
 }): Promise<ChatCompletionResult> {
   const label = options.label ?? "OpenAI";
   const baseUrl = (options.baseUrl ?? "https://api.openai.com/v1").replace(
@@ -69,7 +70,8 @@ export async function generateOpenAIResponsesChat(options: {
     options.providerInstanceId,
     options.providerReplayRevision
   );
-  const response = await fetchWithoutIdleTimeout(`${baseUrl}/responses`, {
+  const fetchImpl = options.fetch ?? fetchWithoutIdleTimeout;
+  const response = await fetchImpl(`${baseUrl}/responses`, {
     body: JSON.stringify(body),
     headers: {
       Authorization: `Bearer ${options.apiKey}`,
