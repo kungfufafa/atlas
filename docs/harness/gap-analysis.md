@@ -46,17 +46,13 @@ Without this, Atlas cannot measure itself against Hermes/OpenClaw/Nakama on the 
 
 ### P0. Assigned-tool allowlist is not in the chat prompt
 
-`buildChatSystemPrompt` names **some** tools when they are present (browser, spreadsheet, `skill_manage`, …) but never emits an explicit allowlist of this session’s tool names. Native function-calling schemas are the only complete catalog.
+**Iteration 2 shipped this.** `buildChatSystemPrompt` emits `# Assigned tools` when `enableToolLoop` is true: exact names plus a one-line purpose from `tool.description`, with an instruction to call only those names or answer directly. Native schemas remain on the provider `tools` field. `DEFAULT_AGENT_WORK_RULES` “Do not invent tools” is still AgentService-only and is not duplicated here.
 
-`DEFAULT_AGENT_WORK_RULES` says “Do not invent tools”, but that string is applied in `AgentService.resolveProfileSystemPrompt` → `appendRuntimeProfileRules`, not in the core prompt builder. A harness that calls `createAgentChatSession` without those rules (CLI, eval, tests) does not get the instruction.
-
-Unknown-tool recovery exists (`executeToolCall` in `tool-loop.ts`) but the model still spends a turn, and there is no prompt-level “only these names exist” constraint.
+Unknown-tool recovery (`executeToolCall` → `{ error: "Unknown tool: …" }`) is unchanged. Live eval on `kimi-k2.7-code` was already 12/12 on the expanded suite before the prompt change; the allowlist is the product-path fix, not a measured live delta on this model.
 
 | H | R | C | L |
 |---|---|---|---|
 | 5 | 3 | 2 | 2 |
-
-**Next iteration candidate:** inject a short assigned-tool roster into `buildChatSystemPrompt` when `enableToolLoop` is true; keep schemas on the provider `tools` field.
 
 ### P1. Memory is file-injection + exact-match DB, not Hermes FTS5 + summarization
 
@@ -143,10 +139,16 @@ Atlas: bundled skills, profile SKILL.md, Composio, `skill_manage`, curator. Open
 
 This is not a prompt tweak. It is the blocker for live evaluation of every other gap on the agreed channel (OpenCode Go). After it lands, iteration 2 should attack **assigned-tool allowlist + unknown-tool learning** (highest remaining H), then **memory retrieval/summarization** (highest remaining C/L).
 
+## Iteration 2 choice
+
+**Shipped:** assigned-tool allowlist in `buildChatSystemPrompt` when `enableToolLoop` is true (`packages/agent/src/chat-prompt.ts`). The real tool-loop path (`createAgentChatSession` → `generateReply` → `executeToolCall`) and AgentService both assemble that prompt, so CLI/eval no longer depend on `appendRuntimeProfileRules` for the roster.
+
+Eval added four harder hallucination scenarios (absent web/email tools, live-vs-archive decoy, lookup+KB combination, no-fit general question). Live OpenCode Go (`kimi-k2.7-code`) was **12/12 before and after**; no scenario improved or regressed. Next: **unknown-tool learning** (feed `Unknown tool` / `no_progress` into post-turn review) or **memory retrieval/summarization** (highest remaining C/L).
+
 ## Eval coverage this iteration
 
 `scripts/harness-eval/run.ts` drives `createAgentHarness` → `createChatSession` → `send()` (real `buildChatSystemPrompt` + `generateReply` + `executeToolCall` loop) with `createOpenCodeGoProvider`.
 
-Scenarios: session transport, tool selection, tool avoidance (arithmetic + hallucinated name), multi-step tools, MEMORY.md recall, WhatsApp channel prompt + reply shape, two-turn context.
+Scenarios: session transport, tool selection, tool avoidance (arithmetic, hallucinated name, absent web/email, no-fit general question), decoy live-vs-archive lookup, multi-step (lookup+note and lookup+KB), MEMORY.md recall, WhatsApp channel prompt + reply shape, two-turn context.
 
 Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no post-turn review, no DB memory_write). Soul is composed in-process. See the eval summary JSON `path` field.
