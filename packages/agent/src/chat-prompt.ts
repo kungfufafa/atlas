@@ -106,6 +106,12 @@ export function buildChatSystemPrompt(
     channel?: AgentRequest["channel"];
     chatKind?: "private" | "group";
     hasDocumentAttachments?: boolean;
+    /**
+     * When the tool loop is on, include the `# Assigned tools` roster.
+     * Defaults to true. Eval ablation can set false without disabling native
+     * schemas or the rest of the tool-loop guidance.
+     */
+    includeAssignedToolsAllowlist?: boolean;
   } = {}
 ): string {
   const soulActive = Boolean(options.soul);
@@ -175,7 +181,10 @@ export function buildChatSystemPrompt(
     );
   }
 
-  if (options.enableToolLoop) {
+  if (
+    options.enableToolLoop &&
+    options.includeAssignedToolsAllowlist !== false
+  ) {
     appendAssignedToolsAllowlist(sections, tools);
   }
 

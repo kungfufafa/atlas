@@ -1,6 +1,12 @@
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { createAgentHarness } from "@atlas/agent";
-import type { ChatMessage, ProviderClient } from "@atlas/core";
-import { composeSoulSystemPrompt } from "@atlas/core";
+import {
+  type ChatMessage,
+  composeSoulSystemPrompt,
+  type GenerateChatInput,
+  type ProviderClient,
+} from "@atlas/core";
 import { createOpenCodeGoProvider } from "../../apps/server/src/providers/opencode-go";
 import { buildChatSystemPrompt } from "../../packages/agent/src/chat-prompt";
 import { appendRuntimeProfileRules } from "../../packages/db/src/constants";
@@ -9,10 +15,22 @@ import {
   loadOpenCodeGoEvalEnv,
   type OpenCodeGoEvalEnv,
 } from "./env";
+import { HARNESS_EVAL_USAGE, parseHarnessEvalArgs } from "./flags";
+import {
+  type AblationCellSummary,
+  type AblationMatrixSummary,
+  buildMatrixConfigs,
+  computeAllowlistDeltas,
+  DEFAULT_MATRIX_OUT_DIR,
+  matrixCellFilename,
+  renderAblationMarkdown,
+  summarizeReport,
+} from "./matrix";
 import {
   EVAL_SCENARIOS,
   type EvalScenario,
   type ScenarioScore,
+  scenarioToolOptions,
   scoreScenario,
 } from "./scenarios";
 import {
@@ -30,34 +48,61 @@ export interface ScenarioResult {
   dimension: string;
   durationMs: number;
   error?: string;
+  gradedScore: number;
   id: string;
   passed: boolean;
   replyPreview: string;
   score: number;
   toolCalls: string[];
+  toolPrecision: number;
+  toolRecall: number;
+}
+
+export interface HarnessEvalAblation {
+  allowlist: boolean;
+  nativeSchemas: boolean;
+  workRules: boolean;
 }
 
 export interface HarnessEvalReport {
+  ablation: HarnessEvalAblation;
   generatedAt: string;
   model: string;
   path: string;
   scenarios: ScenarioResult[];
   summary: {
     failed: number;
+    meanGradedScore: number;
     meanScore: number;
+    meanToolPrecision: number;
+    meanToolRecall: number;
     passed: number;
     transportOk: boolean;
   };
 }
 
 export interface RunHarnessEvalOptions {
+  allowlist?: boolean;
   env?: OpenCodeGoEvalEnv;
   model?: string;
+  nativeSchemas?: boolean;
   promptOnly?: boolean;
   scenarioIds?: string[];
+  workRules?: boolean;
 }
 
-export function evalBasePrompt(scenario: EvalScenario): string {
+export interface EvalPromptOptions {
+  allowlist?: boolean;
+  workRules?: boolean;
+}
+
+const ABLATION_QUESTION =
+  "Does the iteration-2 assigned-tool allowlist reduce tool hallucination when work-rules are OFF and/or on a weaker model?";
+
+export function evalBasePrompt(
+  scenario: EvalScenario,
+  options: EvalPromptOptions = {}
+): string {
   const soul = composeSoulSystemPrompt(
     {
       directory: "eval",
@@ -72,20 +117,50 @@ export function evalBasePrompt(scenario: EvalScenario): string {
     },
     { includeMemory: true }
   );
-  return appendRuntimeProfileRules(false, soul);
+  const workRules = options.workRules !== false;
+  return workRules ? appendRuntimeProfileRules(false, soul) : soul;
 }
 
-export function assembleEvalSystemPrompt(scenario: EvalScenario): string {
-  const tools = createEvalTools(createEvalToolState(), {
-    includeDecoy: scenario.includeDecoyTool,
-  });
+export function assembleEvalSystemPrompt(
+  scenario: EvalScenario,
+  options: EvalPromptOptions = {}
+): string {
+  const tools = createEvalTools(
+    createEvalToolState(),
+    scenarioToolOptions(scenario)
+  );
   return buildChatSystemPrompt(tools, {
-    basePrompt: evalBasePrompt(scenario),
+    basePrompt: evalBasePrompt(scenario, options),
     channel: scenario.channel,
     enableToolLoop: true,
+    includeAssignedToolsAllowlist: options.allowlist !== false,
     soul: Boolean(scenario.soulIdentity || scenario.soulMemory),
     userContext: scenario.userContext,
   });
+}
+
+export function omitNativeToolSchemas(
+  provider: ProviderClient
+): ProviderClient {
+  const stripTools = (input: GenerateChatInput): GenerateChatInput => ({
+    ...input,
+    tools: undefined,
+  });
+  return {
+    generateChat(input) {
+      return provider.generateChat(stripTools(input));
+    },
+    generateText(input) {
+      return provider.generateText(input);
+    },
+    name: provider.name,
+    streamChat(input, handlers) {
+      return provider.streamChat(stripTools(input), handlers);
+    },
+    ...(provider.managesContext === undefined
+      ? {}
+      : { managesContext: provider.managesContext }),
+  };
 }
 
 export async function runHarnessEval(
@@ -93,6 +168,14 @@ export async function runHarnessEval(
 ): Promise<HarnessEvalReport> {
   const env = options.env ?? loadOpenCodeGoEvalEnv();
   const model = options.model ?? env.model ?? DEFAULT_HARNESS_EVAL_MODEL;
+  const workRules = options.workRules !== false;
+  const allowlist = options.allowlist !== false;
+  const nativeSchemas = options.nativeSchemas !== false;
+  const ablation: HarnessEvalAblation = {
+    allowlist,
+    nativeSchemas,
+    workRules,
+  };
   const scenarios = EVAL_SCENARIOS.filter((scenario) =>
     options.scenarioIds?.length
       ? options.scenarioIds.includes(scenario.id)
@@ -101,19 +184,22 @@ export async function runHarnessEval(
 
   let provider: ProviderClient | undefined;
   if (!options.promptOnly) {
-    provider = createOpenCodeGoProvider({
+    const live = createOpenCodeGoProvider({
       apiKey: env.apiKey,
       model: `opencode-go/${model}`,
       providerInstanceId: "harness-eval",
     });
+    provider = nativeSchemas ? live : omitNativeToolSchemas(live);
   }
 
   const results: ScenarioResult[] = [];
   for (const scenario of scenarios) {
     results.push(
       await runScenario(scenario, {
+        allowlist,
         promptOnly: options.promptOnly === true,
         provider,
+        workRules,
       })
     );
   }
@@ -122,9 +208,19 @@ export async function runHarnessEval(
   const meanScore =
     results.reduce((sum, result) => sum + result.score, 0) /
     Math.max(results.length, 1);
+  const meanGradedScore =
+    results.reduce((sum, result) => sum + result.gradedScore, 0) /
+    Math.max(results.length, 1);
+  const meanToolPrecision =
+    results.reduce((sum, result) => sum + result.toolPrecision, 0) /
+    Math.max(results.length, 1);
+  const meanToolRecall =
+    results.reduce((sum, result) => sum + result.toolRecall, 0) /
+    Math.max(results.length, 1);
   const transport = results.find((result) => result.id === "session_transport");
 
   return {
+    ablation,
     generatedAt: new Date().toISOString(),
     model,
     path: options.promptOnly
@@ -133,7 +229,10 @@ export async function runHarnessEval(
     scenarios: results,
     summary: {
       failed: results.length - passed,
+      meanGradedScore: Number(meanGradedScore.toFixed(3)),
       meanScore: Number(meanScore.toFixed(3)),
+      meanToolPrecision: Number(meanToolPrecision.toFixed(3)),
+      meanToolRecall: Number(meanToolRecall.toFixed(3)),
       passed,
       transportOk: transport ? transport.passed : false,
     },
@@ -142,14 +241,21 @@ export async function runHarnessEval(
 
 async function runScenario(
   scenario: EvalScenario,
-  options: { promptOnly: boolean; provider?: ProviderClient }
+  options: {
+    allowlist: boolean;
+    promptOnly: boolean;
+    provider?: ProviderClient;
+    workRules: boolean;
+  }
 ): Promise<ScenarioResult> {
   const started = Date.now();
-  const systemPrompt = assembleEvalSystemPrompt(scenario);
+  const promptOptions: EvalPromptOptions = {
+    allowlist: options.allowlist,
+    workRules: options.workRules,
+  };
+  const systemPrompt = assembleEvalSystemPrompt(scenario, promptOptions);
   const state = createEvalToolState();
-  const tools = createEvalTools(state, {
-    includeDecoy: scenario.includeDecoyTool,
-  });
+  const tools = createEvalTools(state, scenarioToolOptions(scenario));
 
   if (options.promptOnly) {
     const promptScore = scorePromptOnly(scenario, systemPrompt);
@@ -157,11 +263,14 @@ async function runScenario(
       checks: promptScore.checks,
       dimension: scenario.dimension,
       durationMs: Date.now() - started,
+      gradedScore: promptScore.gradedScore,
       id: scenario.id,
       passed: promptScore.passed,
       replyPreview: "",
       score: promptScore.score,
       toolCalls: [],
+      toolPrecision: promptScore.toolPrecision,
+      toolRecall: promptScore.toolRecall,
     };
   }
 
@@ -173,8 +282,9 @@ async function runScenario(
   const session = harness.createChatSession({
     channel: scenario.channel ?? "cli",
     enableToolLoop: true,
+    includeAssignedToolsAllowlist: options.allowlist,
     soul: Boolean(scenario.soulIdentity || scenario.soulMemory),
-    systemPrompt: evalBasePrompt(scenario),
+    systemPrompt: evalBasePrompt(scenario, promptOptions),
     toolContext: { sessionId: `atlas-eval-${scenario.id}` },
     tools,
     userContext: scenario.userContext,
@@ -206,11 +316,14 @@ async function runScenario(
     dimension: scenario.dimension,
     durationMs: Date.now() - started,
     ...(scored.error ? { error: scored.error } : error ? { error } : {}),
+    gradedScore: scored.gradedScore,
     id: scenario.id,
     passed: scored.passed,
     replyPreview: reply.slice(0, 240),
     score: Number(scored.score.toFixed(3)),
     toolCalls: state.calls.map((call) => call.name),
+    toolPrecision: scored.toolPrecision,
+    toolRecall: scored.toolRecall,
   };
 }
 
@@ -224,10 +337,14 @@ function scorePromptOnly(
         "WhatsApp only supports"
       ),
     };
+    const passed = checks.prompt_has_whatsapp_rules;
     return {
       checks,
-      passed: checks.prompt_has_whatsapp_rules,
-      score: checks.prompt_has_whatsapp_rules ? 1 : 0,
+      gradedScore: passed ? 1 : 0,
+      passed,
+      score: passed ? 1 : 0,
+      toolPrecision: 1,
+      toolRecall: 1,
     };
   }
   if (scenario.id === "memory_recall") {
@@ -236,33 +353,115 @@ function scorePromptOnly(
       prompt_has_nickname: systemPrompt.includes(USER_NICKNAME),
     };
     const passed = Object.values(checks).every(Boolean);
-    return { checks, passed, score: passed ? 1 : 0 };
+    return {
+      checks,
+      gradedScore: passed ? 1 : 0,
+      passed,
+      score: passed ? 1 : 0,
+      toolPrecision: 1,
+      toolRecall: 1,
+    };
   }
   return {
     checks: { skipped_live: true },
+    gradedScore: 0,
     passed: true,
     score: 0,
+    toolPrecision: 1,
+    toolRecall: 1,
   };
 }
 
-export async function main(argv = process.argv.slice(2)): Promise<void> {
-  const promptOnly = argv.includes("--prompt-only");
-  const outIndex = argv.indexOf("--out");
-  const modelIndex = argv.indexOf("--model");
-  const scenarioIds = argv.flatMap((arg, index) =>
-    arg === "--scenario" && argv[index + 1] ? [argv[index + 1]!] : []
+export async function runAblationMatrix(input: {
+  env?: OpenCodeGoEvalEnv;
+  outDir?: string;
+  scenarioIds?: string[];
+  strongModel: string;
+  weakModel: string;
+}): Promise<AblationMatrixSummary> {
+  const outDir = input.outDir ?? DEFAULT_MATRIX_OUT_DIR;
+  await mkdir(outDir, { recursive: true });
+  const configs = buildMatrixConfigs({
+    strongModel: input.strongModel,
+    weakModel: input.weakModel,
+  });
+  const cells: AblationCellSummary[] = [];
+
+  for (const config of configs) {
+    process.stderr.write(
+      `matrix cell: ${config.modelClass} allowlist=${config.allowlist ? "on" : "off"} workRules=${config.workRules ? "on" : "off"} model=${config.model}\n`
+    );
+    const report = await runHarnessEval({
+      allowlist: config.allowlist,
+      env: input.env,
+      model: config.model,
+      nativeSchemas: config.nativeSchemas,
+      scenarioIds: input.scenarioIds,
+      workRules: config.workRules,
+    });
+    const reportPath = join(outDir, matrixCellFilename(config));
+    await Bun.write(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+    cells.push(summarizeReport(report, config, reportPath));
+  }
+
+  const summary: AblationMatrixSummary = {
+    cells,
+    deltas: computeAllowlistDeltas(cells),
+    generatedAt: new Date().toISOString(),
+    nativeSchemas: true,
+    path: HARNESS_EVAL_PATH,
+    question: ABLATION_QUESTION,
+    strongModel: input.strongModel,
+    weakModel: input.weakModel,
+  };
+
+  await Bun.write(
+    join(outDir, "ablation-matrix.json"),
+    `${JSON.stringify(summary, null, 2)}\n`
   );
+  await Bun.write(
+    join(outDir, "ablation-summary.md"),
+    renderAblationMarkdown(summary)
+  );
+  return summary;
+}
+
+export async function main(argv = process.argv.slice(2)): Promise<void> {
+  const flags = parseHarnessEvalArgs(argv);
+  if (flags.help) {
+    process.stdout.write(`${HARNESS_EVAL_USAGE}\n`);
+    return;
+  }
+
+  if (flags.matrix) {
+    const summary = await runAblationMatrix({
+      outDir: flags.outDir,
+      scenarioIds: flags.scenarioIds,
+      strongModel: flags.strongModel,
+      weakModel: flags.weakModel,
+    });
+    const json = `${JSON.stringify(summary, null, 2)}\n`;
+    process.stdout.write(json);
+    if (flags.out) {
+      await Bun.write(flags.out, json);
+    }
+    return;
+  }
+
   const report = await runHarnessEval({
-    model: modelIndex >= 0 ? argv[modelIndex + 1] : undefined,
-    promptOnly,
-    scenarioIds: scenarioIds.length > 0 ? scenarioIds : undefined,
+    allowlist: flags.allowlist,
+    model: flags.model,
+    nativeSchemas: flags.nativeSchemas,
+    promptOnly: flags.promptOnly,
+    scenarioIds: flags.scenarioIds,
+    workRules: flags.workRules,
   });
   const json = `${JSON.stringify(report, null, 2)}\n`;
   process.stdout.write(json);
-  if (outIndex >= 0 && argv[outIndex + 1]) {
-    await Bun.write(argv[outIndex + 1]!, json);
+  if (flags.out) {
+    await Bun.write(flags.out, json);
   }
-  if (report.summary.failed > 0 && !promptOnly) {
+  if (report.summary.failed > 0 && !flags.promptOnly) {
     process.exitCode = 1;
   }
 }

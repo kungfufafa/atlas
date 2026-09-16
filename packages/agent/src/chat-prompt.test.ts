@@ -470,6 +470,26 @@ test("buildChatSystemPrompt lists assigned tools when the tool loop is on", () =
   );
 });
 
+test("buildChatSystemPrompt can omit the assigned-tool roster while the tool loop stays on", () => {
+  const prompt = buildChatSystemPrompt(
+    [
+      {
+        description: "Look up a live ticket by id.",
+        name: "lookup_ticket",
+        parameters: { properties: {}, type: "object" },
+      },
+    ],
+    { enableToolLoop: true, includeAssignedToolsAllowlist: false }
+  );
+
+  expect(prompt).not.toContain(ASSIGNED_TOOLS_HEADING);
+  expect(prompt).not.toContain("- lookup_ticket:");
+  expect(prompt).not.toContain("Never invent");
+  expect(prompt).toContain(
+    "Atlas executes these tools independently of the selected model provider"
+  );
+});
+
 test("buildChatSystemPrompt omits the assigned-tool roster when the tool loop is off", () => {
   const prompt = buildChatSystemPrompt(
     [

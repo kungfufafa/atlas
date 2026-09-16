@@ -236,6 +236,8 @@ export interface AgentChatSessionOptions {
   channel?: AgentRequest["channel"];
   compaction?: CompactionConfig;
   enableToolLoop?: boolean;
+  /** Defaults to true when omitted. Set false to omit the assigned-tool roster. */
+  includeAssignedToolsAllowlist?: boolean;
   initialHistory?: ChatMessage[];
   preprocessHistoryForTurn?: (
     messages: readonly ChatMessage[]
@@ -279,6 +281,7 @@ export function createAgentChatSession(
     hasDocumentAttachments: messagesIncludeUserDocuments(
       options.initialHistory ?? []
     ),
+    includeAssignedToolsAllowlist: options.includeAssignedToolsAllowlist,
     soul: options.soul,
     userContext: options.userContext,
     userTimezone: options.userTimezone,

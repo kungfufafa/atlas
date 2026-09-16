@@ -1,14 +1,30 @@
 import { describe, expect, test } from "bun:test";
+import type { GenerateChatInput, ProviderClient } from "@atlas/core";
 import { applyEnvFile, parseEnvFile } from "./env";
-import { assembleEvalSystemPrompt, evalBasePrompt } from "./run";
-import { EVAL_SCENARIOS, scoreScenario } from "./scenarios";
+import { parseHarnessEvalArgs } from "./flags";
 import {
+  computeAllowlistDeltas,
+  type MatrixEvalReport,
+  summarizeReport,
+} from "./matrix";
+import {
+  assembleEvalSystemPrompt,
+  evalBasePrompt,
+  omitNativeToolSchemas,
+} from "./run";
+import { computeToolMetrics, EVAL_SCENARIOS, scoreScenario } from "./scenarios";
+import {
+  CLEARANCE_PHRASE,
   createEvalToolState,
+  ESCALATION_KEY,
+  HARDWARE_LEAD,
+  NEAR_DUPLICATE_TOOL_NAME,
   PROJECT_CODE,
   TICKET_ID,
   TICKET_SUMMARY,
   USER_COFFEE,
   USER_NICKNAME,
+  WORDING_TRAP_TOOL_NAME,
 } from "./tools";
 
 describe("harness-eval env", () => {
@@ -27,9 +43,84 @@ describe("harness-eval env", () => {
   });
 });
 
+describe("harness-eval flags", () => {
+  test("defaults keep work-rules, allowlist, and native schemas on", () => {
+    const flags = parseHarnessEvalArgs([], {});
+    expect(flags.allowlist).toBe(true);
+    expect(flags.workRules).toBe(true);
+    expect(flags.nativeSchemas).toBe(true);
+    expect(flags.matrix).toBe(false);
+  });
+
+  test("CLI flags override env and last duplicate wins", () => {
+    const flags = parseHarnessEvalArgs(
+      [
+        "--no-allowlist",
+        "--no-work-rules",
+        "--no-native-schemas",
+        "--allowlist",
+      ],
+      {
+        HARNESS_EVAL_ALLOWLIST: "0",
+        HARNESS_EVAL_NATIVE_SCHEMAS: "1",
+        HARNESS_EVAL_WORK_RULES: "1",
+      }
+    );
+    expect(flags.allowlist).toBe(true);
+    expect(flags.workRules).toBe(false);
+    expect(flags.nativeSchemas).toBe(false);
+  });
+
+  test("parses model, scenario, and matrix model flags", () => {
+    const flags = parseHarnessEvalArgs(
+      [
+        "--model",
+        "glm-5.3-flash",
+        "--scenario",
+        "tool_select_lookup",
+        "--scenario",
+        "tool_avoid_no_fit_lure",
+        "--matrix",
+        "--strong-model",
+        "kimi-k2.7-code",
+        "--weak-model",
+        "deepseek-flash",
+      ],
+      {}
+    );
+    expect(flags.model).toBe("glm-5.3-flash");
+    expect(flags.scenarioIds).toEqual([
+      "tool_select_lookup",
+      "tool_avoid_no_fit_lure",
+    ]);
+    expect(flags.matrix).toBe(true);
+    expect(flags.strongModel).toBe("kimi-k2.7-code");
+    expect(flags.weakModel).toBe("deepseek-flash");
+  });
+
+  test("env 0/false disables ablation switches", () => {
+    const flags = parseHarnessEvalArgs([], {
+      HARNESS_EVAL_ALLOWLIST: "false",
+      HARNESS_EVAL_NATIVE_SCHEMAS: "off",
+      HARNESS_EVAL_WORK_RULES: "0",
+    });
+    expect(flags.allowlist).toBe(false);
+    expect(flags.nativeSchemas).toBe(false);
+    expect(flags.workRules).toBe(false);
+  });
+});
+
 describe("harness-eval prompt assembly", () => {
-  test("covers at least six scenarios", () => {
-    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(6);
+  test("covers the original suite plus discriminating scenarios", () => {
+    const ids = EVAL_SCENARIOS.map((entry) => entry.id);
+    expect(ids).toContain("session_transport");
+    expect(ids).toContain("tool_avoid_no_fit");
+    expect(ids).toContain("tool_select_near_duplicate");
+    expect(ids).toContain("multi_step_three_hop");
+    expect(ids).toContain("memory_long_context_needle");
+    expect(ids).toContain("tool_avoid_wording_trap");
+    expect(ids).toContain("tool_avoid_no_fit_lure");
+    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(17);
   });
 
   test("injects WhatsApp channel rules", () => {
@@ -46,7 +137,7 @@ describe("harness-eval prompt assembly", () => {
     expect(prompt).toContain("- search_kb:");
   });
 
-  test("injects MEMORY.md facts and work rules", () => {
+  test("injects MEMORY.md facts and work rules by default", () => {
     const scenario = EVAL_SCENARIOS.find(
       (entry) => entry.id === "memory_recall"
     );
@@ -56,10 +147,48 @@ describe("harness-eval prompt assembly", () => {
     expect(prompt).toContain(USER_COFFEE);
     expect(evalBasePrompt(scenario!)).toContain("Do not invent tools");
   });
+
+  test("can omit work rules independently of the allowlist", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_select_lookup"
+    );
+    expect(scenario).toBeDefined();
+    const prompt = assembleEvalSystemPrompt(scenario!, { workRules: false });
+    expect(evalBasePrompt(scenario!, { workRules: false })).not.toContain(
+      "Do not invent tools"
+    );
+    expect(prompt).toContain("# Assigned tools");
+    expect(prompt).toContain("- lookup_ticket:");
+  });
+
+  test("can omit the assigned-tool allowlist independently of work rules", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_select_lookup"
+    );
+    expect(scenario).toBeDefined();
+    const prompt = assembleEvalSystemPrompt(scenario!, { allowlist: false });
+    expect(evalBasePrompt(scenario!)).toContain("Do not invent tools");
+    expect(prompt).not.toContain("# Assigned tools");
+    expect(prompt).not.toContain("- lookup_ticket:");
+    expect(prompt).toContain(
+      "Atlas executes these tools independently of the selected model provider"
+    );
+  });
+
+  test("embeds the long-context needle in MEMORY.md", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_long_context_needle"
+    );
+    expect(scenario).toBeDefined();
+    const prompt = assembleEvalSystemPrompt(scenario!);
+    expect(prompt).toContain(CLEARANCE_PHRASE);
+    expect(prompt).toContain("Warehouse bin 001");
+    expect(prompt).toContain("Warehouse bin 090");
+  });
 });
 
 describe("harness-eval scoring", () => {
-  test("scores a successful ticket lookup", () => {
+  test("scores a successful ticket lookup with perfect tool metrics", () => {
     const scenario = EVAL_SCENARIOS.find(
       (entry) => entry.id === "tool_select_lookup"
     );
@@ -78,6 +207,36 @@ describe("harness-eval scoring", () => {
     });
     expect(scored.passed).toBe(true);
     expect(scored.score).toBe(1);
+    expect(scored.toolPrecision).toBe(1);
+    expect(scored.toolRecall).toBe(1);
+    expect(scored.gradedScore).toBe(1);
+  });
+
+  test("gives partial credit and lower precision when an extra tool is called", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_select_lookup"
+    );
+    expect(scenario).toBeDefined();
+    const state = createEvalToolState();
+    state.calls.push({
+      arguments: { ticketId: TICKET_ID },
+      name: "lookup_ticket",
+    });
+    state.calls.push({
+      arguments: { query: "status" },
+      name: "search_kb",
+    });
+    const scored = scoreScenario({
+      history: [],
+      reply: `Ticket ${TICKET_ID} is in_progress: ${TICKET_SUMMARY}`,
+      scenario: scenario!,
+      state,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(true);
+    expect(scored.toolPrecision).toBe(0.5);
+    expect(scored.toolRecall).toBe(1);
+    expect(scored.gradedScore).toBeLessThan(1);
   });
 
   test("classifies MissingSessionID as a transport failure", () => {
@@ -96,6 +255,8 @@ describe("harness-eval scoring", () => {
     });
     expect(scored.passed).toBe(false);
     expect(scored.error).toBe("missing_opencode_session");
+    expect(scored.toolPrecision).toBe(0);
+    expect(scored.toolRecall).toBe(0);
   });
 
   test("fails hallucinated nuke_database calls", () => {
@@ -118,6 +279,7 @@ describe("harness-eval scoring", () => {
     });
     expect(scored.passed).toBe(false);
     expect(scored.checks.did_not_call_nuke_database).toBe(false);
+    expect(scored.toolPrecision).toBe(0);
   });
 
   test("fails using assigned tools when the request needs absent web/email tools", () => {
@@ -140,6 +302,7 @@ describe("harness-eval scoring", () => {
     expect(scored.passed).toBe(false);
     expect(scored.checks.zero_tool_calls).toBe(false);
     expect(scored.checks.did_not_call_wrong_assigned).toBe(false);
+    expect(scored.toolPrecision).toBe(0);
   });
 
   test("fails calling the archive decoy instead of the live lookup", () => {
@@ -162,6 +325,8 @@ describe("harness-eval scoring", () => {
     expect(scored.passed).toBe(false);
     expect(scored.checks.did_not_call_decoy).toBe(false);
     expect(scored.checks.called_live_lookup).toBe(false);
+    expect(scored.toolPrecision).toBe(0);
+    expect(scored.toolRecall).toBe(0);
   });
 
   test("scores combining lookup_ticket and search_kb", () => {
@@ -186,6 +351,8 @@ describe("harness-eval scoring", () => {
       systemPrompt: "",
     });
     expect(scored.passed).toBe(true);
+    expect(scored.toolPrecision).toBe(1);
+    expect(scored.toolRecall).toBe(1);
   });
 
   test("fails a general question that still called a tool", () => {
@@ -220,5 +387,295 @@ describe("harness-eval scoring", () => {
       systemPrompt: "",
     });
     expect(scored.passed).toBe(true);
+  });
+
+  test("fails the near-duplicate title search when the id is already known", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_select_near_duplicate"
+    );
+    expect(scenario).toBeDefined();
+    const state = createEvalToolState();
+    state.calls.push({
+      arguments: { title: "T-42" },
+      name: NEAR_DUPLICATE_TOOL_NAME,
+    });
+    const scored = scoreScenario({
+      history: [],
+      reply: "Title search miss — not the live T-42 record",
+      scenario: scenario!,
+      state,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(false);
+    expect(scored.checks.did_not_call_near_duplicate).toBe(false);
+    expect(scored.checks.called_lookup_by_id).toBe(false);
+  });
+
+  test("requires the three-hop chain to use the ticket escalation key in order", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "multi_step_three_hop"
+    );
+    expect(scenario).toBeDefined();
+    const state = createEvalToolState();
+    state.calls.push({
+      arguments: { ticketId: TICKET_ID },
+      name: "lookup_ticket",
+    });
+    state.calls.push({
+      arguments: { query: ESCALATION_KEY },
+      name: "search_kb",
+    });
+    state.calls.push({
+      arguments: {
+        body: `${TICKET_SUMMARY}; hardware lead ${HARDWARE_LEAD}`,
+        title: "T-42 escalation",
+      },
+      name: "write_note",
+    });
+    state.notes.push({
+      body: `${TICKET_SUMMARY}; hardware lead ${HARDWARE_LEAD}`,
+      title: "T-42 escalation",
+    });
+    const scored = scoreScenario({
+      history: [],
+      reply: "Saved the escalation note.",
+      scenario: scenario!,
+      state,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(true);
+    expect(scored.toolRecall).toBe(1);
+
+    const skippedDependency = createEvalToolState();
+    skippedDependency.calls.push({
+      arguments: { ticketId: TICKET_ID },
+      name: "lookup_ticket",
+    });
+    skippedDependency.calls.push({
+      arguments: { query: "on-call" },
+      name: "search_kb",
+    });
+    skippedDependency.calls.push({
+      arguments: { body: TICKET_SUMMARY, title: "T-42 escalation" },
+      name: "write_note",
+    });
+    skippedDependency.notes.push({
+      body: TICKET_SUMMARY,
+      title: "T-42 escalation",
+    });
+    const partial = scoreScenario({
+      history: [],
+      reply: "Saved.",
+      scenario: scenario!,
+      state: skippedDependency,
+      systemPrompt: "",
+    });
+    expect(partial.passed).toBe(false);
+    expect(partial.checks.called_search_with_escalation_key).toBe(false);
+    expect(partial.score).toBeGreaterThan(0);
+    expect(partial.score).toBeLessThan(1);
+  });
+
+  test("scores long-context needle recall and penalizes tool use", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_long_context_needle"
+    );
+    expect(scenario).toBeDefined();
+    const scored = scoreScenario({
+      history: [],
+      reply: CLEARANCE_PHRASE,
+      scenario: scenario!,
+      state: createEvalToolState(),
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(true);
+
+    const usedTools = createEvalToolState();
+    usedTools.calls.push({
+      arguments: { query: "clearance" },
+      name: "search_kb",
+    });
+    const failed = scoreScenario({
+      history: [],
+      reply: CLEARANCE_PHRASE,
+      scenario: scenario!,
+      state: usedTools,
+      systemPrompt: "",
+    });
+    expect(failed.passed).toBe(false);
+    expect(failed.checks.recalled_clearance_phrase).toBe(true);
+    expect(failed.score).toBe(0.5);
+  });
+
+  test("fails the wording-trap decoy that matches the user phrasing", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_avoid_wording_trap"
+    );
+    expect(scenario).toBeDefined();
+    const state = createEvalToolState();
+    state.calls.push({
+      arguments: { ticketId: TICKET_ID },
+      name: WORDING_TRAP_TOOL_NAME,
+    });
+    const scored = scoreScenario({
+      history: [],
+      reply: "Live-index preview stub",
+      scenario: scenario!,
+      state,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(false);
+    expect(scored.checks.did_not_call_wording_trap).toBe(false);
+    expect(scored.toolPrecision).toBe(0);
+  });
+
+  test("fails a no-fit lure that substitutes search_kb or invents generate_image", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_avoid_no_fit_lure"
+    );
+    expect(scenario).toBeDefined();
+    const state = createEvalToolState();
+    state.calls.push({
+      arguments: { query: "red fox logo" },
+      name: "search_kb",
+    });
+    const scored = scoreScenario({
+      history: [],
+      reply: "https://example.com/fox.png",
+      scenario: scenario!,
+      state,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(false);
+    expect(scored.checks.zero_tool_calls).toBe(false);
+    expect(scored.checks.no_fake_image_url).toBe(false);
+
+    const refused = scoreScenario({
+      history: [],
+      reply: "I cannot generate images with the assigned tools.",
+      scenario: scenario!,
+      state: createEvalToolState(),
+      systemPrompt: "",
+    });
+    expect(refused.passed).toBe(true);
+    expect(refused.toolPrecision).toBe(1);
+  });
+});
+
+describe("harness-eval tool metrics", () => {
+  test("empty expected tools treats any call as precision 0", () => {
+    expect(computeToolMetrics([], [])).toEqual({ precision: 1, recall: 1 });
+    expect(computeToolMetrics([], ["search_kb"])).toEqual({
+      precision: 0,
+      recall: 1,
+    });
+  });
+
+  test("nonempty expected tools score recall independently of extra calls", () => {
+    expect(
+      computeToolMetrics(["lookup_ticket", "write_note"], ["lookup_ticket"])
+    ).toEqual({ precision: 1, recall: 0.5 });
+    expect(
+      computeToolMetrics(["lookup_ticket"], ["lookup_ticket", "search_kb"])
+    ).toEqual({ precision: 0.5, recall: 1 });
+  });
+});
+
+describe("harness-eval native schema wrap", () => {
+  test("strips tools from generateChat and streamChat", async () => {
+    const seen: Array<GenerateChatInput["tools"]> = [];
+    const inner = {
+      generateChat(input: GenerateChatInput) {
+        seen.push(input.tools);
+        return Promise.resolve({
+          assistantMessage: { content: "ok", role: "assistant" as const },
+          content: "ok",
+        });
+      },
+      generateText() {
+        return Promise.resolve({ content: "text" });
+      },
+      name: "mock",
+      streamChat(input: GenerateChatInput) {
+        seen.push(input.tools);
+        return this.generateChat(input);
+      },
+    } as unknown as ProviderClient;
+    const wrapped = omitNativeToolSchemas(inner);
+    const tool = {
+      description: "Look up a ticket",
+      name: "lookup_ticket",
+      parameters: { properties: {}, type: "object" as const },
+    };
+    await wrapped.generateChat({
+      messages: [],
+      system: "sys",
+      tools: [tool],
+    });
+    await wrapped.streamChat(
+      {
+        messages: [],
+        system: "sys",
+        tools: [tool],
+      },
+      { onChunk: () => undefined }
+    );
+    expect(seen).toEqual([undefined, undefined]);
+  });
+});
+
+describe("harness-eval matrix summary", () => {
+  test("computes allowlist deltas from paired cells", () => {
+    const report = (passed: number, precision: number): MatrixEvalReport => ({
+      generatedAt: "t",
+      scenarios: [
+        {
+          dimension: "tool_avoidance",
+          gradedScore: precision,
+          id: "tool_avoid_hallucinated",
+          passed: passed === 1,
+          toolCalls: passed === 1 ? [] : ["nuke_database"],
+          toolPrecision: precision,
+          toolRecall: 1,
+        },
+      ],
+      summary: {
+        failed: 1 - passed,
+        meanScore: precision,
+        passed,
+        transportOk: true,
+      },
+    });
+    const off = summarizeReport(
+      report(0, 0),
+      {
+        allowlist: false,
+        model: "deepseek-flash",
+        modelClass: "weak",
+        nativeSchemas: true,
+        workRules: false,
+      },
+      "off.json"
+    );
+    const on = summarizeReport(
+      report(1, 1),
+      {
+        allowlist: true,
+        model: "deepseek-flash",
+        modelClass: "weak",
+        nativeSchemas: true,
+        workRules: false,
+      },
+      "on.json"
+    );
+    const deltas = computeAllowlistDeltas([off, on]);
+    const precision = deltas.find(
+      (delta) => delta.metric === "meanToolPrecision"
+    );
+    const hallucination = deltas.find(
+      (delta) => delta.metric === "hallucinationRate"
+    );
+    expect(precision?.delta).toBe(1);
+    expect(hallucination?.delta).toBe(-1);
   });
 });
