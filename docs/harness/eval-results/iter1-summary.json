@@ -1,0 +1,31 @@
+{
+  "iteration": 1,
+  "improvement": "x-opencode-session header on OpenCode Go provider requests",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "before": {
+    "generatedAt": "2026-09-16T23:19:27.373Z",
+    "meanScore": 0,
+    "passed": 0,
+    "failed": 8,
+    "transportOk": false,
+    "error": "missing_opencode_session"
+  },
+  "after": {
+    "generatedAt": "2026-09-16T23:22:16.084Z",
+    "meanScore": 1,
+    "passed": 8,
+    "failed": 0,
+    "transportOk": true
+  },
+  "scenarios": [
+    "session_transport",
+    "tool_select_lookup",
+    "tool_avoid_arithmetic",
+    "tool_avoid_hallucinated",
+    "multi_step_lookup_note",
+    "memory_recall",
+    "channel_whatsapp",
+    "context_continuity"
+  ]
+}
