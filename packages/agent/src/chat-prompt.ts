@@ -63,6 +63,24 @@ export const UNTRUSTED_DOCUMENT_GUIDANCE =
 export const EXTRACT_DOCUMENT_TEXT_GUIDANCE =
   "Use extract_document_text only with a documentRef from email, a stored attachment id (att_...), or a PDF/Word/Excel path in the profile workspace (for example artifacts/report.pdf). Do not call it for documents already shown as [File: ...] in this conversation, and do not guess a documentRef or retry after a missing-reference error.";
 
+export const ASSIGNED_TOOLS_HEADING = "# Assigned tools";
+
+const MAX_ASSIGNED_TOOL_PURPOSE_CHARS = 140;
+
+export function compactToolPurpose(description: string): string {
+  const firstLine = description.trim().split("\n", 1)[0]?.trim() ?? "";
+  const collapsed = firstLine.replace(/\s+/g, " ");
+  if (collapsed.length <= MAX_ASSIGNED_TOOL_PURPOSE_CHARS) {
+    return collapsed;
+  }
+  const truncated = collapsed.slice(0, MAX_ASSIGNED_TOOL_PURPOSE_CHARS);
+  const lastSpace = truncated.lastIndexOf(" ");
+  if (lastSpace < 40) {
+    return truncated.trimEnd();
+  }
+  return truncated.slice(0, lastSpace).trimEnd();
+}
+
 export function shouldIncludeUntrustedDocumentGuidance(options: {
   tools: ToolDefinition[];
   hasDocumentAttachments?: boolean;
@@ -157,10 +175,12 @@ export function buildChatSystemPrompt(
     );
   }
 
+  if (options.enableToolLoop) {
+    appendAssignedToolsAllowlist(sections, tools);
+  }
+
   if (options.enableToolLoop && tools.length > 0) {
     sections.push(
-      "",
-      "You have access to tools for this session. Use them when needed to finish the work, then reply in the user's requested format. Use natural language when no specific response format was requested.",
       "Atlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.",
       "If a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work."
     );
@@ -308,6 +328,30 @@ export function buildChatSystemPrompt(
   }
 
   return sections.join("\n");
+}
+
+function appendAssignedToolsAllowlist(
+  sections: string[],
+  tools: ToolDefinition[]
+): void {
+  sections.push("", ASSIGNED_TOOLS_HEADING);
+  if (tools.length === 0) {
+    sections.push(
+      "No tools are assigned for this session. Answer directly. Never invent or call tools."
+    );
+    return;
+  }
+
+  sections.push(
+    "You have access to tools for this session. Use them when needed to finish the work, then reply in the user's requested format. Use natural language when no specific response format was requested.",
+    "Only the tools listed here exist for this session. Call them by these exact names. If none of them can finish the request, answer directly with no tool call. Never invent, rename, or call a tool that is not listed."
+  );
+  for (const tool of tools) {
+    const purpose = compactToolPurpose(tool.description);
+    sections.push(
+      purpose.length > 0 ? `- ${tool.name}: ${purpose}` : `- ${tool.name}`
+    );
+  }
 }
 
 function appendMessagingChannelPrompt(

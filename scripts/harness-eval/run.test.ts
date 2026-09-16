@@ -40,6 +40,10 @@ describe("harness-eval prompt assembly", () => {
     const prompt = assembleEvalSystemPrompt(scenario!);
     expect(prompt).toContain("WhatsApp only supports");
     expect(prompt).toContain("You have access to tools for this session");
+    expect(prompt).toContain("# Assigned tools");
+    expect(prompt).toContain("- lookup_ticket:");
+    expect(prompt).toContain("- write_note:");
+    expect(prompt).toContain("- search_kb:");
   });
 
   test("injects MEMORY.md facts and work rules", () => {
