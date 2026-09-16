@@ -41,9 +41,9 @@ export function runWithOpenCodeGoSession<T>(
 
 export function wrapFetchWithOpenCodeGoSession(
   fallbackSessionId: string,
-  fetchImpl: typeof fetch = fetchWithoutIdleTimeout
-): typeof fetch {
-  const wrapped: typeof fetch = (input, init) => {
+  fetchImpl: typeof fetchWithoutIdleTimeout = fetchWithoutIdleTimeout
+): typeof fetchWithoutIdleTimeout {
+  return (input, init) => {
     const headers = new Headers(init?.headers);
     headers.set(
       OPENCODE_GO_SESSION_HEADER,
@@ -51,7 +51,6 @@ export function wrapFetchWithOpenCodeGoSession(
     );
     return fetchImpl(input, { ...init, headers });
   };
-  return wrapped;
 }
 
 export function bindOpenCodeGoSession(

@@ -50,7 +50,7 @@ export async function generateOpenAIResponsesChat(options: {
   providerName?: ProviderName;
   providerInstanceId?: string;
   providerReplayRevision?: string;
-  fetch?: typeof fetch;
+  fetch?: typeof fetchWithoutIdleTimeout;
 }): Promise<ChatCompletionResult> {
   const label = options.label ?? "OpenAI";
   const baseUrl = (options.baseUrl ?? "https://api.openai.com/v1").replace(

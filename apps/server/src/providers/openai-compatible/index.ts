@@ -42,7 +42,7 @@ export interface OpenAICompatibleProviderOptions {
   defaultReasoningEffort?: string;
   displayName: string;
   /** Override outbound fetch (OpenCode Go wraps this to send x-opencode-session). */
-  fetch?: typeof fetch;
+  fetch?: typeof fetchWithoutIdleTimeout;
   model: string;
   providerInstanceId?: string;
   providerName?: ProviderClient["name"];
@@ -351,7 +351,7 @@ async function streamChatCompletion(options: {
   thinking?: ProviderChatOptions["thinking"];
   handlers: StreamChatHandlers;
   signal?: AbortSignal;
-  fetch?: typeof fetch;
+  fetch?: typeof fetchWithoutIdleTimeout;
 }): Promise<ChatCompletionResult> {
   const fetchImpl = options.fetch ?? fetchWithoutIdleTimeout;
   const response = await fetchImpl(`${options.baseUrl}/chat/completions`, {
