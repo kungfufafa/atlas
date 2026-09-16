@@ -21,7 +21,10 @@ import {
 } from "@/hooks/use-workspace";
 import { assertDocumentSize } from "@/lib/compress-image";
 import { displayFileKind, fileBasename, fileFolder } from "@/lib/file-display";
-import { isKnowledgeBaseFilename } from "@/lib/kb-files";
+import {
+  isKnowledgeBaseFilename,
+  KNOWLEDGE_BASE_SUPPORTED_TYPE_LABEL,
+} from "@/lib/kb-files";
 import {
   formatKnowledgeBaseDuplicatePrompt,
   type KnowledgeBaseDuplicateContext,
@@ -154,7 +157,7 @@ export default function FilesScreen() {
         return;
       }
       if (!isKnowledgeBaseFilename(asset.name)) {
-        Alert.alert("Use txt, md, csv, pdf, or docx.");
+        Alert.alert(`Use ${KNOWLEDGE_BASE_SUPPORTED_TYPE_LABEL}.`);
         return;
       }
       try {

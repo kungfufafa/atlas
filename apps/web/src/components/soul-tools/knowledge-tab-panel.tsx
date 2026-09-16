@@ -124,7 +124,7 @@ export function KnowledgeTabPanel({
           <p className="text-muted-foreground text-xs tabular-nums">
             {formatDocumentCount(documents.length)}
             {readyCount === documents.length ? "" : ` · ${readyCount} ready`}
-            {" · "}txt, md, csv, pdf · 5 MB max
+            {" · "}pdf, docx, pptx, xlsx, csv, txt & more · 5 MB max
           </p>
 
           <div>

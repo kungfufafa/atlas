@@ -30,6 +30,7 @@
     "./attachments/content": "./src/attachments/content.ts",
     "./attachments/inbound-document": "./src/attachments/inbound-document.ts",
     "./inbound-document": "./src/inbound-document.ts",
+    "./knowledge-base/formats": "./src/knowledge-base/formats.ts",
     "./image-content": "./src/image-content.ts",
     "./identity/principal": "./src/identity/principal.ts",
     "./normalize-task-prompt": "./src/normalize-task-prompt.ts",
