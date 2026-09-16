@@ -76,7 +76,9 @@ export function evalBasePrompt(scenario: EvalScenario): string {
 }
 
 export function assembleEvalSystemPrompt(scenario: EvalScenario): string {
-  const tools = createEvalTools(createEvalToolState());
+  const tools = createEvalTools(createEvalToolState(), {
+    includeDecoy: scenario.includeDecoyTool,
+  });
   return buildChatSystemPrompt(tools, {
     basePrompt: evalBasePrompt(scenario),
     channel: scenario.channel,
@@ -145,7 +147,9 @@ async function runScenario(
   const started = Date.now();
   const systemPrompt = assembleEvalSystemPrompt(scenario);
   const state = createEvalToolState();
-  const tools = createEvalTools(state);
+  const tools = createEvalTools(state, {
+    includeDecoy: scenario.includeDecoyTool,
+  });
 
   if (options.promptOnly) {
     const promptScore = scorePromptOnly(scenario, systemPrompt);

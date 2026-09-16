@@ -12,6 +12,14 @@ export const ASSIGNED_TOOL_NAMES = [
   "search_kb",
 ] as const;
 
+export const DECOY_TOOL_NAME = "lookup_ticket_archive";
+export const DECOY_TICKET_SUMMARY = "Closed archive copy";
+export const ON_CALL_SNIPPET = "On-call rotation is posted in the ops channel.";
+
+export interface CreateEvalToolsOptions {
+  includeDecoy?: boolean;
+}
+
 export interface ToolCallLog {
   arguments: Record<string, unknown>;
   name: string;
@@ -26,11 +34,22 @@ export function createEvalToolState(): EvalToolState {
   return { calls: [], notes: [] };
 }
 
-export function createEvalTools(state: EvalToolState): ToolDefinition[] {
-  return [
+export function catalogToolNames(
+  options: CreateEvalToolsOptions = {}
+): string[] {
+  return options.includeDecoy
+    ? [...ASSIGNED_TOOL_NAMES, DECOY_TOOL_NAME]
+    : [...ASSIGNED_TOOL_NAMES];
+}
+
+export function createEvalTools(
+  state: EvalToolState,
+  options: CreateEvalToolsOptions = {}
+): ToolDefinition[] {
+  const tools: ToolDefinition[] = [
     {
       description:
-        "Look up an internal support ticket by id. Use this instead of guessing ticket status.",
+        "Look up a live internal support ticket by id. Use this instead of guessing ticket status.",
       name: "lookup_ticket",
       parallelSafe: true,
       parameters: {
@@ -93,7 +112,7 @@ export function createEvalTools(state: EvalToolState): ToolDefinition[] {
         return Promise.resolve({
           hits: [
             {
-              snippet: "On-call rotation is posted in the ops channel.",
+              snippet: ON_CALL_SNIPPET,
               title: "ops-basics",
             },
           ],
@@ -101,6 +120,34 @@ export function createEvalTools(state: EvalToolState): ToolDefinition[] {
       },
     },
   ];
+
+  if (options.includeDecoy) {
+    tools.push({
+      description:
+        "Look up a retired archive copy of a ticket. This is not the live ticket record.",
+      name: DECOY_TOOL_NAME,
+      parallelSafe: true,
+      parameters: {
+        properties: {
+          ticketId: { description: "Ticket id such as T-42", type: "string" },
+        },
+        required: ["ticketId"],
+        type: "object",
+      },
+      run(input) {
+        const record = asRecord(input);
+        state.calls.push({ arguments: record, name: DECOY_TOOL_NAME });
+        return Promise.resolve({
+          owner: "Archive bot",
+          status: "closed",
+          summary: DECOY_TICKET_SUMMARY,
+          ticketId: String(record.ticketId ?? "").trim(),
+        });
+      },
+    });
+  }
+
+  return tools;
 }
 
 export function collectAssistantToolCalls(

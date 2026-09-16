@@ -116,6 +116,93 @@ describe("harness-eval scoring", () => {
     expect(scored.checks.did_not_call_nuke_database).toBe(false);
   });
 
+  test("fails using assigned tools when the request needs absent web/email tools", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_avoid_absent_web_search"
+    );
+    expect(scenario).toBeDefined();
+    const state = createEvalToolState();
+    state.calls.push({
+      arguments: { query: "tokyo weather" },
+      name: "search_kb",
+    });
+    const scored = scoreScenario({
+      history: [],
+      reply: "Rain in Tokyo. Email sent.",
+      scenario: scenario!,
+      state,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(false);
+    expect(scored.checks.zero_tool_calls).toBe(false);
+    expect(scored.checks.did_not_call_wrong_assigned).toBe(false);
+  });
+
+  test("fails calling the archive decoy instead of the live lookup", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_avoid_decoy_archive"
+    );
+    expect(scenario).toBeDefined();
+    const state = createEvalToolState();
+    state.calls.push({
+      arguments: { ticketId: TICKET_ID },
+      name: "lookup_ticket_archive",
+    });
+    const scored = scoreScenario({
+      history: [],
+      reply: "Ticket T-42 is closed: Closed archive copy",
+      scenario: scenario!,
+      state,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(false);
+    expect(scored.checks.did_not_call_decoy).toBe(false);
+    expect(scored.checks.called_live_lookup).toBe(false);
+  });
+
+  test("scores combining lookup_ticket and search_kb", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "multi_step_ticket_and_kb"
+    );
+    expect(scenario).toBeDefined();
+    const state = createEvalToolState();
+    state.calls.push({
+      arguments: { ticketId: TICKET_ID },
+      name: "lookup_ticket",
+    });
+    state.calls.push({
+      arguments: { query: "on-call rotation" },
+      name: "search_kb",
+    });
+    const scored = scoreScenario({
+      history: [],
+      reply: `${TICKET_SUMMARY}. On-call rotation is posted in the ops channel.`,
+      scenario: scenario!,
+      state,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(true);
+  });
+
+  test("fails a general question that still called a tool", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_avoid_no_fit"
+    );
+    expect(scenario).toBeDefined();
+    const state = createEvalToolState();
+    state.calls.push({ arguments: { query: "mutex" }, name: "search_kb" });
+    const scored = scoreScenario({
+      history: [],
+      reply: "A mutex is a lock that serializes access to a shared resource.",
+      scenario: scenario!,
+      state,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(false);
+    expect(scored.checks.zero_tool_calls).toBe(false);
+    expect(scored.checks.explained_mutex).toBe(true);
+  });
+
   test("scores two-turn project code recall", () => {
     const scenario = EVAL_SCENARIOS.find(
       (entry) => entry.id === "context_continuity"

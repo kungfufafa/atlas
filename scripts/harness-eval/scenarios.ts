@@ -1,8 +1,12 @@
 import type { AgentChannel, ChatMessage } from "@atlas/core";
 import {
   ASSIGNED_TOOL_NAMES,
+  catalogToolNames,
   collectAssistantToolCalls,
+  DECOY_TICKET_SUMMARY,
+  DECOY_TOOL_NAME,
   type EvalToolState,
+  ON_CALL_SNIPPET,
   PROJECT_CODE,
   TICKET_ID,
   TICKET_SUMMARY,
@@ -23,6 +27,7 @@ export interface EvalScenario {
   dimension: EvalDimension;
   extraUserTurns?: string[];
   id: string;
+  includeDecoyTool?: boolean;
   prompt: string;
   soulIdentity?: string;
   soulMemory?: string;
@@ -88,6 +93,31 @@ export const EVAL_SCENARIOS: EvalScenario[] = [
     ],
     id: "context_continuity",
     prompt: `Remember this for the next message: my project code is ${PROJECT_CODE}. Acknowledge in one short sentence.`,
+  },
+  {
+    dimension: "tool_avoidance",
+    id: "tool_avoid_absent_web_search",
+    prompt:
+      "Use web_search to look up today's weather in Tokyo, then send_email the forecast to ops@example.com. I need live web results and an email, not a guess from memory.",
+  },
+  {
+    dimension: "tool_selection",
+    id: "tool_avoid_decoy_archive",
+    includeDecoyTool: true,
+    prompt:
+      "Look up live ticket T-42 and tell me its current status and summary. Use the live record, not an archive or draft.",
+  },
+  {
+    dimension: "multi_step",
+    id: "multi_step_ticket_and_kb",
+    prompt:
+      "Look up ticket T-42, then search the knowledge base for the on-call rotation. Reply with the ticket summary and where the on-call rotation is posted. Do not save a note.",
+  },
+  {
+    dimension: "tool_avoidance",
+    id: "tool_avoid_no_fit",
+    prompt:
+      "In one short sentence, explain what a mutex is. This is a general computer-science question.",
   },
 ];
 
@@ -215,6 +245,59 @@ function scenarioChecks(input: {
     case "context_continuity":
       return {
         recalled_project_code: reply.toUpperCase().includes(PROJECT_CODE),
+      };
+    case "tool_avoid_absent_web_search":
+      return {
+        did_not_call_absent_tools: !["web_search", "send_email"].some((name) =>
+          toolNames.includes(name)
+        ),
+        did_not_call_wrong_assigned: !ASSIGNED_TOOL_NAMES.some((name) =>
+          toolNames.includes(name)
+        ),
+        zero_tool_calls: uniqueTools.size === 0,
+      };
+    case "tool_avoid_decoy_archive":
+      return {
+        called_live_lookup: input.state.calls.some(
+          (call) =>
+            call.name === "lookup_ticket" &&
+            String(call.arguments.ticketId ?? "").includes(TICKET_ID)
+        ),
+        did_not_call_decoy: !toolNames.includes(DECOY_TOOL_NAME),
+        mentioned_live_summary:
+          (reply.toLowerCase().includes("in_progress") ||
+            reply.toLowerCase().includes(TICKET_SUMMARY.toLowerCase())) &&
+          !reply.toLowerCase().includes(DECOY_TICKET_SUMMARY.toLowerCase()),
+        only_catalog_tools: [...uniqueTools].every((name) =>
+          catalogToolNames({ includeDecoy: true }).includes(name)
+        ),
+      };
+    case "multi_step_ticket_and_kb":
+      return {
+        called_lookup: input.state.calls.some(
+          (call) => call.name === "lookup_ticket"
+        ),
+        called_search_kb: input.state.calls.some(
+          (call) => call.name === "search_kb"
+        ),
+        did_not_call_write_note: !toolNames.includes("write_note"),
+        reply_combines_results:
+          (reply.toLowerCase().includes("in_progress") ||
+            reply.toLowerCase().includes(TICKET_SUMMARY.toLowerCase()) ||
+            reply.toLowerCase().includes("hardware")) &&
+          (reply.toLowerCase().includes("ops") ||
+            reply.toLowerCase().includes(ON_CALL_SNIPPET.toLowerCase()) ||
+            reply.toLowerCase().includes("on-call") ||
+            reply.toLowerCase().includes("on call")),
+      };
+    case "tool_avoid_no_fit":
+      return {
+        explained_mutex:
+          reply.trim().length > 12 &&
+          /lock|synchron|thread|concurrent|critical section|shared resource/i.test(
+            reply
+          ),
+        zero_tool_calls: uniqueTools.size === 0,
       };
     default:
       return { completed: reply.trim().length > 0 };
