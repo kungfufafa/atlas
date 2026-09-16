@@ -1,14 +1,11 @@
 {
   "name": "Atlas",
   "install": "curl -fsSL https://bun.sh/install | bash && export BUN_INSTALL=\"$HOME/.bun\" && export PATH=\"$BUN_INSTALL/bin:$PATH\" && (command -v sudo >/dev/null 2>&1 && sudo ln -sf \"$BUN_INSTALL/bin/bun\" /usr/local/bin/bun && sudo ln -sf \"$BUN_INSTALL/bin/bunx\" /usr/local/bin/bunx || true) && bun install",
+  "start": "export PATH=\"$HOME/.bun/bin:$PATH\"; cd /workspace; if curl -sf http://127.0.0.1:4310/health >/dev/null 2>&1; then exit 0; fi; nohup bun run apps/server/src/index.ts > /tmp/atlas-server.log 2>&1 & for i in $(seq 1 60); do curl -sf http://127.0.0.1:4310/health >/dev/null 2>&1 && exit 0; sleep 1; done; echo 'Atlas API failed to become healthy' >&2; exit 1",
   "terminals": [
     {
-      "name": "server",
-      "command": "export PATH=\"$HOME/.bun/bin:$PATH\" && bun run dev:server"
-    },
-    {
       "name": "web",
-      "command": "export PATH=\"$HOME/.bun/bin:$PATH\" && bun run dev:web"
+      "command": "export PATH=\"$HOME/.bun/bin:$PATH\" && cd /workspace && bun run dev:web"
     }
   ],
   "ports": [3000, 4310]
