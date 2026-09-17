@@ -4,8 +4,10 @@ import type {
   ToolDefinition,
 } from "@atlas/core";
 import {
-  ConversationKeywordSearch,
+  buildFtsChatYardstickDocuments,
+  FTS_CHAT_NEEDLE_CODE,
   type RankableMemoryFact,
+  searchRankedConversations,
   searchRankedMemories,
 } from "@atlas/db";
 
@@ -24,6 +26,7 @@ export const ARCHIVE_BADGE = "QUARTZ-WALRUS-19";
 export const STALE_OFFICE_CITY = "Berlin";
 export const CURRENT_OFFICE_CITY = "Lisbon";
 export const CHAT_DOSSIER = "NIGHTINGALE-4";
+export { FTS_CHAT_NEEDLE_CODE };
 export const OVERFLOW_CODE = "MANGROVE-DELTA-5";
 export const OVERFLOW_DISTRACTOR_COUNT = 250;
 export const MEMORY_BOUNDED_BYTE_CAP = 2048;
@@ -61,6 +64,7 @@ export type ExtraEvalToolId =
 
 export interface CreateEvalToolsOptions {
   extraTools?: readonly ExtraEvalToolId[];
+  ftsChats?: boolean;
   includeDecoy?: boolean;
 }
 
@@ -84,6 +88,22 @@ export interface EvalToolState {
   chats: EvalChatTranscript[];
   memories: RankableMemoryFact[];
   notes: Array<{ body: string; title: string }>;
+}
+
+export function buildFtsChatYardstickTranscripts(): EvalChatTranscript[] {
+  return buildFtsChatYardstickDocuments().map((document) => ({
+    createdAt: document.createdAt,
+    messageId: document.messageId,
+    profileId: "eval-profile",
+    role: "user",
+    sessionId:
+      document.messageId === "fts-needle"
+        ? "prior-fts-session"
+        : "recent-ops-session",
+    sessionTitle:
+      document.messageId === "fts-needle" ? "Cipher stash" : "Weekly ops",
+    text: document.text,
+  }));
 }
 
 export function createEvalToolState(
@@ -208,7 +228,8 @@ export function searchEvalMemories(
 export function searchEvalChats(
   chats: readonly EvalChatTranscript[],
   query: string,
-  limit = 10
+  limit = 10,
+  options: { fts?: boolean } = {}
 ): Array<{
   createdAt: string;
   matchedSnippet: string;
@@ -218,21 +239,22 @@ export function searchEvalChats(
   sessionId: string;
   sessionTitle: string | null;
 }> {
-  const search = new ConversationKeywordSearch(query, limit);
-  for (const chat of chats) {
-    search.add(
-      {
-        createdAt: chat.createdAt,
-        messageId: chat.messageId,
-        profileId: chat.profileId,
-        role: chat.role,
-        sessionId: chat.sessionId,
-        sessionTitle: chat.sessionTitle,
-      },
-      chat.text
-    );
-  }
-  return search.results();
+  const bounded = Number.isFinite(limit)
+    ? Math.max(0, Math.min(50, Math.floor(limit)))
+    : 10;
+  return searchRankedConversations(
+    chats.map((chat) => ({
+      createdAt: chat.createdAt,
+      messageId: chat.messageId,
+      profileId: chat.profileId,
+      role: chat.role,
+      sessionId: chat.sessionId,
+      sessionTitle: chat.sessionTitle,
+      text: chat.text,
+    })),
+    query,
+    { fts: options.fts, limit: bounded }
+  );
 }
 
 export function createEvalTools(
@@ -485,7 +507,9 @@ export function createEvalTools(
         const query = String(record.query ?? "");
         const limitRaw = Number(record.limit);
         const limit = Number.isFinite(limitRaw) ? limitRaw : 10;
-        const results = searchEvalChats(state.chats, query, limit);
+        const results = searchEvalChats(state.chats, query, limit, {
+          fts: options.ftsChats,
+        });
         return Promise.resolve({
           count: results.length,
           query,

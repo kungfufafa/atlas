@@ -220,6 +220,7 @@ import {
   type DatabaseAdapter,
   type LlmUsageDimensions,
   mergeWorkspaceSettings,
+  parseStoredChatKind,
   type StoredProfileRecord,
   type StoredSessionRecord,
   type StoredTaskRecord,
@@ -2896,10 +2897,15 @@ export class AgentService {
       );
     }
 
+    const chatKind = resolveMessagingChatKind(
+      channel,
+      access?.externalPrincipal?.channelIsGroup
+    );
     await this.db.upsertSession({
       agentQuestionnaire: null,
       agentTodos: [],
       channel,
+      ...(chatKind ? { chatKind } : {}),
       createdAt: new Date().toISOString(),
       id: sessionId,
       modelOverride,
@@ -2910,10 +2916,6 @@ export class AgentService {
     });
 
     const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
-    const chatKind = resolveMessagingChatKind(
-      channel,
-      access?.externalPrincipal?.channelIsGroup
-    );
     const session = await this.buildChatSession(
       channel,
       orgId,
@@ -3175,10 +3177,15 @@ export class AgentService {
       ? `${sourceTitle} (Branch)`
       : "Untitled (Branch)";
 
+    const chatKind =
+      this.sessions.get(sessionId)?.chatKind ??
+      parseStoredChatKind(record.chatKind) ??
+      undefined;
     await this.db.upsertSession({
       agentQuestionnaire: null,
       agentTodos: [],
       channel: record.channel,
+      ...(chatKind ? { chatKind } : {}),
       createdAt: new Date().toISOString(),
       id: nextSessionId,
       modelOverride,
@@ -3202,7 +3209,6 @@ export class AgentService {
     }
 
     const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
-    const chatKind = this.sessions.get(sessionId)?.chatKind;
     const session = await this.buildChatSession(
       channel,
       orgId,
@@ -3434,7 +3440,8 @@ export class AgentService {
     }
 
     const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
-    const chatKind = stored?.chatKind;
+    const chatKind =
+      stored?.chatKind ?? parseStoredChatKind(record.chatKind) ?? undefined;
     const session = await this.buildChatSession(
       channel,
       orgId,

@@ -46,6 +46,7 @@ import {
   CHAT_DOSSIER,
   createEvalToolState,
   createEvalTools,
+  FTS_CHAT_NEEDLE_CODE,
   OVERFLOW_CODE,
   toRankableMemoryFact,
   USER_COFFEE,
@@ -76,6 +77,7 @@ export interface HarnessEvalAblation {
   allowlist: boolean;
   archiveIndex: boolean;
   chatKind: boolean;
+  ftsChats: boolean;
   memoryRetrieval: boolean;
   memorySummarization: boolean;
   nativeSchemas: boolean;
@@ -105,6 +107,7 @@ export interface RunHarnessEvalOptions {
   archiveIndex?: boolean;
   chatKind?: boolean;
   env?: OpenCodeGoEvalEnv;
+  ftsChats?: boolean;
   memoryRetrieval?: boolean;
   memorySummarization?: boolean;
   model?: string;
@@ -118,6 +121,7 @@ export interface RunHarnessEvalOptions {
 export interface EvalPromptOptions {
   allowlist?: boolean;
   chatKind?: boolean;
+  ftsChats?: boolean;
   memoryRetrieval?: boolean;
   memorySummary?: string;
   workRules?: boolean;
@@ -159,7 +163,11 @@ export function assembleEvalSystemPrompt(
 ): string {
   const tools = createEvalTools(
     createEvalToolState(),
-    scenarioToolOptions(scenario, options.memoryRetrieval !== false)
+    scenarioToolOptions(
+      scenario,
+      options.memoryRetrieval !== false,
+      options.ftsChats !== false
+    )
   );
   return buildChatSystemPrompt(tools, {
     basePrompt: evalBasePrompt(scenario, options),
@@ -252,10 +260,12 @@ export async function runHarnessEval(
   const archiveIndex = options.archiveIndex !== false;
   const skillLearning = options.skillLearning === true;
   const chatKind = options.chatKind !== false;
+  const ftsChats = options.ftsChats !== false;
   const ablation: HarnessEvalAblation = {
     allowlist,
     archiveIndex,
     chatKind,
+    ftsChats,
     memoryRetrieval,
     memorySummarization,
     nativeSchemas,
@@ -286,6 +296,7 @@ export async function runHarnessEval(
         allowlist,
         archiveIndex,
         chatKind,
+        ftsChats,
         memoryRetrieval,
         memorySummarization,
         promptOnly: options.promptOnly === true,
@@ -338,6 +349,7 @@ async function runScenario(
     allowlist: boolean;
     archiveIndex: boolean;
     chatKind: boolean;
+    ftsChats: boolean;
     memoryRetrieval: boolean;
     memorySummarization: boolean;
     promptOnly: boolean;
@@ -363,6 +375,7 @@ async function runScenario(
   const promptOptions: EvalPromptOptions = {
     allowlist: options.allowlist,
     chatKind: options.chatKind,
+    ftsChats: options.ftsChats,
     memoryRetrieval: options.memoryRetrieval,
     memorySummary,
     workRules: options.workRules,
@@ -381,7 +394,7 @@ async function runScenario(
   );
   const tools = createEvalTools(
     state,
-    scenarioToolOptions(scenario, options.memoryRetrieval)
+    scenarioToolOptions(scenario, options.memoryRetrieval, options.ftsChats)
   );
 
   if (options.promptOnly) {
@@ -448,7 +461,7 @@ async function runScenario(
       );
       const phase2Tools = createEvalTools(
         phase2State,
-        scenarioToolOptions(scenario, options.memoryRetrieval)
+        scenarioToolOptions(scenario, options.memoryRetrieval, options.ftsChats)
       );
       const phase2 = createAgentHarness({
         provider: options.provider,
@@ -629,6 +642,20 @@ function scorePromptOnly(
       toolRecall: 1,
     };
   }
+  if (scenario.id === "memory_search_chats_fts") {
+    const checks = {
+      prompt_omits_fts_needle: !systemPrompt.includes(FTS_CHAT_NEEDLE_CODE),
+    };
+    const passed = checks.prompt_omits_fts_needle;
+    return {
+      checks,
+      gradedScore: passed ? 1 : 0,
+      passed,
+      score: passed ? 1 : 0,
+      toolPrecision: 1,
+      toolRecall: 1,
+    };
+  }
   if (scenario.id === "memory_bounded_dump") {
     const checks = {
       prompt_omits_overflow_code: !systemPrompt.includes(OVERFLOW_CODE),
@@ -757,6 +784,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     allowlist: flags.allowlist,
     archiveIndex: flags.archiveIndex,
     chatKind: flags.chatKind,
+    ftsChats: flags.ftsChats,
     memoryRetrieval: flags.memoryRetrieval,
     memorySummarization: flags.memorySummarization,
     model: flags.model,

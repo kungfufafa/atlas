@@ -16,6 +16,7 @@ import {
   ARCHIVE_BADGE,
   ASSIGNED_TOOL_NAMES,
   buildArchiveNeedleMarkdown,
+  buildFtsChatYardstickTranscripts,
   buildLongDistractorMemory,
   buildOverflowDistractorMemory,
   buildSummaryNeedleMemory,
@@ -33,6 +34,7 @@ import {
   type EvalChatTranscript,
   type EvalToolState,
   type ExtraEvalToolId,
+  FTS_CHAT_NEEDLE_CODE,
   HARDWARE_LEAD,
   HARDWARE_LEAD_SNIPPET,
   MEMORY_BOUNDED_BYTE_CAP,
@@ -126,6 +128,8 @@ export const CHANNEL_KIND_SCENARIO_IDS = [
 export const UNASSIGNED_DECOY_SCENARIO_IDS = [
   "tool_avoid_unassigned_decoy",
 ] as const;
+
+export const FTS_CHATS_SCENARIO_IDS = ["memory_search_chats_fts"] as const;
 
 export const ORIGINAL_SUITE_SCENARIO_COUNT = 21;
 
@@ -359,6 +363,18 @@ export const EVAL_SCENARIOS: EvalScenario[] = [
       "Continuity facts for this user:\n- The user's nickname is Harbor.",
   },
   {
+    chatTranscripts: buildFtsChatYardstickTranscripts(),
+    dimension: "memory",
+    expectedTools: ["search_chats"],
+    extraTools: ["chats"],
+    id: "memory_search_chats_fts",
+    prompt:
+      "What retrieval code did we record for the zephyric cipher locker? It is not in MEMORY.md. Search prior chats. Reply with the code only.",
+    soulIdentity: "You are Atlas, a concise personal assistant.",
+    soulMemory:
+      "Continuity facts for this user:\n- The user's nickname is Harbor.",
+  },
+  {
     dimension: "memory",
     expectedTools: ["memory_search"],
     extraTools: ["memory"],
@@ -405,7 +421,8 @@ export function isExtraEvalScenario(id: string): boolean {
     (LEARNING_SCENARIO_IDS as readonly string[]).includes(id) ||
     (SUMMARY_SCENARIO_IDS as readonly string[]).includes(id) ||
     (CHANNEL_KIND_SCENARIO_IDS as readonly string[]).includes(id) ||
-    (UNASSIGNED_DECOY_SCENARIO_IDS as readonly string[]).includes(id)
+    (UNASSIGNED_DECOY_SCENARIO_IDS as readonly string[]).includes(id) ||
+    (FTS_CHATS_SCENARIO_IDS as readonly string[]).includes(id)
   );
 }
 
@@ -415,9 +432,11 @@ export const DEFAULT_SUITE_SCENARIO_IDS = EVAL_SCENARIOS.filter(
 
 export function scenarioToolOptions(
   scenario: EvalScenario,
-  memoryRetrieval = true
+  memoryRetrieval = true,
+  ftsChats = true
 ): {
   extraTools?: readonly ExtraEvalToolId[];
+  ftsChats?: boolean;
   includeDecoy?: boolean;
 } {
   const extras = [...(scenario.extraTools ?? [])];
@@ -427,6 +446,7 @@ export function scenarioToolOptions(
     : extras.filter((extra) => !retrievalExtras.includes(extra));
   return {
     extraTools: filtered,
+    ftsChats,
     includeDecoy: scenario.includeDecoyTool,
   };
 }
@@ -890,6 +910,13 @@ function scenarioChecks(input: {
         called_search_chats: toolNames.includes("search_chats"),
         prompt_omits_dossier: !input.systemPrompt.includes(CHAT_DOSSIER),
         recalled_dossier: reply.toUpperCase().includes(CHAT_DOSSIER),
+      };
+    case "memory_search_chats_fts":
+      return {
+        called_search_chats: toolNames.includes("search_chats"),
+        prompt_omits_fts_needle:
+          !input.systemPrompt.includes(FTS_CHAT_NEEDLE_CODE),
+        recalled_fts_needle: reply.toUpperCase().includes(FTS_CHAT_NEEDLE_CODE),
       };
     case "memory_bounded_dump":
       return {

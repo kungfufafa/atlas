@@ -4,6 +4,7 @@ import {
   type GenerateChatInput,
   type ProviderClient,
 } from "@atlas/core";
+import { FTS_CHAT_QUERY } from "@atlas/db";
 import {
   GROUP_CHAT_KIND_GUIDANCE,
   messagingGroupAudienceLine,
@@ -41,6 +42,7 @@ import {
   CURRENT_OFFICE_CITY,
   createEvalToolState,
   ESCALATION_KEY,
+  FTS_CHAT_NEEDLE_CODE,
   HARDWARE_LEAD,
   NEAR_DUPLICATE_TOOL_NAME,
   OVERFLOW_CODE,
@@ -85,6 +87,7 @@ describe("harness-eval flags", () => {
     expect(flags.memorySummarization).toBe(true);
     expect(flags.archiveIndex).toBe(true);
     expect(flags.chatKind).toBe(true);
+    expect(flags.ftsChats).toBe(true);
     expect(flags.skillLearning).toBe(false);
     expect(flags.matrix).toBe(false);
   });
@@ -102,6 +105,8 @@ describe("harness-eval flags", () => {
         "--archive-index",
         "--no-chat-kind",
         "--chat-kind",
+        "--no-fts-chats",
+        "--fts-chats",
         "--skill-learning",
         "--no-skill-learning",
         "--skill-learning",
@@ -119,6 +124,7 @@ describe("harness-eval flags", () => {
     expect(flags.memorySummarization).toBe(false);
     expect(flags.archiveIndex).toBe(true);
     expect(flags.chatKind).toBe(true);
+    expect(flags.ftsChats).toBe(true);
     expect(flags.skillLearning).toBe(true);
   });
 
@@ -154,6 +160,7 @@ describe("harness-eval flags", () => {
       HARNESS_EVAL_ALLOWLIST: "false",
       HARNESS_EVAL_ARCHIVE_INDEX: "0",
       HARNESS_EVAL_CHAT_KIND: "0",
+      HARNESS_EVAL_FTS_CHATS: "0",
       HARNESS_EVAL_MEMORY_RETRIEVAL: "0",
       HARNESS_EVAL_MEMORY_SUMMARIZATION: "off",
       HARNESS_EVAL_NATIVE_SCHEMAS: "off",
@@ -165,6 +172,7 @@ describe("harness-eval flags", () => {
     expect(flags.memorySummarization).toBe(false);
     expect(flags.archiveIndex).toBe(false);
     expect(flags.chatKind).toBe(false);
+    expect(flags.ftsChats).toBe(false);
     expect(flags.nativeSchemas).toBe(false);
     expect(flags.skillLearning).toBe(false);
     expect(flags.workRules).toBe(false);
@@ -184,6 +192,7 @@ describe("harness-eval prompt assembly", () => {
     expect(ids).toContain("memory_archive_needle");
     expect(ids).toContain("memory_conflict_recency");
     expect(ids).toContain("memory_search_chats");
+    expect(ids).toContain("memory_search_chats_fts");
     expect(ids).toContain("memory_bounded_dump");
     expect(ids).toContain("memory_summary_needle");
     expect(ids).toContain("learn_sop_acquisition");
@@ -1122,6 +1131,20 @@ describe("harness-eval memory retrieval yardsticks", () => {
       "vendor dossier code"
     );
     expect(hits[0]?.matchedSnippet).toContain(CHAT_DOSSIER);
+  });
+
+  test("FTS search_chats ranking finds the buried needle that lexical misses", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_search_chats_fts"
+    );
+    expect(scenario).toBeDefined();
+    const chats = scenario!.chatTranscripts ?? [];
+    const lexical = searchEvalChats(chats, FTS_CHAT_QUERY, 10, { fts: false });
+    expect(
+      lexical.some((hit) => hit.matchedSnippet.includes(FTS_CHAT_NEEDLE_CODE))
+    ).toBe(false);
+    const fts = searchEvalChats(chats, FTS_CHAT_QUERY, 10, { fts: true });
+    expect(fts[0]?.matchedSnippet).toContain(FTS_CHAT_NEEDLE_CODE);
   });
 });
 
