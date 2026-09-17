@@ -165,7 +165,7 @@ Live OpenCode Go: `memory_summary_needle` **0/6 → 6/6** per model (n=3, extrac
 
 **Shipped:** plumb `chatKind` from `externalPrincipal.channelIsGroup` through `AgentService` / `createAgentChatSession` into `buildChatSystemPrompt`, with explicit private 1:1 vs group etiquette blocks. Assigned-tool roster now labels each line `purpose:` and instructs selection by purpose, not similar names. Eval extras: private/group WhatsApp + Telegram yardsticks (`--no-chat-kind` baseline) and `tool_avoid_unassigned_decoy` (close name absent from the catalog).
 
-See `docs/harness/eval-results/iter6-summary.md` for live numbers. Do not claim `tool_avoid_wording_trap` is solved unless the strong model actually moved.
+Live OpenCode Go: channel prompt checks **0/24 → 24/24**; live pass/fail **0/12 → 9/12** strong and **0/12 → 10/12** weak (residual private name-addressing). Assigned decoy `tool_avoid_wording_trap` **did not move** on `kimi-k2.7-code` (0/3 dedicated, still `lookup_ticket_live`) — model-judgment limitation. Unassigned decoy **6/6** with allowlist on (and 6/6 with allowlist off, because native schemas also omit the missing name). Default 21-suite **20/21**; memory **6/6**; strong learning **22/23**; weak learning extras **2/2** (21-suite flash variance made the 23-count 21/23). Details: `docs/harness/eval-results/iter6-summary.md`.
 
 ## Eval coverage this iteration
 
