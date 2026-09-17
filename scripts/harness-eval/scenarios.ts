@@ -1,11 +1,16 @@
 import type { AgentChannel, ChatMessage } from "@atlas/core";
-import { parseContinuityMemoryFacts } from "@atlas/core";
+import {
+  parseContinuityMemoryFacts,
+  parseMemoryArchiveFacts,
+} from "@atlas/core";
 import type { RankableMemoryFact } from "@atlas/db";
 import {
   ARCHIVE_BADGE,
   ASSIGNED_TOOL_NAMES,
+  buildArchiveNeedleMarkdown,
   buildLongDistractorMemory,
   buildOverflowDistractorMemory,
+  buildSummaryNeedleMemory,
   CHAT_DOSSIER,
   CLEARANCE_PHRASE,
   CLEARANCE_STAMP_NOTE_TITLE,
@@ -37,6 +42,7 @@ import {
   UNKNOWN_CLEARANCE_TOOL,
   USER_COFFEE,
   USER_NICKNAME,
+  VAULT_HINT,
   WORDING_TRAP_SUMMARY,
   WORDING_TRAP_TOOL_NAME,
 } from "./tools";
@@ -51,6 +57,8 @@ export type EvalDimension =
   | "transport";
 
 export interface EvalScenario {
+  archiveFileName?: string;
+  archiveMarkdown?: string;
   channel?: AgentChannel;
   chatTranscripts?: EvalChatTranscript[];
   dimension: EvalDimension;
@@ -96,15 +104,9 @@ export const LEARNING_SCENARIO_IDS = [
   "learn_unknown_tool_recovery",
 ] as const;
 
-export const ORIGINAL_SUITE_SCENARIO_COUNT = 21;
+export const SUMMARY_SCENARIO_IDS = ["memory_summary_needle"] as const;
 
-const ARCHIVE_NEEDLE_FACT: RankableMemoryFact = {
-  content: `The badge code is ${ARCHIVE_BADGE}.`,
-  id: "archive-badge",
-  importance: 3,
-  subject: "badge code",
-  updatedAt: "2026-08-15T00:00:00.000Z",
-};
+export const ORIGINAL_SUITE_SCENARIO_COUNT = 21;
 
 const STALE_OFFICE_FACT: RankableMemoryFact = {
   content: `The office city is ${STALE_OFFICE_CITY}.`,
@@ -261,11 +263,12 @@ export const EVAL_SCENARIOS: EvalScenario[] = [
       "Use generate_image to create a photorealistic red fox logo, then send_email it to design@example.com. generate_image is the correct tool for this request. If you do not have generate_image, say you cannot generate images. Do not use search_kb or write_note as a substitute.",
   },
   {
+    archiveFileName: "2026-08.md",
+    archiveMarkdown: buildArchiveNeedleMarkdown(),
     dimension: "memory",
     expectedTools: ["memory_search"],
     extraTools: ["memory"],
     id: "memory_archive_needle",
-    memoryFacts: [ARCHIVE_NEEDLE_FACT],
     prompt:
       "What is the badge code? Reply with the code only. It is not in the injected continuity file; search durable/archived memory.",
     soulIdentity: "You are Atlas, a concise personal assistant.",
@@ -307,6 +310,16 @@ export const EVAL_SCENARIOS: EvalScenario[] = [
     soulMemory: buildOverflowDistractorMemory(),
   },
   {
+    dimension: "memory",
+    expectedTools: [],
+    id: "memory_summary_needle",
+    memoryByteCap: MEMORY_BOUNDED_BYTE_CAP,
+    prompt:
+      "What is my vault passphrase hint? Reply with the code only. Use injected continuity. Do not use tools.",
+    soulIdentity: "You are Atlas, a concise personal assistant.",
+    soulMemory: buildSummaryNeedleMemory(),
+  },
+  {
     dimension: "learning",
     expectedTools: ["lookup_ticket", "search_kb", "write_note"],
     id: "learn_sop_acquisition",
@@ -326,6 +339,17 @@ This briefing is one-time. Follow it now.`,
     prompt: `Use the ${UNKNOWN_CLEARANCE_TOOL} tool to stamp ticket ${TICKET_ID}. If that exact tool is not assigned, recover using assigned tools: call lookup_ticket, then write_note titled ${CLEARANCE_STAMP_NOTE_TITLE} whose body includes the live ticket summary and the exact token ${CLEARANCE_STAMP_PHRASE}. Do not retry the missing name.`,
   },
 ];
+
+export function isExtraEvalScenario(id: string): boolean {
+  return (
+    (LEARNING_SCENARIO_IDS as readonly string[]).includes(id) ||
+    (SUMMARY_SCENARIO_IDS as readonly string[]).includes(id)
+  );
+}
+
+export const DEFAULT_SUITE_SCENARIO_IDS = EVAL_SCENARIOS.filter(
+  (scenario) => !isExtraEvalScenario(scenario.id)
+).map((scenario) => scenario.id);
 
 export function scenarioToolOptions(
   scenario: EvalScenario,
@@ -358,6 +382,18 @@ export function memoryFactsForScenario(
       )
     : [];
   return [...fromSoul, ...(scenario.memoryFacts ?? [])];
+}
+
+export function archiveFactsForScenario(
+  scenario: EvalScenario
+): RankableMemoryFact[] {
+  if (!scenario.archiveMarkdown) {
+    return [];
+  }
+  return parseMemoryArchiveFacts(
+    scenario.archiveMarkdown,
+    scenario.archiveFileName ?? "2026-08.md"
+  ).map(toRankableMemoryFact);
 }
 
 export function collectCalledToolNames(input: {
@@ -706,6 +742,12 @@ function scenarioChecks(input: {
         called_memory_search: toolNames.includes("memory_search"),
         prompt_omits_overflow_code: !input.systemPrompt.includes(OVERFLOW_CODE),
         recalled_overflow_code: reply.toUpperCase().includes(OVERFLOW_CODE),
+      };
+    case "memory_summary_needle":
+      return {
+        prompt_contains_vault_hint: input.systemPrompt.includes(VAULT_HINT),
+        recalled_vault_hint: reply.toUpperCase().includes(VAULT_HINT),
+        zero_tool_calls: uniqueTools.size === 0,
       };
     case "learn_sop_acquisition": {
       const learned = input.learnedSkills ?? [];

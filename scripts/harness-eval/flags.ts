@@ -17,6 +17,10 @@ Ablation flags (independently togglable; defaults match iteration-2 product path
   --no-allowlist            Omit that roster; native schemas and the tool loop stay on
   --memory-retrieval        Bound MEMORY.md and attach memory_search/search_chats (default)
   --no-memory-retrieval     Dump MEMORY.md wholesale and omit memory retrieval tools (iter3 baseline)
+  --memory-summarization    LLM-summarize omitted MEMORY.md facts when over cap (default)
+  --no-memory-summarization Extractive recency only (iter5 summary-off baseline)
+  --archive-index           Index profile memory-archive/ into memory_search (default)
+  --no-archive-index        Skip archive files (iter5 archive-off baseline)
   --skill-learning          Run the post-turn skill learning loop (eval ON)
   --no-skill-learning       Disable that loop (default; product default is off)
   --native-schemas          Send native tool schemas to the provider (default)
@@ -36,6 +40,8 @@ Environment:
   HARNESS_EVAL_WORK_RULES=0|1       (default 1)
   HARNESS_EVAL_ALLOWLIST=0|1        (default 1)
   HARNESS_EVAL_MEMORY_RETRIEVAL=0|1 (default 1)
+  HARNESS_EVAL_MEMORY_SUMMARIZATION=0|1 (default 1)
+  HARNESS_EVAL_ARCHIVE_INDEX=0|1    (default 1)
   HARNESS_EVAL_SKILL_LEARNING=0|1   (default 0)
   HARNESS_EVAL_NATIVE_SCHEMAS=0|1   (default 1)
   HARNESS_EVAL_STRONG_MODEL
@@ -48,9 +54,11 @@ entirely. The published ablation matrix keeps native schemas ON.
 
 export interface HarnessEvalCliOptions {
   allowlist: boolean;
+  archiveIndex: boolean;
   help: boolean;
   matrix: boolean;
   memoryRetrieval: boolean;
+  memorySummarization: boolean;
   model?: string;
   nativeSchemas: boolean;
   out?: string;
@@ -95,9 +103,15 @@ export function parseHarnessEvalArgs(
 ): HarnessEvalCliOptions {
   const parsed: HarnessEvalCliOptions = {
     allowlist: parseBoolEnv(env, "HARNESS_EVAL_ALLOWLIST", true),
+    archiveIndex: parseBoolEnv(env, "HARNESS_EVAL_ARCHIVE_INDEX", true),
     help: false,
     matrix: false,
     memoryRetrieval: parseBoolEnv(env, "HARNESS_EVAL_MEMORY_RETRIEVAL", true),
+    memorySummarization: parseBoolEnv(
+      env,
+      "HARNESS_EVAL_MEMORY_SUMMARIZATION",
+      true
+    ),
     model: env.HARNESS_EVAL_MODEL?.trim() || undefined,
     nativeSchemas: parseBoolEnv(env, "HARNESS_EVAL_NATIVE_SCHEMAS", true),
     promptOnly: false,
@@ -139,6 +153,18 @@ export function parseHarnessEvalArgs(
         break;
       case "--no-memory-retrieval":
         parsed.memoryRetrieval = false;
+        break;
+      case "--memory-summarization":
+        parsed.memorySummarization = true;
+        break;
+      case "--no-memory-summarization":
+        parsed.memorySummarization = false;
+        break;
+      case "--archive-index":
+        parsed.archiveIndex = true;
+        break;
+      case "--no-archive-index":
+        parsed.archiveIndex = false;
         break;
       case "--skill-learning":
         parsed.skillLearning = true;

@@ -1,11 +1,15 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createAgentHarness } from "@atlas/agent";
 import {
   type ChatMessage,
+  ContinuityMemorySummaryCache,
   composeSoulSystemPrompt,
   type GenerateChatInput,
+  loadMemoryArchiveFacts,
   type ProviderClient,
+  resolveContinuityMemorySummary,
 } from "@atlas/core";
 import { createOpenCodeGoProvider } from "../../apps/server/src/providers/opencode-go";
 import { buildChatSystemPrompt } from "../../packages/agent/src/chat-prompt";
@@ -42,8 +46,10 @@ import {
   createEvalToolState,
   createEvalTools,
   OVERFLOW_CODE,
+  toRankableMemoryFact,
   USER_COFFEE,
   USER_NICKNAME,
+  VAULT_HINT,
 } from "./tools";
 
 export const HARNESS_EVAL_PATH =
@@ -66,7 +72,9 @@ export interface ScenarioResult {
 
 export interface HarnessEvalAblation {
   allowlist: boolean;
+  archiveIndex: boolean;
   memoryRetrieval: boolean;
+  memorySummarization: boolean;
   nativeSchemas: boolean;
   skillLearning: boolean;
   workRules: boolean;
@@ -91,8 +99,10 @@ export interface HarnessEvalReport {
 
 export interface RunHarnessEvalOptions {
   allowlist?: boolean;
+  archiveIndex?: boolean;
   env?: OpenCodeGoEvalEnv;
   memoryRetrieval?: boolean;
+  memorySummarization?: boolean;
   model?: string;
   nativeSchemas?: boolean;
   promptOnly?: boolean;
@@ -104,6 +114,7 @@ export interface RunHarnessEvalOptions {
 export interface EvalPromptOptions {
   allowlist?: boolean;
   memoryRetrieval?: boolean;
+  memorySummary?: string;
   workRules?: boolean;
 }
 
@@ -130,6 +141,7 @@ export function evalBasePrompt(
     {
       includeMemory: true,
       memoryByteCap: memoryRetrieval ? scenario.memoryByteCap : null,
+      memorySummary: options.memorySummary,
     }
   );
   const workRules = options.workRules !== false;
@@ -178,6 +190,49 @@ export function omitNativeToolSchemas(
   };
 }
 
+async function loadEvalArchiveFacts(
+  scenario: EvalScenario
+): Promise<ReturnType<typeof toRankableMemoryFact>[]> {
+  if (!scenario.archiveMarkdown) {
+    return [];
+  }
+  const directory = await mkdtemp(join(tmpdir(), "atlas-eval-archive-"));
+  try {
+    await writeFile(
+      join(directory, scenario.archiveFileName ?? "2026-08.md"),
+      scenario.archiveMarkdown,
+      "utf8"
+    );
+    return (await loadMemoryArchiveFacts(directory)).map(toRankableMemoryFact);
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
+}
+
+async function evalMemoriesForScenario(
+  scenario: EvalScenario,
+  archiveIndex: boolean
+) {
+  const live = memoryFactsForScenario(scenario);
+  if (!archiveIndex) {
+    return live;
+  }
+  return [...live, ...(await loadEvalArchiveFacts(scenario))];
+}
+
+function providerGenerateText(
+  provider: ProviderClient
+): (prompt: string) => Promise<string> {
+  return async (prompt) => {
+    const result = await provider.generateText({
+      format: "text",
+      prompt,
+      system: "You summarize profile continuity memory. Do not invent facts.",
+    });
+    return result.content;
+  };
+}
+
 export async function runHarnessEval(
   options: RunHarnessEvalOptions = {}
 ): Promise<HarnessEvalReport> {
@@ -187,10 +242,14 @@ export async function runHarnessEval(
   const allowlist = options.allowlist !== false;
   const nativeSchemas = options.nativeSchemas !== false;
   const memoryRetrieval = options.memoryRetrieval !== false;
+  const memorySummarization = options.memorySummarization !== false;
+  const archiveIndex = options.archiveIndex !== false;
   const skillLearning = options.skillLearning === true;
   const ablation: HarnessEvalAblation = {
     allowlist,
+    archiveIndex,
     memoryRetrieval,
+    memorySummarization,
     nativeSchemas,
     skillLearning,
     workRules,
@@ -200,6 +259,7 @@ export async function runHarnessEval(
       ? options.scenarioIds.includes(scenario.id)
       : true
   );
+  const summaryCache = new ContinuityMemorySummaryCache();
 
   let provider: ProviderClient | undefined;
   if (!options.promptOnly) {
@@ -216,10 +276,13 @@ export async function runHarnessEval(
     results.push(
       await runScenario(scenario, {
         allowlist,
+        archiveIndex,
         memoryRetrieval,
+        memorySummarization,
         promptOnly: options.promptOnly === true,
         provider,
         skillLearning,
+        summaryCache,
         workRules,
       })
     );
@@ -264,25 +327,44 @@ async function runScenario(
   scenario: EvalScenario,
   options: {
     allowlist: boolean;
+    archiveIndex: boolean;
     memoryRetrieval: boolean;
+    memorySummarization: boolean;
     promptOnly: boolean;
     provider?: ProviderClient;
     skillLearning: boolean;
+    summaryCache: ContinuityMemorySummaryCache;
     workRules: boolean;
   }
 ): Promise<ScenarioResult> {
   const started = Date.now();
+  const memorySummary =
+    options.promptOnly || !options.provider
+      ? undefined
+      : await resolveContinuityMemorySummary(scenario.soulMemory ?? "", {
+          byteCap: scenario.memoryByteCap,
+          cache: options.summaryCache,
+          enabled:
+            options.memorySummarization &&
+            options.memoryRetrieval &&
+            Boolean(scenario.soulMemory),
+          generateText: providerGenerateText(options.provider),
+        });
   const promptOptions: EvalPromptOptions = {
     allowlist: options.allowlist,
     memoryRetrieval: options.memoryRetrieval,
+    memorySummary,
     workRules: options.workRules,
   };
   const systemPrompt = assembleEvalSystemPrompt(scenario, promptOptions);
+  const memories = options.memoryRetrieval
+    ? await evalMemoriesForScenario(scenario, options.archiveIndex)
+    : [];
   const state = createEvalToolState(
     options.memoryRetrieval
       ? {
           chats: [...(scenario.chatTranscripts ?? [])],
-          memories: memoryFactsForScenario(scenario),
+          memories,
         }
       : {}
   );
@@ -348,7 +430,7 @@ async function runScenario(
         options.memoryRetrieval
           ? {
               chats: [...(scenario.chatTranscripts ?? [])],
-              memories: memoryFactsForScenario(scenario),
+              memories,
             }
           : {}
       );
@@ -511,6 +593,20 @@ function scorePromptOnly(
       toolRecall: 1,
     };
   }
+  if (scenario.id === "memory_summary_needle") {
+    const checks = {
+      prompt_omits_vault_hint: !systemPrompt.includes(VAULT_HINT),
+    };
+    const passed = checks.prompt_omits_vault_hint;
+    return {
+      checks,
+      gradedScore: passed ? 1 : 0,
+      passed,
+      score: passed ? 1 : 0,
+      toolPrecision: 1,
+      toolRecall: 1,
+    };
+  }
   if ((LEARNING_SCENARIO_IDS as readonly string[]).includes(scenario.id)) {
     return {
       checks: { skipped_live: true },
@@ -609,7 +705,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const report = await runHarnessEval({
     allowlist: flags.allowlist,
+    archiveIndex: flags.archiveIndex,
     memoryRetrieval: flags.memoryRetrieval,
+    memorySummarization: flags.memorySummarization,
     model: flags.model,
     nativeSchemas: flags.nativeSchemas,
     promptOnly: flags.promptOnly,

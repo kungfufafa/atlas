@@ -27,6 +27,8 @@ export const CHAT_DOSSIER = "NIGHTINGALE-4";
 export const OVERFLOW_CODE = "MANGROVE-DELTA-5";
 export const OVERFLOW_DISTRACTOR_COUNT = 250;
 export const MEMORY_BOUNDED_BYTE_CAP = 2048;
+export const VAULT_HINT = "CEDAR-FALCON-7";
+export const SUMMARY_DISTRACTOR_COUNT = 80;
 
 export const ASSIGNED_TOOL_NAMES = [
   "lookup_ticket",
@@ -132,7 +134,7 @@ export function buildOverflowDistractorMemory(): string {
     "",
     "## 2024-01-01",
     "",
-    `- The overflow code is ${OVERFLOW_CODE}.`,
+    `- Warehouse overflow bin label ${OVERFLOW_CODE} counted last Tuesday.`,
     "",
     "## 2026-09-01",
     "",
@@ -144,6 +146,39 @@ export function buildOverflowDistractorMemory(): string {
     );
   }
   return lines.join("\n");
+}
+
+export function buildSummaryNeedleMemory(): string {
+  const lines = [
+    "Continuity facts for this user:",
+    "",
+    "## 2024-01-01",
+    "",
+    `- The user's vault passphrase hint is ${VAULT_HINT}.`,
+    "",
+    "## 2026-09-01",
+    "",
+  ];
+  for (let index = 1; index <= SUMMARY_DISTRACTOR_COUNT; index += 1) {
+    const bin = String(index).padStart(3, "0");
+    lines.push(
+      `- Warehouse bin ${bin} holds spare SKU-A${bin} counted last Tuesday.`
+    );
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+export function buildArchiveNeedleMarkdown(badge = ARCHIVE_BADGE): string {
+  return `# Archived Memory
+
+---
+
+<!-- archived: 2026-08-15T00:00:00.000Z -->
+
+## 2026-08-15
+
+- The badge code is ${badge}.
+`;
 }
 
 export function toRankableMemoryFact(

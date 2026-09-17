@@ -17,7 +17,9 @@ import {
   omitNativeToolSchemas,
 } from "./run";
 import {
+  archiveFactsForScenario,
   computeToolMetrics,
+  DEFAULT_SUITE_SCENARIO_IDS,
   EVAL_SCENARIOS,
   memoryFactsForScenario,
   scoreScenario,
@@ -45,6 +47,7 @@ import {
   UNKNOWN_CLEARANCE_TOOL,
   USER_COFFEE,
   USER_NICKNAME,
+  VAULT_HINT,
   WORDING_TRAP_TOOL_NAME,
 } from "./tools";
 
@@ -71,6 +74,8 @@ describe("harness-eval flags", () => {
     expect(flags.workRules).toBe(true);
     expect(flags.nativeSchemas).toBe(true);
     expect(flags.memoryRetrieval).toBe(true);
+    expect(flags.memorySummarization).toBe(true);
+    expect(flags.archiveIndex).toBe(true);
     expect(flags.skillLearning).toBe(false);
     expect(flags.matrix).toBe(false);
   });
@@ -83,6 +88,9 @@ describe("harness-eval flags", () => {
         "--no-native-schemas",
         "--allowlist",
         "--no-memory-retrieval",
+        "--no-memory-summarization",
+        "--no-archive-index",
+        "--archive-index",
         "--skill-learning",
         "--no-skill-learning",
         "--skill-learning",
@@ -97,6 +105,8 @@ describe("harness-eval flags", () => {
     expect(flags.workRules).toBe(false);
     expect(flags.nativeSchemas).toBe(false);
     expect(flags.memoryRetrieval).toBe(false);
+    expect(flags.memorySummarization).toBe(false);
+    expect(flags.archiveIndex).toBe(true);
     expect(flags.skillLearning).toBe(true);
   });
 
@@ -130,13 +140,17 @@ describe("harness-eval flags", () => {
   test("env 0/false disables ablation switches", () => {
     const flags = parseHarnessEvalArgs([], {
       HARNESS_EVAL_ALLOWLIST: "false",
+      HARNESS_EVAL_ARCHIVE_INDEX: "0",
       HARNESS_EVAL_MEMORY_RETRIEVAL: "0",
+      HARNESS_EVAL_MEMORY_SUMMARIZATION: "off",
       HARNESS_EVAL_NATIVE_SCHEMAS: "off",
       HARNESS_EVAL_SKILL_LEARNING: "0",
       HARNESS_EVAL_WORK_RULES: "0",
     });
     expect(flags.allowlist).toBe(false);
     expect(flags.memoryRetrieval).toBe(false);
+    expect(flags.memorySummarization).toBe(false);
+    expect(flags.archiveIndex).toBe(false);
     expect(flags.nativeSchemas).toBe(false);
     expect(flags.skillLearning).toBe(false);
     expect(flags.workRules).toBe(false);
@@ -157,9 +171,10 @@ describe("harness-eval prompt assembly", () => {
     expect(ids).toContain("memory_conflict_recency");
     expect(ids).toContain("memory_search_chats");
     expect(ids).toContain("memory_bounded_dump");
+    expect(ids).toContain("memory_summary_needle");
     expect(ids).toContain("learn_sop_acquisition");
     expect(ids).toContain("learn_unknown_tool_recovery");
-    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(23);
+    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(24);
   });
 
   test("injects WhatsApp channel rules", () => {
@@ -257,6 +272,41 @@ describe("harness-eval prompt assembly", () => {
     expect(chats).toBeDefined();
     expect(assembleEvalSystemPrompt(archive!)).not.toContain(ARCHIVE_BADGE);
     expect(assembleEvalSystemPrompt(chats!)).not.toContain(CHAT_DOSSIER);
+  });
+
+  test("extractive bounding omits the vault hint; a supplied summary keeps it", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_summary_needle"
+    );
+    expect(scenario).toBeDefined();
+    const extractive = assembleEvalSystemPrompt(scenario!);
+    expect(extractive).not.toContain(VAULT_HINT);
+    expect(extractive).toContain("Warehouse bin");
+    const summarized = evalBasePrompt(scenario!, {
+      memorySummary: `The user's vault passphrase hint is ${VAULT_HINT}.`,
+    });
+    expect(summarized).toContain(VAULT_HINT);
+    expect(summarized).toContain("Warehouse bin");
+  });
+
+  test("archive needle is loaded from production archive files, not live MEMORY.md", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_archive_needle"
+    );
+    expect(scenario).toBeDefined();
+    expect(
+      memoryFactsForScenario(scenario!).some((fact) =>
+        fact.content.includes(ARCHIVE_BADGE)
+      )
+    ).toBe(false);
+    expect(
+      archiveFactsForScenario(scenario!).some((fact) =>
+        fact.content.includes(ARCHIVE_BADGE)
+      )
+    ).toBe(true);
+    expect(DEFAULT_SUITE_SCENARIO_IDS).toHaveLength(21);
+    expect(DEFAULT_SUITE_SCENARIO_IDS).toContain("memory_archive_needle");
+    expect(DEFAULT_SUITE_SCENARIO_IDS).not.toContain("memory_summary_needle");
   });
 });
 
@@ -783,7 +833,10 @@ describe("harness-eval memory retrieval yardsticks", () => {
     );
     expect(archive).toBeDefined();
     const state = createEvalToolState({
-      memories: memoryFactsForScenario(archive!),
+      memories: [
+        ...memoryFactsForScenario(archive!),
+        ...archiveFactsForScenario(archive!),
+      ],
     });
     state.calls.push({
       arguments: { query: "badge code" },
@@ -799,6 +852,37 @@ describe("harness-eval memory retrieval yardsticks", () => {
     expect(scored.passed).toBe(true);
     expect(scored.toolPrecision).toBe(1);
     expect(scored.toolRecall).toBe(1);
+  });
+
+  test("summary yardstick fails on extractive injection and passes when the hint is present", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_summary_needle"
+    );
+    expect(scenario).toBeDefined();
+    const extractive = assembleEvalSystemPrompt(scenario!);
+    const failed = scoreScenario({
+      history: [],
+      reply: "I do not see a vault hint.",
+      scenario: scenario!,
+      state: createEvalToolState(),
+      systemPrompt: extractive,
+    });
+    expect(failed.passed).toBe(false);
+    expect(failed.checks.prompt_contains_vault_hint).toBe(false);
+
+    const summarized = evalBasePrompt(scenario!, {
+      memorySummary: `The user's vault passphrase hint is ${VAULT_HINT}.`,
+    });
+    const passed = scoreScenario({
+      history: [],
+      reply: VAULT_HINT,
+      scenario: scenario!,
+      state: createEvalToolState(),
+      systemPrompt: summarized,
+    });
+    expect(passed.passed).toBe(true);
+    expect(passed.checks.prompt_contains_vault_hint).toBe(true);
+    expect(passed.checks.recalled_vault_hint).toBe(true);
   });
 
   test("shared ranking returns the newer office city and the overflow code", () => {
@@ -825,6 +909,27 @@ describe("harness-eval memory retrieval yardsticks", () => {
       3
     );
     expect(codes[0]?.content).toContain(OVERFLOW_CODE);
+  });
+
+  test("production archive parser ranks the badge that live MEMORY.md omits", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_archive_needle"
+    );
+    expect(scenario).toBeDefined();
+    const live = searchEvalMemories(
+      memoryFactsForScenario(scenario!),
+      "badge code",
+      3
+    );
+    expect(live.some((item) => item.content.includes(ARCHIVE_BADGE))).toBe(
+      false
+    );
+    const archived = searchEvalMemories(
+      archiveFactsForScenario(scenario!),
+      "badge code",
+      3
+    );
+    expect(archived[0]?.content).toContain(ARCHIVE_BADGE);
   });
 
   test("search_chats ranking finds the other-session dossier", () => {
