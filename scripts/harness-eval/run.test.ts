@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import type { GenerateChatInput, ProviderClient } from "@atlas/core";
+import {
+  DEFAULT_MEMORY_MD_BYTE_CAP,
+  type GenerateChatInput,
+  type ProviderClient,
+} from "@atlas/core";
 import { applyEnvFile, parseEnvFile } from "./env";
 import { parseHarnessEvalArgs } from "./flags";
 import {
@@ -12,14 +16,27 @@ import {
   evalBasePrompt,
   omitNativeToolSchemas,
 } from "./run";
-import { computeToolMetrics, EVAL_SCENARIOS, scoreScenario } from "./scenarios";
 import {
+  computeToolMetrics,
+  EVAL_SCENARIOS,
+  memoryFactsForScenario,
+  scoreScenario,
+} from "./scenarios";
+import {
+  ARCHIVE_BADGE,
+  buildLongDistractorMemory,
+  CHAT_DOSSIER,
   CLEARANCE_PHRASE,
+  CURRENT_OFFICE_CITY,
   createEvalToolState,
   ESCALATION_KEY,
   HARDWARE_LEAD,
   NEAR_DUPLICATE_TOOL_NAME,
+  OVERFLOW_CODE,
   PROJECT_CODE,
+  STALE_OFFICE_CITY,
+  searchEvalChats,
+  searchEvalMemories,
   TICKET_ID,
   TICKET_SUMMARY,
   USER_COFFEE,
@@ -44,11 +61,12 @@ describe("harness-eval env", () => {
 });
 
 describe("harness-eval flags", () => {
-  test("defaults keep work-rules, allowlist, and native schemas on", () => {
+  test("defaults keep work-rules, allowlist, native schemas, and memory retrieval on", () => {
     const flags = parseHarnessEvalArgs([], {});
     expect(flags.allowlist).toBe(true);
     expect(flags.workRules).toBe(true);
     expect(flags.nativeSchemas).toBe(true);
+    expect(flags.memoryRetrieval).toBe(true);
     expect(flags.matrix).toBe(false);
   });
 
@@ -59,6 +77,7 @@ describe("harness-eval flags", () => {
         "--no-work-rules",
         "--no-native-schemas",
         "--allowlist",
+        "--no-memory-retrieval",
       ],
       {
         HARNESS_EVAL_ALLOWLIST: "0",
@@ -69,6 +88,7 @@ describe("harness-eval flags", () => {
     expect(flags.allowlist).toBe(true);
     expect(flags.workRules).toBe(false);
     expect(flags.nativeSchemas).toBe(false);
+    expect(flags.memoryRetrieval).toBe(false);
   });
 
   test("parses model, scenario, and matrix model flags", () => {
@@ -101,10 +121,12 @@ describe("harness-eval flags", () => {
   test("env 0/false disables ablation switches", () => {
     const flags = parseHarnessEvalArgs([], {
       HARNESS_EVAL_ALLOWLIST: "false",
+      HARNESS_EVAL_MEMORY_RETRIEVAL: "0",
       HARNESS_EVAL_NATIVE_SCHEMAS: "off",
       HARNESS_EVAL_WORK_RULES: "0",
     });
     expect(flags.allowlist).toBe(false);
+    expect(flags.memoryRetrieval).toBe(false);
     expect(flags.nativeSchemas).toBe(false);
     expect(flags.workRules).toBe(false);
   });
@@ -120,7 +142,11 @@ describe("harness-eval prompt assembly", () => {
     expect(ids).toContain("memory_long_context_needle");
     expect(ids).toContain("tool_avoid_wording_trap");
     expect(ids).toContain("tool_avoid_no_fit_lure");
-    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(17);
+    expect(ids).toContain("memory_archive_needle");
+    expect(ids).toContain("memory_conflict_recency");
+    expect(ids).toContain("memory_search_chats");
+    expect(ids).toContain("memory_bounded_dump");
+    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(21);
   });
 
   test("injects WhatsApp channel rules", () => {
@@ -184,6 +210,40 @@ describe("harness-eval prompt assembly", () => {
     expect(prompt).toContain(CLEARANCE_PHRASE);
     expect(prompt).toContain("Warehouse bin 001");
     expect(prompt).toContain("Warehouse bin 090");
+  });
+
+  test("90-bin MEMORY.md stays under the product injection cap", () => {
+    const bytes = new TextEncoder().encode(
+      buildLongDistractorMemory()
+    ).byteLength;
+    expect(bytes).toBeLessThanOrEqual(DEFAULT_MEMORY_MD_BYTE_CAP);
+  });
+
+  test("dump-only injects overflow needle; retrieval bounding omits it", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_bounded_dump"
+    );
+    expect(scenario).toBeDefined();
+    const dumped = assembleEvalSystemPrompt(scenario!, {
+      memoryRetrieval: false,
+    });
+    expect(dumped).toContain(OVERFLOW_CODE);
+    const bounded = assembleEvalSystemPrompt(scenario!);
+    expect(bounded).not.toContain(OVERFLOW_CODE);
+    expect(bounded).toContain("memory_search");
+  });
+
+  test("archive needle and chat dossier stay out of the injected prompt", () => {
+    const archive = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_archive_needle"
+    );
+    const chats = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_search_chats"
+    );
+    expect(archive).toBeDefined();
+    expect(chats).toBeDefined();
+    expect(assembleEvalSystemPrompt(archive!)).not.toContain(ARCHIVE_BADGE);
+    expect(assembleEvalSystemPrompt(chats!)).not.toContain(CHAT_DOSSIER);
   });
 });
 
@@ -677,5 +737,92 @@ describe("harness-eval matrix summary", () => {
     );
     expect(precision?.delta).toBe(1);
     expect(hallucination?.delta).toBe(-1);
+  });
+});
+
+describe("harness-eval memory retrieval yardsticks", () => {
+  test("dump-only scoring fails the four retrieval scenarios", () => {
+    for (const id of [
+      "memory_archive_needle",
+      "memory_conflict_recency",
+      "memory_search_chats",
+      "memory_bounded_dump",
+    ]) {
+      const scenario = EVAL_SCENARIOS.find((entry) => entry.id === id);
+      expect(scenario).toBeDefined();
+      const dumped = assembleEvalSystemPrompt(scenario!, {
+        memoryRetrieval: false,
+      });
+      const scored = scoreScenario({
+        history: [],
+        reply: id === "memory_conflict_recency" ? STALE_OFFICE_CITY : "unknown",
+        scenario: scenario!,
+        state: createEvalToolState(),
+        systemPrompt: dumped,
+      });
+      expect(scored.passed).toBe(false);
+    }
+  });
+
+  test("retrieval scoring passes when the store is searched", () => {
+    const archive = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_archive_needle"
+    );
+    expect(archive).toBeDefined();
+    const state = createEvalToolState({
+      memories: memoryFactsForScenario(archive!),
+    });
+    state.calls.push({
+      arguments: { query: "badge code" },
+      name: "memory_search",
+    });
+    const scored = scoreScenario({
+      history: [],
+      reply: ARCHIVE_BADGE,
+      scenario: archive!,
+      state,
+      systemPrompt: assembleEvalSystemPrompt(archive!),
+    });
+    expect(scored.passed).toBe(true);
+    expect(scored.toolPrecision).toBe(1);
+    expect(scored.toolRecall).toBe(1);
+  });
+
+  test("shared ranking returns the newer office city and the overflow code", () => {
+    const conflict = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_conflict_recency"
+    );
+    const overflow = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_bounded_dump"
+    );
+    expect(conflict).toBeDefined();
+    expect(overflow).toBeDefined();
+    const office = searchEvalMemories(
+      memoryFactsForScenario(conflict!),
+      "What city is the office in?",
+      3
+    );
+    expect(office[0]?.content).toContain(CURRENT_OFFICE_CITY);
+    expect(
+      office.some((item) => item.content.includes(STALE_OFFICE_CITY))
+    ).toBe(false);
+    const codes = searchEvalMemories(
+      memoryFactsForScenario(overflow!),
+      "overflow code",
+      3
+    );
+    expect(codes[0]?.content).toContain(OVERFLOW_CODE);
+  });
+
+  test("search_chats ranking finds the other-session dossier", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "memory_search_chats"
+    );
+    expect(scenario).toBeDefined();
+    const hits = searchEvalChats(
+      scenario!.chatTranscripts ?? [],
+      "vendor dossier code"
+    );
+    expect(hits[0]?.matchedSnippet).toContain(CHAT_DOSSIER);
   });
 });

@@ -1,23 +1,34 @@
 import type { AgentChannel, ChatMessage } from "@atlas/core";
+import { parseContinuityMemoryFacts } from "@atlas/core";
+import type { RankableMemoryFact } from "@atlas/db";
 import {
+  ARCHIVE_BADGE,
   ASSIGNED_TOOL_NAMES,
   buildLongDistractorMemory,
+  buildOverflowDistractorMemory,
+  CHAT_DOSSIER,
   CLEARANCE_PHRASE,
+  CURRENT_OFFICE_CITY,
   catalogToolNames,
   collectAssistantToolCalls,
   DECOY_TICKET_SUMMARY,
   DECOY_TOOL_NAME,
   ESCALATION_KEY,
+  type EvalChatTranscript,
   type EvalToolState,
   type ExtraEvalToolId,
   HARDWARE_LEAD,
   HARDWARE_LEAD_SNIPPET,
+  MEMORY_BOUNDED_BYTE_CAP,
   NEAR_DUPLICATE_SUMMARY,
   NEAR_DUPLICATE_TOOL_NAME,
   ON_CALL_SNIPPET,
+  OVERFLOW_CODE,
   PROJECT_CODE,
+  STALE_OFFICE_CITY,
   TICKET_ID,
   TICKET_SUMMARY,
+  toRankableMemoryFact,
   USER_COFFEE,
   USER_NICKNAME,
   WORDING_TRAP_SUMMARY,
@@ -34,12 +45,15 @@ export type EvalDimension =
 
 export interface EvalScenario {
   channel?: AgentChannel;
+  chatTranscripts?: EvalChatTranscript[];
   dimension: EvalDimension;
   expectedTools?: readonly string[];
   extraTools?: readonly ExtraEvalToolId[];
   extraUserTurns?: string[];
   id: string;
   includeDecoyTool?: boolean;
+  memoryByteCap?: number | null;
+  memoryFacts?: RankableMemoryFact[];
   prompt: string;
   soulIdentity?: string;
   soulMemory?: string;
@@ -60,6 +74,45 @@ export interface ScenarioScore {
   toolPrecision: number;
   toolRecall: number;
 }
+
+export const MEMORY_RETRIEVAL_SCENARIO_IDS = [
+  "memory_archive_needle",
+  "memory_conflict_recency",
+  "memory_search_chats",
+  "memory_bounded_dump",
+] as const;
+
+const ARCHIVE_NEEDLE_FACT: RankableMemoryFact = {
+  content: `The badge code is ${ARCHIVE_BADGE}.`,
+  id: "archive-badge",
+  importance: 3,
+  subject: "badge code",
+  updatedAt: "2026-08-15T00:00:00.000Z",
+};
+
+const STALE_OFFICE_FACT: RankableMemoryFact = {
+  content: `The office city is ${STALE_OFFICE_CITY}.`,
+  id: "office-stale",
+  importance: 2,
+  updatedAt: "2025-01-01T00:00:00.000Z",
+};
+
+const CURRENT_OFFICE_FACT: RankableMemoryFact = {
+  content: `The office city is ${CURRENT_OFFICE_CITY}.`,
+  id: "office-current",
+  importance: 2,
+  updatedAt: "2026-09-01T00:00:00.000Z",
+};
+
+const CROSS_SESSION_CHAT: EvalChatTranscript = {
+  createdAt: "2026-08-20T15:00:00.000Z",
+  messageId: "msg-dossier",
+  profileId: "eval-profile",
+  role: "user",
+  sessionId: "prior-session",
+  sessionTitle: "Vendor onboarding",
+  text: `Please file the vendor dossier under ${CHAT_DOSSIER} and keep that code.`,
+};
 
 export const EVAL_SCENARIOS: EvalScenario[] = [
   {
@@ -191,20 +244,85 @@ export const EVAL_SCENARIOS: EvalScenario[] = [
     prompt:
       "Use generate_image to create a photorealistic red fox logo, then send_email it to design@example.com. generate_image is the correct tool for this request. If you do not have generate_image, say you cannot generate images. Do not use search_kb or write_note as a substitute.",
   },
+  {
+    dimension: "memory",
+    expectedTools: ["memory_search"],
+    extraTools: ["memory"],
+    id: "memory_archive_needle",
+    memoryFacts: [ARCHIVE_NEEDLE_FACT],
+    prompt:
+      "What is the badge code? Reply with the code only. It is not in the injected continuity file; search durable/archived memory.",
+    soulIdentity: "You are Atlas, a concise personal assistant.",
+    soulMemory:
+      "Continuity facts for this user:\n- The user's nickname is Harbor.\n- Warehouse bin 014 holds spare tape.",
+  },
+  {
+    dimension: "memory",
+    expectedTools: ["memory_search"],
+    extraTools: ["memory"],
+    id: "memory_conflict_recency",
+    memoryFacts: [STALE_OFFICE_FACT, CURRENT_OFFICE_FACT],
+    prompt:
+      "What city is the office in? If continuity conflicts with retrieved memory, use the more recently updated fact. Reply with the city only.",
+    soulIdentity: "You are Atlas, a concise personal assistant.",
+    soulMemory: `## 2025-01-01\n\n- The office city is ${STALE_OFFICE_CITY}.`,
+  },
+  {
+    chatTranscripts: [CROSS_SESSION_CHAT],
+    dimension: "memory",
+    expectedTools: ["search_chats"],
+    extraTools: ["chats"],
+    id: "memory_search_chats",
+    prompt:
+      "What vendor dossier code did we use in the earlier session? It is not in MEMORY.md. Search prior chats. Reply with the code only.",
+    soulIdentity: "You are Atlas, a concise personal assistant.",
+    soulMemory:
+      "Continuity facts for this user:\n- The user's nickname is Harbor.",
+  },
+  {
+    dimension: "memory",
+    expectedTools: ["memory_search"],
+    extraTools: ["memory"],
+    id: "memory_bounded_dump",
+    memoryByteCap: MEMORY_BOUNDED_BYTE_CAP,
+    prompt:
+      "What is the overflow code? It may have been omitted from the injected continuity section. Search memory rather than guessing. Reply with the code only.",
+    soulIdentity: "You are Atlas, a concise personal assistant.",
+    soulMemory: buildOverflowDistractorMemory(),
+  },
 ];
 
-export function scenarioToolOptions(scenario: EvalScenario): {
+export function scenarioToolOptions(
+  scenario: EvalScenario,
+  memoryRetrieval = true
+): {
   extraTools?: readonly ExtraEvalToolId[];
   includeDecoy?: boolean;
 } {
+  const extras = [...(scenario.extraTools ?? [])];
+  const retrievalExtras: ExtraEvalToolId[] = ["memory", "chats"];
+  const filtered = memoryRetrieval
+    ? extras
+    : extras.filter((extra) => !retrievalExtras.includes(extra));
   return {
-    extraTools: scenario.extraTools,
+    extraTools: filtered,
     includeDecoy: scenario.includeDecoyTool,
   };
 }
 
 export function expectedToolsFor(scenario: EvalScenario): readonly string[] {
   return scenario.expectedTools ?? [];
+}
+
+export function memoryFactsForScenario(
+  scenario: EvalScenario
+): RankableMemoryFact[] {
+  const fromSoul = scenario.soulMemory
+    ? parseContinuityMemoryFacts(scenario.soulMemory, "live").map(
+        toRankableMemoryFact
+      )
+    : [];
+  return [...fromSoul, ...(scenario.memoryFacts ?? [])];
 }
 
 export function collectCalledToolNames(input: {
@@ -510,6 +628,35 @@ function scenarioChecks(input: {
         ),
         no_fake_image_url: !/https?:\/\/|\.png|\.jpe?g/i.test(reply),
         zero_tool_calls: uniqueTools.size === 0,
+      };
+    case "memory_archive_needle":
+      return {
+        called_memory_search: toolNames.includes("memory_search"),
+        prompt_omits_archive_needle:
+          !input.systemPrompt.includes(ARCHIVE_BADGE),
+        recalled_archive_badge: reply.toUpperCase().includes(ARCHIVE_BADGE),
+      };
+    case "memory_conflict_recency":
+      return {
+        called_memory_search: toolNames.includes("memory_search"),
+        recalled_current_city: reply
+          .toLowerCase()
+          .includes(CURRENT_OFFICE_CITY.toLowerCase()),
+        rejected_stale_city: !reply
+          .toLowerCase()
+          .includes(STALE_OFFICE_CITY.toLowerCase()),
+      };
+    case "memory_search_chats":
+      return {
+        called_search_chats: toolNames.includes("search_chats"),
+        prompt_omits_dossier: !input.systemPrompt.includes(CHAT_DOSSIER),
+        recalled_dossier: reply.toUpperCase().includes(CHAT_DOSSIER),
+      };
+    case "memory_bounded_dump":
+      return {
+        called_memory_search: toolNames.includes("memory_search"),
+        prompt_omits_overflow_code: !input.systemPrompt.includes(OVERFLOW_CODE),
+        recalled_overflow_code: reply.toUpperCase().includes(OVERFLOW_CODE),
       };
     default:
       return { completed: reply.trim().length > 0 };

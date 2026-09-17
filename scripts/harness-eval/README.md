@@ -28,6 +28,7 @@ Defaults match the iteration-2 product path (all on). Each switch is independent
 |---|---|---|---|
 | `--work-rules` / `--no-work-rules` | `HARNESS_EVAL_WORK_RULES=0\|1` | on | `appendRuntimeProfileRules` / `DEFAULT_AGENT_WORK_RULES` ("do not invent tools") |
 | `--allowlist` / `--no-allowlist` | `HARNESS_EVAL_ALLOWLIST=0\|1` | on | `# Assigned tools` roster in `buildChatSystemPrompt` |
+| `--memory-retrieval` / `--no-memory-retrieval` | `HARNESS_EVAL_MEMORY_RETRIEVAL=0\|1` | on | Bound MEMORY.md + `memory_search`/`search_chats` extras |
 | `--model <id>` | `HARNESS_EVAL_MODEL` | `kimi-k2.7-code` | OpenCode Go model id |
 | `--native-schemas` / `--no-native-schemas` | `HARNESS_EVAL_NATIVE_SCHEMAS=0\|1` | on | Whether `generateChat`/`streamChat` receive native tool schemas |
 
@@ -59,7 +60,8 @@ any call → precision 0.
 
 ## Discriminating scenarios
 
-Original ids are unchanged. Added:
+Original ids are unchanged. Added in eval hardening, plus iteration-3 memory
+retrieval yardsticks:
 
 | Id | What it separates |
 |---|---|
@@ -68,6 +70,21 @@ Original ids are unchanged. Added:
 | `memory_long_context_needle` | recall `SILVER-ORCHID-77` from a 90-bin MEMORY.md distractor list |
 | `tool_avoid_wording_trap` | user says `lookup_ticket_live`; real tool is `lookup_ticket` |
 | `tool_avoid_no_fit_lure` | `generate_image` / `send_email` requested; neither is assigned |
+| `memory_archive_needle` | badge code only in the archive store; not in injected MEMORY.md |
+| `memory_conflict_recency` | stale city in MEMORY.md vs newer store fact |
+| `memory_search_chats` | dossier code only in another transcript (`search_chats`) |
+| `memory_bounded_dump` | overflow code is in a huge MEMORY.md but omitted from the bounded injection |
+
+`--memory-retrieval` (default) bounds MEMORY.md with the product composer and
+attaches `memory_search` / `search_chats` that call the same
+`searchRankedMemories` / `ConversationKeywordSearch` code as production.
+`--no-memory-retrieval` dumps MEMORY.md wholesale and omits those tools (the
+iteration-3 dump-only baseline). The in-harness store is not SQLite/AgentService;
+it exercises the shared ranking/bounding functions. Live `memory_search` in
+AgentService still goes through `MemoryService` + tenant-scoped SQLite.
+
+LLM continuity summarization is a seam (`summarizeContinuityMemoryWithModel`).
+Default injection is extractive recency, not a live OpenCode Go call.
 
 ## Matrix
 

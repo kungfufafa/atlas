@@ -15,6 +15,8 @@ Ablation flags (independently togglable; defaults match iteration-2 product path
   --no-work-rules           Omit runtime work rules, including "do not invent tools"
   --allowlist               Include the # Assigned tools prompt section (default)
   --no-allowlist            Omit that roster; native schemas and the tool loop stay on
+  --memory-retrieval        Bound MEMORY.md and attach memory_search/search_chats (default)
+  --no-memory-retrieval     Dump MEMORY.md wholesale and omit memory retrieval tools (iter3 baseline)
   --native-schemas          Send native tool schemas to the provider (default)
   --no-native-schemas       Strip tools from provider generateChat/streamChat (eval-only wrap)
   --scenario <id>           Run one scenario (repeatable)
@@ -31,6 +33,7 @@ Environment:
   HARNESS_EVAL_MODEL
   HARNESS_EVAL_WORK_RULES=0|1       (default 1)
   HARNESS_EVAL_ALLOWLIST=0|1        (default 1)
+  HARNESS_EVAL_MEMORY_RETRIEVAL=0|1 (default 1)
   HARNESS_EVAL_NATIVE_SCHEMAS=0|1   (default 1)
   HARNESS_EVAL_STRONG_MODEL
   HARNESS_EVAL_WEAK_MODEL
@@ -44,6 +47,7 @@ export interface HarnessEvalCliOptions {
   allowlist: boolean;
   help: boolean;
   matrix: boolean;
+  memoryRetrieval: boolean;
   model?: string;
   nativeSchemas: boolean;
   out?: string;
@@ -89,6 +93,7 @@ export function parseHarnessEvalArgs(
     allowlist: parseBoolEnv(env, "HARNESS_EVAL_ALLOWLIST", true),
     help: false,
     matrix: false,
+    memoryRetrieval: parseBoolEnv(env, "HARNESS_EVAL_MEMORY_RETRIEVAL", true),
     model: env.HARNESS_EVAL_MODEL?.trim() || undefined,
     nativeSchemas: parseBoolEnv(env, "HARNESS_EVAL_NATIVE_SCHEMAS", true),
     promptOnly: false,
@@ -123,6 +128,12 @@ export function parseHarnessEvalArgs(
         break;
       case "--no-allowlist":
         parsed.allowlist = false;
+        break;
+      case "--memory-retrieval":
+        parsed.memoryRetrieval = true;
+        break;
+      case "--no-memory-retrieval":
+        parsed.memoryRetrieval = false;
         break;
       case "--native-schemas":
         parsed.nativeSchemas = true;

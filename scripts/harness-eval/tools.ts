@@ -1,4 +1,13 @@
-import type { ChatMessage, ToolDefinition } from "@atlas/core";
+import type {
+  ChatMessage,
+  ContinuityMemoryFact,
+  ToolDefinition,
+} from "@atlas/core";
+import {
+  ConversationKeywordSearch,
+  type RankableMemoryFact,
+  searchRankedMemories,
+} from "@atlas/db";
 
 export const TICKET_ID = "T-42";
 export const TICKET_SUMMARY = "Waiting on hardware";
@@ -11,6 +20,13 @@ export const HARDWARE_LEAD_SNIPPET = "Hardware lead contact is Priya in bay 4.";
 export const CLEARANCE_PHRASE = "SILVER-ORCHID-77";
 export const LONG_CONTEXT_NEEDLE_INDEX = 37;
 export const LONG_CONTEXT_DISTRACTOR_COUNT = 90;
+export const ARCHIVE_BADGE = "QUARTZ-WALRUS-19";
+export const STALE_OFFICE_CITY = "Berlin";
+export const CURRENT_OFFICE_CITY = "Lisbon";
+export const CHAT_DOSSIER = "NIGHTINGALE-4";
+export const OVERFLOW_CODE = "MANGROVE-DELTA-5";
+export const OVERFLOW_DISTRACTOR_COUNT = 250;
+export const MEMORY_BOUNDED_BYTE_CAP = 2048;
 
 export const ASSIGNED_TOOL_NAMES = [
   "lookup_ticket",
@@ -27,7 +43,12 @@ export const WORDING_TRAP_TOOL_NAME = "lookup_ticket_live";
 export const WORDING_TRAP_SUMMARY = "Live-index preview stub";
 export const ON_CALL_SNIPPET = "On-call rotation is posted in the ops channel.";
 
-export type ExtraEvalToolId = "archive" | "near_duplicate" | "wording_trap";
+export type ExtraEvalToolId =
+  | "archive"
+  | "chats"
+  | "memory"
+  | "near_duplicate"
+  | "wording_trap";
 
 export interface CreateEvalToolsOptions {
   extraTools?: readonly ExtraEvalToolId[];
@@ -39,13 +60,32 @@ export interface ToolCallLog {
   name: string;
 }
 
+export interface EvalChatTranscript {
+  createdAt: string;
+  messageId: string;
+  profileId: string;
+  role: string;
+  sessionId: string;
+  sessionTitle: string;
+  text: string;
+}
+
 export interface EvalToolState {
   calls: ToolCallLog[];
+  chats: EvalChatTranscript[];
+  memories: RankableMemoryFact[];
   notes: Array<{ body: string; title: string }>;
 }
 
-export function createEvalToolState(): EvalToolState {
-  return { calls: [], notes: [] };
+export function createEvalToolState(
+  seed: { chats?: EvalChatTranscript[]; memories?: RankableMemoryFact[] } = {}
+): EvalToolState {
+  return {
+    calls: [],
+    chats: [...(seed.chats ?? [])],
+    memories: [...(seed.memories ?? [])],
+    notes: [],
+  };
 }
 
 export function resolveExtraEvalTools(
@@ -78,6 +118,79 @@ export function buildLongDistractorMemory(): string {
     );
   }
   return lines.join("\n");
+}
+
+export function buildOverflowDistractorMemory(): string {
+  const lines = [
+    "Continuity facts for this user:",
+    "",
+    "## 2024-01-01",
+    "",
+    `- The overflow code is ${OVERFLOW_CODE}.`,
+    "",
+    "## 2026-09-01",
+    "",
+  ];
+  for (let index = 1; index <= OVERFLOW_DISTRACTOR_COUNT; index += 1) {
+    const bin = String(index).padStart(3, "0");
+    lines.push(
+      `- Warehouse bin ${bin} holds spare SKU-A${bin} counted last Tuesday.`
+    );
+  }
+  return lines.join("\n");
+}
+
+export function toRankableMemoryFact(
+  fact: ContinuityMemoryFact | RankableMemoryFact
+): RankableMemoryFact {
+  return {
+    content: fact.content,
+    id: fact.id,
+    importance: fact.importance ?? 1,
+    subject: "subject" in fact ? (fact.subject ?? null) : null,
+    updatedAt: fact.updatedAt,
+  };
+}
+
+export function searchEvalMemories(
+  memories: readonly RankableMemoryFact[],
+  query: string,
+  limit = 10
+): RankableMemoryFact[] {
+  return searchRankedMemories(memories, query, {
+    limit,
+    resolveConflicts: true,
+  });
+}
+
+export function searchEvalChats(
+  chats: readonly EvalChatTranscript[],
+  query: string,
+  limit = 10
+): Array<{
+  createdAt: string;
+  matchedSnippet: string;
+  messageId: string;
+  profileId: string;
+  role: string;
+  sessionId: string;
+  sessionTitle: string | null;
+}> {
+  const search = new ConversationKeywordSearch(query, limit);
+  for (const chat of chats) {
+    search.add(
+      {
+        createdAt: chat.createdAt,
+        messageId: chat.messageId,
+        profileId: chat.profileId,
+        role: chat.role,
+        sessionId: chat.sessionId,
+        sessionTitle: chat.sessionTitle,
+      },
+      chat.text
+    );
+  }
+  return search.results();
 }
 
 export function createEvalTools(
@@ -251,6 +364,80 @@ export function createEvalTools(
           status: "unknown",
           summary: WORDING_TRAP_SUMMARY,
           ticketId: String(record.ticketId ?? "").trim(),
+        });
+      },
+    });
+  }
+
+  if (extras.has("memory")) {
+    tools.push({
+      description:
+        "Search durable memories and the memory archive. Ranked by lexical/FTS relevance; when facts conflict, the more recently updated value wins. Use this for facts missing from or newer than MEMORY.md.",
+      name: "memory_search",
+      parallelSafe: true,
+      parameters: {
+        properties: {
+          limit: { type: "number" },
+          query: {
+            description:
+              "Search keywords or natural language query for memories",
+            type: "string",
+          },
+        },
+        required: ["query"],
+        type: "object",
+      },
+      run(input) {
+        const record = asRecord(input);
+        state.calls.push({ arguments: record, name: "memory_search" });
+        const query = String(record.query ?? "");
+        const limitRaw = Number(record.limit);
+        const limit = Number.isFinite(limitRaw) ? limitRaw : 10;
+        const memories = searchEvalMemories(state.memories, query, limit);
+        return Promise.resolve({
+          count: memories.length,
+          memories: memories.map((item) => ({
+            content: item.content,
+            id: item.id,
+            importance: item.importance ?? 1,
+            subject: item.subject ?? null,
+            updatedAt: item.updatedAt,
+          })),
+          query,
+        });
+      },
+    });
+  }
+
+  if (extras.has("chats")) {
+    tools.push({
+      description:
+        "Search previous chat sessions for topics, decisions, or facts that are not in MEMORY.md.",
+      name: "search_chats",
+      parallelSafe: true,
+      parameters: {
+        properties: {
+          limit: { type: "number" },
+          query: {
+            description:
+              "Keywords or a natural-language query for past conversations",
+            type: "string",
+          },
+        },
+        required: ["query"],
+        type: "object",
+      },
+      run(input) {
+        const record = asRecord(input);
+        state.calls.push({ arguments: record, name: "search_chats" });
+        const query = String(record.query ?? "");
+        const limitRaw = Number(record.limit);
+        const limit = Number.isFinite(limitRaw) ? limitRaw : 10;
+        const results = searchEvalChats(state.chats, query, limit);
+        return Promise.resolve({
+          count: results.length,
+          query,
+          results,
         });
       },
     });
