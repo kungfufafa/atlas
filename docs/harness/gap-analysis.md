@@ -151,10 +151,16 @@ The 12-scenario suite was saturated on `kimi-k2.7-code` because work-rules and n
 
 Honest result: allowlist **alone** did not reduce hallucination (zero delta with work-rules OFF on both `kimi-k2.7-code` and `deepseek-flash`). Allowlist **plus** work-rules flipped `tool_avoid_absent_web_search` on flash only (15/17 → 16/17). `tool_avoid_wording_trap` failed all eight cells because the user-named decoy is in that scenario's catalog.
 
+## Iteration 3 choice
+
+**Shipped:** bounded `MEMORY.md` injection (`composeContinuityMemorySection`, 8192-byte default; small files unchanged) and shared `searchRankedMemories` (lexical + FTS5 boost + recency collapse on `"X is Y"` slots). `MemoryService` search uses that ranker. Eval `--no-memory-retrieval` is the dump-only baseline.
+
+Live OpenCode Go: memory yardsticks **0/4 → 4/4** on `kimi-k2.7-code` (n=3) and `deepseek-flash` (n=3). Full suite **20/21** on both; original 16/17 held. `tool_avoid_wording_trap` still fails. Extractive bound is the production default; LLM summarization is a seam, not a live session-start call. Details: `docs/harness/eval-results/iter3-summary.md`.
+
 ## Eval coverage this iteration
 
 `scripts/harness-eval/run.ts` drives `createAgentHarness` → `createChatSession` → `send()` (real `buildChatSystemPrompt` + `generateReply` + `executeToolCall` loop) with `createOpenCodeGoProvider`. Flags: `scripts/harness-eval/README.md`.
 
-Scenarios: original 12 plus near-duplicate id-vs-title lookup, 3-hop lookup→KB(`HW-LEAD`)→note, 90-bin MEMORY.md needle, `lookup_ticket_live` wording trap, and generate_image/send_email lure.
+Scenarios: original 12 plus near-duplicate, 3-hop, 90-bin MEMORY.md needle, wording trap, no-fit lure, and four retrieval yardsticks (archive needle, conflict/recency, search_chats, bounded dump).
 
-Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no post-turn review, no DB memory_write). Soul is composed in-process. Native schemas stay on in the published matrix. See the eval summary JSON `path` field.
+Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no post-turn review, no SQLite `memory_write`). Soul is composed in-process. Memory tools in the eval use an in-harness store over the **same** `searchRankedMemories` / `ConversationKeywordSearch` functions as production. Native schemas stay on in the published matrix. See the eval summary JSON `path` field.

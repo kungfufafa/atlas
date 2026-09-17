@@ -1,0 +1,90 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": false,
+    "nativeSchemas": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T00:24:18.133Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_memory_search": false,
+        "prompt_omits_archive_needle": true,
+        "recalled_archive_badge": false
+      },
+      "dimension": "memory",
+      "durationMs": 6521,
+      "gradedScore": 0.111,
+      "id": "memory_archive_needle",
+      "passed": false,
+      "replyPreview": "I don't have access to durable or archived memory beyond the injected continuity file and the knowledge base, and the badge code isn't in either. I can only retrieve it if you tell me the source/ticket ID or if it's added to the KB.",
+      "score": 0.333,
+      "toolCalls": ["search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_memory_search": false,
+        "recalled_current_city": false,
+        "rejected_stale_city": false
+      },
+      "dimension": "memory",
+      "durationMs": 1788,
+      "gradedScore": 0,
+      "id": "memory_conflict_recency",
+      "passed": false,
+      "replyPreview": "Berlin",
+      "score": 0,
+      "toolCalls": [],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_search_chats": false,
+        "prompt_omits_dossier": true,
+        "recalled_dossier": false
+      },
+      "dimension": "memory",
+      "durationMs": 12411,
+      "gradedScore": 0.111,
+      "id": "memory_search_chats",
+      "passed": false,
+      "replyPreview": "I can’t search prior chat logs with the tools available this session. The only lookup tools I have are the internal KB and ticket lookup, and the dossier code isn’t in either.\n\nIf you remember the ticket or doc it was tied to, I can try `lo",
+      "score": 0.333,
+      "toolCalls": ["search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_memory_search": false,
+        "prompt_omits_overflow_code": false,
+        "recalled_overflow_code": true
+      },
+      "dimension": "memory",
+      "durationMs": 3038,
+      "gradedScore": 0.111,
+      "id": "memory_bounded_dump",
+      "passed": false,
+      "replyPreview": "MANGROVE-DELTA-5",
+      "score": 0.333,
+      "toolCalls": [],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    }
+  ],
+  "summary": {
+    "failed": 4,
+    "meanGradedScore": 0.083,
+    "meanScore": 0.25,
+    "meanToolPrecision": 0,
+    "meanToolRecall": 0,
+    "passed": 0,
+    "transportOk": false
+  }
+}

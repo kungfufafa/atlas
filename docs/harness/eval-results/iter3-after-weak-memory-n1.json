@@ -1,0 +1,90 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T00:27:41.152Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_memory_search": true,
+        "prompt_omits_archive_needle": true,
+        "recalled_archive_badge": true
+      },
+      "dimension": "memory",
+      "durationMs": 5014,
+      "gradedScore": 1,
+      "id": "memory_archive_needle",
+      "passed": true,
+      "replyPreview": "QUARTZ-WALRUS-19",
+      "score": 1,
+      "toolCalls": ["memory_search", "memory_search"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_memory_search": true,
+        "recalled_current_city": true,
+        "rejected_stale_city": true
+      },
+      "dimension": "memory",
+      "durationMs": 2714,
+      "gradedScore": 0.833,
+      "id": "memory_conflict_recency",
+      "passed": true,
+      "replyPreview": "Lisbon",
+      "score": 1,
+      "toolCalls": ["memory_search", "search_kb"],
+      "toolPrecision": 0.5,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_search_chats": true,
+        "prompt_omits_dossier": true,
+        "recalled_dossier": true
+      },
+      "dimension": "memory",
+      "durationMs": 2539,
+      "gradedScore": 1,
+      "id": "memory_search_chats",
+      "passed": true,
+      "replyPreview": "NIGHTINGALE-4",
+      "score": 1,
+      "toolCalls": ["search_chats", "search_chats"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_memory_search": true,
+        "prompt_omits_overflow_code": true,
+        "recalled_overflow_code": true
+      },
+      "dimension": "memory",
+      "durationMs": 4403,
+      "gradedScore": 1,
+      "id": "memory_bounded_dump",
+      "passed": true,
+      "replyPreview": "MANGROVE-DELTA-5",
+      "score": 1,
+      "toolCalls": ["memory_search", "memory_search"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 0.958,
+    "meanScore": 1,
+    "meanToolPrecision": 0.875,
+    "meanToolRecall": 1,
+    "passed": 4,
+    "transportOk": false
+  }
+}
