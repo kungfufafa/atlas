@@ -6,7 +6,7 @@ export const FTS_CHAT_DISTRACTOR_COUNT = 80;
 export const FTS_CHAT_RESULT_LIMIT = 10;
 
 export function ftsChatNeedleText(): string {
-  return `Zephyric cipher locker code: ${FTS_CHAT_NEEDLE_CODE}.`;
+  return `Zephyric cipher locker retrieval code: ${FTS_CHAT_NEEDLE_CODE}.`;
 }
 
 export function ftsChatDistractorText(index: number): string {
