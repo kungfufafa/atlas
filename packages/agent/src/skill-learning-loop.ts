@@ -134,6 +134,7 @@ export function distillFallbackSkill(input: {
       "1. Use only assigned tools.",
       "2. If a ticket id is present, call lookup_ticket with that id.",
       "3. Call write_note to record the result. Prefer a title that names the workflow (for example clearance-stamp) and include the live ticket summary in the body.",
+      "4. Copy any exact tokens or note titles from the original request into that note.",
       "",
       `Original request: ${userMessage || "(none)"}`,
     ].join("\n");

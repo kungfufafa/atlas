@@ -8,6 +8,8 @@ import {
   buildOverflowDistractorMemory,
   CHAT_DOSSIER,
   CLEARANCE_PHRASE,
+  CLEARANCE_STAMP_NOTE_TITLE,
+  CLEARANCE_STAMP_PHRASE,
   CURRENT_OFFICE_CITY,
   catalogToolNames,
   collectAssistantToolCalls,
@@ -321,7 +323,7 @@ This briefing is one-time. Follow it now.`,
     expectedTools: ["lookup_ticket", "write_note"],
     id: "learn_unknown_tool_recovery",
     phase2Prompt: `Stamp the clearance for ticket ${TICKET_ID} using ${UNKNOWN_CLEARANCE_TOOL}.`,
-    prompt: `Use the ${UNKNOWN_CLEARANCE_TOOL} tool to stamp ticket ${TICKET_ID}. If that exact tool is not assigned, recover using assigned tools instead of retrying the missing name.`,
+    prompt: `Use the ${UNKNOWN_CLEARANCE_TOOL} tool to stamp ticket ${TICKET_ID}. If that exact tool is not assigned, recover using assigned tools: call lookup_ticket, then write_note titled ${CLEARANCE_STAMP_NOTE_TITLE} whose body includes the live ticket summary and the exact token ${CLEARANCE_STAMP_PHRASE}. Do not retry the missing name.`,
   },
 ];
 
@@ -753,13 +755,18 @@ function scenarioChecks(input: {
       const skillCapturesUnknown = learned.some(
         (skill) =>
           skill.body.includes(UNKNOWN_CLEARANCE_TOOL) ||
+          skill.body.includes(CLEARANCE_STAMP_PHRASE) ||
           skill.description.toLowerCase().includes("clearance") ||
           skill.description.toLowerCase().includes("stamp")
+      );
+      const noteHasStampPhrase = input.state.notes.some((note) =>
+        note.body.toUpperCase().includes(CLEARANCE_STAMP_PHRASE)
       );
       return {
         phase1_unknown_tool: input.skillLearning
           ? phase1Unknown || learned.length > 0
           : true,
+        phase2_note_has_stamp_phrase: noteHasStampPhrase,
         phase2_used_assigned_tools:
           usedLookup && usedNote && phase2Assigned.length > 0,
         ...(input.skillLearning

@@ -27,6 +27,7 @@ import {
   buildLongDistractorMemory,
   CHAT_DOSSIER,
   CLEARANCE_PHRASE,
+  CLEARANCE_STAMP_PHRASE,
   CURRENT_OFFICE_CITY,
   createEvalToolState,
   ESCALATION_KEY,
@@ -913,20 +914,48 @@ describe("harness-eval learning yardsticks", () => {
     });
     expect(without.passed).toBe(false);
 
-    const recovered = createEvalToolState();
-    recovered.calls.push(
+    const guessed = createEvalToolState();
+    guessed.calls.push(
       { arguments: { ticketId: TICKET_ID }, name: "lookup_ticket" },
       {
         arguments: { body: TICKET_SUMMARY, title: "clearance-stamp" },
         name: "write_note",
       }
     );
-    recovered.notes.push({ body: TICKET_SUMMARY, title: "clearance-stamp" });
+    guessed.notes.push({ body: TICKET_SUMMARY, title: "clearance-stamp" });
+    const guessedScore = scoreScenario({
+      history: [],
+      learnedSkills: [],
+      phase1Calls: [UNKNOWN_CLEARANCE_TOOL],
+      reply: "looked up and noted",
+      scenario: scenario!,
+      skillLearning: false,
+      state: guessed,
+      systemPrompt: "",
+    });
+    expect(guessedScore.passed).toBe(false);
+    expect(guessedScore.checks.phase2_note_has_stamp_phrase).toBe(false);
+
+    const recovered = createEvalToolState();
+    recovered.calls.push(
+      { arguments: { ticketId: TICKET_ID }, name: "lookup_ticket" },
+      {
+        arguments: {
+          body: `${TICKET_SUMMARY} ${CLEARANCE_STAMP_PHRASE}`,
+          title: "clearance-stamp",
+        },
+        name: "write_note",
+      }
+    );
+    recovered.notes.push({
+      body: `${TICKET_SUMMARY} ${CLEARANCE_STAMP_PHRASE}`,
+      title: "clearance-stamp",
+    });
     const scored = scoreScenario({
       history: [],
       learnedSkills: [
         {
-          body: `Never call \`${UNKNOWN_CLEARANCE_TOOL}\``,
+          body: `Never call \`${UNKNOWN_CLEARANCE_TOOL}\`. Token ${CLEARANCE_STAMP_PHRASE}`,
           description: "Recover when the user asks to clearance stamp",
           name: "recover-clearance-stamp",
         },
