@@ -774,6 +774,16 @@ describe("harness-eval scoring", () => {
     expect(groupPass.passed).toBe(true);
     expect(groupPass.checks.reply_addresses_asker).toBe(true);
 
+    const groupAtMention = scoreScenario({
+      history: [],
+      reply: `@${CHANNEL_ASKER} nightly backup finished.`,
+      scenario: groupScenario!,
+      state: createEvalToolState(),
+      systemPrompt: groupPrompt,
+    });
+    expect(groupAtMention.passed).toBe(true);
+    expect(groupAtMention.checks.reply_addresses_asker).toBe(true);
+
     const groupFail = scoreScenario({
       history: [],
       reply: "Nightly backup finished.",

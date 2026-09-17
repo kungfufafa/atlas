@@ -569,7 +569,6 @@ function channelKindChecks(
     prompt_omits_unset_kind: !prompt.includes(
       messagingUnsetAudienceLine(label)
     ),
-    reply_no_at_mention: !/@/.test(reply),
   };
   if (kind === "private") {
     checks.prompt_has_private_kind = prompt.includes(
@@ -585,6 +584,7 @@ function channelKindChecks(
       GROUP_CHAT_KIND_GUIDANCE
     );
     checks.reply_does_not_address_asker = !addressesAsker;
+    checks.reply_no_at_mention = !/@/.test(reply);
   } else {
     checks.prompt_has_group_audience = prompt.includes(
       messagingGroupAudienceLine(label)
