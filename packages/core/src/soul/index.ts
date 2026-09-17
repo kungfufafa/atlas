@@ -1,4 +1,5 @@
 export * from "./compose";
+export * from "./continuity-memory";
 export * from "./init";
 export * from "./load";
 export * from "./memory-archive";

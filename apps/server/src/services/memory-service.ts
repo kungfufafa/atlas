@@ -4,8 +4,8 @@ import {
   type DatabaseAdapter,
   type MemoryScope,
   memoryResultLimit,
-  rankMemoryMatches,
   type StoredMemoryRecord,
+  searchRankedMemories,
   tokenizeMemoryQuery,
 } from "@atlas/db";
 
@@ -145,15 +145,16 @@ export class MemoryService {
     if (terms.length === 0) {
       return [];
     }
+    const candidateLimit = memoryResultLimit(Math.max(limit * 8, 40), 200);
     const records = await this.db.searchMemories(
       orgId,
       terms,
       options.scope,
       options.ownerId,
-      limit
+      candidateLimit
     );
 
-    return rankMemoryMatches(records, terms).slice(0, limit);
+    return searchRankedMemories(records, cleanQuery, { limit });
   }
 
   async listMemories(
@@ -260,10 +261,7 @@ export class MemoryService {
       seen.add(record.id);
       merged.push(record);
     }
-    return rankMemoryMatches(merged, tokenizeMemoryQuery(query)).slice(
-      0,
-      limit
-    );
+    return searchRankedMemories(merged, query, { limit });
   }
 
   async getMemory(

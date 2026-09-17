@@ -1,7 +1,14 @@
+import {
+  type ComposeContinuityMemoryOptions,
+  composeContinuityMemorySection,
+} from "./continuity-memory";
 import type { LoadedSoulStack } from "./types";
 
 export interface ComposeSoulPromptOptions {
   includeMemory?: boolean;
+  memoryByteCap?: ComposeContinuityMemoryOptions["byteCap"];
+  memoryOverflowHint?: string;
+  memorySummary?: string;
   profilePrompt?: string;
 }
 
@@ -35,7 +42,12 @@ export function composeSoulSystemPrompt(
   }
 
   if (options.includeMemory !== false && stack.files.memory) {
-    sections.push("", "# Continuity (MEMORY.md)", stack.files.memory);
+    const continuity = composeContinuityMemorySection(stack.files.memory, {
+      byteCap: options.memoryByteCap,
+      overflowHint: options.memoryOverflowHint,
+      summary: options.memorySummary,
+    });
+    sections.push("", "# Continuity (MEMORY.md)", continuity.injected);
   }
 
   if (stack.files.soul && profilePrompt && profilePrompt !== stack.files.soul) {

@@ -1,4 +1,12 @@
-import type { StoredMemoryRecord } from "./types";
+export interface RankableMemoryFact {
+  content: string;
+  id: string;
+  importance?: number;
+  subject?: string | null;
+  updatedAt: string;
+}
+
+const IS_SLOT = /^(?:the\s+)?(.+?)\s+is\s+\S/i;
 
 const MAX_QUERY_CHARS = 4096;
 const MAX_TERMS = 16;
@@ -72,7 +80,7 @@ export function memoryTermWeight(term: string): number {
 }
 
 export function memoryMatchScore(
-  record: StoredMemoryRecord,
+  record: RankableMemoryFact,
   terms: readonly string[]
 ): number {
   const content = normalizeMemoryText(record.content);
@@ -87,10 +95,52 @@ export function memoryMatchScore(
   return score;
 }
 
-export function rankMemoryMatches(
-  records: StoredMemoryRecord[],
+/**
+ * Shared "X is Y" slot so a newer value can replace a stale MEMORY.md line.
+ * Subject labels are not a collapse key: independent facts may share a subject.
+ */
+export function memoryConflictSlot(
+  fact: Pick<RankableMemoryFact, "content">
+): string | null {
+  const match = IS_SLOT.exec(fact.content.trim().replace(/^-\s+/, ""));
+  if (!match?.[1]) {
+    return null;
+  }
+  return normalizeMemoryText(match[1]);
+}
+
+/**
+ * Keep the newest fact per conflict slot. Independent facts without a slot,
+ * and distinct slots under one subject label, stay separate.
+ */
+export function collapseConflictingMemories<T extends RankableMemoryFact>(
+  records: readonly T[]
+): T[] {
+  const chosen = new Map<string, T>();
+  const passthrough: T[] = [];
+  for (const record of records) {
+    const slot = memoryConflictSlot(record);
+    if (!slot) {
+      passthrough.push(record);
+      continue;
+    }
+    const existing = chosen.get(slot);
+    if (
+      !existing ||
+      record.updatedAt.localeCompare(existing.updatedAt) > 0 ||
+      (record.updatedAt === existing.updatedAt &&
+        record.id.localeCompare(existing.id) < 0)
+    ) {
+      chosen.set(slot, record);
+    }
+  }
+  return [...passthrough, ...chosen.values()];
+}
+
+export function rankMemoryMatches<T extends RankableMemoryFact>(
+  records: T[],
   terms: readonly string[]
-): StoredMemoryRecord[] {
+): T[] {
   // Confidence is stored evidence, not a default relevance boost. In particular,
   // missing/zero confidence must never be silently promoted to certainty.
   return records
@@ -99,7 +149,7 @@ export function rankMemoryMatches(
     .sort(
       (a, b) =>
         b.score - a.score ||
-        b.record.importance - a.record.importance ||
+        (b.record.importance ?? 0) - (a.record.importance ?? 0) ||
         b.record.updatedAt.localeCompare(a.record.updatedAt) ||
         a.record.id.localeCompare(b.record.id)
     )

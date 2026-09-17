@@ -17,10 +17,19 @@ export {
 } from "./artifact-publication-identity";
 export * from "./automation-store";
 export * from "./constants";
+export { ConversationKeywordSearch } from "./conversation-keyword-search";
 export type { ResolveDatabasePathOptions } from "./database-url";
 export * from "./local-client";
 export {
+  queryMemoryFts5Hits,
+  searchRankedMemories,
+} from "./memory-rank-fts5";
+export {
+  collapseConflictingMemories,
+  memoryConflictSlot,
+  memoryMatchScore,
   memoryResultLimit,
+  type RankableMemoryFact,
   rankMemoryMatches,
   tokenizeMemoryQuery,
 } from "./memory-search";
