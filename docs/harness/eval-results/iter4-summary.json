@@ -1,0 +1,180 @@
+{
+  "generatedAt": "2026-09-17T01:41:38.940Z",
+  "iteration": 4,
+  "question": "Does a post-turn skill learning loop on unknown-tool / taught-SOP signals move two-phase yardsticks from fail to pass without regressing the 20/21 suite?",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "models": {
+    "strong": "kimi-k2.7-code",
+    "weak": "deepseek-flash"
+  },
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "workRules": true,
+    "skillLearningDefault": false
+  },
+  "yardstickIds": ["learn_sop_acquisition", "learn_unknown_tool_recovery"],
+  "before": {
+    "label": "learning off (--no-skill-learning, product default)",
+    "kimi-k2.7-code": {
+      "n": 3,
+      "passed": 0,
+      "failed": 6,
+      "passRate": 0.0,
+      "meanScore": 0.5,
+      "meanGradedScore": 0.713,
+      "files": [
+        "docs/harness/eval-results/iter4-before-strong-n1.json",
+        "docs/harness/eval-results/iter4-before-strong-n2.json",
+        "docs/harness/eval-results/iter4-before-strong-n3.json"
+      ],
+      "byScenario": {
+        "learn_sop_acquisition": {
+          "passed": 0,
+          "n": 3,
+          "meanScore": 0.5
+        },
+        "learn_unknown_tool_recovery": {
+          "passed": 0,
+          "n": 3,
+          "meanScore": 0.5
+        }
+      }
+    },
+    "deepseek-flash": {
+      "n": 3,
+      "passed": 0,
+      "failed": 6,
+      "passRate": 0.0,
+      "meanScore": 0.583,
+      "meanGradedScore": 0.768,
+      "files": [
+        "docs/harness/eval-results/iter4-before-weak-n1.json",
+        "docs/harness/eval-results/iter4-before-weak-n2.json",
+        "docs/harness/eval-results/iter4-before-weak-n3.json"
+      ],
+      "byScenario": {
+        "learn_sop_acquisition": {
+          "passed": 0,
+          "n": 3,
+          "meanScore": 0.5
+        },
+        "learn_unknown_tool_recovery": {
+          "passed": 0,
+          "n": 3,
+          "meanScore": 0.667
+        }
+      }
+    }
+  },
+  "after": {
+    "label": "learning on (--skill-learning)",
+    "kimi-k2.7-code": {
+      "n": 3,
+      "passed": 6,
+      "failed": 0,
+      "passRate": 1.0,
+      "meanScore": 1.0,
+      "meanGradedScore": 1.0,
+      "files": [
+        "docs/harness/eval-results/iter4-after-strong-n1.json",
+        "docs/harness/eval-results/iter4-after-strong-n2.json",
+        "docs/harness/eval-results/iter4-after-strong-n3.json"
+      ],
+      "byScenario": {
+        "learn_sop_acquisition": {
+          "passed": 3,
+          "n": 3,
+          "meanScore": 1.0
+        },
+        "learn_unknown_tool_recovery": {
+          "passed": 3,
+          "n": 3,
+          "meanScore": 1.0
+        }
+      }
+    },
+    "deepseek-flash": {
+      "n": 3,
+      "passed": 6,
+      "failed": 0,
+      "passRate": 1.0,
+      "meanScore": 1.0,
+      "meanGradedScore": 1.0,
+      "files": [
+        "docs/harness/eval-results/iter4-after-weak-n1.json",
+        "docs/harness/eval-results/iter4-after-weak-n2.json",
+        "docs/harness/eval-results/iter4-after-weak-n3.json"
+      ],
+      "byScenario": {
+        "learn_sop_acquisition": {
+          "passed": 3,
+          "n": 3,
+          "meanScore": 1.0
+        },
+        "learn_unknown_tool_recovery": {
+          "passed": 3,
+          "n": 3,
+          "meanScore": 1.0
+        }
+      }
+    }
+  },
+  "fullSuite": {
+    "kimi-k2.7-code": {
+      "n": 1,
+      "scenarioCount": 21,
+      "passed": 20,
+      "failed": 1,
+      "failedIds": ["tool_avoid_wording_trap"],
+      "original17Passed": 16,
+      "file": "docs/harness/eval-results/iter4-after-strong-full.json"
+    },
+    "deepseek-flash": {
+      "n": 1,
+      "scenarioCount": 21,
+      "passed": 20,
+      "failed": 1,
+      "failedIds": ["tool_avoid_absent_web_search"],
+      "original17Passed": 16,
+      "note": "iter3 failed tool_avoid_wording_trap on this model; this run wording_trap passed and absent_web_search failed (still 20/21, 16/17 original).",
+      "file": "docs/harness/eval-results/iter4-after-weak-full.json"
+    }
+  },
+  "delta": {
+    "kimi-k2.7-code": {
+      "beforePassRate": 0.0,
+      "afterPassRate": 1.0,
+      "scenarioRuns": 6
+    },
+    "deepseek-flash": {
+      "beforePassRate": 0.0,
+      "afterPassRate": 1.0,
+      "scenarioRuns": 6
+    }
+  },
+  "productionVsEval": {
+    "shared": [
+      "runSkillLearningTurn / distillFallbackSkill / collectSkillLearningSignals on createAgentChatSession",
+      "generateSkillPostTurnReview LLM distill (noop falls back to deterministic skill)",
+      "consolidateSkillLearningOutcome Jaccard overlap 0.45 (create→edit/noop)",
+      "parseSkillMarkdown / matchSkillsForMessage / composeSkillsCatalog / composeMatchedSkillsPrompt",
+      "createFts5SkillRanker",
+      "channel allowlist web/cli only; automations/Telegram/WhatsApp/Discord skipped"
+    ],
+    "evalOnly": [
+      "in-memory skill store (not SkillsService disk/SQLite or org ACLs)",
+      "--skill-learning forces the session flag; product default remains off unless post-turn review is opted in",
+      "eval live-applies create/edit; production stages when write-approval is on",
+      "phase 2 is a new session with the same store and no phase-1 history",
+      "no skill_manage tool, no /learn command, no AgentService org middleware"
+    ]
+  },
+  "commits": [
+    "3c16658c Close the post-turn skill learning loop on createAgentChatSession.",
+    "8aa62e80 Add two-phase skill-learning eval yardsticks and an ablation flag.",
+    "134d6f69 Learn from requested unassigned tools even when the model never called them.",
+    "4bb76ee5 Score unknown-tool phase 2 on a skill-captured recovery token."
+  ]
+}

@@ -74,20 +74,17 @@ Atlas:
 
 ### P1. Learning loop is opt-in and turn-local, not continuous
 
-Hermes: always-on learning from traces into skills.
+**Iteration 4 shipped the closed loop, still default-off.** `runSkillLearningTurn` on `createAgentChatSession` distills Unknown tool / requested unassigned tool / `no_progress` / taught SOP into a skill (LLM review + deterministic fallback), consolidates, and injects via matched-skill compose. Live two-phase eval: **0/6 → 6/6** with `--skill-learning` on both models.
 
-Atlas:
+Remaining vs Hermes always-on:
 
-- `/learn` + `skill_manage` are strong (Nakama-grade) **when the user invokes them**
-- Post-turn review (`generateSkillPostTurnReview`) is **off by default** (`resolveSkillPostTurnReviewEnabled` → org default false)
-- Review output is create/patch/noop JSON; it does not write into model history (good) but also does not accumulate a learning curriculum
-- No automatic “this tool-call pattern failed, update the skill” loop from `Unknown tool` / stalled `no_progress` stops (`SendStreamOptions.onToolLoopStop`)
+- Product still requires opted-in post-turn review + assigned `manage-skills` (eval `--skill-learning` forces the session flag)
+- `/learn` remains the user-invoked path
+- Review output on the older AgentService suggestion path is unchanged when the new loop is off
 
 | H | R | C | L |
 |---|---|---|---|
 | 3 | 4 | 3 | 3 |
-
-**Next:** enable post-turn review for eval profiles; feed mechanical stops (`no_progress`, unknown-tool) into the curator.
 
 ### P1. Long-session compaction is structured but not retrieval-backed
 
@@ -157,10 +154,16 @@ Honest result: allowlist **alone** did not reduce hallucination (zero delta with
 
 Live OpenCode Go: memory yardsticks **0/4 → 4/4** on `kimi-k2.7-code` (n=3) and `deepseek-flash` (n=3). Full suite **20/21** on both; original 16/17 held. `tool_avoid_wording_trap` still fails. Extractive bound is the production default; LLM summarization is a seam, not a live session-start call. Details: `docs/harness/eval-results/iter3-summary.md`.
 
+## Iteration 4 choice
+
+**Shipped:** a default-off closed skill-learning loop on `createAgentChatSession`. Qualifying signals (Unknown tool, requested unassigned snake_case name, `no_progress`/`iteration_limit`, tool error, taught SOP) distill a create/patch via `generateSkillPostTurnReview` with `distillFallbackSkill` if the LLM noops, then `consolidateSkillLearningOutcome`. Learned skills match/inject through the existing FTS compose path (`include-body-on-match: true`). AgentService enables the loop only when post-turn review is opted in, `manage-skills` is assigned, the channel is web/cli, and the principal is not a guest. Write-approval still stages.
+
+Live OpenCode Go two-phase yardsticks (`learn_sop_acquisition`, `learn_unknown_tool_recovery`): **0/6 → 6/6** on `kimi-k2.7-code` (n=3) and **0/6 → 6/6** on `deepseek-flash` (n=3) with `--skill-learning` vs `--no-skill-learning`. Original 21-suite **20/21** held (learning off). Details: `docs/harness/eval-results/iter4-summary.md`.
+
 ## Eval coverage this iteration
 
 `scripts/harness-eval/run.ts` drives `createAgentHarness` → `createChatSession` → `send()` (real `buildChatSystemPrompt` + `generateReply` + `executeToolCall` loop) with `createOpenCodeGoProvider`. Flags: `scripts/harness-eval/README.md`.
 
-Scenarios: original 12 plus near-duplicate, 3-hop, 90-bin MEMORY.md needle, wording trap, no-fit lure, and four retrieval yardsticks (archive needle, conflict/recency, search_chats, bounded dump).
+Scenarios: original 12 plus near-duplicate, 3-hop, 90-bin MEMORY.md needle, wording trap, no-fit lure, four retrieval yardsticks (archive needle, conflict/recency, search_chats, bounded dump), and two two-phase learning yardsticks (SOP acquisition, unknown-tool recovery). `--skill-learning` is **off** by default.
 
 Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no post-turn review, no SQLite `memory_write`). Soul is composed in-process. Memory tools in the eval use an in-harness store over the **same** `searchRankedMemories` / `ConversationKeywordSearch` functions as production. Native schemas stay on in the published matrix. See the eval summary JSON `path` field.

@@ -1,0 +1,59 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T01:17:53.541Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": true,
+        "phase2_searched_sop": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 13491,
+      "gradedScore": 1,
+      "id": "learn_sop_acquisition",
+      "passed": true,
+      "replyPreview": "Quarantine hold filed for T-42. All three SOP steps completed in order.\n\n**Ticket fields**\n- ticketId: T-42\n- status: in_progress\n- owner: Lee\n- escalationKey: HW-LEAD\n- summary: Waiting on hardware\n\n**KB snippet** (`quarantine-hold-sop`): ",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": true,
+        "phase2_used_assigned_tools": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 17627,
+      "gradedScore": 1,
+      "id": "learn_unknown_tool_recovery",
+      "passed": true,
+      "replyPreview": "`clearance_stamp` isn't assigned in this session, so I ran the recovery path instead of guessing at the tool.\n\n- **lookup_ticket T-42** — live fields: ticketId `T-42`, status `in_progress`, owner `Lee`, escalationKey `HW-LEAD`, summary \"Wai",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 1,
+    "meanScore": 1,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 2,
+    "transportOk": false
+  }
+}

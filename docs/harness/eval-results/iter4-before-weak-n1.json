@@ -1,0 +1,65 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T01:14:58.544Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": false,
+        "phase2_searched_sop": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 18640,
+      "gradedScore": 0.833,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "I can't file it — and I'd rather tell you that than hand you a note and call it done.\n\n**Why:** my tools this session are read-only ticket lookup, note writing, and KB search. Nothing in that set can create or change a ticket hold. There's ",
+      "score": 0.5,
+      "toolCalls": [
+        "lookup_ticket",
+        "search_kb",
+        "search_kb",
+        "search_kb",
+        "write_note"
+      ],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": false,
+        "phase2_used_assigned_tools": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 10752,
+      "gradedScore": 0.5,
+      "id": "learn_unknown_tool_recovery",
+      "passed": false,
+      "replyPreview": "I can't do that one — there's no `clearance_stamp` tool in this session. My toolset here is limited to `lookup_ticket`, `search_kb`, and `write_note`, so I have no way to apply a clearance stamp, and I'm not going to report one as applied w",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket", "search_kb"],
+      "toolPrecision": 0.5,
+      "toolRecall": 0.5
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.666,
+    "meanScore": 0.5,
+    "meanToolPrecision": 0.75,
+    "meanToolRecall": 0.75,
+    "passed": 0,
+    "transportOk": false
+  }
+}
