@@ -145,10 +145,16 @@ This is not a prompt tweak. It is the blocker for live evaluation of every other
 
 Eval added four harder hallucination scenarios (absent web/email tools, live-vs-archive decoy, lookup+KB combination, no-fit general question). Live OpenCode Go (`kimi-k2.7-code`) was **12/12 before and after**; no scenario improved or regressed. Next: **unknown-tool learning** (feed `Unknown tool` / `no_progress` into post-turn review) or **memory retrieval/summarization** (highest remaining C/L).
 
+## Eval hardening (after iteration 2)
+
+The 12-scenario suite was saturated on `kimi-k2.7-code` because work-rules and native schemas already constrained a strong model. The runner now ablates work-rules, the assigned-tool allowlist, model id, and (eval-only) native schemas; scores tool precision/recall; and adds near-duplicate, 3-hop, long-context needle, wording-trap, and no-fit-lure scenarios. Live matrix: `docs/harness/eval-results/ablation-summary.md`.
+
+Honest result: allowlist **alone** did not reduce hallucination (zero delta with work-rules OFF on both `kimi-k2.7-code` and `deepseek-flash`). Allowlist **plus** work-rules flipped `tool_avoid_absent_web_search` on flash only (15/17 → 16/17). `tool_avoid_wording_trap` failed all eight cells because the user-named decoy is in that scenario's catalog.
+
 ## Eval coverage this iteration
 
-`scripts/harness-eval/run.ts` drives `createAgentHarness` → `createChatSession` → `send()` (real `buildChatSystemPrompt` + `generateReply` + `executeToolCall` loop) with `createOpenCodeGoProvider`.
+`scripts/harness-eval/run.ts` drives `createAgentHarness` → `createChatSession` → `send()` (real `buildChatSystemPrompt` + `generateReply` + `executeToolCall` loop) with `createOpenCodeGoProvider`. Flags: `scripts/harness-eval/README.md`.
 
-Scenarios: session transport, tool selection, tool avoidance (arithmetic, hallucinated name, absent web/email, no-fit general question), decoy live-vs-archive lookup, multi-step (lookup+note and lookup+KB), MEMORY.md recall, WhatsApp channel prompt + reply shape, two-turn context.
+Scenarios: original 12 plus near-duplicate id-vs-title lookup, 3-hop lookup→KB(`HW-LEAD`)→note, 90-bin MEMORY.md needle, `lookup_ticket_live` wording trap, and generate_image/send_email lure.
 
-Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no post-turn review, no DB memory_write). Soul is composed in-process. See the eval summary JSON `path` field.
+Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no post-turn review, no DB memory_write). Soul is composed in-process. Native schemas stay on in the published matrix. See the eval summary JSON `path` field.

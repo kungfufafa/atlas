@@ -33,7 +33,9 @@ export interface AblationCellConfig {
 
 export interface AblationCellSummary extends AblationCellConfig {
   dimensionPassRate: Record<string, number>;
+  extraToolScenarioIds: string[];
   failed: number;
+  failedScenarioIds: string[];
   generatedAt: string;
   hallucinationRate: number;
   meanGradedScore: number;
@@ -138,7 +140,13 @@ export function summarizeReport(
   return {
     ...config,
     dimensionPassRate,
+    extraToolScenarioIds: report.scenarios
+      .filter((scenario) => scenario.passed && scenario.toolPrecision < 1)
+      .map((scenario) => scenario.id),
     failed: report.summary.failed,
+    failedScenarioIds: report.scenarios
+      .filter((scenario) => !scenario.passed)
+      .map((scenario) => scenario.id),
     generatedAt: report.generatedAt,
     hallucinationRate: round3(
       mean(hallucinationFlags.map((flag) => (flag ? 1 : 0)))
