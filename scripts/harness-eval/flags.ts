@@ -17,6 +17,8 @@ Ablation flags (independently togglable; defaults match iteration-2 product path
   --no-allowlist            Omit that roster; native schemas and the tool loop stay on
   --memory-retrieval        Bound MEMORY.md and attach memory_search/search_chats (default)
   --no-memory-retrieval     Dump MEMORY.md wholesale and omit memory retrieval tools (iter3 baseline)
+  --skill-learning          Run the post-turn skill learning loop (eval ON)
+  --no-skill-learning       Disable that loop (default; product default is off)
   --native-schemas          Send native tool schemas to the provider (default)
   --no-native-schemas       Strip tools from provider generateChat/streamChat (eval-only wrap)
   --scenario <id>           Run one scenario (repeatable)
@@ -34,6 +36,7 @@ Environment:
   HARNESS_EVAL_WORK_RULES=0|1       (default 1)
   HARNESS_EVAL_ALLOWLIST=0|1        (default 1)
   HARNESS_EVAL_MEMORY_RETRIEVAL=0|1 (default 1)
+  HARNESS_EVAL_SKILL_LEARNING=0|1   (default 0)
   HARNESS_EVAL_NATIVE_SCHEMAS=0|1   (default 1)
   HARNESS_EVAL_STRONG_MODEL
   HARNESS_EVAL_WEAK_MODEL
@@ -54,6 +57,7 @@ export interface HarnessEvalCliOptions {
   outDir?: string;
   promptOnly: boolean;
   scenarioIds?: string[];
+  skillLearning: boolean;
   strongModel: string;
   weakModel: string;
   workRules: boolean;
@@ -97,6 +101,7 @@ export function parseHarnessEvalArgs(
     model: env.HARNESS_EVAL_MODEL?.trim() || undefined,
     nativeSchemas: parseBoolEnv(env, "HARNESS_EVAL_NATIVE_SCHEMAS", true),
     promptOnly: false,
+    skillLearning: parseBoolEnv(env, "HARNESS_EVAL_SKILL_LEARNING", false),
     strongModel:
       env.HARNESS_EVAL_STRONG_MODEL?.trim() || DEFAULT_STRONG_EVAL_MODEL,
     weakModel: env.HARNESS_EVAL_WEAK_MODEL?.trim() || DEFAULT_WEAK_EVAL_MODEL,
@@ -134,6 +139,12 @@ export function parseHarnessEvalArgs(
         break;
       case "--no-memory-retrieval":
         parsed.memoryRetrieval = false;
+        break;
+      case "--skill-learning":
+        parsed.skillLearning = true;
+        break;
+      case "--no-skill-learning":
+        parsed.skillLearning = false;
         break;
       case "--native-schemas":
         parsed.nativeSchemas = true;

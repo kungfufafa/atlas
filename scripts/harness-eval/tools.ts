@@ -42,6 +42,12 @@ export const NEAR_DUPLICATE_SUMMARY =
 export const WORDING_TRAP_TOOL_NAME = "lookup_ticket_live";
 export const WORDING_TRAP_SUMMARY = "Live-index preview stub";
 export const ON_CALL_SNIPPET = "On-call rotation is posted in the ops channel.";
+export const QUARANTINE_SOP_QUERY = "QUARANTINE-HOLD-SOP";
+export const QUARANTINE_HOLD_TOKEN = "Q-HOLD-ALPHA";
+export const QUARANTINE_HOLD_TITLE = "quarantine-hold";
+export const UNKNOWN_CLEARANCE_TOOL = "clearance_stamp";
+export const CLEARANCE_STAMP_NOTE_TITLE = "clearance-stamp";
+export const CLEARANCE_STAMP_PHRASE = "STAMP-VIA-NOTE";
 
 export type ExtraEvalToolId =
   | "archive"
@@ -269,6 +275,16 @@ export function createEvalTools(
               {
                 snippet: HARDWARE_LEAD_SNIPPET,
                 title: "hardware-escalation",
+              },
+            ],
+          });
+        }
+        if (query.toUpperCase().includes(QUARANTINE_SOP_QUERY)) {
+          return Promise.resolve({
+            hits: [
+              {
+                snippet: `Quarantine hold SOP token is ${QUARANTINE_HOLD_TOKEN}.`,
+                title: "quarantine-hold-sop",
               },
             ],
           });

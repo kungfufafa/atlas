@@ -29,6 +29,7 @@ Defaults match the iteration-2 product path (all on). Each switch is independent
 | `--work-rules` / `--no-work-rules` | `HARNESS_EVAL_WORK_RULES=0\|1` | on | `appendRuntimeProfileRules` / `DEFAULT_AGENT_WORK_RULES` ("do not invent tools") |
 | `--allowlist` / `--no-allowlist` | `HARNESS_EVAL_ALLOWLIST=0\|1` | on | `# Assigned tools` roster in `buildChatSystemPrompt` |
 | `--memory-retrieval` / `--no-memory-retrieval` | `HARNESS_EVAL_MEMORY_RETRIEVAL=0\|1` | on | Bound MEMORY.md + `memory_search`/`search_chats` extras |
+| `--skill-learning` / `--no-skill-learning` | `HARNESS_EVAL_SKILL_LEARNING=0\|1` | **off** | Post-turn skill distill on `createAgentChatSession` (product default is off) |
 | `--model <id>` | `HARNESS_EVAL_MODEL` | `kimi-k2.7-code` | OpenCode Go model id |
 | `--native-schemas` / `--no-native-schemas` | `HARNESS_EVAL_NATIVE_SCHEMAS=0\|1` | on | Whether `generateChat`/`streamChat` receive native tool schemas |
 
@@ -74,6 +75,8 @@ retrieval yardsticks:
 | `memory_conflict_recency` | stale city in MEMORY.md vs newer store fact |
 | `memory_search_chats` | dossier code only in another transcript (`search_chats`) |
 | `memory_bounded_dump` | overflow code is in a huge MEMORY.md but omitted from the bounded injection |
+| `learn_sop_acquisition` | two-phase: teach a quarantine-hold SOP, then a later session must follow it from a learned skill |
+| `learn_unknown_tool_recovery` | two-phase: unknown `clearance_stamp` in phase 1; phase 2 succeeds only if a recovery skill was distilled |
 
 `--memory-retrieval` (default) bounds MEMORY.md with the product composer and
 attaches `memory_search` / `search_chats` that call the same
@@ -82,6 +85,13 @@ attaches `memory_search` / `search_chats` that call the same
 iteration-3 dump-only baseline). The in-harness store is not SQLite/AgentService;
 it exercises the shared ranking/bounding functions. Live `memory_search` in
 AgentService still goes through `MemoryService` + tenant-scoped SQLite.
+
+`--skill-learning` (default off, matching product) runs `runSkillLearningTurn`
+after each `send()`. Learned SKILL.md files live in an in-harness store that
+calls the same `parseSkillMarkdown` / `matchSkillsForMessage` /
+`composeMatchedSkillsPrompt` / FTS5 ranker as production. Phase 2 is a **new
+session** with that store and without phase-1 history. Write-approval staging
+is production-only (`createSkillsServiceLearningStore`).
 
 LLM continuity summarization is a seam (`summarizeContinuityMemoryWithModel`).
 Default injection is extractive recency, not a live OpenCode Go call.

@@ -29,11 +29,13 @@ import {
 import {
   EVAL_SCENARIOS,
   type EvalScenario,
+  LEARNING_SCENARIO_IDS,
   memoryFactsForScenario,
   type ScenarioScore,
   scenarioToolOptions,
   scoreScenario,
 } from "./scenarios";
+import { createInHarnessSkillStore } from "./skill-store";
 import {
   ARCHIVE_BADGE,
   CHAT_DOSSIER,
@@ -66,6 +68,7 @@ export interface HarnessEvalAblation {
   allowlist: boolean;
   memoryRetrieval: boolean;
   nativeSchemas: boolean;
+  skillLearning: boolean;
   workRules: boolean;
 }
 
@@ -94,6 +97,7 @@ export interface RunHarnessEvalOptions {
   nativeSchemas?: boolean;
   promptOnly?: boolean;
   scenarioIds?: string[];
+  skillLearning?: boolean;
   workRules?: boolean;
 }
 
@@ -183,10 +187,12 @@ export async function runHarnessEval(
   const allowlist = options.allowlist !== false;
   const nativeSchemas = options.nativeSchemas !== false;
   const memoryRetrieval = options.memoryRetrieval !== false;
+  const skillLearning = options.skillLearning === true;
   const ablation: HarnessEvalAblation = {
     allowlist,
     memoryRetrieval,
     nativeSchemas,
+    skillLearning,
     workRules,
   };
   const scenarios = EVAL_SCENARIOS.filter((scenario) =>
@@ -213,6 +219,7 @@ export async function runHarnessEval(
         memoryRetrieval,
         promptOnly: options.promptOnly === true,
         provider,
+        skillLearning,
         workRules,
       })
     );
@@ -260,6 +267,7 @@ async function runScenario(
     memoryRetrieval: boolean;
     promptOnly: boolean;
     provider?: ProviderClient;
+    skillLearning: boolean;
     workRules: boolean;
   }
 ): Promise<ScenarioResult> {
@@ -304,11 +312,20 @@ async function runScenario(
     throw new Error("Provider is required for live eval.");
   }
 
-  const harness = createAgentHarness({ provider: options.provider, tools });
+  const skillStore = createInHarnessSkillStore();
+  const twoPhase = Boolean(scenario.phase2Prompt);
+  const harness = createAgentHarness({
+    provider: options.provider,
+    tools,
+  });
   const session = harness.createChatSession({
     channel: scenario.channel ?? "cli",
     enableToolLoop: true,
     includeAssignedToolsAllowlist: options.allowlist,
+    skillLearning: {
+      enabled: options.skillLearning,
+      store: skillStore,
+    },
     soul: Boolean(scenario.soulIdentity || scenario.soulMemory),
     systemPrompt: evalBasePrompt(scenario, promptOptions),
     toolContext: { sessionId: `atlas-eval-${scenario.id}` },
@@ -318,10 +335,71 @@ async function runScenario(
 
   let reply = "";
   let error: string | undefined;
+  let phase1Calls: string[] = [];
   try {
     reply = await session.send(scenario.prompt);
     for (const followUp of scenario.extraUserTurns ?? []) {
       reply = await session.send(followUp);
+    }
+    phase1Calls = state.calls.map((call) => call.name);
+
+    if (twoPhase && scenario.phase2Prompt) {
+      const phase2State = createEvalToolState(
+        options.memoryRetrieval
+          ? {
+              chats: [...(scenario.chatTranscripts ?? [])],
+              memories: memoryFactsForScenario(scenario),
+            }
+          : {}
+      );
+      const phase2Tools = createEvalTools(
+        phase2State,
+        scenarioToolOptions(scenario, options.memoryRetrieval)
+      );
+      const phase2 = createAgentHarness({
+        provider: options.provider,
+        tools: phase2Tools,
+      }).createChatSession({
+        channel: scenario.channel ?? "cli",
+        enableToolLoop: true,
+        includeAssignedToolsAllowlist: options.allowlist,
+        skillLearning: {
+          enabled: false,
+          store: skillStore,
+        },
+        soul: Boolean(scenario.soulIdentity || scenario.soulMemory),
+        systemPrompt: evalBasePrompt(scenario, promptOptions),
+        toolContext: { sessionId: `atlas-eval-${scenario.id}-phase2` },
+        tools: phase2Tools,
+        userContext: scenario.userContext,
+      });
+      reply = await phase2.send(scenario.phase2Prompt);
+      const phase2History: readonly ChatMessage[] = phase2.getHistory();
+      const scored = scoreScenario({
+        error,
+        history: phase2History,
+        learnedSkills: skillStore.snapshot(),
+        phase1Calls,
+        reply,
+        scenario,
+        skillLearning: options.skillLearning,
+        state: phase2State,
+        systemPrompt,
+      });
+      return {
+        checks: scored.checks,
+        dimension: scenario.dimension,
+        durationMs: Date.now() - started,
+        ...(scored.error ? { error: scored.error } : error ? { error } : {}),
+        gradedScore: scored.gradedScore,
+        id: scenario.id,
+        passed: scored.passed,
+        replyPreview: reply.slice(0, 240),
+        score: Number(scored.score.toFixed(3)),
+        toolCalls: phase2State.calls.map((call) => call.name),
+        toolPrecision: scored.toolPrecision,
+        toolRecall: scored.toolRecall,
+      };
     }
   } catch (caught) {
     error = caught instanceof Error ? caught.message : String(caught);
@@ -331,8 +409,11 @@ async function runScenario(
   const scored = scoreScenario({
     error,
     history,
+    learnedSkills: skillStore.snapshot(),
+    phase1Calls,
     reply,
     scenario,
+    skillLearning: options.skillLearning,
     state,
     systemPrompt,
   });
@@ -430,6 +511,16 @@ function scorePromptOnly(
       toolRecall: 1,
     };
   }
+  if ((LEARNING_SCENARIO_IDS as readonly string[]).includes(scenario.id)) {
+    return {
+      checks: { skipped_live: true },
+      gradedScore: 0,
+      passed: true,
+      score: 0,
+      toolPrecision: 1,
+      toolRecall: 1,
+    };
+  }
   return {
     checks: { skipped_live: true },
     gradedScore: 0,
@@ -523,6 +614,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     nativeSchemas: flags.nativeSchemas,
     promptOnly: flags.promptOnly,
     scenarioIds: flags.scenarioIds,
+    skillLearning: flags.skillLearning,
     workRules: flags.workRules,
   });
   const json = `${JSON.stringify(report, null, 2)}\n`;

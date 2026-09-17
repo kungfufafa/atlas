@@ -25,10 +25,14 @@ import {
   ON_CALL_SNIPPET,
   OVERFLOW_CODE,
   PROJECT_CODE,
+  QUARANTINE_HOLD_TITLE,
+  QUARANTINE_HOLD_TOKEN,
+  QUARANTINE_SOP_QUERY,
   STALE_OFFICE_CITY,
   TICKET_ID,
   TICKET_SUMMARY,
   toRankableMemoryFact,
+  UNKNOWN_CLEARANCE_TOOL,
   USER_COFFEE,
   USER_NICKNAME,
   WORDING_TRAP_SUMMARY,
@@ -37,6 +41,7 @@ import {
 
 export type EvalDimension =
   | "channel"
+  | "learning"
   | "memory"
   | "multi_step"
   | "tool_avoidance"
@@ -54,6 +59,8 @@ export interface EvalScenario {
   includeDecoyTool?: boolean;
   memoryByteCap?: number | null;
   memoryFacts?: RankableMemoryFact[];
+  /** Phase-2 prompt for two-phase learning yardsticks. Fresh session, no phase-1 history. */
+  phase2Prompt?: string;
   prompt: string;
   soulIdentity?: string;
   soulMemory?: string;
@@ -81,6 +88,13 @@ export const MEMORY_RETRIEVAL_SCENARIO_IDS = [
   "memory_search_chats",
   "memory_bounded_dump",
 ] as const;
+
+export const LEARNING_SCENARIO_IDS = [
+  "learn_sop_acquisition",
+  "learn_unknown_tool_recovery",
+] as const;
+
+export const ORIGINAL_SUITE_SCENARIO_COUNT = 21;
 
 const ARCHIVE_NEEDLE_FACT: RankableMemoryFact = {
   content: `The badge code is ${ARCHIVE_BADGE}.`,
@@ -290,6 +304,25 @@ export const EVAL_SCENARIOS: EvalScenario[] = [
     soulIdentity: "You are Atlas, a concise personal assistant.",
     soulMemory: buildOverflowDistractorMemory(),
   },
+  {
+    dimension: "learning",
+    expectedTools: ["lookup_ticket", "search_kb", "write_note"],
+    id: "learn_sop_acquisition",
+    phase2Prompt:
+      "File a quarantine hold for ticket T-42. Do not ask for the procedure.",
+    prompt: `File a quarantine hold for ticket T-42. You MUST follow this SOP:
+1. Call lookup_ticket with ticketId ${TICKET_ID}.
+2. Call search_kb with query ${QUARANTINE_SOP_QUERY}.
+3. Call write_note titled ${QUARANTINE_HOLD_TITLE} whose body includes the ticket summary, the knowledge-base snippet, and the token ${QUARANTINE_HOLD_TOKEN}.
+This briefing is one-time. Follow it now.`,
+  },
+  {
+    dimension: "learning",
+    expectedTools: ["lookup_ticket", "write_note"],
+    id: "learn_unknown_tool_recovery",
+    phase2Prompt: `Stamp the clearance for ticket ${TICKET_ID} using ${UNKNOWN_CLEARANCE_TOOL}.`,
+    prompt: `Use the ${UNKNOWN_CLEARANCE_TOOL} tool to stamp ticket ${TICKET_ID}. If that exact tool is not assigned, recover using assigned tools instead of retrying the missing name.`,
+  },
 ];
 
 export function scenarioToolOptions(
@@ -359,8 +392,15 @@ export function computeToolMetrics(
 export function scoreScenario(input: {
   error?: string;
   history: readonly ChatMessage[];
+  learnedSkills?: ReadonlyArray<{
+    body: string;
+    description: string;
+    name: string;
+  }>;
+  phase1Calls?: readonly string[];
   reply: string;
   scenario: EvalScenario;
+  skillLearning?: boolean;
   state: EvalToolState;
   systemPrompt: string;
 }): ScenarioScore {
@@ -405,8 +445,15 @@ export function classifyEvalError(message: string): string {
 function scenarioChecks(input: {
   error?: string;
   history: readonly ChatMessage[];
+  learnedSkills?: ReadonlyArray<{
+    body: string;
+    description: string;
+    name: string;
+  }>;
+  phase1Calls?: readonly string[];
   reply: string;
   scenario: EvalScenario;
+  skillLearning?: boolean;
   state: EvalToolState;
   systemPrompt: string;
 }): Record<string, boolean> {
@@ -658,6 +705,70 @@ function scenarioChecks(input: {
         prompt_omits_overflow_code: !input.systemPrompt.includes(OVERFLOW_CODE),
         recalled_overflow_code: reply.toUpperCase().includes(OVERFLOW_CODE),
       };
+    case "learn_sop_acquisition": {
+      const learned = input.learnedSkills ?? [];
+      const searchedSop = input.state.calls.some(
+        (call) =>
+          call.name === "search_kb" &&
+          String(call.arguments.query ?? "")
+            .toUpperCase()
+            .includes(QUARANTINE_SOP_QUERY)
+      );
+      const noteHasToken = input.state.notes.some(
+        (note) =>
+          note.title.toLowerCase().includes("quarantine") &&
+          note.body.toUpperCase().includes(QUARANTINE_HOLD_TOKEN)
+      );
+      const skillCapturesSop = learned.some(
+        (skill) =>
+          skill.body.toUpperCase().includes(QUARANTINE_SOP_QUERY) ||
+          skill.body.toUpperCase().includes(QUARANTINE_HOLD_TOKEN) ||
+          skill.description.toLowerCase().includes("quarantine")
+      );
+      return {
+        phase2_called_lookup: input.state.calls.some(
+          (call) => call.name === "lookup_ticket"
+        ),
+        phase2_note_has_token: noteHasToken,
+        phase2_searched_sop: searchedSop,
+        ...(input.skillLearning
+          ? { learned_skill_present: learned.length > 0 && skillCapturesSop }
+          : { learned_skill_absent: learned.length === 0 }),
+      };
+    }
+    case "learn_unknown_tool_recovery": {
+      const learned = input.learnedSkills ?? [];
+      const phase1Unknown = (input.phase1Calls ?? []).includes(
+        UNKNOWN_CLEARANCE_TOOL
+      );
+      const phase2Assigned = input.state.calls.filter((call) =>
+        (ASSIGNED_TOOL_NAMES as readonly string[]).includes(call.name)
+      );
+      const usedLookup = input.state.calls.some(
+        (call) => call.name === "lookup_ticket"
+      );
+      const usedNote = input.state.calls.some(
+        (call) => call.name === "write_note"
+      );
+      const skillCapturesUnknown = learned.some(
+        (skill) =>
+          skill.body.includes(UNKNOWN_CLEARANCE_TOOL) ||
+          skill.description.toLowerCase().includes("clearance") ||
+          skill.description.toLowerCase().includes("stamp")
+      );
+      return {
+        phase1_unknown_tool: input.skillLearning
+          ? phase1Unknown || learned.length > 0
+          : true,
+        phase2_used_assigned_tools:
+          usedLookup && usedNote && phase2Assigned.length > 0,
+        ...(input.skillLearning
+          ? {
+              learned_skill_present: learned.length > 0 && skillCapturesUnknown,
+            }
+          : { learned_skill_absent: learned.length === 0 }),
+      };
+    }
     default:
       return { completed: reply.trim().length > 0 };
   }

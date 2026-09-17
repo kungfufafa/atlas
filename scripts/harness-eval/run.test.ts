@@ -34,11 +34,14 @@ import {
   NEAR_DUPLICATE_TOOL_NAME,
   OVERFLOW_CODE,
   PROJECT_CODE,
+  QUARANTINE_HOLD_TOKEN,
+  QUARANTINE_SOP_QUERY,
   STALE_OFFICE_CITY,
   searchEvalChats,
   searchEvalMemories,
   TICKET_ID,
   TICKET_SUMMARY,
+  UNKNOWN_CLEARANCE_TOOL,
   USER_COFFEE,
   USER_NICKNAME,
   WORDING_TRAP_TOOL_NAME,
@@ -67,6 +70,7 @@ describe("harness-eval flags", () => {
     expect(flags.workRules).toBe(true);
     expect(flags.nativeSchemas).toBe(true);
     expect(flags.memoryRetrieval).toBe(true);
+    expect(flags.skillLearning).toBe(false);
     expect(flags.matrix).toBe(false);
   });
 
@@ -78,6 +82,9 @@ describe("harness-eval flags", () => {
         "--no-native-schemas",
         "--allowlist",
         "--no-memory-retrieval",
+        "--skill-learning",
+        "--no-skill-learning",
+        "--skill-learning",
       ],
       {
         HARNESS_EVAL_ALLOWLIST: "0",
@@ -89,6 +96,7 @@ describe("harness-eval flags", () => {
     expect(flags.workRules).toBe(false);
     expect(flags.nativeSchemas).toBe(false);
     expect(flags.memoryRetrieval).toBe(false);
+    expect(flags.skillLearning).toBe(true);
   });
 
   test("parses model, scenario, and matrix model flags", () => {
@@ -123,11 +131,13 @@ describe("harness-eval flags", () => {
       HARNESS_EVAL_ALLOWLIST: "false",
       HARNESS_EVAL_MEMORY_RETRIEVAL: "0",
       HARNESS_EVAL_NATIVE_SCHEMAS: "off",
+      HARNESS_EVAL_SKILL_LEARNING: "0",
       HARNESS_EVAL_WORK_RULES: "0",
     });
     expect(flags.allowlist).toBe(false);
     expect(flags.memoryRetrieval).toBe(false);
     expect(flags.nativeSchemas).toBe(false);
+    expect(flags.skillLearning).toBe(false);
     expect(flags.workRules).toBe(false);
   });
 });
@@ -146,7 +156,9 @@ describe("harness-eval prompt assembly", () => {
     expect(ids).toContain("memory_conflict_recency");
     expect(ids).toContain("memory_search_chats");
     expect(ids).toContain("memory_bounded_dump");
-    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(21);
+    expect(ids).toContain("learn_sop_acquisition");
+    expect(ids).toContain("learn_unknown_tool_recovery");
+    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(23);
   });
 
   test("injects WhatsApp channel rules", () => {
@@ -824,5 +836,108 @@ describe("harness-eval memory retrieval yardsticks", () => {
       "vendor dossier code"
     );
     expect(hits[0]?.matchedSnippet).toContain(CHAT_DOSSIER);
+  });
+});
+
+describe("harness-eval learning yardsticks", () => {
+  test("phase 2 SOP fails without a learned skill and passes with one", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "learn_sop_acquisition"
+    );
+    expect(scenario).toBeDefined();
+    const empty = createEvalToolState();
+    const without = scoreScenario({
+      history: [],
+      learnedSkills: [],
+      reply: "I filed it",
+      scenario: scenario!,
+      skillLearning: false,
+      state: empty,
+      systemPrompt: "",
+    });
+    expect(without.passed).toBe(false);
+
+    const withLearning = createEvalToolState();
+    withLearning.calls.push(
+      { arguments: { ticketId: TICKET_ID }, name: "lookup_ticket" },
+      { arguments: { query: QUARANTINE_SOP_QUERY }, name: "search_kb" },
+      {
+        arguments: {
+          body: `summary + ${QUARANTINE_HOLD_TOKEN}`,
+          title: "quarantine-hold",
+        },
+        name: "write_note",
+      }
+    );
+    withLearning.notes.push({
+      body: `summary + ${QUARANTINE_HOLD_TOKEN}`,
+      title: "quarantine-hold",
+    });
+    const scored = scoreScenario({
+      history: [],
+      learnedSkills: [
+        {
+          body: `Call search_kb with ${QUARANTINE_SOP_QUERY}`,
+          description: "File a quarantine hold",
+          name: "quarantine-hold",
+        },
+      ],
+      reply: "done",
+      scenario: scenario!,
+      skillLearning: true,
+      state: withLearning,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(true);
+  });
+
+  test("unknown-tool recovery requires assigned tools on phase 2 when learning is on", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "learn_unknown_tool_recovery"
+    );
+    expect(scenario).toBeDefined();
+    const failed = createEvalToolState();
+    failed.calls.push({
+      arguments: { ticketId: TICKET_ID },
+      name: UNKNOWN_CLEARANCE_TOOL,
+    });
+    const without = scoreScenario({
+      history: [],
+      learnedSkills: [],
+      phase1Calls: [UNKNOWN_CLEARANCE_TOOL],
+      reply: "unknown tool",
+      scenario: scenario!,
+      skillLearning: false,
+      state: failed,
+      systemPrompt: "",
+    });
+    expect(without.passed).toBe(false);
+
+    const recovered = createEvalToolState();
+    recovered.calls.push(
+      { arguments: { ticketId: TICKET_ID }, name: "lookup_ticket" },
+      {
+        arguments: { body: TICKET_SUMMARY, title: "clearance-stamp" },
+        name: "write_note",
+      }
+    );
+    recovered.notes.push({ body: TICKET_SUMMARY, title: "clearance-stamp" });
+    const scored = scoreScenario({
+      history: [],
+      learnedSkills: [
+        {
+          body: `Never call \`${UNKNOWN_CLEARANCE_TOOL}\``,
+          description: "Recover when the user asks to clearance stamp",
+          name: "recover-clearance-stamp",
+        },
+      ],
+      phase1Calls: [UNKNOWN_CLEARANCE_TOOL],
+      reply: "stamped via note",
+      scenario: scenario!,
+      skillLearning: true,
+      state: recovered,
+      systemPrompt: "",
+    });
+    expect(scored.passed).toBe(true);
   });
 });
