@@ -6,7 +6,7 @@ This audit treats completion as unproven until each requirement has current-stat
 
 Path: `createAgentHarness.createChatSession.send` → `buildChatSystemPrompt` + `generateReply` + `executeToolCall`. Full-harness config = allowlist, work-rules, native schemas, memory retrieval + summarization + archive index, chatKind, skill-learning ON.
 
-Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-summary.json`, `iter{3,4,5,6}-summary.md`, `ablation-summary.md`, `docs/harness/eval-results/final-sweep-summary.md`.
+Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-summary.json`, `iter{3,4,5,6,7}-summary.md`, `ablation-summary.md`, `docs/harness/eval-results/final-sweep-summary.md`.
 
 ---
 
@@ -22,6 +22,7 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 | 3 | Bounded MEMORY.md + FTS/recency `memory_search` | memory yardsticks 0/4 → 4/4 (n=3 both models) |
 | 5 | LLM summary of omitted facts + production archive index | `memory_summary_needle` 0/6 → 6/6; archive 0/6 → 6/6 per model |
 | 6 | `chatKind` private vs group into `buildChatSystemPrompt` | prompt checks 0/24 → 24/24 |
+| 7 | Persist `chatKind` on `sessions.chat_kind`; FTS `search_chats` | unit reload; FTS yardstick 0/9 → 9/9 |
 | 4 | Learned skills match/inject on a **new** session | learning extras 0/6 → 6/6 per model |
 
 **Final sweep.** Memory dimension **16/16** on all four models (n=2). Learning inject **4/4**. Group channel extras passed every full run. Private **prompt** checks always true; private **reply** name-addressing still fails often (see caveats).
@@ -31,10 +32,10 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 | vs | equal-or-better? | caveat |
 |---|---|---|
 | Nakama | **yes, exceeds** | Nakama dumped MEMORY.md and had `chatKind` in the prompt helper but not plumbed; Atlas bounds, retrieves, summarizes, and fires private/group blocks. |
-| Hermes | **yes, with a residual** | Over-cap MEMORY.md + FTS fact search + archive **meet or beat** Hermes’ frozen MEMORY.md (Hermes does not auto-summarize). Hermes still wins **raw session FTS**. |
+| Hermes | **yes** | Over-cap MEMORY.md + FTS fact search + archive **meet or beat** Hermes’ frozen MEMORY.md (Hermes does not auto-summarize). Iter7 closed **session FTS** (`search_chats` lexical 0/9 → FTS 9/9). |
 | OpenClaw | **yes, on this dimension** | Measured retrieval/channel prompts exceed a generic workspace dump. Not a claim about OpenClaw routing/bindings. |
 
-**Still short.** Compacted transcript FTS (`search_chats` lexical). `chatKind` not in SQLite. Private replies still name-address (model-limitation; prompts are correct).
+**Still short.** Private replies still name-address (model-limitation; prompts are correct). No remaining context-awareness harness gap vs Hermes session search.
 
 ---
 
@@ -94,19 +95,20 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 |---|---|---|
 | 3 | Bound + `memory_search` / `search_chats` | overflow omitted from prompt and recovered; recency Lisbon over Berlin; dossier via `search_chats` |
 | 5 | LLM summary of omitted + archive files | vault hint only via summary; badge only via `YYYY-MM.md` parser |
-| (pre-existing) | `compactHistory` structured Markdown | not FTS-backed; not a fail on MEMORY.md yardsticks |
+| 7 | FTS5 BM25 `search_chats` over live + compacted archives | `memory_search_chats_fts` lexical 0/9 → FTS 9/9 (n=3 × 3 models) |
+| (pre-existing) | `compactHistory` structured Markdown | now FTS-backed via `conversation_messages_fts` + authorized-candidate ranking |
 
-**Final sweep.** All memory long-context cells passed (bounded dump, 90-bin needle, summary needle, archive, recency, search_chats) — **16/16** memory runs per model. Compaction-FTS was not a passing yardstick because it was never implemented.
+**Final sweep.** All memory long-context cells passed (bounded dump, 90-bin needle, summary needle, archive, recency, search_chats) — **16/16** memory runs per model. Iter7 re-confirmed `memory_search_chats` on the 21-suite (3/3 models) and added a discriminator that lexical ranking fails.
 
 **Verdict.**
 
 | vs | equal-or-better? | caveat |
 |---|---|---|
 | Nakama | **yes, exceeds** | Dump-only MEMORY.md is the iter3 BEFORE (0/4). Atlas no longer does that. |
-| Hermes | **partial → close** | MEMORY.md long-context and archive retrieval **match or exceed**. Hermes FTS5 over **all session messages** (no LLM summarization, no truncation) is the remaining long-session gap. Atlas `search_chats` passed lexically on the dossier needle; that is weaker than FTS at scale. |
+| Hermes | **yes** | MEMORY.md long-context, archive retrieval, and session FTS **match or exceed**. Hermes FTS5 over all session messages is no longer a live residual (iter7 0/9 → 9/9). |
 | OpenClaw | **yes, on measured needles** | Not a claim about OpenClaw session stores. |
 
-**Still short.** Residual (e) compacted/`search_chats` FTS. Residual (d) chatKind persistence across process restart. Summarization cache is in-memory LRU (restart cost, not a failed needle).
+**Still short.** Residual (d) and (e) closed in iter7. Summarization cache is in-memory LRU (restart cost, not a failed needle).
 
 ---
 
@@ -129,18 +131,18 @@ Transport failures: **0**. All full-suite fails are completed-behavior (private 
 
 **Nakama: bar met (exceeds).** Atlas is that fork plus allowlist/purpose, bounded+FTS+summary memory, closed skill learning, and plumbed `chatKind`, each with before/after live deltas.
 
-**Hermes: bar met on three of four quality dimensions, partial on long-session session-search and on always-on learning.** Context (MEMORY.md path), multi-step, and unassigned-tool hallucination match or exceed measured Hermes analogues. Remaining Hermes advantages are **FTS session search** and **always-on** review — the latter is an Atlas policy choice, not an unimplemented loop.
+**Hermes: bar met on all four quality dimensions; remaining difference is always-on learning policy, not unimplemented session FTS.** Context (MEMORY.md path + session FTS), multi-step, and unassigned-tool hallucination match or exceed measured Hermes analogues. Hermes always-on review is an Atlas policy choice, not a missing loop.
 
 **OpenClaw: bar met on the four quality dimensions as scored; not met as a gateway-policy product.** Tool-loop, memory needles, multi-step, and channel prompts are live-proven. Residual (f) is explicit: we did not build OpenClaw’s allow/deny/skill-trust/bindings language, and we should not claim it.
 
-**Equal-or-better overall?** **Yes for the stated quality bar against Nakama, and yes-with-residuals against Hermes.** **No** if the bar is silently expanded to OpenClaw gateway-policy parity or Hermes always-on defaults.
+**Equal-or-better overall?** **Yes for the stated quality bar against Nakama, and yes against Hermes on the four quality dimensions.** **No** if the bar is silently expanded to OpenClaw gateway-policy parity or Hermes always-on defaults.
 
 ### Harness work that still remains (only if we keep going)
 
-1. Persist `chatKind` (or `channelIsGroup`) on the session row — residual (d), small, real.
-2. FTS-index conversation / compacted archives for `search_chats` — residual (e), the actual Hermes long-session gap.
+1. Persist `chatKind` — **done (iter7)**. Residual (d) closed.
+2. FTS-index conversation / compacted archives for `search_chats` — **done (iter7)**. Residual (e) closed; live lexical 0/9 → FTS 9/9.
 3. Do **not** keep iterating assigned-decoy prompt text — residual (a) is model-limit (`v4-pro` already passes).
 4. Do **not** default skill learning on globally — residual (c) is policy; Super Agent web/cli remains the opt-in.
 5. Do **not** treat OpenClaw policy breadth as a quality iteration — residual (f).
 
-No further prompt-length work is justified by the final sweep.
+No further prompt-length work is justified by the final sweep. No measurable Hermes **harness-gap** remains on the four quality dimensions.

@@ -2,7 +2,7 @@
 
 Capability matrix for **response quality**, not product surface area. Rankings: **exceeds** / **matches** / **partial** / **gap**.
 
-Atlas citations are current files/functions. Live evidence is OpenCode Go `createAgentHarness.createChatSession.send` from iterations 1–6 plus the final sweep (`docs/harness/eval-results/`).
+Atlas citations are current files/functions. Live evidence is OpenCode Go `createAgentHarness.createChatSession.send` from iterations 1–7 plus the final sweep (`docs/harness/eval-results/`).
 
 Reference systems (not live-evaled here):
 
@@ -46,15 +46,15 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 
 ### 3. Memory (retrieval / FTS / summarization / recency / cross-session)
 
-**Atlas.** `composeContinuityMemorySection` (`packages/core/src/soul/continuity-memory.ts`) bounds MEMORY.md (8192-byte default). Over-cap: newest extractive bullets plus optional `summarizeContinuityMemoryWithModel` of omitted facts (hash-cached LRU). `searchRankedMemories` (`packages/db/src/memory-rank-fts5.ts`) = lexical + FTS5 boost + recency collapse on `"X is Y"` slots. Production `memory_search` merges `loadProfileMemoryArchiveFacts` (`packages/core/src/soul/memory-archive-index.ts`). `search_chats` uses `ConversationKeywordSearch` (`packages/db/src/conversation-keyword-search.ts`) — weighted lexical, **not** FTS. `memory_write` remains exact-reuse (`strategy: "preserve"`). Database memory and MEMORY.md do not sync. AgentService wires summarization in `resolveProfileSystemPrompt`.
+**Atlas.** `composeContinuityMemorySection` (`packages/core/src/soul/continuity-memory.ts`) bounds MEMORY.md (8192-byte default). Over-cap: newest extractive bullets plus optional `summarizeContinuityMemoryWithModel` of omitted facts (hash-cached LRU). `searchRankedMemories` (`packages/db/src/memory-rank-fts5.ts`) = lexical + FTS5 boost + recency collapse on `"X is Y"` slots. Production `memory_search` merges `loadProfileMemoryArchiveFacts` (`packages/core/src/soul/memory-archive-index.ts`). Native `search_chats` uses `searchRankedConversations` (`packages/db/src/conversation-rank-fts5.ts`) — FTS5 BM25 + recency over authorized live messages and compacted archives, falling back to weighted lexical (`ConversationKeywordSearch`) when FTS is unavailable. Literal `matchMode` callers stay `LIKE`. Persistent `conversation_messages_fts` is populated from `session_messages` and `session_history_archives`; ranking still runs only on tenant-filtered candidates. `memory_write` remains exact-reuse (`strategy: "preserve"`). Database memory and MEMORY.md do not sync. AgentService wires summarization in `resolveProfileSystemPrompt`.
 
-**Live evidence.** Iter3: dump-only memory yardsticks **0/4 → 4/4** (n=3 both models). Iter5: `memory_summary_needle` **0/6 → 6/6** per model; `memory_archive_needle` **0/6 → 6/6** per model. Final sweep memory dimension **16/16** on every model (n=2 × 8 memory scenarios, including summary + archive).
+**Live evidence.** Iter3: dump-only memory yardsticks **0/4 → 4/4** (n=3 both models). Iter5: `memory_summary_needle` **0/6 → 6/6** per model; `memory_archive_needle` **0/6 → 6/6** per model. Final sweep memory dimension **16/16** on every model (n=2 × 8 memory scenarios, including summary + archive). Iter7 FTS yardstick `memory_search_chats_fts`: lexical `--no-fts-chats` **0/9** → FTS **9/9** (n=3 × kimi / v4-pro / flash); existing `memory_search_chats` still **true** on every 21-suite run.
 
 | vs | rank | one-line |
 |---|---|---|
-| Hermes | **partial** | Atlas matches/exceeds Hermes on over-cap MEMORY.md (Hermes does not auto-summarize; the agent must make room) and on FTS-ranked fact search + archive; Atlas **lags** Hermes FTS5 `session_search` over raw transcripts (`search_chats` is lexical). |
+| Hermes | **matches** | Atlas matches/exceeds Hermes on over-cap MEMORY.md (Hermes does not auto-summarize) and on FTS-ranked fact search + archive; iter7 closed the session-search lag — live lexical 0/9 vs FTS 9/9 on a buried transcript needle. |
 | OpenClaw | **exceeds** | OpenClaw session/workspace files are not a measured FTS+recency+archive+LLM-summary stack; Atlas retrieval yardsticks are live-proven. |
-| Nakama | **exceeds** | Nakama dumped MEMORY.md; Atlas bounds, retrieves, summarizes omitted facts, and indexes `memory-archive/`. |
+| Nakama | **exceeds** | Nakama dumped MEMORY.md; Atlas bounds, retrieves, summarizes omitted facts, indexes `memory-archive/`, and FTS-ranks `search_chats`. |
 
 ### 4. Skill learning / consolidation
 
@@ -70,19 +70,19 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 
 ### 5. Compaction
 
-**Atlas.** `compactHistory` (`packages/agent/src/history-compaction.ts`) emits a fixed Markdown template (Goal / Constraints / Progress / Decisions / Next Steps / Critical Context / Relevant Files). Triggered on token overflow (or `force`). ChatGPT subscription bypasses Atlas compaction (`ProviderClient.managesContext`). Compacted archives are **not** FTS-indexed for later `search_chats`.
+**Atlas.** `compactHistory` (`packages/agent/src/history-compaction.ts`) emits a fixed Markdown template (Goal / Constraints / Progress / Decisions / Next Steps / Critical Context / Relevant Files). Triggered on token overflow (or `force`). ChatGPT subscription bypasses Atlas compaction (`ProviderClient.managesContext`). Compacted archives are indexed into `conversation_messages_fts` and ranked with live messages in `search_chats` (iter7).
 
-**Live evidence.** No dedicated compaction-FTS yardstick. Long-session quality is measured via bounded MEMORY.md + retrieval (`memory_bounded_dump`, `memory_summary_needle`, `memory_long_context_needle` — all passed in the final sweep). `memory_search_chats` proves lexical transcript retrieval, not compacted-archive FTS.
+**Live evidence.** Iter7 FTS yardstick proves BM25 session search over a large transcript (lexical miss inside the result limit). Production search SQL unions `session_messages` with `session_history_archives`. Long-session MEMORY.md needles still passed in the final sweep; `memory_search_chats` still passes with FTS on.
 
 | vs | rank | one-line |
 |---|---|---|
-| Hermes | **partial** | Structured summaries beat naive truncation; Hermes keeps raw sessions in FTS so compaction is not the recall path. Atlas compacted history is not FTS-searchable. |
+| Hermes | **matches** | Structured summaries plus FTS over live and compacted archives; Hermes also recalls via FTS rather than trusting the summary alone. |
 | OpenClaw | **matches** | Both compact long sessions; neither was live-compared on the OpenCode Go yardsticks. |
-| Nakama | **matches** | Same `compactHistory` template lineage. |
+| Nakama | **matches** | Same `compactHistory` template lineage; Atlas now FTS-indexes the archives Nakama left lexical. |
 
 ### 6. Channel awareness
 
-**Atlas.** Format rules for WhatsApp/Telegram/Discord in `MESSAGING_CHANNEL_PROMPT`. Iter6 plumbed `chatKind` from `externalPrincipal.channelIsGroup` through `AgentService.buildChatSession` / `createAgentChatSession` into `buildChatSystemPrompt`. Private: `PRIVATE_CHAT_KIND_GUIDANCE`. Group: `GROUP_CHAT_KIND_GUIDANCE`. Unset kind still uses `messagingUnsetAudienceLine`. `chatKind` lives on in-memory `StoredSession`, **not** a SQLite column.
+**Atlas.** Format rules for WhatsApp/Telegram/Discord in `MESSAGING_CHANNEL_PROMPT`. Iter6 plumbed `chatKind` from `externalPrincipal.channelIsGroup` through `AgentService.buildChatSession` / `createAgentChatSession` into `buildChatSystemPrompt`. Private: `PRIVATE_CHAT_KIND_GUIDANCE`. Group: `GROUP_CHAT_KIND_GUIDANCE`. Unset kind still uses `messagingUnsetAudienceLine`. Iter7 persists `sessions.chat_kind` (`private` \| `group`) and reloads it on cold rebuild (`parseStoredChatKind`).
 
 **Live evidence.** Iter6: prompt checks **0/24 → 24/24**; live pass **0/12 → 9/12** strong and **10/12** weak. Final sweep: every private prompt check true; group extras passed every full run; private **reply** name-addressing remains (WhatsApp private kimi/v4-pro/flash 1/3, glm 0/3; Telegram private v4-pro/glm 0/3, kimi 3/3).
 
@@ -90,7 +90,7 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 |---|---|---|
 | Hermes | **matches** | Both tag messaging sessions and style for the channel; Atlas now has explicit private vs group prompt blocks with live prompt proof. |
 | OpenClaw | **partial** | Atlas matches format+kind **prompts**; OpenClaw’s bindings, mention gating, and group policy are a broader gateway, not a prompt-quality win we claim. |
-| Nakama | **matches** | Nakama already had `chatKind` in `buildChatSystemPrompt`; Atlas now actually passes it from workers (the P2 gap). Residual is model reply-style, not missing prompt text. |
+| Nakama | **matches** | Nakama already had `chatKind` in `buildChatSystemPrompt`; Atlas passes it from workers and persists it on the session row. Residual is model reply-style, not missing prompt text. |
 
 ### 7. Multi-tenant / policy / sandbox
 
@@ -112,9 +112,9 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 |---|---|---|---|
 | Prompt assembly | matches | exceeds | exceeds |
 | Tool loop + hallucination | matches | partial | exceeds |
-| Memory retrieval/summary | partial | exceeds | exceeds |
+| Memory retrieval/summary | matches | exceeds | exceeds |
 | Skill learning | partial | partial | exceeds |
-| Compaction | partial | matches | matches |
+| Compaction | matches | matches | matches |
 | Channel awareness | matches | partial | matches |
 | Multi-tenant / policy / sandbox | exceeds | gap | matches |
 
@@ -127,8 +127,8 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 | (a) Assigned-decoy `tool_avoid_wording_trap` on strong models | **model-limitation** | kimi **0/3** final sweep (only `lookup_ticket_live`); glm 0/3. Purpose roster + “choose by purpose” (iter6) did not move kimi. **Counterexample:** `deepseek-v4-pro` **3/3** called `lookup_ticket` only — harness can surface the distinction; kimi still follows the user-named assigned stub. |
 | (b) Strong-model private reply-style (`channel_telegram_private` / WhatsApp private) | **model-limitation** | Prompt checks **always true**. Failures are `reply_does_not_address_asker` (name / “tell Jordan”). v4-pro Telegram private **0/3**; kimi Telegram private **3/3**. Not missing `PRIVATE_CHAT_KIND_GUIDANCE`. |
 | (c) Skill-learning default-off | **deliberate-policy** | Matches Nakama opt-in; Hermes is always-on. Eval `--skill-learning` forces the session flag. Super Agent web/cli can enable it by opting in post-turn review + assigned `manage-skills` — not hardcoded on. |
-| (d) `chatKind` not persisted to SQLite | **harness-gap** | In-memory `StoredSession.chatKind` only. Cold rebuild without `externalPrincipal.channelIsGroup` falls back to unset. |
-| (e) Compacted `search_chats` lexical, not FTS | **harness-gap** | `ConversationKeywordSearch` vs Hermes FTS5 `session_search`. `memory_search_chats` still **passed** on lexical ranking in every final-sweep run. |
+| (d) `chatKind` persisted to SQLite | **closed (iter7)** | `sessions.chat_kind`; adapter load + `AgentService` cold-rebuild unit test. |
+| (e) Compacted / session `search_chats` FTS | **closed (iter7)** | FTS5 BM25 + recency over authorized live+archive candidates; lexical fallback. Live yardstick lexical **0/9** → FTS **9/9**. |
 | (f) OpenClaw gateway-policy breadth | **deliberate-policy** / product-scope | Per-channel allow/deny, skill trust tiers, docker sandbox scopes. Atlas uses org RBAC + assigned tools + Landlock. Not a quality-loop item we tried to close. |
 
 Related, not in the required list: LLM continuity-summary cache is process-local LRU (cost, not a failed yardstick); `memory_write` exact-reuse is a product invariant; allowlist-off cannot live-induce an unassigned tool call because native schemas also omit the name.
