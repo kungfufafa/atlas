@@ -8,6 +8,8 @@ import {
   draftTaskPromptFromFields,
   executeToolCall,
   expandLearnInLastUserMessage,
+  type MessagingChatKind,
+  resolveMessagingChatKind,
   suggestToolParamsFromPrompt,
   type ToolLoopStopReason,
   tryParseLearnCommand,
@@ -377,6 +379,7 @@ import {
 
 interface StoredSession {
   channel: AgentChannel;
+  chatKind?: MessagingChatKind;
   isPlatformAdmin: boolean;
   modelOverride: string | null;
   orgId: string;
@@ -2907,6 +2910,10 @@ export class AgentService {
     });
 
     const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
+    const chatKind = resolveMessagingChatKind(
+      channel,
+      access?.externalPrincipal?.channelIsGroup
+    );
     const session = await this.buildChatSession(
       channel,
       orgId,
@@ -2915,13 +2922,15 @@ export class AgentService {
       modelOverride,
       principalUserId,
       sessionOrgRole,
-      sessionIsPlatformAdmin
+      sessionIsPlatformAdmin,
+      chatKind
     );
 
     this.rememberSession(
       sessionId,
       {
         channel,
+        ...(chatKind ? { chatKind } : {}),
         isPlatformAdmin: sessionIsPlatformAdmin,
         modelOverride,
         orgId,
@@ -3193,6 +3202,7 @@ export class AgentService {
     }
 
     const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
+    const chatKind = this.sessions.get(sessionId)?.chatKind;
     const session = await this.buildChatSession(
       channel,
       orgId,
@@ -3201,12 +3211,14 @@ export class AgentService {
       modelOverride,
       branchUserId,
       branchOrgRole,
-      branchIsPlatformAdmin
+      branchIsPlatformAdmin,
+      chatKind
     );
     this.rememberSession(
       nextSessionId,
       {
         channel,
+        ...(chatKind ? { chatKind } : {}),
         isPlatformAdmin: branchIsPlatformAdmin,
         modelOverride,
         orgId,
@@ -3422,6 +3434,7 @@ export class AgentService {
     }
 
     const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
+    const chatKind = stored?.chatKind;
     const session = await this.buildChatSession(
       channel,
       orgId,
@@ -3430,7 +3443,8 @@ export class AgentService {
       modelOverride,
       actorUserId,
       orgRole,
-      isPlatformAdmin
+      isPlatformAdmin,
+      chatKind
     );
 
     await this.requireActiveOrganizationForTurn(orgId);
@@ -3447,6 +3461,7 @@ export class AgentService {
       sessionId,
       {
         channel,
+        ...(chatKind ? { chatKind } : {}),
         isPlatformAdmin,
         modelOverride,
         orgId,
@@ -5974,7 +5989,8 @@ export class AgentService {
     modelOverride: string | null,
     userId?: string | null,
     orgRole?: OrgRole | null,
-    isPlatformAdmin?: boolean
+    isPlatformAdmin?: boolean,
+    chatKind?: MessagingChatKind
   ): Promise<AgentChatSession> {
     let userConfig = await this.getOrgUserConfig(orgId);
     const profile = await this.requireProfile(orgId, profileId);
@@ -6151,6 +6167,7 @@ export class AgentService {
 
     const session = harness.createChatSession({
       channel,
+      chatKind,
       compaction,
       enableToolLoop: tools.length > 0,
       initialHistory,

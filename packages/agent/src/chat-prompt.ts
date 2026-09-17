@@ -3,11 +3,46 @@ import type { AgentRequest } from "./chat";
 
 type MessagingChannel = "telegram" | "whatsapp" | "discord";
 
+export type MessagingChatKind = "private" | "group";
+
 type MessagingChannelPromptConfig = {
   label: string;
   supportsGroupAudience: boolean;
   format: readonly string[];
 };
+
+export const PRIVATE_CHAT_KIND_GUIDANCE =
+  "This is a private 1:1 chat. Reply directly to the person. Do not @-mention them, do not start with their name, and do not use group etiquette.";
+
+export const GROUP_CHAT_KIND_GUIDANCE =
+  "This is a group conversation. Address the person who asked by name when the message identifies them. Keep the reply short for everyone else in the room. Do not greet the whole group and do not write as if this were a private 1:1.";
+
+export function messagingPrivateAudienceLine(label: string): string {
+  return `You are replying in a private ${label} chat.`;
+}
+
+export function messagingGroupAudienceLine(label: string): string {
+  return `You are replying in a ${label} channel. Everyone in the channel can see your messages.`;
+}
+
+export function messagingUnsetAudienceLine(label: string): string {
+  return `You are replying on ${label}. Follow the private or group context supplied with each message; group replies are visible to everyone with access to that conversation.`;
+}
+
+export function resolveMessagingChatKind(
+  channel: AgentRequest["channel"] | undefined,
+  channelIsGroup: boolean | undefined
+): MessagingChatKind | undefined {
+  if (!isMessagingChannel(channel)) {
+    return;
+  }
+  if (channelIsGroup === true) {
+    return "group";
+  }
+  if (channelIsGroup === false) {
+    return "private";
+  }
+}
 
 const MESSAGING_CHANNEL_PROMPT = {
   discord: {
@@ -65,6 +100,8 @@ export const EXTRACT_DOCUMENT_TEXT_GUIDANCE =
 
 export const ASSIGNED_TOOLS_HEADING = "# Assigned tools";
 
+export const ASSIGNED_TOOL_PURPOSE_LABEL = "purpose:";
+
 const MAX_ASSIGNED_TOOL_PURPOSE_CHARS = 140;
 
 export function compactToolPurpose(description: string): string {
@@ -104,7 +141,7 @@ export function buildChatSystemPrompt(
     soul?: boolean;
     userTimezone?: string;
     channel?: AgentRequest["channel"];
-    chatKind?: "private" | "group";
+    chatKind?: MessagingChatKind;
     hasDocumentAttachments?: boolean;
     /**
      * When the tool loop is on, include the `# Assigned tools` roster.
@@ -353,28 +390,43 @@ function appendAssignedToolsAllowlist(
 
   sections.push(
     "You have access to tools for this session. Use them when needed to finish the work, then reply in the user's requested format. Use natural language when no specific response format was requested.",
-    "Only the tools listed here exist for this session. Call them by these exact names. If none of them can finish the request, answer directly with no tool call. Never invent, rename, or call a tool that is not listed."
+    "Only the tools listed here exist for this session. Call them by these exact names. Choose a tool by its purpose, not by a similar-looking name. Names that look alike are distinct tools. If the user names a tool that is not listed, do not invent or call that name — pick the listed tool whose purpose matches the work, or answer directly if none match. Never invent, rename, or call a tool that is not listed."
   );
   for (const tool of tools) {
-    const purpose = compactToolPurpose(tool.description);
-    sections.push(
-      purpose.length > 0 ? `- ${tool.name}: ${purpose}` : `- ${tool.name}`
-    );
+    sections.push(formatAssignedToolRosterLine(tool));
   }
+}
+
+export function formatAssignedToolRosterLine(tool: {
+  description: string;
+  name: string;
+}): string {
+  const purpose = compactToolPurpose(tool.description);
+  if (purpose.length === 0) {
+    return `- ${tool.name}`;
+  }
+  return `- ${tool.name} — ${ASSIGNED_TOOL_PURPOSE_LABEL} ${purpose}`;
 }
 
 function appendMessagingChannelPrompt(
   sections: string[],
   channel: MessagingChannel,
-  chatKind?: "private" | "group"
+  chatKind?: MessagingChatKind
 ): void {
   const config = MESSAGING_CHANNEL_PROMPT[channel];
-  const audienceLine =
-    chatKind === "group" && config.supportsGroupAudience
-      ? `You are replying in a ${config.label} channel. Everyone in the channel can see your messages.`
-      : chatKind === "private"
-        ? `You are replying in a private ${config.label} chat.`
-        : `You are replying on ${config.label}. Follow the private or group context supplied with each message; group replies are visible to everyone with access to that conversation.`;
+  const isGroup = chatKind === "group" && config.supportsGroupAudience;
+  const isPrivate = chatKind === "private";
+  const audienceLine = isGroup
+    ? messagingGroupAudienceLine(config.label)
+    : isPrivate
+      ? messagingPrivateAudienceLine(config.label)
+      : messagingUnsetAudienceLine(config.label);
 
-  sections.push("", audienceLine, ...config.format, ...SHARED_MESSAGING_STYLE);
+  sections.push("", audienceLine, ...config.format);
+  if (isGroup) {
+    sections.push(GROUP_CHAT_KIND_GUIDANCE);
+  } else if (isPrivate) {
+    sections.push(PRIVATE_CHAT_KIND_GUIDANCE);
+  }
+  sections.push(...SHARED_MESSAGING_STYLE);
 }

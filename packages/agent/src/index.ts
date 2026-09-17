@@ -77,6 +77,8 @@ export type {
   ToolLoopStopReason,
 } from "./chat";
 export { ChatCapabilityError } from "./chat";
+export type { MessagingChatKind } from "./chat-prompt";
+export { resolveMessagingChatKind } from "./chat-prompt";
 export type { CompactionConfig } from "./history-compaction";
 export { usableContextTokens } from "./history-compaction";
 export {

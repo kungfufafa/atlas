@@ -102,6 +102,7 @@ import {
 } from "@atlas/core";
 import {
   buildChatSystemPrompt,
+  type MessagingChatKind,
   UNTRUSTED_DOCUMENT_GUIDANCE,
 } from "./chat-prompt";
 import {
@@ -240,6 +241,8 @@ export interface ResolvePromptContextInput {
 
 export interface AgentChatSessionOptions {
   channel?: AgentRequest["channel"];
+  /** Private vs group audience for messaging channels. */
+  chatKind?: MessagingChatKind;
   compaction?: CompactionConfig;
   enableToolLoop?: boolean;
   /** Defaults to true when omitted. Set false to omit the assigned-tool roster. */
@@ -307,6 +310,7 @@ export function createAgentChatSession(
   const systemPrompt = buildChatSystemPrompt(tools, {
     basePrompt: options.systemPrompt,
     channel,
+    chatKind: options.chatKind,
     enableToolLoop,
     hasDocumentAttachments: messagesIncludeUserDocuments(
       options.initialHistory ?? []
