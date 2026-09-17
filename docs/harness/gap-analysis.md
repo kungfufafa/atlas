@@ -56,21 +56,18 @@ Unknown-tool recovery (`executeToolCall` → `{ error: "Unknown tool: …" }`) i
 
 ### P1. Memory is file-injection + exact-match DB, not Hermes FTS5 + summarization
 
-Hermes: FTS5 over memories with LLM summarization / consolidation as the learning substrate.
+**Iteration 3 shipped** bounded `MEMORY.md` + FTS/recency `memory_search`. **Iteration 5 shipped** the remaining Hermes pair: live LLM summarization of over-cap omitted facts (hash-cached) and production `memory_search` over profile `memory-archive/` (`YYYY-MM.md`), ranked with the same FTS/recency code.
 
-Atlas:
+Remaining vs Hermes:
 
-- `MEMORY.md` is dumped wholesale by `composeSoulSystemPrompt` (no budget, no summary, no retrieval)
-- `memory_write` exact-reuses identical trimmed content (`MemoryService.writeMemory(..., { strategy: "preserve" })`) — not a semantic merge
-- `search_chats` keyword ranking (`ConversationKeywordSearch`) scans authorized history in process; **no FTS5 virtual table for memories or transcripts**
-- Skill FTS5 (`skill-rank-fts5.ts`) does not cover memory
-- Database memory and `MEMORY.md` **do not sync**
+- `memory_write` exact-reuses identical trimmed content (`strategy: "preserve"`) — not a semantic merge
+- `search_chats` is still in-process keyword ranking; compacted transcripts are not FTS-indexed
+- Database memory and `MEMORY.md` **do not sync**; the LLM summary is an injection, not a rewritten file
+- Summarization cache is process-local LRU (content hash); it does not persist across restarts
 
 | H | R | C | L |
 |---|---|---|---|
-| 1 | 3 | 5 | 5 |
-
-**Next:** bounded MEMORY.md (summarize + archive), FTS5 (or equivalent) for `memory_search` / `search_chats`, optional LLM memory distill after long sessions.
+| 1 | 3 | 2 | 3 |
 
 ### P1. Learning loop is opt-in and turn-local, not continuous
 
@@ -160,10 +157,16 @@ Live OpenCode Go: memory yardsticks **0/4 → 4/4** on `kimi-k2.7-code` (n=3) an
 
 Live OpenCode Go two-phase yardsticks (`learn_sop_acquisition`, `learn_unknown_tool_recovery`): **0/6 → 6/6** on `kimi-k2.7-code` (n=3) and **0/6 → 6/6** on `deepseek-flash` (n=3) with `--skill-learning` vs `--no-skill-learning`. Original 21-suite **20/21** held (learning off). Details: `docs/harness/eval-results/iter4-summary.md`.
 
+## Iteration 5 choice
+
+**Shipped:** wire `summarizeContinuityMemoryWithModel` into `composeSoulSystemPromptWithSummary` / `AgentService.resolveProfileSystemPrompt` so over-cap MEMORY.md injects a hash-cached LLM summary of omitted facts plus newest extractive bullets. Product `memory_search` loads `memory-archive/YYYY-MM.md` via `loadProfileMemoryArchiveFacts` and ranks those rows with `searchRankedMemories`. Kill switches: `ATLAS_MEMORY_SUMMARIZATION=0`, `MemoryService({ indexProfileArchive: false })`.
+
+Live OpenCode Go: `memory_summary_needle` **0/6 → 6/6** per model (n=3, extractive vs LLM; `CEDAR-FALCON-7` survives only via summary). `memory_archive_needle` **0/6 → 6/6** per model (n=3, `--no-archive-index` vs production parser; `QUARTZ-WALRUS-19`). Full 21-suite **20/21**; learning 23-suite **22/23** strong / **23/23** weak. Details: `docs/harness/eval-results/iter5-summary.md`.
+
 ## Eval coverage this iteration
 
 `scripts/harness-eval/run.ts` drives `createAgentHarness` → `createChatSession` → `send()` (real `buildChatSystemPrompt` + `generateReply` + `executeToolCall` loop) with `createOpenCodeGoProvider`. Flags: `scripts/harness-eval/README.md`.
 
-Scenarios: original 12 plus near-duplicate, 3-hop, 90-bin MEMORY.md needle, wording trap, no-fit lure, four retrieval yardsticks (archive needle, conflict/recency, search_chats, bounded dump), and two two-phase learning yardsticks (SOP acquisition, unknown-tool recovery). `--skill-learning` is **off** by default.
+Scenarios: original 12 plus near-duplicate, 3-hop, 90-bin MEMORY.md needle, wording trap, no-fit lure, four retrieval yardsticks (archive needle, conflict/recency, search_chats, bounded dump), two two-phase learning yardsticks (SOP acquisition, unknown-tool recovery), and extra `memory_summary_needle` (not in the 21 default). `--skill-learning` is **off** by default. `--memory-summarization` and `--archive-index` default **on**.
 
-Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no post-turn review, no SQLite `memory_write`). Soul is composed in-process. Memory tools in the eval use an in-harness store over the **same** `searchRankedMemories` / `ConversationKeywordSearch` functions as production. Native schemas stay on in the published matrix. See the eval summary JSON `path` field.
+Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no SQLite `memory_write`). Soul is composed in-process via the same `composeSoulSystemPromptWithSummary` AgentService uses. Memory tools in the eval use an in-harness store over the **same** `searchRankedMemories` / `ConversationKeywordSearch` / `loadMemoryArchiveFacts` functions as production. Native schemas stay on in the published matrix. See the eval summary JSON `path` field.
