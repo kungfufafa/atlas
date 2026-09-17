@@ -271,7 +271,7 @@ export function buildChatSystemPrompt(
     ) {
       sections.push(
         "Use the update-profile-memory skill when it is active to record facts, preferences, and personal context in MEMORY.md — things you know about the user. Do not use MEMORY.md for step-by-step procedures; use profile skills for those.",
-        "When MEMORY.md is full or the user wants to remove facts without deleting them, follow the archive-profile-memory skill when it is active. Archived facts live under memory-archive/ and are not loaded automatically; use search_files or read_file to retrieve them when relevant."
+        "When MEMORY.md is full or the user wants to remove facts without deleting them, follow the archive-profile-memory skill when it is active. Archived facts live under memory-archive/ and are not injected automatically; use memory_search when it is assigned, otherwise search_files or read_file, to retrieve them when relevant."
       );
     }
 

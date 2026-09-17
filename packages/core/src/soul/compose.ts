@@ -1,6 +1,8 @@
 import {
   type ComposeContinuityMemoryOptions,
+  type ContinuityMemorySummaryCache,
   composeContinuityMemorySection,
+  resolveContinuityMemorySummary,
 } from "./continuity-memory";
 import type { LoadedSoulStack } from "./types";
 
@@ -10,6 +12,13 @@ export interface ComposeSoulPromptOptions {
   memoryOverflowHint?: string;
   memorySummary?: string;
   profilePrompt?: string;
+}
+
+export interface ComposeSoulPromptWithSummaryOptions
+  extends ComposeSoulPromptOptions {
+  generateText?: (prompt: string) => Promise<string>;
+  memorySummarization?: boolean;
+  summaryCache?: ContinuityMemorySummaryCache;
 }
 
 export function composeSoulSystemPrompt(
@@ -55,4 +64,31 @@ export function composeSoulSystemPrompt(
   }
 
   return sections.join("\n");
+}
+
+/**
+ * Same as `composeSoulSystemPrompt`, but when MEMORY.md is over cap and a
+ * model is available, injects a hash-cached LLM summary of omitted facts.
+ * Falls back to extractive recency when summarization is disabled, no model
+ * is provided, or the summarizer throws.
+ */
+export async function composeSoulSystemPromptWithSummary(
+  stack: LoadedSoulStack,
+  options: ComposeSoulPromptWithSummaryOptions = {}
+): Promise<string> {
+  let memorySummary = options.memorySummary;
+  if (
+    memorySummary === undefined &&
+    options.includeMemory !== false &&
+    stack.files.memory &&
+    options.memorySummarization !== false
+  ) {
+    memorySummary = await resolveContinuityMemorySummary(stack.files.memory, {
+      byteCap: options.memoryByteCap,
+      cache: options.summaryCache,
+      enabled: options.memorySummarization,
+      generateText: options.generateText,
+    });
+  }
+  return composeSoulSystemPrompt(stack, { ...options, memorySummary });
 }

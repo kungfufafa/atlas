@@ -3,6 +3,7 @@ export * from "./continuity-memory";
 export * from "./init";
 export * from "./load";
 export * from "./memory-archive";
+export * from "./memory-archive-index";
 export * from "./mutation-lock";
 export * from "./org-memory";
 export * from "./org-memory-history";

@@ -1,4 +1,8 @@
-import { nanoid } from "@atlas/core";
+import {
+  type ContinuityMemoryFact,
+  loadProfileMemoryArchiveFacts,
+  nanoid,
+} from "@atlas/core";
 import { calculateTitleSimilarity } from "@atlas/core/tools/url-utils";
 import {
   type DatabaseAdapter,
@@ -30,17 +34,64 @@ export interface WriteMemoryInput {
 }
 
 export interface SearchMemoryOptions {
+  /** When false, skip profile `memory-archive/` even if the service indexes it. */
+  indexProfileArchive?: boolean;
   limit?: number;
   ownerId?: string;
+  /** Profile whose `memory-archive/` should be searched (agent/visible path). */
+  profileId?: string;
   scope?: MemoryScope;
+}
+
+export interface MemoryServiceOptions {
+  /** Default true. Production `memory_search` ranks parsed archive files with DB rows. */
+  indexProfileArchive?: boolean;
 }
 
 function normalizedSubject(subject: string | null | undefined): string | null {
   return subject?.normalize("NFKC").trim().toLowerCase() || null;
 }
 
+function archiveFactToStoredMemory(
+  fact: ContinuityMemoryFact,
+  orgId: string,
+  profileId: string
+): StoredMemoryRecord {
+  return {
+    confidence: 1,
+    content: fact.content,
+    createdAt: fact.updatedAt,
+    id: fact.id,
+    importance: fact.importance ?? 1,
+    orgId,
+    ownerId: profileId,
+    scope: "agent",
+    source: "memory-archive",
+    subject: fact.subject ?? null,
+    updatedAt: fact.updatedAt,
+  };
+}
+
+function mergeMemoryRecords(
+  records: readonly StoredMemoryRecord[]
+): StoredMemoryRecord[] {
+  const seen = new Set<string>();
+  const merged: StoredMemoryRecord[] = [];
+  for (const record of records) {
+    if (seen.has(record.id)) {
+      continue;
+    }
+    seen.add(record.id);
+    merged.push(record);
+  }
+  return merged;
+}
+
 export class MemoryService {
-  constructor(private readonly db: DatabaseAdapter) {}
+  constructor(
+    private readonly db: DatabaseAdapter,
+    private readonly options: MemoryServiceOptions = {}
+  ) {}
 
   private sanitizeAndValidate(content: string): void {
     for (const pattern of SENSITIVE_PATTERNS) {
@@ -153,8 +204,12 @@ export class MemoryService {
       options.ownerId,
       candidateLimit
     );
-
-    return searchRankedMemories(records, cleanQuery, { limit });
+    const archive = await this.loadArchiveRecords(orgId, options);
+    return searchRankedMemories(
+      mergeMemoryRecords([...records, ...archive]),
+      cleanQuery,
+      { limit }
+    );
   }
 
   async listMemories(
@@ -241,6 +296,7 @@ export class MemoryService {
         ? this.searchMemories(orgId, query, {
             limit,
             ownerId: visibility.profileId,
+            profileId: visibility.profileId,
             scope: "agent",
           })
         : Promise.resolve([]),
@@ -290,5 +346,34 @@ export class MemoryService {
 
   async deleteMemory(orgId: string, id: string): Promise<boolean> {
     return this.db.deleteMemory(orgId, id);
+  }
+
+  private async loadArchiveRecords(
+    orgId: string,
+    options: SearchMemoryOptions
+  ): Promise<StoredMemoryRecord[]> {
+    if (
+      this.options.indexProfileArchive === false ||
+      options.indexProfileArchive === false
+    ) {
+      return [];
+    }
+    if (options.scope && options.scope !== "agent") {
+      return [];
+    }
+    const profileId =
+      options.profileId?.trim() ||
+      (options.scope === "agent" ? options.ownerId?.trim() : "");
+    if (!profileId) {
+      return [];
+    }
+    try {
+      const facts = await loadProfileMemoryArchiveFacts(orgId, profileId);
+      return facts.map((fact) =>
+        archiveFactToStoredMemory(fact, orgId, profileId)
+      );
+    } catch {
+      return [];
+    }
   }
 }

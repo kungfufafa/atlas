@@ -127,7 +127,7 @@ import {
   buildToolExecutionContext,
   buildUserContextStatus,
   composeKnowledgeBaseCatalog,
-  composeSoulSystemPrompt,
+  composeSoulSystemPromptWithSummary,
   composeTurnMemoryContext,
   createErrorTrackingSink,
   createSmtpSender,
@@ -166,6 +166,7 @@ import {
   loadUserVisionSettings,
   loadWhatsAppSettingsPublic,
   mapArtifactReadError,
+  memorySummarizationEnabled,
   messageContentHasImages,
   migrateCapabilityTargetProviderIds,
   migrateLegacyCapabilityConfig,
@@ -6633,9 +6634,31 @@ export class AgentService {
   ): Promise<{ systemPrompt: string; soulActive: boolean }> {
     const isGuestPrincipal = isChannelGuestUserId(userId);
     const stack = await resolveSoulStackForProfile(orgId, profileId);
+    let generateText: ((prompt: string) => Promise<string>) | undefined;
+    if (!isGuestPrincipal && stack && memorySummarizationEnabled()) {
+      try {
+        const profile = await this.requireProfile(orgId, profileId);
+        const client = this.resolveProviderClientForProfile(profile);
+        if (client) {
+          generateText = async (prompt) => {
+            const result = await client.generateText({
+              format: "text",
+              prompt,
+              system:
+                "You summarize profile continuity memory. Do not invent facts.",
+            });
+            return result.content;
+          };
+        }
+      } catch {
+        generateText = undefined;
+      }
+    }
     let systemPrompt = stack
-      ? composeSoulSystemPrompt(stack, {
+      ? await composeSoulSystemPromptWithSummary(stack, {
+          generateText,
           includeMemory: !isGuestPrincipal,
+          memorySummarization: Boolean(generateText),
           profilePrompt,
         })
       : profilePrompt;

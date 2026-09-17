@@ -1,10 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { composeSoulSystemPrompt } from "./compose";
 import {
+  composeSoulSystemPrompt,
+  composeSoulSystemPromptWithSummary,
+} from "./compose";
+import {
+  ContinuityMemorySummaryCache,
   composeContinuityMemorySection,
   DEFAULT_MEMORY_MD_BYTE_CAP,
+  hashContinuityMemoryContent,
   MEMORY_SEARCH_OVERFLOW_HINT,
   parseContinuityMemoryFacts,
+  resolveContinuityMemorySummary,
+  selectNewestContinuityFacts,
   summarizeContinuityMemoryWithModel,
 } from "./continuity-memory";
 
@@ -76,6 +83,25 @@ describe("composeContinuityMemorySection", () => {
   });
 });
 
+describe("selectNewestContinuityFacts", () => {
+  test("squeezes an older durable fact out of a tight extractive budget", () => {
+    const memory = bulkyMemory(80, {
+      date: "2024-01-01",
+      text: "The user's vault passphrase hint is CEDAR-FALCON-7.",
+    });
+    const selected = selectNewestContinuityFacts(memory, 2048);
+    expect(
+      selected.omitted.some((fact) => fact.content.includes("CEDAR-FALCON-7"))
+    ).toBe(true);
+    expect(
+      selected.kept.some((fact) => fact.content.includes("CEDAR-FALCON-7"))
+    ).toBe(false);
+    expect(
+      selected.kept.some((fact) => fact.content.includes("Warehouse bin"))
+    ).toBe(true);
+  });
+});
+
 describe("parseContinuityMemoryFacts", () => {
   test("dated bullets carry their section date and preamble lines recency-order later rows", () => {
     const facts = parseContinuityMemoryFacts(
@@ -143,5 +169,116 @@ describe("summarizeContinuityMemoryWithModel", () => {
     expect(new TextEncoder().encode(fallback).byteLength).toBeLessThanOrEqual(
       DEFAULT_MEMORY_MD_BYTE_CAP
     );
+  });
+});
+
+describe("resolveContinuityMemorySummary", () => {
+  const needleMemory = bulkyMemory(80, {
+    date: "2024-01-01",
+    text: "The user's vault passphrase hint is CEDAR-FALCON-7.",
+  });
+
+  test("returns undefined when summarization is disabled or no model is provided", async () => {
+    const calls: string[] = [];
+    expect(
+      await resolveContinuityMemorySummary(needleMemory, {
+        byteCap: 2048,
+        enabled: false,
+        generateText: async (prompt) => {
+          calls.push(prompt);
+          return "should not run";
+        },
+      })
+    ).toBeUndefined();
+    expect(
+      await resolveContinuityMemorySummary(needleMemory, { byteCap: 2048 })
+    ).toBeUndefined();
+    expect(calls).toHaveLength(0);
+  });
+
+  test("keys the cache by content hash and skips a second model call", async () => {
+    const cache = new ContinuityMemorySummaryCache();
+    let calls = 0;
+    const generateText = async () => {
+      calls += 1;
+      return "The user's vault passphrase hint is CEDAR-FALCON-7.";
+    };
+    const first = await resolveContinuityMemorySummary(needleMemory, {
+      byteCap: 2048,
+      cache,
+      generateText,
+    });
+    const second = await resolveContinuityMemorySummary(needleMemory, {
+      byteCap: 2048,
+      cache,
+      generateText,
+    });
+    expect(first).toContain("CEDAR-FALCON-7");
+    expect(second).toBe(first);
+    expect(calls).toBe(1);
+    expect(hashContinuityMemoryContent(needleMemory)).toHaveLength(64);
+
+    const mutated = `${needleMemory}-changed`;
+    await resolveContinuityMemorySummary(mutated, {
+      byteCap: 2048,
+      cache,
+      generateText,
+    });
+    expect(calls).toBe(2);
+  });
+
+  test("falls back to extractive bounding when the model throws", async () => {
+    const summary = await resolveContinuityMemorySummary(needleMemory, {
+      byteCap: 2048,
+      cache: new ContinuityMemorySummaryCache(),
+      generateText: async () => {
+        throw new Error("provider unavailable");
+      },
+    });
+    expect(summary).toBeUndefined();
+    const extractive = composeContinuityMemorySection(needleMemory, {
+      byteCap: 2048,
+    });
+    expect(extractive.injected).not.toContain("CEDAR-FALCON-7");
+    expect(extractive.injected).toContain("Warehouse bin");
+  });
+});
+
+describe("composeSoulSystemPromptWithSummary", () => {
+  test("injects the model summary of an omitted fact and keeps recent bullets", async () => {
+    const memory = bulkyMemory(80, {
+      date: "2024-01-01",
+      text: "The user's vault passphrase hint is CEDAR-FALCON-7.",
+    });
+    let calls = 0;
+    const prompt = await composeSoulSystemPromptWithSummary(
+      {
+        directory: "/tmp",
+        files: { memory, soul: "You are Atlas." },
+        loaded: ["SOUL.md", "MEMORY.md"],
+      },
+      {
+        generateText: async () => {
+          calls += 1;
+          return "The user's vault passphrase hint is CEDAR-FALCON-7.";
+        },
+        memoryByteCap: 2048,
+        summaryCache: new ContinuityMemorySummaryCache(),
+      }
+    );
+    expect(calls).toBe(1);
+    expect(prompt).toContain("CEDAR-FALCON-7");
+    expect(prompt).toContain("Warehouse bin");
+    expect(prompt).toContain(MEMORY_SEARCH_OVERFLOW_HINT);
+
+    const extractive = composeSoulSystemPrompt(
+      {
+        directory: "/tmp",
+        files: { memory, soul: "You are Atlas." },
+        loaded: ["SOUL.md", "MEMORY.md"],
+      },
+      { memoryByteCap: 2048 }
+    );
+    expect(extractive).not.toContain("CEDAR-FALCON-7");
   });
 });
