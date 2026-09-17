@@ -90,4 +90,15 @@ describe("buildSkillPostTurnReviewPrompt", () => {
     expect(prompt).toContain("bash");
     expect(prompt).toContain("deploy staging");
   });
+
+  test("includes learning signals and assigned tools", () => {
+    const prompt = buildSkillPostTurnReviewPrompt({
+      assignedToolNames: ["lookup_ticket"],
+      catalog: [],
+      signals: [{ kind: "unknown_tool", toolName: "clearance_stamp" }],
+      turnMessages: [{ content: "stamp it", role: "user" }],
+    });
+    expect(prompt).toContain("unknown_tool: clearance_stamp");
+    expect(prompt).toContain("lookup_ticket");
+  });
 });

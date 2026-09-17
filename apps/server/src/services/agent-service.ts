@@ -189,6 +189,8 @@ import {
   rehydrateAttachmentRefsInContent,
   replaceImagePartsWithDescriptions,
   resolveDiscordApplicationId,
+  resolveSkillFailureLearningEnabled,
+  resolveSkillWriteApprovalRequired,
   resolveSoulStackForProfile,
   runAsPrincipal,
   saveComposioConfig,
@@ -359,6 +361,7 @@ import {
 } from "./session-persistence";
 import { SessionTitleService } from "./session-title-service";
 import { sessionTurnRegistry } from "./session-turn-registry";
+import { createSkillsServiceLearningStore } from "./skill-learning-store";
 import { SkillPostTurnReviewService } from "./skill-post-turn-review-service";
 import type { SkillProposalService } from "./skill-proposal-service";
 import type { SkillSuggestionService } from "./skill-suggestion-service";
@@ -6116,6 +6119,35 @@ export class AgentService {
     const expandLearnCommand = shouldExpandLearnCommand(channel, tools);
     let forceSkillWriteProposal = false;
 
+    const organization = await this.db.getOrganizationById(orgId);
+    const skillFailureLearningEnabled =
+      Boolean(this.skillsService) &&
+      includeSkillManageTools &&
+      !isGuestPrincipal &&
+      resolveSkillFailureLearningEnabled({
+        orgSkillsPostTurnReview: organization?.skillsPostTurnReview ?? false,
+        profileSkillsPostTurnReview: profile.skillsPostTurnReview ?? null,
+      });
+    const skillLearning =
+      skillFailureLearningEnabled && this.skillsService
+        ? {
+            enabled: true,
+            injectMatchedSkills: false,
+            store: createSkillsServiceLearningStore(this.skillsService, {
+              orgId,
+              profileId,
+              sessionId,
+              skillProposalService: this.skillProposalService,
+              userId: userId ?? null,
+            }),
+            writeApprovalRequired: resolveSkillWriteApprovalRequired({
+              orgSkillsWriteApproval:
+                organization?.skillsWriteApproval ?? false,
+              profileSkillsWriteApproval: profile.skillsWriteApproval ?? null,
+            }),
+          }
+        : undefined;
+
     const session = harness.createChatSession({
       channel,
       compaction,
@@ -6305,6 +6337,7 @@ export class AgentService {
 
         return parts.join("\n\n");
       },
+      skillLearning,
       soul: soulActive,
       systemPrompt: resolvedSystemPrompt,
       toolContext: buildToolExecutionContext({

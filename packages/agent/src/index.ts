@@ -102,6 +102,17 @@ export {
   generateSkillCuratorConsolidationMarkdown,
 } from "./skill-curator-consolidation";
 export type {
+  SkillLearningApplyResult,
+  SkillLearningSessionOptions,
+  SkillLearningStore,
+  SkillLearningTurnResult,
+} from "./skill-learning-loop";
+export {
+  composeSkillLearningPromptContext,
+  distillFallbackSkill,
+  runSkillLearningTurn,
+} from "./skill-learning-loop";
+export type {
   SkillCatalogEntry,
   SkillPostTurnReviewOutcome,
 } from "./skill-post-turn-review";

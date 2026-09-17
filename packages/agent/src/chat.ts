@@ -83,6 +83,7 @@ export class ChatCapabilityError extends Error {
 }
 
 import {
+  extractLatestTurnMessages,
   getUserMessageText,
   isChannelGuestUserId,
   messageContentHasDocuments,
@@ -110,6 +111,11 @@ import {
   usableContextTokens,
 } from "./history-compaction";
 import { createRuntimeToolDispatcher } from "./runtime-tool-dispatcher";
+import {
+  composeSkillLearningPromptContext,
+  runSkillLearningTurn,
+  type SkillLearningSessionOptions,
+} from "./skill-learning-loop";
 import type { ToolExecutionLifecycle } from "./tool-execution-lifecycle";
 import {
   canRunToolCallsInParallel,
@@ -251,6 +257,8 @@ export interface AgentChatSessionOptions {
   resolvePromptContext?: (
     context?: ResolvePromptContextInput
   ) => string | Promise<string>;
+  /** Opt-in closed skill-learning loop. Default unset/disabled. */
+  skillLearning?: SkillLearningSessionOptions;
   soul?: boolean;
   systemPrompt?: string;
   toolContext?: ToolContext;
@@ -274,6 +282,28 @@ export function createAgentChatSession(
   const channel = options.channel ?? "cli";
   const tools = options.tools ?? dependencies.tools ?? [];
   const enableToolLoop = options.enableToolLoop ?? tools.length > 0;
+  const skillLearning = options.skillLearning;
+  const injectLearnedSkills =
+    skillLearning !== undefined && skillLearning.injectMatchedSkills !== false;
+  const resolvePromptContext = injectLearnedSkills
+    ? async (context?: ResolvePromptContextInput) => {
+        const parts: string[] = [];
+        if (options.resolvePromptContext) {
+          const extra = await options.resolvePromptContext(context);
+          if (extra?.trim()) {
+            parts.push(extra.trim());
+          }
+        }
+        const skillContext = await composeSkillLearningPromptContext({
+          store: skillLearning.store,
+          userMessage: context?.userMessage,
+        });
+        if (skillContext.trim()) {
+          parts.push(skillContext.trim());
+        }
+        return parts.join("\n\n");
+      }
+    : options.resolvePromptContext;
   const systemPrompt = buildChatSystemPrompt(tools, {
     basePrompt: options.systemPrompt,
     channel,
@@ -315,6 +345,7 @@ export function createAgentChatSession(
   let historyRevision = 0;
   const pendingHistoryArchives: CompactedHistoryArchive[] = [];
   let lastContextUsage: ChatContextUsage | null = null;
+  let lastToolLoopStop: ToolLoopStopReason | null = null;
   let lifecycle = new AbortController();
   let activeLifecycle: AbortController | undefined;
 
@@ -332,6 +363,38 @@ export function createAgentChatSession(
       if (activeLifecycle === turnLifecycle) {
         activeLifecycle = undefined;
       }
+    }
+  }
+
+  function bindOnToolLoopStop(
+    caller?: SendStreamOptions["onToolLoopStop"]
+  ): SendStreamOptions["onToolLoopStop"] {
+    return (reason) => {
+      lastToolLoopStop = reason;
+      return caller?.(reason);
+    };
+  }
+
+  async function maybeRunSkillLearning(): Promise<void> {
+    if (!skillLearning?.enabled) {
+      lastToolLoopStop = null;
+      return;
+    }
+    const stopReason = lastToolLoopStop;
+    lastToolLoopStop = null;
+    try {
+      await runSkillLearningTurn({
+        assignedToolNames: tools.map((tool) => tool.name),
+        channel,
+        enabled: true,
+        provider: dependencies.provider,
+        stopReason,
+        store: skillLearning.store,
+        turnMessages: extractLatestTurnMessages(history),
+        writeApprovalRequired: skillLearning.writeApprovalRequired,
+      });
+    } catch (error) {
+      console.error("Failed skill learning turn:", error);
     }
   }
 
@@ -537,7 +600,7 @@ export function createAgentChatSession(
           ? AbortSignal.any([sendOptions.signal, turnLifecycle.signal])
           : turnLifecycle.signal;
         await preprocessHistoryForTurn(signal);
-        return sendMessage(
+        const reply = await sendMessage(
           dependencies,
           tools,
           systemPrompt,
@@ -551,10 +614,10 @@ export function createAgentChatSession(
             onFailedSend: failedSendHandler(),
             onIncompleteCompletion: sendOptions?.onIncompleteCompletion,
             onToolCheckpoint: sendOptions?.onToolCheckpoint,
-            onToolLoopStop: sendOptions?.onToolLoopStop,
+            onToolLoopStop: bindOnToolLoopStop(sendOptions?.onToolLoopStop),
             preprocessUserContent: options.preprocessUserContent,
             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
-            resolvePromptContext: options.resolvePromptContext,
+            resolvePromptContext,
             runCompaction: (force) => runCompaction(force, signal),
             signal,
             toolContext: turnToolContext,
@@ -562,6 +625,8 @@ export function createAgentChatSession(
             userTimezone: options.userTimezone,
           }
         );
+        await maybeRunSkillLearning();
+        return reply;
       });
     },
     async sendStream(input, handlers, streamOptions) {
@@ -579,7 +644,7 @@ export function createAgentChatSession(
           ? AbortSignal.any([streamOptions.signal, turnLifecycle.signal])
           : turnLifecycle.signal;
         await preprocessHistoryForTurn(signal);
-        return sendMessage(
+        const reply = await sendMessage(
           dependencies,
           tools,
           systemPrompt,
@@ -594,10 +659,10 @@ export function createAgentChatSession(
             onFailedSend: failedSendHandler(),
             onIncompleteCompletion: streamOptions?.onIncompleteCompletion,
             onToolCheckpoint: streamOptions?.onToolCheckpoint,
-            onToolLoopStop: streamOptions?.onToolLoopStop,
+            onToolLoopStop: bindOnToolLoopStop(streamOptions?.onToolLoopStop),
             preprocessUserContent: options.preprocessUserContent,
             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
-            resolvePromptContext: options.resolvePromptContext,
+            resolvePromptContext,
             runCompaction: (force) => runCompaction(force, signal),
             signal,
             toolContext: turnToolContext,
@@ -605,6 +670,8 @@ export function createAgentChatSession(
             userTimezone: options.userTimezone,
           }
         );
+        await maybeRunSkillLearning();
+        return reply;
       });
     },
   };
