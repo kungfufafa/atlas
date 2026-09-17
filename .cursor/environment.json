@@ -1,0 +1,20 @@
+{
+  "name": "Atlas",
+  "install": "export BUN_INSTALL=\"$HOME/.bun\"\nexport PATH=\"$BUN_INSTALL/bin:$PATH\"\nif ! command -v bun >/dev/null 2>&1; then\n  curl -fsSL https://bun.sh/install | bash -s -- bun-v1.3.14\nfi\nif command -v sudo >/dev/null 2>&1 && [ -d /usr/local/bin ]; then\n  sudo ln -sf \"$BUN_INSTALL/bin/bun\" /usr/local/bin/bun\n  sudo ln -sf \"$BUN_INSTALL/bin/bunx\" /usr/local/bin/bunx\nfi\nbun install",
+  "terminals": [
+    {
+      "name": "atlas",
+      "command": "export PATH=\"$HOME/.bun/bin:$PATH\"\ncd /workspace\nbun run dev"
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 3000
+    },
+    {
+      "name": "api",
+      "port": 4310
+    }
+  ]
+}
