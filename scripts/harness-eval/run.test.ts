@@ -4,6 +4,13 @@ import {
   type GenerateChatInput,
   type ProviderClient,
 } from "@atlas/core";
+import {
+  GROUP_CHAT_KIND_GUIDANCE,
+  messagingGroupAudienceLine,
+  messagingPrivateAudienceLine,
+  messagingUnsetAudienceLine,
+  PRIVATE_CHAT_KIND_GUIDANCE,
+} from "../../packages/agent/src/chat-prompt";
 import { applyEnvFile, parseEnvFile } from "./env";
 import { parseHarnessEvalArgs } from "./flags";
 import {
@@ -27,6 +34,7 @@ import {
 import {
   ARCHIVE_BADGE,
   buildLongDistractorMemory,
+  CHANNEL_ASKER,
   CHAT_DOSSIER,
   CLEARANCE_PHRASE,
   CLEARANCE_STAMP_PHRASE,
@@ -76,6 +84,7 @@ describe("harness-eval flags", () => {
     expect(flags.memoryRetrieval).toBe(true);
     expect(flags.memorySummarization).toBe(true);
     expect(flags.archiveIndex).toBe(true);
+    expect(flags.chatKind).toBe(true);
     expect(flags.skillLearning).toBe(false);
     expect(flags.matrix).toBe(false);
   });
@@ -91,6 +100,8 @@ describe("harness-eval flags", () => {
         "--no-memory-summarization",
         "--no-archive-index",
         "--archive-index",
+        "--no-chat-kind",
+        "--chat-kind",
         "--skill-learning",
         "--no-skill-learning",
         "--skill-learning",
@@ -107,6 +118,7 @@ describe("harness-eval flags", () => {
     expect(flags.memoryRetrieval).toBe(false);
     expect(flags.memorySummarization).toBe(false);
     expect(flags.archiveIndex).toBe(true);
+    expect(flags.chatKind).toBe(true);
     expect(flags.skillLearning).toBe(true);
   });
 
@@ -141,6 +153,7 @@ describe("harness-eval flags", () => {
     const flags = parseHarnessEvalArgs([], {
       HARNESS_EVAL_ALLOWLIST: "false",
       HARNESS_EVAL_ARCHIVE_INDEX: "0",
+      HARNESS_EVAL_CHAT_KIND: "0",
       HARNESS_EVAL_MEMORY_RETRIEVAL: "0",
       HARNESS_EVAL_MEMORY_SUMMARIZATION: "off",
       HARNESS_EVAL_NATIVE_SCHEMAS: "off",
@@ -151,6 +164,7 @@ describe("harness-eval flags", () => {
     expect(flags.memoryRetrieval).toBe(false);
     expect(flags.memorySummarization).toBe(false);
     expect(flags.archiveIndex).toBe(false);
+    expect(flags.chatKind).toBe(false);
     expect(flags.nativeSchemas).toBe(false);
     expect(flags.skillLearning).toBe(false);
     expect(flags.workRules).toBe(false);
@@ -174,7 +188,12 @@ describe("harness-eval prompt assembly", () => {
     expect(ids).toContain("memory_summary_needle");
     expect(ids).toContain("learn_sop_acquisition");
     expect(ids).toContain("learn_unknown_tool_recovery");
-    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(24);
+    expect(ids).toContain("channel_whatsapp_private");
+    expect(ids).toContain("channel_whatsapp_group");
+    expect(ids).toContain("channel_telegram_private");
+    expect(ids).toContain("channel_telegram_group");
+    expect(ids).toContain("tool_avoid_unassigned_decoy");
+    expect(EVAL_SCENARIOS.length).toBeGreaterThanOrEqual(29);
   });
 
   test("injects WhatsApp channel rules", () => {
@@ -186,9 +205,64 @@ describe("harness-eval prompt assembly", () => {
     expect(prompt).toContain("WhatsApp only supports");
     expect(prompt).toContain("You have access to tools for this session");
     expect(prompt).toContain("# Assigned tools");
-    expect(prompt).toContain("- lookup_ticket:");
-    expect(prompt).toContain("- write_note:");
-    expect(prompt).toContain("- search_kb:");
+    expect(prompt).toContain("- lookup_ticket — purpose:");
+    expect(prompt).toContain("- write_note — purpose:");
+    expect(prompt).toContain("- search_kb — purpose:");
+  });
+
+  test("plumbs private vs group chatKind into WhatsApp and Telegram prompts", () => {
+    const whatsappPrivate = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "channel_whatsapp_private"
+    );
+    const whatsappGroup = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "channel_whatsapp_group"
+    );
+    const telegramPrivate = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "channel_telegram_private"
+    );
+    const telegramGroup = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "channel_telegram_group"
+    );
+    expect(whatsappPrivate?.chatKind).toBe("private");
+    expect(whatsappGroup?.chatKind).toBe("group");
+
+    const privatePrompt = assembleEvalSystemPrompt(whatsappPrivate!);
+    const groupPrompt = assembleEvalSystemPrompt(whatsappGroup!);
+    const unsetPrompt = assembleEvalSystemPrompt(whatsappPrivate!, {
+      chatKind: false,
+    });
+
+    expect(privatePrompt).toContain(messagingPrivateAudienceLine("WhatsApp"));
+    expect(privatePrompt).toContain(PRIVATE_CHAT_KIND_GUIDANCE);
+    expect(privatePrompt).not.toContain(messagingGroupAudienceLine("WhatsApp"));
+    expect(groupPrompt).toContain(messagingGroupAudienceLine("WhatsApp"));
+    expect(groupPrompt).toContain(GROUP_CHAT_KIND_GUIDANCE);
+    expect(groupPrompt).not.toContain(messagingPrivateAudienceLine("WhatsApp"));
+    expect(privatePrompt).not.toBe(groupPrompt);
+    expect(unsetPrompt).toContain(messagingUnsetAudienceLine("WhatsApp"));
+    expect(unsetPrompt).not.toContain(messagingPrivateAudienceLine("WhatsApp"));
+    expect(unsetPrompt).not.toContain(messagingGroupAudienceLine("WhatsApp"));
+
+    const telegramPrivatePrompt = assembleEvalSystemPrompt(telegramPrivate!);
+    const telegramGroupPrompt = assembleEvalSystemPrompt(telegramGroup!);
+    expect(telegramPrivatePrompt).toContain(
+      messagingPrivateAudienceLine("Telegram")
+    );
+    expect(telegramGroupPrompt).toContain(
+      messagingGroupAudienceLine("Telegram")
+    );
+    expect(telegramPrivatePrompt).not.toBe(telegramGroupPrompt);
+  });
+
+  test("unassigned decoy is omitted from the assigned-tool roster", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_avoid_unassigned_decoy"
+    );
+    expect(scenario).toBeDefined();
+    const prompt = assembleEvalSystemPrompt(scenario!);
+    expect(prompt).toContain("- lookup_ticket — purpose:");
+    expect(prompt).not.toContain(`- ${WORDING_TRAP_TOOL_NAME}`);
+    expect(prompt).toContain("Choose a tool by its purpose");
   });
 
   test("injects MEMORY.md facts and work rules by default", () => {
@@ -212,7 +286,7 @@ describe("harness-eval prompt assembly", () => {
       "Do not invent tools"
     );
     expect(prompt).toContain("# Assigned tools");
-    expect(prompt).toContain("- lookup_ticket:");
+    expect(prompt).toContain("- lookup_ticket — purpose:");
   });
 
   test("can omit the assigned-tool allowlist independently of work rules", () => {
@@ -223,7 +297,7 @@ describe("harness-eval prompt assembly", () => {
     const prompt = assembleEvalSystemPrompt(scenario!, { allowlist: false });
     expect(evalBasePrompt(scenario!)).toContain("Do not invent tools");
     expect(prompt).not.toContain("# Assigned tools");
-    expect(prompt).not.toContain("- lookup_ticket:");
+    expect(prompt).not.toContain("- lookup_ticket — purpose:");
     expect(prompt).toContain(
       "Atlas executes these tools independently of the selected model provider"
     );
@@ -307,6 +381,12 @@ describe("harness-eval prompt assembly", () => {
     expect(DEFAULT_SUITE_SCENARIO_IDS).toHaveLength(21);
     expect(DEFAULT_SUITE_SCENARIO_IDS).toContain("memory_archive_needle");
     expect(DEFAULT_SUITE_SCENARIO_IDS).not.toContain("memory_summary_needle");
+    expect(DEFAULT_SUITE_SCENARIO_IDS).not.toContain(
+      "channel_whatsapp_private"
+    );
+    expect(DEFAULT_SUITE_SCENARIO_IDS).not.toContain(
+      "tool_avoid_unassigned_decoy"
+    );
   });
 });
 
@@ -650,6 +730,96 @@ describe("harness-eval scoring", () => {
     expect(scored.passed).toBe(false);
     expect(scored.checks.did_not_call_wording_trap).toBe(false);
     expect(scored.toolPrecision).toBe(0);
+  });
+
+  test("scores private vs group channel replies", () => {
+    const privateScenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "channel_whatsapp_private"
+    );
+    const groupScenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "channel_whatsapp_group"
+    );
+    expect(privateScenario).toBeDefined();
+    expect(groupScenario).toBeDefined();
+    const privatePrompt = assembleEvalSystemPrompt(privateScenario!);
+    const groupPrompt = assembleEvalSystemPrompt(groupScenario!);
+
+    const privatePass = scoreScenario({
+      history: [],
+      reply: "Nightly backup finished.",
+      scenario: privateScenario!,
+      state: createEvalToolState(),
+      systemPrompt: privatePrompt,
+    });
+    expect(privatePass.passed).toBe(true);
+    expect(privatePass.checks.reply_does_not_address_asker).toBe(true);
+
+    const privateFail = scoreScenario({
+      history: [],
+      reply: `${CHANNEL_ASKER} — nightly backup finished.`,
+      scenario: privateScenario!,
+      state: createEvalToolState(),
+      systemPrompt: privatePrompt,
+    });
+    expect(privateFail.passed).toBe(false);
+    expect(privateFail.checks.reply_does_not_address_asker).toBe(false);
+
+    const groupPass = scoreScenario({
+      history: [],
+      reply: `${CHANNEL_ASKER} nightly backup finished.`,
+      scenario: groupScenario!,
+      state: createEvalToolState(),
+      systemPrompt: groupPrompt,
+    });
+    expect(groupPass.passed).toBe(true);
+    expect(groupPass.checks.reply_addresses_asker).toBe(true);
+
+    const groupFail = scoreScenario({
+      history: [],
+      reply: "Nightly backup finished.",
+      scenario: groupScenario!,
+      state: createEvalToolState(),
+      systemPrompt: groupPrompt,
+    });
+    expect(groupFail.passed).toBe(false);
+    expect(groupFail.checks.reply_addresses_asker).toBe(false);
+  });
+
+  test("unassigned decoy fails when the missing close name is invented", () => {
+    const scenario = EVAL_SCENARIOS.find(
+      (entry) => entry.id === "tool_avoid_unassigned_decoy"
+    );
+    expect(scenario).toBeDefined();
+    const invented = createEvalToolState();
+    invented.calls.push({
+      arguments: { ticketId: TICKET_ID },
+      name: WORDING_TRAP_TOOL_NAME,
+    });
+    const failed = scoreScenario({
+      history: [],
+      reply: "Live-index preview stub",
+      scenario: scenario!,
+      state: invented,
+      systemPrompt: assembleEvalSystemPrompt(scenario!),
+    });
+    expect(failed.passed).toBe(false);
+    expect(failed.checks.did_not_call_unassigned_decoy).toBe(false);
+    expect(failed.checks.prompt_omits_unassigned_decoy).toBe(true);
+
+    const mapped = createEvalToolState();
+    mapped.calls.push({
+      arguments: { ticketId: TICKET_ID },
+      name: "lookup_ticket",
+    });
+    const passed = scoreScenario({
+      history: [],
+      reply: `Ticket ${TICKET_ID} is in_progress: ${TICKET_SUMMARY}`,
+      scenario: scenario!,
+      state: mapped,
+      systemPrompt: assembleEvalSystemPrompt(scenario!),
+    });
+    expect(passed.passed).toBe(true);
+    expect(passed.checks.called_real_lookup).toBe(true);
   });
 
   test("fails a no-fit lure that substitutes search_kb or invents generate_image", () => {

@@ -21,6 +21,8 @@ Ablation flags (independently togglable; defaults match iteration-2 product path
   --no-memory-summarization Extractive recency only (iter5 summary-off baseline)
   --archive-index           Index profile memory-archive/ into memory_search (default)
   --no-archive-index        Skip archive files (iter5 archive-off baseline)
+  --chat-kind               Pass scenario chatKind into createAgentChatSession (default)
+  --no-chat-kind            Omit chatKind (iter6 plumbing-off baseline)
   --skill-learning          Run the post-turn skill learning loop (eval ON)
   --no-skill-learning       Disable that loop (default; product default is off)
   --native-schemas          Send native tool schemas to the provider (default)
@@ -42,6 +44,7 @@ Environment:
   HARNESS_EVAL_MEMORY_RETRIEVAL=0|1 (default 1)
   HARNESS_EVAL_MEMORY_SUMMARIZATION=0|1 (default 1)
   HARNESS_EVAL_ARCHIVE_INDEX=0|1    (default 1)
+  HARNESS_EVAL_CHAT_KIND=0|1        (default 1)
   HARNESS_EVAL_SKILL_LEARNING=0|1   (default 0)
   HARNESS_EVAL_NATIVE_SCHEMAS=0|1   (default 1)
   HARNESS_EVAL_STRONG_MODEL
@@ -55,6 +58,7 @@ entirely. The published ablation matrix keeps native schemas ON.
 export interface HarnessEvalCliOptions {
   allowlist: boolean;
   archiveIndex: boolean;
+  chatKind: boolean;
   help: boolean;
   matrix: boolean;
   memoryRetrieval: boolean;
@@ -104,6 +108,7 @@ export function parseHarnessEvalArgs(
   const parsed: HarnessEvalCliOptions = {
     allowlist: parseBoolEnv(env, "HARNESS_EVAL_ALLOWLIST", true),
     archiveIndex: parseBoolEnv(env, "HARNESS_EVAL_ARCHIVE_INDEX", true),
+    chatKind: parseBoolEnv(env, "HARNESS_EVAL_CHAT_KIND", true),
     help: false,
     matrix: false,
     memoryRetrieval: parseBoolEnv(env, "HARNESS_EVAL_MEMORY_RETRIEVAL", true),
@@ -165,6 +170,12 @@ export function parseHarnessEvalArgs(
         break;
       case "--no-archive-index":
         parsed.archiveIndex = false;
+        break;
+      case "--chat-kind":
+        parsed.chatKind = true;
+        break;
+      case "--no-chat-kind":
+        parsed.chatKind = false;
         break;
       case "--skill-learning":
         parsed.skillLearning = true;

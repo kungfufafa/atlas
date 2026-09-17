@@ -43,6 +43,7 @@ export const NEAR_DUPLICATE_SUMMARY =
   "Title search miss — not the live T-42 record";
 export const WORDING_TRAP_TOOL_NAME = "lookup_ticket_live";
 export const WORDING_TRAP_SUMMARY = "Live-index preview stub";
+export const CHANNEL_ASKER = "Jordan";
 export const ON_CALL_SNIPPET = "On-call rotation is posted in the ops channel.";
 export const QUARANTINE_SOP_QUERY = "QUARANTINE-HOLD-SOP";
 export const QUARANTINE_HOLD_TOKEN = "Q-HOLD-ALPHA";

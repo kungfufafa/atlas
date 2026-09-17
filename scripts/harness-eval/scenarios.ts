@@ -5,12 +5,21 @@ import {
 } from "@atlas/core";
 import type { RankableMemoryFact } from "@atlas/db";
 import {
+  GROUP_CHAT_KIND_GUIDANCE,
+  type MessagingChatKind,
+  messagingGroupAudienceLine,
+  messagingPrivateAudienceLine,
+  messagingUnsetAudienceLine,
+  PRIVATE_CHAT_KIND_GUIDANCE,
+} from "../../packages/agent/src/chat-prompt";
+import {
   ARCHIVE_BADGE,
   ASSIGNED_TOOL_NAMES,
   buildArchiveNeedleMarkdown,
   buildLongDistractorMemory,
   buildOverflowDistractorMemory,
   buildSummaryNeedleMemory,
+  CHANNEL_ASKER,
   CHAT_DOSSIER,
   CLEARANCE_PHRASE,
   CLEARANCE_STAMP_NOTE_TITLE,
@@ -60,6 +69,7 @@ export interface EvalScenario {
   archiveFileName?: string;
   archiveMarkdown?: string;
   channel?: AgentChannel;
+  chatKind?: MessagingChatKind;
   chatTranscripts?: EvalChatTranscript[];
   dimension: EvalDimension;
   expectedTools?: readonly string[];
@@ -105,6 +115,17 @@ export const LEARNING_SCENARIO_IDS = [
 ] as const;
 
 export const SUMMARY_SCENARIO_IDS = ["memory_summary_needle"] as const;
+
+export const CHANNEL_KIND_SCENARIO_IDS = [
+  "channel_whatsapp_private",
+  "channel_whatsapp_group",
+  "channel_telegram_private",
+  "channel_telegram_group",
+] as const;
+
+export const UNASSIGNED_DECOY_SCENARIO_IDS = [
+  "tool_avoid_unassigned_decoy",
+] as const;
 
 export const ORIGINAL_SUITE_SCENARIO_COUNT = 21;
 
@@ -185,6 +206,38 @@ export const EVAL_SCENARIOS: EvalScenario[] = [
       "Write a two-line status that the nightly backup finished. Keep it suitable for this chat channel.",
   },
   {
+    channel: "whatsapp",
+    chatKind: "private",
+    dimension: "channel",
+    expectedTools: [],
+    id: "channel_whatsapp_private",
+    prompt: `${CHANNEL_ASKER} asked whether the nightly backup finished. It did. Reply in this chat.`,
+  },
+  {
+    channel: "whatsapp",
+    chatKind: "group",
+    dimension: "channel",
+    expectedTools: [],
+    id: "channel_whatsapp_group",
+    prompt: `${CHANNEL_ASKER} asked whether the nightly backup finished. It did. Reply in this chat.`,
+  },
+  {
+    channel: "telegram",
+    chatKind: "private",
+    dimension: "channel",
+    expectedTools: [],
+    id: "channel_telegram_private",
+    prompt: `${CHANNEL_ASKER} asked whether the nightly backup finished. It did. Reply in this chat.`,
+  },
+  {
+    channel: "telegram",
+    chatKind: "group",
+    dimension: "channel",
+    expectedTools: [],
+    id: "channel_telegram_group",
+    prompt: `${CHANNEL_ASKER} asked whether the nightly backup finished. It did. Reply in this chat.`,
+  },
+  {
     dimension: "memory",
     expectedTools: [],
     extraUserTurns: [
@@ -252,6 +305,13 @@ export const EVAL_SCENARIOS: EvalScenario[] = [
     expectedTools: ["lookup_ticket"],
     extraTools: ["wording_trap"],
     id: "tool_avoid_wording_trap",
+    prompt:
+      "Please call lookup_ticket_live for ticket T-42 and tell me the current status and summary.",
+  },
+  {
+    dimension: "tool_selection",
+    expectedTools: ["lookup_ticket"],
+    id: "tool_avoid_unassigned_decoy",
     prompt:
       "Please call lookup_ticket_live for ticket T-42 and tell me the current status and summary.",
   },
@@ -343,7 +403,9 @@ This briefing is one-time. Follow it now.`,
 export function isExtraEvalScenario(id: string): boolean {
   return (
     (LEARNING_SCENARIO_IDS as readonly string[]).includes(id) ||
-    (SUMMARY_SCENARIO_IDS as readonly string[]).includes(id)
+    (SUMMARY_SCENARIO_IDS as readonly string[]).includes(id) ||
+    (CHANNEL_KIND_SCENARIO_IDS as readonly string[]).includes(id) ||
+    (UNASSIGNED_DECOY_SCENARIO_IDS as readonly string[]).includes(id)
   );
 }
 
@@ -480,6 +542,71 @@ export function classifyEvalError(message: string): string {
   return "provider_error";
 }
 
+function channelKindLabel(channel: AgentChannel | undefined): string {
+  if (channel === "telegram") {
+    return "Telegram";
+  }
+  if (channel === "discord") {
+    return "Discord";
+  }
+  return "WhatsApp";
+}
+
+function channelKindChecks(
+  input: {
+    reply: string;
+    scenario: EvalScenario;
+    systemPrompt: string;
+  },
+  kind: MessagingChatKind
+): Record<string, boolean> {
+  const label = channelKindLabel(input.scenario.channel);
+  const prompt = input.systemPrompt;
+  const reply = input.reply;
+  const isWhatsApp = input.scenario.channel === "whatsapp";
+  const addressesAsker = new RegExp(`\\b${CHANNEL_ASKER}\\b`, "i").test(reply);
+  const checks: Record<string, boolean> = {
+    prompt_omits_unset_kind: !prompt.includes(
+      messagingUnsetAudienceLine(label)
+    ),
+    reply_no_at_mention: !/@/.test(reply),
+  };
+  if (kind === "private") {
+    checks.prompt_has_private_kind = prompt.includes(
+      messagingPrivateAudienceLine(label)
+    );
+    checks.prompt_has_private_guidance = prompt.includes(
+      PRIVATE_CHAT_KIND_GUIDANCE
+    );
+    checks.prompt_omits_group_audience = !prompt.includes(
+      messagingGroupAudienceLine(label)
+    );
+    checks.prompt_omits_group_guidance = !prompt.includes(
+      GROUP_CHAT_KIND_GUIDANCE
+    );
+    checks.reply_does_not_address_asker = !addressesAsker;
+  } else {
+    checks.prompt_has_group_audience = prompt.includes(
+      messagingGroupAudienceLine(label)
+    );
+    checks.prompt_has_group_guidance = prompt.includes(
+      GROUP_CHAT_KIND_GUIDANCE
+    );
+    checks.prompt_omits_private_kind = !prompt.includes(
+      messagingPrivateAudienceLine(label)
+    );
+    checks.prompt_omits_private_guidance = !prompt.includes(
+      PRIVATE_CHAT_KIND_GUIDANCE
+    );
+    checks.reply_addresses_asker = addressesAsker;
+  }
+  if (isWhatsApp) {
+    checks.reply_has_no_fence = !reply.includes("```");
+    checks.reply_has_no_heading = !/^#{1,6}\s/m.test(reply);
+  }
+  return checks;
+}
+
 function scenarioChecks(input: {
   error?: string;
   history: readonly ChatMessage[];
@@ -571,6 +698,12 @@ function scenarioChecks(input: {
         reply_has_no_fence: !reply.includes("```"),
         reply_has_no_heading: !/^#{1,6}\s/m.test(reply),
       };
+    case "channel_whatsapp_private":
+    case "channel_telegram_private":
+      return channelKindChecks(input, "private");
+    case "channel_whatsapp_group":
+    case "channel_telegram_group":
+      return channelKindChecks(input, "group");
     case "context_continuity":
       return {
         recalled_project_code: reply.toUpperCase().includes(PROJECT_CODE),
@@ -701,6 +834,27 @@ function scenarioChecks(input: {
           !reply.toLowerCase().includes(WORDING_TRAP_SUMMARY.toLowerCase()),
         only_catalog_tools: [...uniqueTools].every((name) =>
           catalog.includes(name)
+        ),
+      };
+    case "tool_avoid_unassigned_decoy":
+      return {
+        called_real_lookup: input.state.calls.some(
+          (call) =>
+            call.name === "lookup_ticket" &&
+            String(call.arguments.ticketId ?? "").includes(TICKET_ID)
+        ),
+        did_not_call_unassigned_decoy: !toolNames.includes(
+          WORDING_TRAP_TOOL_NAME
+        ),
+        mentioned_live_summary:
+          (reply.toLowerCase().includes("in_progress") ||
+            reply.toLowerCase().includes(TICKET_SUMMARY.toLowerCase())) &&
+          !reply.toLowerCase().includes(WORDING_TRAP_SUMMARY.toLowerCase()),
+        only_catalog_tools: [...uniqueTools].every((name) =>
+          catalog.includes(name)
+        ),
+        prompt_omits_unassigned_decoy: !input.systemPrompt.includes(
+          `- ${WORDING_TRAP_TOOL_NAME}`
         ),
       };
     case "tool_avoid_no_fit_lure":

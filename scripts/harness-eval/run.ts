@@ -31,6 +31,7 @@ import {
   summarizeReport,
 } from "./matrix";
 import {
+  CHANNEL_KIND_SCENARIO_IDS,
   EVAL_SCENARIOS,
   type EvalScenario,
   LEARNING_SCENARIO_IDS,
@@ -50,6 +51,7 @@ import {
   USER_COFFEE,
   USER_NICKNAME,
   VAULT_HINT,
+  WORDING_TRAP_TOOL_NAME,
 } from "./tools";
 
 export const HARNESS_EVAL_PATH =
@@ -73,6 +75,7 @@ export interface ScenarioResult {
 export interface HarnessEvalAblation {
   allowlist: boolean;
   archiveIndex: boolean;
+  chatKind: boolean;
   memoryRetrieval: boolean;
   memorySummarization: boolean;
   nativeSchemas: boolean;
@@ -100,6 +103,7 @@ export interface HarnessEvalReport {
 export interface RunHarnessEvalOptions {
   allowlist?: boolean;
   archiveIndex?: boolean;
+  chatKind?: boolean;
   env?: OpenCodeGoEvalEnv;
   memoryRetrieval?: boolean;
   memorySummarization?: boolean;
@@ -113,6 +117,7 @@ export interface RunHarnessEvalOptions {
 
 export interface EvalPromptOptions {
   allowlist?: boolean;
+  chatKind?: boolean;
   memoryRetrieval?: boolean;
   memorySummary?: string;
   workRules?: boolean;
@@ -159,6 +164,7 @@ export function assembleEvalSystemPrompt(
   return buildChatSystemPrompt(tools, {
     basePrompt: evalBasePrompt(scenario, options),
     channel: scenario.channel,
+    chatKind: options.chatKind === false ? undefined : scenario.chatKind,
     enableToolLoop: true,
     includeAssignedToolsAllowlist: options.allowlist !== false,
     soul: Boolean(scenario.soulIdentity || scenario.soulMemory),
@@ -245,9 +251,11 @@ export async function runHarnessEval(
   const memorySummarization = options.memorySummarization !== false;
   const archiveIndex = options.archiveIndex !== false;
   const skillLearning = options.skillLearning === true;
+  const chatKind = options.chatKind !== false;
   const ablation: HarnessEvalAblation = {
     allowlist,
     archiveIndex,
+    chatKind,
     memoryRetrieval,
     memorySummarization,
     nativeSchemas,
@@ -277,6 +285,7 @@ export async function runHarnessEval(
       await runScenario(scenario, {
         allowlist,
         archiveIndex,
+        chatKind,
         memoryRetrieval,
         memorySummarization,
         promptOnly: options.promptOnly === true,
@@ -328,6 +337,7 @@ async function runScenario(
   options: {
     allowlist: boolean;
     archiveIndex: boolean;
+    chatKind: boolean;
     memoryRetrieval: boolean;
     memorySummarization: boolean;
     promptOnly: boolean;
@@ -352,6 +362,7 @@ async function runScenario(
         });
   const promptOptions: EvalPromptOptions = {
     allowlist: options.allowlist,
+    chatKind: options.chatKind,
     memoryRetrieval: options.memoryRetrieval,
     memorySummary,
     workRules: options.workRules,
@@ -402,6 +413,7 @@ async function runScenario(
   });
   const session = harness.createChatSession({
     channel: scenario.channel ?? "cli",
+    chatKind: options.chatKind === false ? undefined : scenario.chatKind,
     enableToolLoop: true,
     includeAssignedToolsAllowlist: options.allowlist,
     skillLearning: {
@@ -443,6 +455,7 @@ async function runScenario(
         tools: phase2Tools,
       }).createChatSession({
         channel: scenario.channel ?? "cli",
+        chatKind: options.chatKind === false ? undefined : scenario.chatKind,
         enableToolLoop: true,
         includeAssignedToolsAllowlist: options.allowlist,
         skillLearning: {
@@ -527,6 +540,43 @@ function scorePromptOnly(
       ),
     };
     const passed = checks.prompt_has_whatsapp_rules;
+    return {
+      checks,
+      gradedScore: passed ? 1 : 0,
+      passed,
+      score: passed ? 1 : 0,
+      toolPrecision: 1,
+      toolRecall: 1,
+    };
+  }
+  if ((CHANNEL_KIND_SCENARIO_IDS as readonly string[]).includes(scenario.id)) {
+    const scored = scoreScenario({
+      history: [],
+      reply: "",
+      scenario,
+      state: createEvalToolState(),
+      systemPrompt,
+    });
+    const checks = Object.fromEntries(
+      Object.entries(scored.checks).filter(([key]) => key.startsWith("prompt_"))
+    );
+    const passed = Object.values(checks).every(Boolean);
+    return {
+      checks,
+      gradedScore: passed ? 1 : 0,
+      passed,
+      score: passed ? 1 : 0,
+      toolPrecision: 1,
+      toolRecall: 1,
+    };
+  }
+  if (scenario.id === "tool_avoid_unassigned_decoy") {
+    const checks = {
+      prompt_omits_unassigned_decoy: !systemPrompt.includes(
+        `- ${WORDING_TRAP_TOOL_NAME}`
+      ),
+    };
+    const passed = checks.prompt_omits_unassigned_decoy;
     return {
       checks,
       gradedScore: passed ? 1 : 0,
@@ -706,6 +756,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const report = await runHarnessEval({
     allowlist: flags.allowlist,
     archiveIndex: flags.archiveIndex,
+    chatKind: flags.chatKind,
     memoryRetrieval: flags.memoryRetrieval,
     memorySummarization: flags.memorySummarization,
     model: flags.model,

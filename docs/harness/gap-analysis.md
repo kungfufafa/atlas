@@ -97,9 +97,7 @@ Remaining vs Hermes always-on:
 
 ### P2. Channel awareness: format rules exist; private/group kind does not reach the session
 
-Nakama-style channel prompts are in `MESSAGING_CHANNEL_PROMPT` / `appendMessagingChannelPrompt`. `createAgentChatSession` (`packages/agent/src/chat.ts`) passes `channel` but **never `chatKind`**, so group vs private lines in `buildChatSystemPrompt` rarely fire. `AgentService` chat sessions similarly omit `chatKind`.
-
-WhatsApp guest KB policy is real (`channel-guest-knowledge-base-policy.ts`) and stronger than OpenClaw’s generic gateway in that slice. The quality gap is **prompt fidelity** (group visibility, compact replies) not missing workers.
+**Iteration 6 shipped this.** `createAgentChatSession` and `AgentService.buildChatSession` pass `chatKind` (`private` | `group`) into `buildChatSystemPrompt`. Channel workers already send `externalPrincipal.channelIsGroup`; `resolveMessagingChatKind` maps that onto messaging channels only. Unset kind still uses the generic fallback line. Private vs group etiquette lines now fire. Remaining: `chatKind` is in-memory on the live session record, not a SQLite column, so a cold rebuild after restart without the original principal falls back to unset.
 
 | H | R | C | L |
 |---|---|---|---|
@@ -163,10 +161,16 @@ Live OpenCode Go two-phase yardsticks (`learn_sop_acquisition`, `learn_unknown_t
 
 Live OpenCode Go: `memory_summary_needle` **0/6 → 6/6** per model (n=3, extractive vs LLM; `CEDAR-FALCON-7` survives only via summary). `memory_archive_needle` **0/6 → 6/6** per model (n=3, `--no-archive-index` vs production parser; `QUARTZ-WALRUS-19`). Full 21-suite **20/21**; learning 23-suite **22/23** strong / **23/23** weak. Details: `docs/harness/eval-results/iter5-summary.md`.
 
+## Iteration 6 choice
+
+**Shipped:** plumb `chatKind` from `externalPrincipal.channelIsGroup` through `AgentService` / `createAgentChatSession` into `buildChatSystemPrompt`, with explicit private 1:1 vs group etiquette blocks. Assigned-tool roster now labels each line `purpose:` and instructs selection by purpose, not similar names. Eval extras: private/group WhatsApp + Telegram yardsticks (`--no-chat-kind` baseline) and `tool_avoid_unassigned_decoy` (close name absent from the catalog).
+
+See `docs/harness/eval-results/iter6-summary.md` for live numbers. Do not claim `tool_avoid_wording_trap` is solved unless the strong model actually moved.
+
 ## Eval coverage this iteration
 
 `scripts/harness-eval/run.ts` drives `createAgentHarness` → `createChatSession` → `send()` (real `buildChatSystemPrompt` + `generateReply` + `executeToolCall` loop) with `createOpenCodeGoProvider`. Flags: `scripts/harness-eval/README.md`.
 
-Scenarios: original 12 plus near-duplicate, 3-hop, 90-bin MEMORY.md needle, wording trap, no-fit lure, four retrieval yardsticks (archive needle, conflict/recency, search_chats, bounded dump), two two-phase learning yardsticks (SOP acquisition, unknown-tool recovery), and extra `memory_summary_needle` (not in the 21 default). `--skill-learning` is **off** by default. `--memory-summarization` and `--archive-index` default **on**.
+Scenarios: original 12 plus near-duplicate, 3-hop, 90-bin MEMORY.md needle, wording trap, no-fit lure, four retrieval yardsticks (archive needle, conflict/recency, search_chats, bounded dump), two two-phase learning yardsticks (SOP acquisition, unknown-tool recovery), extra `memory_summary_needle` (not in the 21 default), private/group WhatsApp+Telegram `chatKind` extras, and `tool_avoid_unassigned_decoy`. `--skill-learning` is **off** by default. `--memory-summarization`, `--archive-index`, and `--chat-kind` default **on**.
 
 Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no SQLite `memory_write`). Soul is composed in-process via the same `composeSoulSystemPromptWithSummary` AgentService uses. Memory tools in the eval use an in-harness store over the **same** `searchRankedMemories` / `ConversationKeywordSearch` / `loadMemoryArchiveFacts` functions as production. Native schemas stay on in the published matrix. See the eval summary JSON `path` field.

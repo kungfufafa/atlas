@@ -31,6 +31,7 @@ Defaults match the iteration-2 product path (all on). Each switch is independent
 | `--memory-retrieval` / `--no-memory-retrieval` | `HARNESS_EVAL_MEMORY_RETRIEVAL=0\|1` | on | Bound MEMORY.md + `memory_search`/`search_chats` extras |
 | `--memory-summarization` / `--no-memory-summarization` | `HARNESS_EVAL_MEMORY_SUMMARIZATION=0\|1` | on | LLM summary of omitted MEMORY.md facts (hash-cached); off is extractive recency |
 | `--archive-index` / `--no-archive-index` | `HARNESS_EVAL_ARCHIVE_INDEX=0\|1` | on | Load profile `memory-archive/` files into `memory_search` |
+| `--chat-kind` / `--no-chat-kind` | `HARNESS_EVAL_CHAT_KIND=0\|1` | on | Pass scenario `chatKind` into `createAgentChatSession` (private vs group). Off is the iter6 plumbing-off baseline. |
 | `--skill-learning` / `--no-skill-learning` | `HARNESS_EVAL_SKILL_LEARNING=0\|1` | **off** | Post-turn skill distill on `createAgentChatSession` (product default is off) |
 | `--model <id>` | `HARNESS_EVAL_MODEL` | `kimi-k2.7-code` | OpenCode Go model id |
 | `--native-schemas` / `--no-native-schemas` | `HARNESS_EVAL_NATIVE_SCHEMAS=0\|1` | on | Whether `generateChat`/`streamChat` receive native tool schemas |
@@ -71,8 +72,12 @@ retrieval yardsticks:
 | `tool_select_near_duplicate` | `lookup_ticket` vs `lookup_ticket_by_title` |
 | `multi_step_three_hop` | lookup → `search_kb` with ticket `escalationKey` → `write_note` in order |
 | `memory_long_context_needle` | recall `SILVER-ORCHID-77` from a 90-bin MEMORY.md distractor list |
-| `tool_avoid_wording_trap` | user says `lookup_ticket_live`; real tool is `lookup_ticket` |
+| `tool_avoid_wording_trap` | user says `lookup_ticket_live`; that decoy **is** assigned; real tool is `lookup_ticket` |
+| `tool_avoid_unassigned_decoy` | same user wording, but `lookup_ticket_live` is **not** in the catalog; allowlist must omit it |
 | `tool_avoid_no_fit_lure` | `generate_image` / `send_email` requested; neither is assigned |
+| `channel_whatsapp_private` | WhatsApp 1:1: prompt has private kind; reply is direct (no asker name / @mention) |
+| `channel_whatsapp_group` | WhatsApp group: prompt has group audience; reply addresses the asker |
+| `channel_telegram_private` / `channel_telegram_group` | same private vs group discriminator on Telegram |
 | `memory_archive_needle` | badge code only in the archive store; not in injected MEMORY.md |
 | `memory_conflict_recency` | stale city in MEMORY.md vs newer store fact |
 | `memory_search_chats` | dossier code only in another transcript (`search_chats`) |
@@ -107,6 +112,17 @@ calls the same `parseSkillMarkdown` / `matchSkillsForMessage` /
 `composeMatchedSkillsPrompt` / FTS5 ranker as production. Phase 2 is a **new
 session** with that store and without phase-1 history. Write-approval staging
 is production-only (`createSkillsServiceLearningStore`).
+
+`--chat-kind` (default on) passes `EvalScenario.chatKind` through
+`createAgentChatSession` into `buildChatSystemPrompt`. `--no-chat-kind` is the
+iteration-6 baseline: private and group scenarios share the generic unset
+audience line. Channel workers already send `channelIsGroup` on
+`externalPrincipal`; AgentService maps that to `chatKind`.
+
+The assigned-tool roster lists each tool as `- name — purpose: …` and tells the
+model to select by purpose, not similar names. `tool_avoid_unassigned_decoy`
+is extra (not in the 21 default): the user names `lookup_ticket_live` while
+that tool is absent from the catalog.
 
 ## Matrix
 
