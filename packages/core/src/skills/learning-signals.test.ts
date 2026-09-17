@@ -114,6 +114,40 @@ describe("collectSkillLearningSignals", () => {
     );
   });
 
+  test("flags a requested snake_case tool that is not assigned even without a call", () => {
+    const signals = collectSkillLearningSignals({
+      assignedToolNames: ["lookup_ticket", "write_note"],
+      turnMessages: [
+        {
+          content: "Use the clearance_stamp tool to stamp ticket T-42",
+          role: "user",
+        },
+        {
+          content:
+            "I don't have clearance_stamp. I can look the ticket up instead.",
+          role: "assistant",
+        },
+      ],
+    });
+    expect(signals).toEqual([
+      { kind: "requested_unassigned_tool", toolName: "clearance_stamp" },
+    ]);
+    expect(skillLearningIsEligible(signals)).toBe(true);
+  });
+
+  test("does not flag assigned snake_case names as missing tools", () => {
+    const signals = collectSkillLearningSignals({
+      assignedToolNames: ["lookup_ticket", "write_note"],
+      turnMessages: [
+        { content: "Call lookup_ticket then write_note", role: "user" },
+        { content: "ok", role: "assistant" },
+      ],
+    });
+    expect(
+      signals.some((signal) => signal.kind === "requested_unassigned_tool")
+    ).toBe(false);
+  });
+
   test("ignores chit-chat with no failures", () => {
     expect(
       skillLearningIsEligible(

@@ -101,6 +101,26 @@ describe("distillFallbackSkill", () => {
     expect(outcome.content).toContain("lookup_ticket");
   });
 
+  test("writes a recover skill for a requested unassigned tool", () => {
+    const outcome = distillFallbackSkill({
+      assignedToolNames: ["lookup_ticket", "write_note"],
+      catalog: [],
+      signals: [
+        { kind: "requested_unassigned_tool", toolName: "clearance_stamp" },
+      ],
+      turnMessages: [
+        { content: "Use clearance_stamp on T-42", role: "user" },
+        { content: "that tool is not assigned", role: "assistant" },
+      ],
+    });
+    expect(outcome.action).toBe("create");
+    if (outcome.action !== "create") {
+      throw new Error("expected create");
+    }
+    expect(outcome.content).toContain("Never call `clearance_stamp`");
+    expect(outcome.content).toContain("write_note");
+  });
+
   test("consolidates a second unknown-tool distill into an edit", () => {
     const first = distillFallbackSkill({
       assignedToolNames: ["lookup_ticket"],
@@ -327,5 +347,52 @@ describe("createAgentChatSession skill learning", () => {
     expect(capturedPrompt).toContain("Available Agent Skills");
     expect(capturedPrompt).toContain("Active Skill");
     expect(capturedPrompt).toContain("Never call `clearance_stamp`");
+  });
+
+  test("learns from a requested unassigned tool when the model never called it", async () => {
+    const store = memoryStore();
+    let calls = 0;
+    const provider: ProviderClient = {
+      generateChat() {
+        calls += 1;
+        return Promise.resolve({
+          assistantMessage: {
+            content: "clearance_stamp is not assigned",
+            role: "assistant",
+          },
+          content: "clearance_stamp is not assigned",
+          toolCalls: [],
+        });
+      },
+      generateText() {
+        return Promise.resolve({
+          content: JSON.stringify({ action: "noop", reason: "fallback" }),
+        });
+      },
+      name: "stub",
+      streamChat() {
+        return Promise.resolve({
+          assistantMessage: { content: "done", role: "assistant" },
+          content: "done",
+          toolCalls: [],
+        });
+      },
+    };
+    const assigned: ToolDefinition = {
+      description: "Look up a ticket",
+      name: "lookup_ticket",
+      parameters: { properties: {}, type: "object" },
+      run: () => Promise.resolve({ ok: true }),
+    };
+    const harness = createAgentHarness({ provider, tools: [assigned] });
+    const phase1 = harness.createChatSession({
+      enableToolLoop: true,
+      skillLearning: { enabled: true, store },
+      tools: [assigned],
+    });
+    await phase1.send("Use clearance_stamp on T-42");
+    expect(calls).toBeGreaterThan(0);
+    expect(store.skills.size).toBe(1);
+    expect([...store.skills.values()][0]?.body).toContain("clearance_stamp");
   });
 });

@@ -95,10 +95,14 @@ describe("buildSkillPostTurnReviewPrompt", () => {
     const prompt = buildSkillPostTurnReviewPrompt({
       assignedToolNames: ["lookup_ticket"],
       catalog: [],
-      signals: [{ kind: "unknown_tool", toolName: "clearance_stamp" }],
+      signals: [
+        { kind: "unknown_tool", toolName: "clearance_stamp" },
+        { kind: "requested_unassigned_tool", toolName: "clearance_stamp" },
+      ],
       turnMessages: [{ content: "stamp it", role: "user" }],
     });
     expect(prompt).toContain("unknown_tool: clearance_stamp");
+    expect(prompt).toContain("requested_unassigned_tool: clearance_stamp");
     expect(prompt).toContain("lookup_ticket");
   });
 });

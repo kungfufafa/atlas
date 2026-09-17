@@ -97,7 +97,11 @@ export function distillFallbackSkill(input: {
 }): LearnedSkillApplyAction {
   const userMessage = latestUserMessage(input.turnMessages);
   const unknownTools = input.signals
-    .filter((signal) => signal.kind === "unknown_tool")
+    .filter(
+      (signal) =>
+        signal.kind === "unknown_tool" ||
+        signal.kind === "requested_unassigned_tool"
+    )
     .map((signal) => signal.toolName);
   const stop = input.signals.find((signal) => signal.kind === "tool_loop_stop");
   const taught = input.signals.some(
@@ -199,6 +203,7 @@ export async function runSkillLearningTurn(input: {
   }
 
   const signals = collectSkillLearningSignals({
+    assignedToolNames: input.assignedToolNames,
     stopReason: input.stopReason,
     turnMessages: input.turnMessages,
   });

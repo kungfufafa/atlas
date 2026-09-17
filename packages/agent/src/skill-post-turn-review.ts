@@ -31,7 +31,7 @@ const REVIEW_SYSTEM = [
   "Rules:",
   "- Prefer patch over create when an existing profile skill clearly matches",
   "- Prefer noop when the turn is routine, already covered, or low confidence",
-  "- When learning signals list unknown tools, a mechanical stop, or a taught SOP, prefer create or patch over noop",
+  "- When learning signals list unknown tools, a requested unassigned tool, a mechanical stop, or a taught SOP, prefer create or patch over noop",
   "- Learned create content MUST include YAML frontmatter with name, description, and include-body-on-match: true",
   "- Capture exact tool names, queries, note titles, and tokens from the turn so a later similar request can follow the procedure without the original briefing",
   "- Never delete skills; never target bundled/global system skills",
@@ -77,6 +77,10 @@ export function buildSkillPostTurnReviewPrompt(input: {
     for (const signal of input.signals) {
       if (signal.kind === "unknown_tool") {
         lines.push(`- unknown_tool: ${signal.toolName}`);
+        continue;
+      }
+      if (signal.kind === "requested_unassigned_tool") {
+        lines.push(`- requested_unassigned_tool: ${signal.toolName}`);
         continue;
       }
       if (signal.kind === "tool_loop_stop") {

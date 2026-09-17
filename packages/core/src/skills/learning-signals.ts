@@ -12,8 +12,11 @@ export const SKILL_LEARNING_INTERACTIVE_CHANNELS = new Set<AgentChannel>([
 
 export type SkillLearningStopReason = "no_progress" | "iteration_limit";
 
+export const SNAKE_CASE_TOOL_NAME = /\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/gi;
+
 export type SkillLearningSignal =
   | { kind: "unknown_tool"; toolName: string }
+  | { kind: "requested_unassigned_tool"; toolName: string }
   | { kind: "tool_loop_stop"; reason: SkillLearningStopReason }
   | { kind: "tool_error"; toolName?: string }
   | { kind: "taught_procedure" };
@@ -59,6 +62,24 @@ export function parseUnknownToolName(content: string): string | null {
   return name || null;
 }
 
+export function extractSnakeCaseToolNames(text: string): string[] {
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const match of text.matchAll(SNAKE_CASE_TOOL_NAME)) {
+    const name = match[0];
+    if (!name) {
+      continue;
+    }
+    const key = name.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    names.push(key);
+  }
+  return names;
+}
+
 export function looksLikeTaughtProcedure(userMessage: string): boolean {
   const text = userMessage.trim();
   if (!text) {
@@ -75,6 +96,7 @@ export function looksLikeTaughtProcedure(userMessage: string): boolean {
 }
 
 export function collectSkillLearningSignals(input: {
+  assignedToolNames?: readonly string[];
   stopReason?: SkillLearningStopReason | null;
   turnMessages: ChatMessage[];
 }): SkillLearningSignal[] {
@@ -96,7 +118,7 @@ export function collectSkillLearningSignals(input: {
     }
     const unknownName = parseUnknownToolName(message.content);
     if (unknownName) {
-      unknownNames.add(unknownName);
+      unknownNames.add(unknownName.toLowerCase());
       continue;
     }
     if (toolContentHasError(message.content)) {
@@ -110,6 +132,18 @@ export function collectSkillLearningSignals(input: {
 
   for (const toolName of unknownNames) {
     signals.push({ kind: "unknown_tool", toolName });
+  }
+
+  const assigned = new Set(
+    (input.assignedToolNames ?? []).map((name) => name.toLowerCase())
+  );
+  if (assigned.size > 0) {
+    for (const toolName of extractSnakeCaseToolNames(userMessage)) {
+      if (assigned.has(toolName) || unknownNames.has(toolName)) {
+        continue;
+      }
+      signals.push({ kind: "requested_unassigned_tool", toolName });
+    }
   }
 
   if (input.stopReason) {
