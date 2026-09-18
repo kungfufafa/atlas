@@ -8,6 +8,7 @@ import { ChannelNativePolicyDialog } from "@/components/ChannelNativePolicyDialo
 import { SETTINGS_CARD_LOADING_SKELETON } from "@/components/integration-settings.shared";
 import { WhatsAppSettingsCardContent } from "@/components/whatsapp-settings-card-content";
 import { formatWhatsAppDevicePairingCode } from "@/components/whatsapp-settings-linking.shared";
+import { resolveWhatsAppSettingsStatus } from "@/components/whatsapp-settings-status";
 import { useProfilesQuery } from "@/hooks/use-app-queries";
 import { useSystemStatusQuery } from "@/hooks/use-system-status";
 import {
@@ -224,45 +225,18 @@ function useWhatsAppSettingsCard({
     (formError ? formError : null) ??
     (loadError ? formatError(loadError) : null);
 
-  const headerSubtitle = configured
-    ? paired && running
-      ? "WhatsApp is connected and ready to receive messages"
-      : paired && !running
-        ? "WhatsApp is linked. Start the bridge to receive messages"
-        : running
-          ? showDevicePairingCode
-            ? "Enter the Linked Devices code in WhatsApp, or scan the QR code"
-            : showQr
-              ? "Scan the QR code in WhatsApp to link this device"
-              : linkingAfterScan
-                ? "Connecting WhatsApp…"
-                : awaitingDevicePairingCode
-                  ? "Requesting link code…"
-                  : awaitingQr
-                    ? "Preparing QR code…"
-                    : "Scan the QR code in WhatsApp to connect"
-          : "Bridge stopped — start it to get a link code or QR"
-    : "Choose a reply profile, then enable WhatsApp";
-
-  const statusBadge = configured
-    ? paired && running
-      ? "Connected"
-      : paired && !running
-        ? "Bridge stopped"
-        : running
-          ? linkingAfterScan
-            ? "Connecting"
-            : showDevicePairingCode
-              ? "Awaiting link"
-              : awaitingDevicePairingCode
-                ? "Starting…"
-                : showQr
-                  ? "Awaiting scan"
-                  : awaitingQr
-                    ? "Starting…"
-                    : "Not connected"
-          : "Stopped"
-    : "Not set up";
+  const { headerConnected, headerSubtitle, statusBadge } =
+    resolveWhatsAppSettingsStatus({
+      awaitingDevicePairingCode,
+      awaitingQr,
+      configured,
+      connected,
+      linkingAfterScan,
+      paired,
+      running,
+      showDevicePairingCode,
+      showQr,
+    });
 
   async function copyPairingCode() {
     if (!pairingCode) {
@@ -432,6 +406,7 @@ function useWhatsAppSettingsCard({
       devicePairingCode={showDevicePairingCode ? devicePairingCode : null}
       embedded={embedded}
       formError={formError}
+      headerConnected={headerConnected}
       headerSubtitle={headerSubtitle}
       linkedNumber={linkedNumber}
       linkingAfterScan={linkingAfterScan}
