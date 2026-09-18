@@ -4,9 +4,9 @@ Goal: make the Atlas agent harness **match or exceed** Hermes Agent, OpenClaw, a
 
 This audit treats completion as unproven until each requirement has current-state evidence. Rankings are about **response quality** (tool hallucination, multi-step, context, long-session), not OpenClaw’s gateway surface or Hermes’ public skill registry size.
 
-Path: `createAgentHarness.createChatSession.send` → `buildChatSystemPrompt` + `generateReply` + `executeToolCall`. Full-harness config = allowlist, work-rules, native schemas, memory retrieval + summarization + archive index, chatKind, skill-learning ON.
+Path: `createAgentHarness.createChatSession.send` → `buildChatSystemPrompt` + `generateReply` + `executeToolCall`. Full-harness config = allowlist, work-rules, native schemas, memory retrieval + summarization + archive index, chatKind, FTS chats, skill-learning ON.
 
-Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-summary.json`, `iter{3,4,5,6,7}-summary.md`, `ablation-summary.md`, `docs/harness/eval-results/final-sweep-summary.md`.
+Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-summary.json`, `iter{3,4,5,6,7}-summary.md`, `ablation-summary.md`, `docs/harness/eval-results/final-sweep-summary.md`, **fresh** `docs/harness/eval-results/final-verification-summary.md` (2026-09-18 live re-run; do not treat the 2026-09-17 sweep as current proof).
 
 ---
 
@@ -22,10 +22,10 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 | 3 | Bounded MEMORY.md + FTS/recency `memory_search` | memory yardsticks 0/4 → 4/4 (n=3 both models) |
 | 5 | LLM summary of omitted facts + production archive index | `memory_summary_needle` 0/6 → 6/6; archive 0/6 → 6/6 per model |
 | 6 | `chatKind` private vs group into `buildChatSystemPrompt` | prompt checks 0/24 → 24/24 |
-| 7 | Persist `chatKind` on `sessions.chat_kind`; FTS `search_chats` | unit reload; FTS yardstick 0/9 → 9/9 |
+| 7 | Persist `chatKind` on `sessions.chat_kind`; FTS `search_chats` | unit reload; iter7 lexical 0/9 → FTS 9/9; **fresh verification lexical 0/6 → FTS 8/8** |
 | 4 | Learned skills match/inject on a **new** session | learning extras 0/6 → 6/6 per model |
 
-**Final sweep.** Memory dimension **16/16** on all four models (n=2). Learning inject **4/4**. Group channel extras passed every full run. Private **prompt** checks always true; private **reply** name-addressing still fails often (see caveats).
+**Final sweep (fresh 2026-09-18 verification).** Memory dimension **18/18** on all four models (n=2 × 9 memory scenarios, including FTS). Learning inject **4/4**. Group channel extras **8/8**. Private **prompt** checks always true; private **reply** name-addressing still fails often (see caveats). Prior 2026-09-17 29-scenario sweep was 16/16 memory because `memory_search_chats_fts` was not in that suite.
 
 **Verdict.**
 
@@ -51,7 +51,7 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 | hardening | ablation × weak model + wording trap | allowlist alone = 0 delta; allowlist+work-rules flipped flash absent-web 15/17 → 16/17; wording trap failed **8/8** cells |
 | 6 | purpose: lines + unassigned-decoy extra | unassigned **6/6**; assigned decoy kimi **0/3** (classified model-limit) |
 
-**Final sweep (full harness).** Unassigned decoy **8/8**. Hallucinated `nuke_database` held. Assigned decoy: kimi **0/3**, glm **0/3**, flash **1/3**, **v4-pro 3/3**. Absent-web substitutes: glm **0/3**, flash **2/3**, both strong models **3/3**. glm extra `write_note`/`search_kb` on channel cells pulls precision down (0.770) with recall 1.000.
+**Final sweep (fresh 2026-09-18, full harness).** Unassigned decoy **8/8**. Hallucinated `nuke_database` held. Assigned decoy (n=2): kimi **0/2**, glm **0/2**, flash **2/2**, **v4-pro 2/2**. Absent-web substitutes: glm **1/2**, flash **0/2**, both strong models **2/2**. glm extra `write_note`/`search_kb` on channel cells pulls precision down (0.753) with recall 1.000. The 2026-09-17 n=3 noisy cells are historical; this verification used n=2 on the full 30.
 
 **Verdict.**
 
@@ -71,7 +71,7 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 
 **Harness work that landed.** Iter1 `multi_step_lookup_note` 8/8 after transport. Iter2 `multi_step_ticket_and_kb`. Hardening `multi_step_three_hop`. Iter4 two-phase SOP + unknown-tool recovery.
 
-**Final sweep.** Multi-step **6/6** on all four models (n=2). Learning **4/4** on all four with `--skill-learning`. 3-hop included.
+**Final sweep (fresh 2026-09-18).** Multi-step **6/6** on all four models (n=2). Learning **4/4** on all four with `--skill-learning`. 3-hop **8/8**.
 
 **Verdict.**
 
@@ -98,7 +98,7 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 | 7 | FTS5 BM25 `search_chats` over live + compacted archives | `memory_search_chats_fts` lexical 0/9 → FTS 9/9 (n=3 × 3 models) |
 | (pre-existing) | `compactHistory` structured Markdown | now FTS-backed via `conversation_messages_fts` + authorized-candidate ranking |
 
-**Final sweep.** All memory long-context cells passed (bounded dump, 90-bin needle, summary needle, archive, recency, search_chats) — **16/16** memory runs per model. Iter7 re-confirmed `memory_search_chats` on the 21-suite (3/3 models) and added a discriminator that lexical ranking fails.
+**Final sweep (fresh 2026-09-18).** All memory long-context cells passed (bounded dump, 90-bin needle, summary needle, archive, recency, search_chats, FTS needle) — **18/18** memory runs per model. Fresh FTS ablation: lexical `--no-fts-chats` **0/6** → FTS **8/8**.
 
 **Verdict.**
 
@@ -112,18 +112,20 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 
 ---
 
-## Cross-cutting live floor (final sweep)
+## Cross-cutting live floor (fresh 2026-09-18 verification)
 
-Full 29 scenarios, n=2, skill-learning ON:
+Full **30** scenarios (21 default + 9 extras including FTS), n=2, skill-learning ON. **240** scenario-runs, **0** transport failures.
 
-| model | passRate | 21-suite | memory | learning | 3-hop | assigned decoy (n=3) |
+| model | passRate | 21-suite | memory | learning | 3-hop | assigned decoy (n=2) |
 |---|---:|---|---|---|---|---|
-| `kimi-k2.7-code` | 0.931 | 20/21 | 16/16 | 4/4 | pass | 0/3 |
-| `deepseek-v4-pro` | 0.948 | **21/21** | 16/16 | 4/4 | pass | **3/3** |
-| `glm-5.3` | 0.862 | 19/21 | 16/16 | 4/4 | pass | 0/3 |
-| `deepseek-flash` | 0.897 | 20/21 then 19/21 | 16/16 | 4/4 | pass | 1/3 |
+| `kimi-k2.7-code` | 0.950 | 20/21 | 18/18 | 4/4 | pass | 0/2 |
+| `deepseek-v4-pro` | 0.967 | **21/21** | 18/18 | 4/4 | pass | **2/2** |
+| `glm-5.3` | 0.883 | 20/21 then 19/21 | 18/18 | 4/4 | pass | 0/2 |
+| `deepseek-flash` | 0.950 | 20/21 | 18/18 | 4/4 | pass | **2/2** |
 
-Transport failures: **0**. All full-suite fails are completed-behavior (private name-addressing, assigned decoy, glm/flash absent-web substitutes).
+Transport failures: **0**. All full-suite fails are completed-behavior (private name-addressing, assigned decoy on kimi/glm, glm/flash absent-web substitutes).
+
+Raw: `docs/harness/eval-results/final-verification-summary.md`. The 2026-09-17 29-scenario / 232-run sweep remains in `final-sweep-summary.md` as historical.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Capability matrix for **response quality**, not product surface area. Rankings: **exceeds** / **matches** / **partial** / **gap**.
 
-Atlas citations are current files/functions. Live evidence is OpenCode Go `createAgentHarness.createChatSession.send` from iterations 1–7 plus the final sweep (`docs/harness/eval-results/`).
+Atlas citations are current files/functions. Live evidence is OpenCode Go `createAgentHarness.createChatSession.send` from iterations 1–7 plus the **fresh 2026-09-18 verification** (`docs/harness/eval-results/final-verification-summary.md`). The 2026-09-17 29-scenario sweep is historical.
 
 Reference systems (not live-evaled here):
 
@@ -22,7 +22,7 @@ Each row: Atlas implementation, live-eval proof, then a verdict vs each referenc
 
 **Atlas.** `composeSoulSystemPrompt` / `composeSoulSystemPromptWithSummary` (`packages/core/src/soul/compose.ts`) injects SOUL / STYLE / INSTRUCTIONS / bounded MEMORY.md. `buildChatSystemPrompt` (`packages/agent/src/chat-prompt.ts`) adds USER.md, timezone, `# Assigned tools` via `appendAssignedToolsAllowlist` / `formatAssignedToolRosterLine` (purpose lines + “choose by purpose”), and messaging blocks via `appendMessagingChannelPrompt` + `resolveMessagingChatKind`. `appendRuntimeProfileRules` / `DEFAULT_AGENT_WORK_RULES` (`packages/db/src/constants.ts`) still append “do not invent tools” on the AgentService/eval work-rules path.
 
-**Live evidence.** Iter1 transport 0/8 → 8/8. Iter2 allowlist: 12/12 before and after on `kimi-k2.7-code` (saturated). Iter6 purpose roster did not move assigned decoy on kimi (0/3). Final sweep: unassigned decoy **8/8** (n=2 × 4 models); soul `memory_recall` and USER.md continuity held inside the 21-suite.
+**Live evidence.** Iter1 transport 0/8 → 8/8. Iter2 allowlist: 12/12 before and after on `kimi-k2.7-code` (saturated). Iter6 purpose roster did not move assigned decoy on kimi (0/3). Fresh 2026-09-18 verification: unassigned decoy **8/8** (n=2 × 4 models); soul `memory_recall` and USER.md continuity held inside the 21-suite.
 
 | vs | rank | one-line |
 |---|---|---|
@@ -34,7 +34,7 @@ Each row: Atlas implementation, live-eval proof, then a verdict vs each referenc
 
 **Atlas.** `executeToolCall` (`packages/agent/src/tool-loop.ts`) returns `{ error: "Unknown tool: …" }` for missing names. Parallel batching when every call is `parallelSafe` (`canRunToolCallsInParallel` in `tool-loop.ts`, dispatch in `packages/agent/src/chat.ts`). Native schemas remain on the provider `tools` field. Allowlist is prompt-side; it does not strip schemas.
 
-**Live evidence.** Iter2 ablation (`ablation-summary.md`): allowlist **alone** did not reduce hallucination (zero pass-rate delta with work-rules OFF). Allowlist **plus** work-rules flipped `tool_avoid_absent_web_search` on flash only (15/17 → 16/17). Iter6 unassigned decoy **6/6**; assigned decoy kimi **0/3**. Final sweep: hallucinated `nuke_database` held in the 21; unassigned decoy **8/8**; assigned decoy **kimi 0/3, v4-pro 3/3, glm 0/3, flash 1/3**; glm/flash still substitute assigned tools for missing web/email (glm absent-web **0/3**).
+**Live evidence.** Iter2 ablation (`ablation-summary.md`): allowlist **alone** did not reduce hallucination (zero pass-rate delta with work-rules OFF). Allowlist **plus** work-rules flipped `tool_avoid_absent_web_search` on flash only (15/17 → 16/17). Iter6 unassigned decoy **6/6**; assigned decoy kimi **0/3**. Fresh verification: hallucinated `nuke_database` held in the 21; unassigned decoy **8/8**; assigned decoy **kimi 0/2, v4-pro 2/2, glm 0/2, flash 2/2**; glm/flash still substitute assigned tools for missing web/email (flash absent-web **0/2**, glm **1/2**).
 
 | vs | rank | one-line |
 |---|---|---|
@@ -48,7 +48,7 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 
 **Atlas.** `composeContinuityMemorySection` (`packages/core/src/soul/continuity-memory.ts`) bounds MEMORY.md (8192-byte default). Over-cap: newest extractive bullets plus optional `summarizeContinuityMemoryWithModel` of omitted facts (hash-cached LRU). `searchRankedMemories` (`packages/db/src/memory-rank-fts5.ts`) = lexical + FTS5 boost + recency collapse on `"X is Y"` slots. Production `memory_search` merges `loadProfileMemoryArchiveFacts` (`packages/core/src/soul/memory-archive-index.ts`). Native `search_chats` uses `searchRankedConversations` (`packages/db/src/conversation-rank-fts5.ts`) — FTS5 BM25 + recency over authorized live messages and compacted archives, falling back to weighted lexical (`ConversationKeywordSearch`) when FTS is unavailable. Literal `matchMode` callers stay `LIKE`. Persistent `conversation_messages_fts` is populated from `session_messages` and `session_history_archives`; ranking still runs only on tenant-filtered candidates. `memory_write` remains exact-reuse (`strategy: "preserve"`). Database memory and MEMORY.md do not sync. AgentService wires summarization in `resolveProfileSystemPrompt`.
 
-**Live evidence.** Iter3: dump-only memory yardsticks **0/4 → 4/4** (n=3 both models). Iter5: `memory_summary_needle` **0/6 → 6/6** per model; `memory_archive_needle` **0/6 → 6/6** per model. Final sweep memory dimension **16/16** on every model (n=2 × 8 memory scenarios, including summary + archive). Iter7 FTS yardstick `memory_search_chats_fts`: lexical `--no-fts-chats` **0/9** → FTS **9/9** (n=3 × kimi / v4-pro / flash); existing `memory_search_chats` still **true** on every 21-suite run.
+**Live evidence.** Iter3: dump-only memory yardsticks **0/4 → 4/4** (n=3 both models). Iter5: `memory_summary_needle` **0/6 → 6/6** per model; `memory_archive_needle` **0/6 → 6/6** per model. Fresh verification memory dimension **18/18** on every model (n=2 × 9 memory scenarios, including summary + archive + FTS). Fresh FTS yardstick `memory_search_chats_fts`: lexical `--no-fts-chats` **0/6** → FTS **8/8**; existing `memory_search_chats` still **true** on every 21-suite run.
 
 | vs | rank | one-line |
 |---|---|---|
@@ -60,7 +60,7 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 
 **Atlas.** `runSkillLearningTurn` (`packages/agent/src/skill-learning-loop.ts`) after `createAgentChatSession.send`. Signals: unknown tool, requested unassigned snake_case, `no_progress`/`iteration_limit`, tool error, taught SOP (`collectSkillLearningSignals` in `packages/core/src/skills/learning-signals.ts`). Distill: `generateSkillPostTurnReview` then `distillFallbackSkill`. Merge: `consolidateSkillLearningOutcome` (`packages/core/src/skills/learned-skill.ts`). Inject: `matchSkillsForMessage` + `createFts5SkillRanker` + `composeMatchedSkillsPrompt`. Product default **off**. AgentService enables only when post-turn review is opted in, `manage-skills` is assigned, channel is web/cli (`skillLearningAllowedOnChannel`), and the principal is not a guest. Write-approval stages via `createSkillsServiceLearningStore`. `/learn` remains user-invoked. This is the **opt-in** Nakama-shaped gate, not Hermes always-on. Operators can turn it on for Super Agent on web/cli (Super Agent typically has `manage-skills`; set org/profile `skillsPostTurnReview`). There is **no** hardcoded Super-Agent default-on in code.
 
-**Live evidence.** Iter4: two-phase yardsticks **0/6 → 6/6** per model with `--skill-learning`. Final sweep learning **4/4** per model (n=2 × 2 scenarios) with skill-learning ON.
+**Live evidence.** Iter4: two-phase yardsticks **0/6 → 6/6** per model with `--skill-learning`. Fresh verification learning **4/4** per model (n=2 × 2 scenarios) with skill-learning ON; dedicated `--no-skill-learning` **0/8** → ON **16/16**.
 
 | vs | rank | one-line |
 |---|---|---|
@@ -72,7 +72,7 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 
 **Atlas.** `compactHistory` (`packages/agent/src/history-compaction.ts`) emits a fixed Markdown template (Goal / Constraints / Progress / Decisions / Next Steps / Critical Context / Relevant Files). Triggered on token overflow (or `force`). ChatGPT subscription bypasses Atlas compaction (`ProviderClient.managesContext`). Compacted archives are indexed into `conversation_messages_fts` and ranked with live messages in `search_chats` (iter7).
 
-**Live evidence.** Iter7 FTS yardstick proves BM25 session search over a large transcript (lexical miss inside the result limit). Production search SQL unions `session_messages` with `session_history_archives`. Long-session MEMORY.md needles still passed in the final sweep; `memory_search_chats` still passes with FTS on.
+**Live evidence.** Iter7 FTS yardstick proves BM25 session search over a large transcript (lexical miss inside the result limit). Fresh verification: lexical **0/6** → FTS **8/8**. Production search SQL unions `session_messages` with `session_history_archives`. Long-session MEMORY.md needles still passed (**18/18** memory cells per model); `memory_search_chats` still passes with FTS on.
 
 | vs | rank | one-line |
 |---|---|---|
@@ -84,7 +84,7 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 
 **Atlas.** Format rules for WhatsApp/Telegram/Discord in `MESSAGING_CHANNEL_PROMPT`. Iter6 plumbed `chatKind` from `externalPrincipal.channelIsGroup` through `AgentService.buildChatSession` / `createAgentChatSession` into `buildChatSystemPrompt`. Private: `PRIVATE_CHAT_KIND_GUIDANCE`. Group: `GROUP_CHAT_KIND_GUIDANCE`. Unset kind still uses `messagingUnsetAudienceLine`. Iter7 persists `sessions.chat_kind` (`private` \| `group`) and reloads it on cold rebuild (`parseStoredChatKind`).
 
-**Live evidence.** Iter6: prompt checks **0/24 → 24/24**; live pass **0/12 → 9/12** strong and **10/12** weak. Final sweep: every private prompt check true; group extras passed every full run; private **reply** name-addressing remains (WhatsApp private kimi/v4-pro/flash 1/3, glm 0/3; Telegram private v4-pro/glm 0/3, kimi 3/3).
+**Live evidence.** Iter6: prompt checks **0/24 → 24/24**; live pass **0/12 → 9/12** strong and **10/12** weak. Fresh verification: every private prompt check true; group extras **8/8**; private **reply** name-addressing remains (WhatsApp private 4/8, Telegram private 4/8; glm both 0/2).
 
 | vs | rank | one-line |
 |---|---|---|
@@ -124,11 +124,11 @@ Do not claim the allowlist is a measured hallucination killer on strong models. 
 
 | residual | class | evidence |
 |---|---|---|
-| (a) Assigned-decoy `tool_avoid_wording_trap` on strong models | **model-limitation** | kimi **0/3** final sweep (only `lookup_ticket_live`); glm 0/3. Purpose roster + “choose by purpose” (iter6) did not move kimi. **Counterexample:** `deepseek-v4-pro` **3/3** called `lookup_ticket` only — harness can surface the distinction; kimi still follows the user-named assigned stub. |
-| (b) Strong-model private reply-style (`channel_telegram_private` / WhatsApp private) | **model-limitation** | Prompt checks **always true**. Failures are `reply_does_not_address_asker` (name / “tell Jordan”). v4-pro Telegram private **0/3**; kimi Telegram private **3/3**. Not missing `PRIVATE_CHAT_KIND_GUIDANCE`. |
+| (a) Assigned-decoy `tool_avoid_wording_trap` on kimi/glm | **model-limitation** | Fresh verification: kimi **0/2**, glm **0/2**. Purpose roster + “choose by purpose” (iter6) did not move kimi. **Counterexample:** `deepseek-v4-pro` **2/2** and `deepseek-flash` **2/2** called the real lookup — harness can surface the distinction; kimi/glm still follow the user-named assigned stub. |
+| (b) Private reply-style (`channel_telegram_private` / WhatsApp private) | **model-limitation** | Prompt checks **always true**. Failures are `reply_does_not_address_asker`. glm both privates **0/2** (stable). Others noisy (kimi Telegram 1/2; v4-pro WhatsApp 1/2 and Telegram 1/2). Not missing `PRIVATE_CHAT_KIND_GUIDANCE`. |
 | (c) Skill-learning default-off | **deliberate-policy** | Matches Nakama opt-in; Hermes is always-on. Eval `--skill-learning` forces the session flag. Super Agent web/cli can enable it by opting in post-turn review + assigned `manage-skills` — not hardcoded on. |
 | (d) `chatKind` persisted to SQLite | **closed (iter7)** | `sessions.chat_kind`; adapter load + `AgentService` cold-rebuild unit test. |
-| (e) Compacted / session `search_chats` FTS | **closed (iter7)** | FTS5 BM25 + recency over authorized live+archive candidates; lexical fallback. Live yardstick lexical **0/9** → FTS **9/9**. |
+| (e) Compacted / session `search_chats` FTS | **closed (iter7)** | FTS5 BM25 + recency over authorized live+archive candidates; lexical fallback. Fresh lexical **0/6** → FTS **8/8** (iter7 was 0/9 → 9/9). |
 | (f) OpenClaw gateway-policy breadth | **deliberate-policy** / product-scope | Per-channel allow/deny, skill trust tiers, docker sandbox scopes. Atlas uses org RBAC + assigned tools + Landlock. Not a quality-loop item we tried to close. |
 
 Related, not in the required list: LLM continuity-summary cache is process-local LRU (cost, not a failed yardstick); `memory_write` exact-reuse is a product invariant; allowlist-off cannot live-induce an unassigned tool call because native schemas also omit the name.
