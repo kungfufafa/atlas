@@ -14,6 +14,7 @@
     "@atlas/agent": "workspace:*",
     "@atlas/core": "workspace:*",
     "@atlas/db": "workspace:*",
+    "@atlas/whatsapp": "workspace:*",
     "@composio/core": "^0.14.1",
     "@countrystatecity/timezones": "^1.0.9",
     "@google/genai": "^2.7.0",

@@ -17,6 +17,10 @@ export interface ServerOptions {
   agent: AgentService;
   authService?: AuthService | null;
   automationService: AutomationService;
+  /** Drop-in CESA recruitment WhatsApp engine (loopback :3318 or this handle). */
+  cesaWhatsAppEngine?: {
+    handle: (request: Request) => Promise<Response> | Response;
+  };
   composioService?: ComposioService | null;
   /** Exact browser origins allowed to call the API across origins. */
   corsAllowedOrigins?: readonly string[];

@@ -1,0 +1,75 @@
+---
+title: "CESA WhatsApp engine"
+description: "Use Atlas as the WhatsApp connection engine for CESA recruitment instead of CESA's local Node process."
+---
+
+CESA recruitment already knows how to connect WhatsApp accounts and send interview messages. Atlas can own that connection engine so CESA does not need to run its own Baileys process.
+
+Use this when CESA and Atlas run together and you want one WhatsApp engine, one place to keep linked-device sessions, and no second Node service on the CESA host.
+
+This engine is **not** the Atlas chat bridge in **Integrations → WhatsApp**. Recruitment accounts stay on their own sessions (`rekrutmen-1`, `rekrutmen-2`, …). The Atlas agent chat socket stays separate.
+
+## What gets better
+
+- CESA can turn off its local WhatsApp engine and still connect, scan QR, pair a phone, and send text
+- Session files live in Atlas data, so an Atlas restart does not invent a new WhatsApp identity
+- Temporary WhatsApp stream errors (including provider **500**) reconnect instead of wiping the linked device
+
+## Same-host drop-in
+
+On the CESA host, keep the default engine URL and stop CESA from spawning Node:
+
+```bash
+REKRUTMEN_WHATSAPP_ENGINE_URL=http://127.0.0.1:3318
+REKRUTMEN_WHATSAPP_ENGINE_AUTO_START=false
+```
+
+Start Atlas as usual. The API process listens on loopback port **3318** with the same paths CESA already calls: `/health`, `/sessions`, `/sessions/:id/send`.
+
+Do not run `php artisan rekrutmen:whatsapp-engine` on that host. Two engines on 3318 will collide.
+
+## Remote Atlas
+
+When CESA cannot reach loopback 3318, point it at Atlas:
+
+```bash
+REKRUTMEN_WHATSAPP_ENGINE_URL=https://YOUR_ATLAS_HOST/v1/integrations/cesa/whatsapp
+REKRUTMEN_WHATSAPP_ENGINE_AUTO_START=false
+```
+
+Set `ATLAS_CESA_WHATSAPP_TOKEN` on Atlas. CESA's current client does not send a token, so a same-network loopback or a reverse proxy that adds one of these headers is required:
+
+- `Authorization: Bearer <token>`
+- `X-Atlas-Cesa-Token: <token>`
+
+Without a token, Atlas accepts the prefixed path only from `127.0.0.1`, `localhost`, or `::1`.
+
+## Docker
+
+The Atlas container already runs this engine inside the API process. Publish 3318 only on a private network if CESA should keep using `http://atlas:3318`. Prefer the prefixed URL on port 4310 plus a token for anything that leaves that network.
+
+```bash
+docker run -d -p 4310:4310 \
+  -e ATLAS_CESA_WHATSAPP_TOKEN=replace-me \
+  -v atlas-data:/atlas/data \
+  --name atlas ghcr.io/kungfufafa/atlas:latest
+```
+
+## Operator settings
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `ATLAS_CESA_WHATSAPP_ENGINE` | on | Set `off`, `0`, or `false` to disable |
+| `ATLAS_CESA_WHATSAPP_ENGINE_HOST` | `127.0.0.1` | Loopback bind address |
+| `ATLAS_CESA_WHATSAPP_ENGINE_PORT` | `3318` | CESA drop-in port |
+| `ATLAS_CESA_WHATSAPP_TOKEN` | unset | Required for non-loopback `/v1/integrations/cesa/whatsapp` |
+
+Session files stay under the Atlas data root in `cesa-whatsapp/sessions` and send receipts in `cesa-whatsapp/messages`. Restarting Atlas must not delete those directories.
+
+If the loopback port is already taken, Atlas still serves `/v1/integrations/cesa/whatsapp` on the main API port.
+
+## Related docs
+
+- [WhatsApp](/whatsapp)
+- [Integrations](/integrations)
+- [Docker](/docker)

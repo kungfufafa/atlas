@@ -17,6 +17,7 @@ export type CreateMinimalHonoAppOverrides = {
   agent?: ServerOptions["agent"] | object;
   authService?: AuthService;
   automationService?: ServerOptions["automationService"] | object;
+  cesaWhatsAppEngine?: ServerOptions["cesaWhatsAppEngine"];
   composioService?: ServerOptions["composioService"];
   corsAllowedOrigins?: ServerOptions["corsAllowedOrigins"];
   dataImportBodyReadTimeoutMs?: ServerOptions["dataImportBodyReadTimeoutMs"];
@@ -47,6 +48,7 @@ export function createMinimalHonoApp(
     authService,
     automationService: (overrides.automationService ??
       {}) as ServerOptions["automationService"],
+    cesaWhatsAppEngine: overrides.cesaWhatsAppEngine,
     composioService: overrides.composioService,
     corsAllowedOrigins: overrides.corsAllowedOrigins,
     databaseAdapter,

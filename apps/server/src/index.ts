@@ -38,6 +38,10 @@ import {
   seedDatabase,
   UNKNOWN_USAGE_DIMENSION,
 } from "@atlas/db";
+import {
+  cesaWhatsAppEngineEnabled,
+  startCesaWhatsAppEngineServer,
+} from "@atlas/whatsapp/cesa-engine";
 import { createHonoApp } from "./http/app";
 import { parseCorsAllowedOrigins } from "./http/cors";
 import { disableBunIdleTimeoutForSse } from "./http/sse-idle-timeout";
@@ -320,10 +324,16 @@ const systemStatus = new SystemStatusService(
 );
 
 const webDistDir = resolveWebDistDir(projectRoot);
+const cesaWhatsAppEngine = cesaWhatsAppEngineEnabled()
+  ? await startCesaWhatsAppEngineServer()
+  : null;
 const app = createHonoApp({
   agent,
   authService,
   automationService,
+  cesaWhatsAppEngine: cesaWhatsAppEngine
+    ? { handle: cesaWhatsAppEngine.handle }
+    : undefined,
   composioService,
   corsAllowedOrigins,
   databaseAdapter: database.adapter,
@@ -353,7 +363,13 @@ const serverUrl = writeRuntimeServerUrl(
   `http://${server.hostname}:${server.port}`
 );
 
-registerRuntimeCleanup(server, serverUrl, database, mcpClientManager);
+registerRuntimeCleanup(
+  server,
+  serverUrl,
+  database,
+  mcpClientManager,
+  cesaWhatsAppEngine
+);
 
 if (server.port !== requestedPort) {
   console.log(`Port ${requestedPort} is busy. Using ${server.port} instead.`);
@@ -361,6 +377,15 @@ if (server.port !== requestedPort) {
 
 console.log(`Atlas server listening on ${serverUrl}`);
 console.log(`Atlas database ready at ${config.databaseUrl}`);
+if (cesaWhatsAppEngine?.listening) {
+  console.log(
+    `CESA WhatsApp engine listening on http://${cesaWhatsAppEngine.hostname}:${cesaWhatsAppEngine.port}`
+  );
+} else if (cesaWhatsAppEngine) {
+  console.warn(
+    "CESA WhatsApp loopback port is busy; CESA can use /v1/integrations/cesa/whatsapp on this server."
+  );
+}
 
 const officeBinary = await officeConverter.resolveConverterBinary();
 if (officeBinary) {
@@ -491,7 +516,10 @@ function registerRuntimeCleanup(
   server: ReturnType<typeof Bun.serve>,
   serverUrl: string,
   database: Database,
-  mcpClientManager: McpClientManager
+  mcpClientManager: McpClientManager,
+  cesaEngine: {
+    stop: () => Promise<void>;
+  } | null
 ): void {
   let cleanedUp = false;
 
@@ -501,6 +529,7 @@ function registerRuntimeCleanup(
     }
 
     cleanedUp = true;
+    void cesaEngine?.stop();
     void mcpClientManager.disconnectAll();
     clearRuntimeServerUrl(serverUrl);
     database.close();

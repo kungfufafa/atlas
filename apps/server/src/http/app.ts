@@ -11,6 +11,7 @@ import { registerArtifactPublicationRoutes } from "./routes/artifact-publication
 import { registerArtifactShareRoutes } from "./routes/artifact-shares";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAutomationRoutes } from "./routes/automations";
+import { registerCesaWhatsAppRoutes } from "./routes/cesa-whatsapp";
 import { registerChannelAuthorizationRoutes } from "./routes/channel-authorization";
 import { registerCodingHarnessSettingsRoutes } from "./routes/coding-harnesses";
 import {
@@ -118,6 +119,7 @@ export function createHonoApp(options: ServerOptions) {
   registerInternalCuratorRoutes(app, options);
   registerNotificationWebhookRoutes(app, options);
   registerComposioOAuthRoutes(app, options);
+  registerCesaWhatsAppRoutes(app, options);
   app.use("*", createOrgContextMiddleware(options));
   registerSystemRoutes(app, options);
   registerAuthRoutes(app, options);

@@ -81,4 +81,28 @@ describe("isPublicRouteRequest", () => {
       isPublicRouteRequest("DELETE", "/v1/tasks/__capability_probe__/messages")
     ).toBe(false);
   });
+
+  test("allows CESA WhatsApp engine methods without Atlas session auth", () => {
+    expect(
+      isPublicRouteRequest("GET", "/v1/integrations/cesa/whatsapp/health")
+    ).toBe(true);
+    expect(
+      isPublicRouteRequest("POST", "/v1/integrations/cesa/whatsapp/sessions")
+    ).toBe(true);
+    expect(
+      isPublicRouteRequest(
+        "DELETE",
+        "/v1/integrations/cesa/whatsapp/sessions/rekrutmen-1"
+      )
+    ).toBe(true);
+    expect(
+      isPublicRouteRequest("HEAD", "/v1/integrations/cesa/whatsapp/health")
+    ).toBe(true);
+    expect(
+      isPublicRouteRequest("PUT", "/v1/integrations/cesa/whatsapp/sessions")
+    ).toBe(false);
+    expect(
+      isPublicRouteRequest("GET", "/v1/integrations/cesa/whatsapp-other")
+    ).toBe(false);
+  });
 });

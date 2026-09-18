@@ -2,6 +2,9 @@
   "name": "@atlas/whatsapp",
   "private": true,
   "type": "module",
+  "exports": {
+    "./cesa-engine": "./src/cesa-engine/listen.ts"
+  },
   "scripts": {
     "build": "bun build ./src/index.ts --outdir dist --target bun --external link-preview-js --external jimp --external sharp --external qrcode-terminal",
     "dev": "bun run src/index.ts",
@@ -11,6 +14,7 @@
   "dependencies": {
     "@atlas/client": "workspace:*",
     "@atlas/core": "workspace:*",
-    "@whiskeysockets/baileys": "6.7.24"
+    "@whiskeysockets/baileys": "6.7.24",
+    "qrcode": "^1.5.4"
   }
 }

@@ -1,3 +1,5 @@
+import { isCesaWhatsAppEngineRequest } from "./routes/cesa-whatsapp";
+
 export const PUBLIC_ROUTES = new Set([
   "/health",
   "/docs",
@@ -25,6 +27,10 @@ export function isPublicRouteRequest(
   method: string,
   pathname: string
 ): boolean {
+  if (isCesaWhatsAppEngineRequest(method, pathname)) {
+    return true;
+  }
+
   if (pathname === "/v1/auth/me") {
     return method === "GET";
   }
