@@ -17,6 +17,8 @@ Docker images include LibreOffice so Word, PowerPoint, and Excel artifacts can p
 
 On a fresh install, Atlas redirects you to the setup wizard automatically.
 
+If the dashboard spinner never finishes, the JavaScript bundle is usually reaching the browser uncompressed (~4 MB). Restart Atlas after a web rebuild, then confirm the public URL returns `Content-Encoding: gzip` for `/assets/index-*.js`. Hard-refresh if an older uncompressed file is cached.
+
 Docker installs can skip the wizard by setting `ATLAS_SEED_ADMIN_EMAIL`, `ATLAS_SEED_ADMIN_NAME`, and `ATLAS_SEED_ADMIN_PASSWORD` before first boot. See [Docker → First-boot seed](/docker#first-boot-seed-optional).
 
 ## Step 1: Superadmin account
