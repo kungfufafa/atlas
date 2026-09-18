@@ -1,0 +1,86 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:34:34.000Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 852,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": false,
+        "phase2_searched_sop": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 15540,
+      "gradedScore": 0.833,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "I did not file it \u2014 I can't, and I won't fake it.\n\n**What I checked**\n- **T-42 (live lookup):** status `in_progress`, owner **Lee**, summary \"Waiting on hardware\", escalation key `HW-LEAD`. Unchanged \u2014 I applied nothing.\n- **Internal KB:** ",
+      "score": 0.5,
+      "toolCalls": [
+        "lookup_ticket",
+        "search_kb",
+        "search_kb",
+        "search_kb",
+        "write_note"
+      ],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": false,
+        "phase2_used_assigned_tools": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 9656,
+      "gradedScore": 0.5,
+      "id": "learn_unknown_tool_recovery",
+      "passed": false,
+      "replyPreview": "I can't stamp it \u2014 there's no `clearance_stamp` tool assigned to me this session. My write capability is limited to `write_note`, so I won't claim a clearance that wasn't actually applied.\n\nWhat I can tell you about T-42 (live lookup):\n\n- *",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket", "search_kb"],
+      "toolPrecision": 0.5,
+      "toolRecall": 0.5
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.778,
+    "meanScore": 0.667,
+    "meanToolPrecision": 0.833,
+    "meanToolRecall": 0.833,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

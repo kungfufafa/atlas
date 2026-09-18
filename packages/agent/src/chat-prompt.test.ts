@@ -1,5 +1,17 @@
 import { expect, test } from "bun:test";
-import { buildChatSystemPrompt } from "./chat-prompt";
+import {
+  ASSIGNED_TOOL_PURPOSE_LABEL,
+  ASSIGNED_TOOLS_HEADING,
+  buildChatSystemPrompt,
+  compactToolPurpose,
+  formatAssignedToolRosterLine,
+  GROUP_CHAT_KIND_GUIDANCE,
+  messagingGroupAudienceLine,
+  messagingPrivateAudienceLine,
+  messagingUnsetAudienceLine,
+  PRIVATE_CHAT_KIND_GUIDANCE,
+  resolveMessagingChatKind,
+} from "./chat-prompt";
 
 test("buildChatSystemPrompt default identity is a present personal assistant", () => {
   const prompt = buildChatSystemPrompt([]);
@@ -429,4 +441,194 @@ test("buildChatSystemPrompt tells WhatsApp not to repeat file links in chat", ()
   expect(prompt).toContain("the channel attaches it in WhatsApp");
   expect(prompt).toContain("Do not put download links");
   expect(prompt).not.toContain("the channel attaches it in Telegram");
+});
+
+test("buildChatSystemPrompt lists assigned tools when the tool loop is on", () => {
+  const prompt = buildChatSystemPrompt(
+    [
+      {
+        description:
+          "Look up a live ticket by id.\nSecond line must not appear.",
+        name: "lookup_ticket",
+        parameters: { properties: {}, type: "object" },
+      },
+      {
+        description: "Save a short note for the user.",
+        name: "write_note",
+        parameters: { properties: {}, type: "object" },
+      },
+    ],
+    { enableToolLoop: true }
+  );
+
+  const headingIndex = prompt.indexOf(ASSIGNED_TOOLS_HEADING);
+  const lookupIndex = prompt.indexOf(
+    `- lookup_ticket — ${ASSIGNED_TOOL_PURPOSE_LABEL}`
+  );
+  const noteIndex = prompt.indexOf(
+    `- write_note — ${ASSIGNED_TOOL_PURPOSE_LABEL}`
+  );
+  const presenceIndex = prompt.indexOf("# Presence");
+
+  expect(headingIndex).toBeGreaterThan(presenceIndex);
+  expect(lookupIndex).toBeGreaterThan(headingIndex);
+  expect(noteIndex).toBeGreaterThan(lookupIndex);
+  expect(prompt).toContain("Look up a live ticket by id.");
+  expect(prompt).not.toContain("Second line must not appear.");
+  expect(prompt).toContain("Choose a tool by its purpose");
+  expect(prompt).toContain("Names that look alike are distinct tools");
+  expect(prompt).toContain("answer directly if none match");
+  expect(prompt).toContain("Never invent");
+  expect(prompt).toContain(
+    "Atlas executes these tools independently of the selected model provider"
+  );
+});
+
+test("buildChatSystemPrompt can omit the assigned-tool roster while the tool loop stays on", () => {
+  const prompt = buildChatSystemPrompt(
+    [
+      {
+        description: "Look up a live ticket by id.",
+        name: "lookup_ticket",
+        parameters: { properties: {}, type: "object" },
+      },
+    ],
+    { enableToolLoop: true, includeAssignedToolsAllowlist: false }
+  );
+
+  expect(prompt).not.toContain(ASSIGNED_TOOLS_HEADING);
+  expect(prompt).not.toContain("- lookup_ticket:");
+  expect(prompt).not.toContain("Never invent");
+  expect(prompt).toContain(
+    "Atlas executes these tools independently of the selected model provider"
+  );
+});
+
+test("buildChatSystemPrompt omits the assigned-tool roster when the tool loop is off", () => {
+  const prompt = buildChatSystemPrompt(
+    [
+      {
+        description: "Look up a live ticket by id.",
+        name: "lookup_ticket",
+        parameters: { properties: {}, type: "object" },
+      },
+    ],
+    { enableToolLoop: false }
+  );
+
+  expect(prompt).not.toContain(ASSIGNED_TOOLS_HEADING);
+  expect(prompt).not.toContain("- lookup_ticket:");
+  expect(prompt).not.toContain("Never invent");
+});
+
+test("buildChatSystemPrompt says no tools are assigned when the loop is on with an empty catalog", () => {
+  const prompt = buildChatSystemPrompt([], { enableToolLoop: true });
+
+  expect(prompt).toContain(ASSIGNED_TOOLS_HEADING);
+  expect(prompt).toContain("No tools are assigned");
+  expect(prompt).not.toContain(
+    "Atlas executes these tools independently of the selected model provider"
+  );
+});
+
+test("assigned-tool allowlist does not drop soul or channel sections", () => {
+  const prompt = buildChatSystemPrompt(
+    [
+      {
+        description: "Search the tiny internal knowledge base.",
+        name: "search_kb",
+        parameters: { properties: {}, type: "object" },
+      },
+    ],
+    {
+      basePrompt: "You embody the default agent.",
+      channel: "whatsapp",
+      enableToolLoop: true,
+      soul: true,
+    }
+  );
+
+  expect(prompt).toContain("You embody the default agent.");
+  expect(prompt).toContain("Stay in that identity while you work");
+  expect(prompt).toContain(ASSIGNED_TOOLS_HEADING);
+  expect(prompt).toContain(`- search_kb — ${ASSIGNED_TOOL_PURPOSE_LABEL}`);
+  expect(prompt).toContain("WhatsApp only supports");
+  expect(prompt.indexOf(ASSIGNED_TOOLS_HEADING)).toBeLessThan(
+    prompt.indexOf("WhatsApp only supports")
+  );
+});
+
+test("compactToolPurpose keeps the first line and bounds length", () => {
+  expect(compactToolPurpose("  Look up a ticket.  \nIgnore this.")).toBe(
+    "Look up a ticket."
+  );
+  const longPurpose = `${"word ".repeat(80)}end`;
+  const compacted = compactToolPurpose(longPurpose);
+  expect(compacted.length).toBeLessThanOrEqual(140);
+  expect(compacted.includes("\n")).toBe(false);
+  expect(compacted.endsWith(" ")).toBe(false);
+});
+
+test("formatAssignedToolRosterLine puts purpose before similar names", () => {
+  expect(
+    formatAssignedToolRosterLine({
+      description: "Look up a live ticket by id.\nIgnore.",
+      name: "lookup_ticket",
+    })
+  ).toBe(
+    `- lookup_ticket — ${ASSIGNED_TOOL_PURPOSE_LABEL} Look up a live ticket by id.`
+  );
+});
+
+test("resolveMessagingChatKind maps channelIsGroup only on messaging channels", () => {
+  expect(resolveMessagingChatKind("whatsapp", true)).toBe("group");
+  expect(resolveMessagingChatKind("telegram", false)).toBe("private");
+  expect(resolveMessagingChatKind("discord", undefined)).toBeUndefined();
+  expect(resolveMessagingChatKind("web", true)).toBeUndefined();
+  expect(resolveMessagingChatKind("cli", false)).toBeUndefined();
+});
+
+test("unset chatKind uses the same generic audience line for private and group", () => {
+  const privatePrompt = buildChatSystemPrompt([], { channel: "whatsapp" });
+  const groupPrompt = buildChatSystemPrompt([], { channel: "whatsapp" });
+  expect(privatePrompt).toBe(groupPrompt);
+  expect(privatePrompt).toContain(messagingUnsetAudienceLine("WhatsApp"));
+  expect(privatePrompt).not.toContain(messagingPrivateAudienceLine("WhatsApp"));
+  expect(privatePrompt).not.toContain(messagingGroupAudienceLine("WhatsApp"));
+  expect(privatePrompt).not.toContain(PRIVATE_CHAT_KIND_GUIDANCE);
+  expect(privatePrompt).not.toContain(GROUP_CHAT_KIND_GUIDANCE);
+});
+
+test("private chatKind fires 1:1 rules and omits group audience", () => {
+  for (const channel of ["whatsapp", "telegram"] as const) {
+    const label = channel === "whatsapp" ? "WhatsApp" : "Telegram";
+    const prompt = buildChatSystemPrompt([], {
+      channel,
+      chatKind: "private",
+    });
+    expect(prompt).toContain(messagingPrivateAudienceLine(label));
+    expect(prompt).toContain(PRIVATE_CHAT_KIND_GUIDANCE);
+    expect(prompt).not.toContain(messagingGroupAudienceLine(label));
+    expect(prompt).not.toContain(GROUP_CHAT_KIND_GUIDANCE);
+    expect(prompt).not.toContain(messagingUnsetAudienceLine(label));
+  }
+});
+
+test("group chatKind fires group audience and etiquette, distinct from private", () => {
+  for (const channel of ["whatsapp", "telegram"] as const) {
+    const label = channel === "whatsapp" ? "WhatsApp" : "Telegram";
+    const privatePrompt = buildChatSystemPrompt([], {
+      channel,
+      chatKind: "private",
+    });
+    const groupPrompt = buildChatSystemPrompt([], {
+      channel,
+      chatKind: "group",
+    });
+    expect(groupPrompt).toContain(messagingGroupAudienceLine(label));
+    expect(groupPrompt).toContain(GROUP_CHAT_KIND_GUIDANCE);
+    expect(groupPrompt).not.toContain(messagingPrivateAudienceLine(label));
+    expect(groupPrompt).not.toContain(PRIVATE_CHAT_KIND_GUIDANCE);
+    expect(groupPrompt).not.toBe(privatePrompt);
+  }
 });

@@ -117,6 +117,14 @@ describe("evaluatePostTurnReviewTurnEligibility", () => {
     expect(result.reason).toBe("turn_not_complex");
   });
 
+  test("eligible when the tool loop stops even with fewer than 5 tools", () => {
+    const result = evaluatePostTurnReviewTurnEligibility(
+      [{ content: "retry", role: "user" }, assistantWithTools(1)],
+      "no_progress"
+    );
+    expect(result.eligible).toBe(true);
+  });
+
   test("eligible when tool error present even with fewer than 5 tools", () => {
     const result = evaluatePostTurnReviewTurnEligibility([
       { content: "fix it", role: "user" },

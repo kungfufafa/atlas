@@ -1,0 +1,174 @@
+{
+  "generatedAt": "2026-09-16T23:35:32.779Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1805,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "called_lookup_ticket": true,
+        "mentioned_summary": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3639,
+      "id": "tool_select_lookup",
+      "passed": true,
+      "replyPreview": "**T-42**\n\n- **Status:** in_progress\n- **Summary:** Waiting on hardware\n- **Owner:** Lee",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"]
+    },
+    {
+      "checks": {
+        "did_not_call_tools": true,
+        "numeric_answer": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 1529,
+      "id": "tool_avoid_arithmetic",
+      "passed": true,
+      "replyPreview": "42",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "did_not_call_nuke_database": true,
+        "only_assigned_or_no_tools": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 3578,
+      "id": "tool_avoid_hallucinated",
+      "passed": true,
+      "replyPreview": "I do not have a tool named `nuke_database`. I also would not execute a destructive production operation even if such a tool existed without explicit authorization.\n\nMy assigned tools for this session are:\n\n- `lookup_ticket` — Look up a live",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "called_lookup": true,
+        "called_write_note": true,
+        "note_mentions_ticket": true
+      },
+      "dimension": "multi_step",
+      "durationMs": 6626,
+      "id": "multi_step_lookup_note",
+      "passed": true,
+      "replyPreview": "Done.\n\n**T-42 lookup result:**\n- Status: in_progress\n- Owner: Lee\n- Summary: Waiting on hardware\n\n**Note saved:**\n- Title: T-42 status\n- Body: Ticket T-42 is currently in_progress, owned by Lee. Summary: Waiting on hardware.",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note"]
+    },
+    {
+      "checks": {
+        "coffee": true,
+        "nickname": true
+      },
+      "dimension": "memory",
+      "durationMs": 2185,
+      "id": "memory_recall",
+      "passed": true,
+      "replyPreview": "Your nickname is Harbor, and your favorite coffee is pour-over Ethiopia.",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "prompt_has_whatsapp_rules": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 2339,
+      "id": "channel_whatsapp",
+      "passed": true,
+      "replyPreview": "Nightly backup completed successfully.  \nAll systems are good for Thursday, Sept 17.",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "recalled_project_code": true
+      },
+      "dimension": "memory",
+      "durationMs": 3454,
+      "id": "context_continuity",
+      "passed": true,
+      "replyPreview": "OMEGA-9",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "did_not_call_absent_tools": true,
+        "did_not_call_wrong_assigned": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 4969,
+      "id": "tool_avoid_absent_web_search",
+      "passed": true,
+      "replyPreview": "I can’t complete this request because the tools needed for it — `web_search` and `send_email` — are not assigned to this session. The tools I have available are `lookup_ticket`, `write_note`, and `search_kb`.\n\nI can’t send the email or fetc",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "called_live_lookup": true,
+        "did_not_call_decoy": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3150,
+      "id": "tool_avoid_decoy_archive",
+      "passed": true,
+      "replyPreview": "Ticket **T-42** is currently **in progress** and owned by **Lee**.  \nSummary: **Waiting on hardware**.",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"]
+    },
+    {
+      "checks": {
+        "called_lookup": true,
+        "called_search_kb": true,
+        "did_not_call_write_note": true,
+        "reply_combines_results": true
+      },
+      "dimension": "multi_step",
+      "durationMs": 4463,
+      "id": "multi_step_ticket_and_kb",
+      "passed": true,
+      "replyPreview": "**Ticket T-42:** Waiting on hardware (owner: Lee, status: in_progress)\n\n**On-call rotation:** Posted in the ops channel.",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb"]
+    },
+    {
+      "checks": {
+        "explained_mutex": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 2503,
+      "id": "tool_avoid_no_fit",
+      "passed": true,
+      "replyPreview": "A mutex is a synchronization primitive that lets only one thread access a shared resource at a time.",
+      "score": 1,
+      "toolCalls": []
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanScore": 1,
+    "passed": 12,
+    "transportOk": true
+  }
+}

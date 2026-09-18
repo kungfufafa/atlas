@@ -1,0 +1,61 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T04:19:11.797Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed": false
+      },
+      "dimension": "learning",
+      "durationMs": 53112,
+      "error": "provider_error",
+      "gradedScore": 0,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "",
+      "score": 0,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": true,
+        "phase2_used_assigned_tools": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 12742,
+      "gradedScore": 1,
+      "id": "learn_unknown_tool_recovery",
+      "passed": true,
+      "replyPreview": "`clearance_stamp` isn't assigned to me this session, so I used the documented fallback instead of retrying it.\n\n**Live ticket T-42** (via `lookup_ticket`):\n- status: `in_progress`\n- owner: `Lee`\n- summary: Waiting on hardware\n- escalationKe",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.5,
+    "meanScore": 0.5,
+    "meanToolPrecision": 0.5,
+    "meanToolRecall": 0.5,
+    "passed": 1,
+    "transportOk": false
+  }
+}

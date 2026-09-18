@@ -115,7 +115,8 @@ export function turnUsedSkillManage(turnMessages: ChatMessage[]): boolean {
 }
 
 export function evaluatePostTurnReviewTurnEligibility(
-  turnMessages: ChatMessage[]
+  turnMessages: ChatMessage[],
+  stopReason?: "no_progress" | "iteration_limit" | null
 ): PostTurnReviewEligibility {
   const toolCallCount = countToolCallsInTurn(turnMessages);
   const hasToolError = turnHasToolError(turnMessages);
@@ -132,7 +133,10 @@ export function evaluatePostTurnReviewTurnEligibility(
   }
 
   const complex =
-    toolCallCount >= MIN_TOOL_CALLS_FOR_COMPLEX_TURN || hasToolError;
+    toolCallCount >= MIN_TOOL_CALLS_FOR_COMPLEX_TURN ||
+    hasToolError ||
+    stopReason === "no_progress" ||
+    stopReason === "iteration_limit";
   if (!complex) {
     return {
       eligible: false,

@@ -1,6 +1,7 @@
 import Anthropic, { APIError } from "@anthropic-ai/sdk";
 import type {
   CustomModelEntry,
+  fetchWithoutIdleTimeout,
   GenerateChatInput,
   GenerateTextInput,
   GenerateTextResult,
@@ -21,7 +22,7 @@ export interface AnthropicProviderOptions {
   baseUrl?: string;
   customModels?: CustomModelEntry[];
   /** Injected in tests to mock HTTP without touching global fetch. */
-  fetch?: typeof fetch;
+  fetch?: typeof fetchWithoutIdleTimeout;
   model?: string;
   providerInstanceId?: string;
   providerLabel?: string;
@@ -32,7 +33,7 @@ export interface AnthropicProviderOptions {
 function createAnthropicClient(
   apiKey: string,
   baseUrl?: string,
-  fetchImpl?: typeof fetch
+  fetchImpl?: typeof fetchWithoutIdleTimeout
 ): Anthropic {
   return new Anthropic({
     apiKey,
