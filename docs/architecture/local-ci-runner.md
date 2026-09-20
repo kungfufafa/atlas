@@ -35,6 +35,15 @@ and its GitHub SHA-256 digest. No host PAT, provider credential, or home directo
 is copied. The scripts use Ubuntu package repositories as configured by the
 official Colima image; package or kernel failures remain failures.
 
+The pinned Bun setup action requires `unzip` to extract its Linux binary.
+Provisioning installs it. For an existing dedicated guest created before this
+prerequisite was added, install it explicitly without recreating the VM:
+
+```sh
+colima --profile atlas-ci ssh -- sudo -n apt-get update
+colima --profile atlas-ci ssh -- sudo -n apt-get install -y --no-install-recommends unzip
+```
+
 The two guest scripts live at `$HOME/.local/share/atlas-ci-bootstrap` inside
 `atlas-ci`, so they survive a guest reboot. To install or refresh them in an
 existing running `atlas-ci`, run `bash scripts/ci-local.sh refresh` from the

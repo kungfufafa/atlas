@@ -15,7 +15,7 @@ repository=https://github.com/kungfufafa/atlas
 case "${1:-}" in
   provision)
     sudo -n apt-get update
-    sudo -n apt-get install -y --no-install-recommends ca-certificates curl git jq python3
+    sudo -n apt-get install -y --no-install-recommends ca-certificates curl git jq python3 unzip
     bash "$script_dir/verify-linux-landlock.sh"
     docker info >/dev/null
     archive="$(mktemp)"
