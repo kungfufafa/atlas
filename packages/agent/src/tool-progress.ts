@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import type { ChatMessage, ToolCall } from "@atlas/core";
+import { createSpreadsheetFormattingBudget } from "./spreadsheet-progress";
 
 const MAX_IDENTICAL_OUTCOMES = 4;
+const MAX_INVALID_ARGUMENT_BATCHES = 4;
 
 function canonicalize(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -25,26 +27,61 @@ function outcomeData(content: string): unknown {
   }
 }
 
+function isInvalidArgumentFailure(value: unknown): boolean {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "errorCode" in value &&
+    value.errorCode === "INVALID_ARGUMENT" &&
+    toolResultError(value) !== undefined
+  );
+}
+
 /** Same requests can make progress (polling, reading a changed file, pagination). */
 export function createToolProgressTracker(): {
+  recordFormatting: (call: ToolCall, result: unknown) => boolean;
+  stop: () => { reason: "no_progress" | "iteration_limit"; message: string };
   record: (
     calls: readonly ToolCall[],
     results: readonly ChatMessage[],
-    orderIndependent?: boolean
+    orderIndependent?: boolean,
+    formattingAlreadyRecorded?: boolean
   ) => boolean;
 } {
+  const formattingBudget = createSpreadsheetFormattingBudget();
+  let formattingLimit = false;
   let previous: string | undefined;
   let identicalOutcomes = 0;
+  let invalidArgumentBatches = 0;
   return {
-    record(calls, results, orderIndependent = false) {
+    record(
+      calls,
+      results,
+      orderIndependent = false,
+      formattingAlreadyRecorded = false
+    ) {
       const outcomes = calls.map((call, index) => {
         const result = results[index];
+        const data =
+          result?.role === "tool" ? outcomeData(result.content) : null;
+        if (!formattingAlreadyRecorded) {
+          formattingLimit = formattingBudget(call, data) || formattingLimit;
+        }
         return {
           arguments: call.arguments,
           name: call.name,
-          result: result?.role === "tool" ? outcomeData(result.content) : null,
+          result: data,
         };
       });
+      // Changing ranges or other arguments cannot turn repeated input rejection
+      // into progress. Any completed success or different failure allows recovery.
+      const onlyInvalidArguments =
+        outcomes.length > 0 &&
+        results.length === calls.length &&
+        outcomes.every((outcome) => isInvalidArgumentFailure(outcome.result));
+      invalidArgumentBatches = onlyInvalidArguments
+        ? invalidArgumentBatches + 1
+        : 0;
       const normalizedOutcomes = outcomes.map((outcome) =>
         JSON.stringify(canonicalize(outcome))
       );
@@ -56,7 +93,28 @@ export function createToolProgressTracker(): {
         .digest("hex");
       identicalOutcomes = signature === previous ? identicalOutcomes + 1 : 1;
       previous = signature;
-      return identicalOutcomes >= MAX_IDENTICAL_OUTCOMES;
+      return (
+        formattingLimit ||
+        identicalOutcomes >= MAX_IDENTICAL_OUTCOMES ||
+        invalidArgumentBatches >= MAX_INVALID_ARGUMENT_BATCHES
+      );
+    },
+    recordFormatting(call, result) {
+      formattingLimit = formattingBudget(call, result) || formattingLimit;
+      return formattingLimit;
+    },
+    stop() {
+      return formattingLimit
+        ? {
+            message:
+              "The spreadsheet reached eight formatting revisions in one turn. Stop restyling and report the latest saved workbook and any unfinished work. For future edits, combine related writes and formatting with batch_edit.",
+            reason: "iteration_limit" as const,
+          }
+        : {
+            message:
+              "Repeated tool calls did not make observable progress. Use the recorded results to identify the blocker.",
+            reason: "no_progress" as const,
+          };
     },
   };
 }

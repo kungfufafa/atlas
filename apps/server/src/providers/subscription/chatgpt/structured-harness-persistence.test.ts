@@ -155,6 +155,9 @@ class PersistentCodexPeer extends EventEmitter implements JsonRpcStdioProcess {
     }
     let result: unknown;
     switch (message.method) {
+      case "config/read":
+        result = { config: {} };
+        break;
       case "account/read":
         result = { account: { type: "chatgpt" } };
         break;

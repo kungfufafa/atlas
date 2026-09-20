@@ -14,5 +14,23 @@ esac
 "$python_binary" -m venv "$runtime_dir"
 "$runtime_dir/bin/python3" -m pip install --disable-pip-version-check --requirement "$script_dir/file-runtime/requirements.txt"
 "$runtime_dir/bin/python3" -m pip check
-"$runtime_dir/bin/python3" -c 'import pandas, openpyxl, docx, pptx, pypdf, reportlab, fontTools, uharfbuzz, bidi; print("Atlas file runtime ready")'
+"$runtime_dir/bin/python3" -I - <<'PYTHON'
+from io import BytesIO
+
+import pandas, openpyxl, docx, pptx, pypdf, reportlab, fontTools, uharfbuzz, bidi
+from PIL import Image
+
+with Image.new("RGB", (16, 12), (150, 90, 30)) as source:
+    for image_format in ("JPEG", "PNG"):
+        with BytesIO() as encoded:
+            source.save(encoded, format=image_format)
+            encoded.seek(0)
+            with Image.open(encoded) as decoded:
+                decoded.load()
+                assert decoded.format == image_format
+                assert decoded.size == source.size
+                assert decoded.mode == "RGB"
+
+print("Atlas file runtime ready (JPEG/PNG encode and decode verified)")
+PYTHON
 printf 'ATLAS_PYTHON_PATH=%s/bin/python3\n' "$runtime_dir"

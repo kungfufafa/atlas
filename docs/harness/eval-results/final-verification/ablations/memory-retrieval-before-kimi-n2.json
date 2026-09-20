@@ -1,0 +1,118 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": false,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:21:40.000Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1754,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_memory_search": false,
+        "prompt_omits_archive_needle": true,
+        "recalled_archive_badge": false
+      },
+      "dimension": "memory",
+      "durationMs": 10000,
+      "gradedScore": 0.111,
+      "id": "memory_archive_needle",
+      "passed": false,
+      "replyPreview": "No badge code is present in the accessible archived memory or knowledge base.",
+      "score": 0.333,
+      "toolCalls": [
+        "search_kb",
+        "search_kb",
+        "search_kb",
+        "search_kb",
+        "search_kb"
+      ],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_memory_search": false,
+        "recalled_current_city": false,
+        "rejected_stale_city": false
+      },
+      "dimension": "memory",
+      "durationMs": 2693,
+      "gradedScore": 0,
+      "id": "memory_conflict_recency",
+      "passed": false,
+      "replyPreview": "Berlin",
+      "score": 0,
+      "toolCalls": [],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_search_chats": false,
+        "prompt_omits_dossier": true,
+        "recalled_dossier": false
+      },
+      "dimension": "memory",
+      "durationMs": 4186,
+      "gradedScore": 0.111,
+      "id": "memory_search_chats",
+      "passed": false,
+      "replyPreview": "I don\u2019t have a way to search prior chats. I can only check MEMORY.md, the internal knowledge base, or a support ticket by ID. If the vendor dossier code is in a ticket, give me the ticket ID and I\u2019ll look it up.",
+      "score": 0.333,
+      "toolCalls": [],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_memory_search": false,
+        "prompt_omits_overflow_code": false,
+        "recalled_overflow_code": true
+      },
+      "dimension": "memory",
+      "durationMs": 4382,
+      "gradedScore": 0.111,
+      "id": "memory_bounded_dump",
+      "passed": false,
+      "replyPreview": "MANGROVE-DELTA-5",
+      "score": 0.333,
+      "toolCalls": [],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    }
+  ],
+  "summary": {
+    "failed": 4,
+    "meanGradedScore": 0.267,
+    "meanScore": 0.4,
+    "meanToolPrecision": 0.2,
+    "meanToolRecall": 0.2,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

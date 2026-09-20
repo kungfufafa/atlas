@@ -7,6 +7,7 @@ import {
   type ToolApprovalInput,
   type ToolExecutionReceipt,
 } from "@atlas/core";
+import { CHAT_TOOL_APPROVAL_TIMEOUT_MS } from "@atlas/core/chat-tool-approval-timeout";
 import { isFailedToolResult } from "@atlas/core/tools/result-status";
 import type { DatabaseAdapter } from "@atlas/db";
 import type { ExecutionPlaneService } from "./execution-plane-service";
@@ -34,8 +35,6 @@ export interface ChatToolApprovalDecisionInput {
   principal: CanonicalPrincipal;
   sessionId: string;
 }
-
-const APPROVAL_TIMEOUT_MS = 15 * 60 * 1000;
 
 /** Durable approval records authorize only the live, waiting Atlas invocation. */
 export class ChatToolApprovalService {
@@ -100,7 +99,7 @@ export class ChatToolApprovalService {
         pending,
         new AtlasApiError("The pending approval has expired.", 409)
       );
-    }, APPROVAL_TIMEOUT_MS);
+    }, CHAT_TOOL_APPROVAL_TIMEOUT_MS);
     timeout.unref();
     try {
       onPending();
@@ -133,6 +132,11 @@ export class ChatToolApprovalService {
       );
     }
     const pending = this.pending.get(input.approvalId);
+    // An HTTP response can be lost after the live invocation resumes. Return the
+    // recorded decision without issuing another grant or replaying the action.
+    if (!pending && stored.status === input.decision) {
+      return { resumed: true, status: input.decision };
+    }
     if (!pending) {
       throw new AtlasApiError(
         "The turn is no longer waiting for this approval. Continue the conversation to request a new action.",

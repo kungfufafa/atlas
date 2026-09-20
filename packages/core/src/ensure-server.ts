@@ -1,7 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ATLAS_API_VERSION } from "./contract";
-import { loadLocalAuthToken } from "./local-auth";
 import { resolveServerUrl } from "./runtime";
 
 const STARTUP_TIMEOUT_MS = 30_000;
@@ -13,11 +12,32 @@ export interface EnsureServerResult {
   spawnedChild: Bun.Subprocess | null;
 }
 
-export async function ensureServerRunning(): Promise<EnsureServerResult> {
+export async function ensureServerRunning(
+  options: { autoStart?: boolean; timeoutMs?: number } = {}
+): Promise<EnsureServerResult> {
   const serverUrl = resolveServerUrl();
 
   if (await isServerHealthy(serverUrl)) {
     return { serverUrl, spawnedChild: null };
+  }
+
+  const timeoutMs = options.timeoutMs ?? STARTUP_TIMEOUT_MS;
+  if (options.autoStart === false) {
+    const readyUrl = await waitForServer(timeoutMs);
+    if (!readyUrl) {
+      throw new Error(
+        `Atlas API is unavailable at ${serverUrl}. Start or repair the Atlas server; channel workers do not start an API process.`
+      );
+    }
+    return { serverUrl: readyUrl, spawnedChild: null };
+  }
+
+  // An HTTP response proves something already owns this endpoint. Authentication,
+  // deployment/version mismatch, or temporary readiness must never spawn a rival API.
+  if (await serverEndpointResponds(serverUrl)) {
+    throw new Error(
+      `An unavailable or incompatible server already responds at ${serverUrl}. Check the existing Atlas server before retrying.`
+    );
   }
 
   const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -32,12 +52,12 @@ export async function ensureServerRunning(): Promise<EnsureServerResult> {
 
   console.warn("Starting Atlas server...");
 
-  const readyUrl = await waitForServer(STARTUP_TIMEOUT_MS);
+  const readyUrl = await waitForServer(timeoutMs);
 
   if (!readyUrl) {
     stopSpawnedServer(child);
     throw new Error(
-      `Server failed to start within ${STARTUP_TIMEOUT_MS / 1000}s (${serverUrl})`
+      `Server failed to start within ${timeoutMs / 1000}s (${serverUrl})`
     );
   }
 
@@ -55,15 +75,6 @@ export function stopSpawnedServer(child: Bun.Subprocess | null): void {
 
   child.kill();
 }
-
-const REQUIRED_BUILTIN_TOOLS = [
-  "write_file",
-  "delete_file",
-  "edit_file",
-  "read_file",
-  "search_files",
-  "web_search",
-] as const;
 
 export async function serverHasTaskChat(
   serverUrl: string,
@@ -109,15 +120,9 @@ export async function isServerHealthy(serverUrl: string): Promise<boolean> {
       apiVersion?: number;
     };
 
-    if (payload.ok !== true || payload.apiVersion !== ATLAS_API_VERSION) {
-      return false;
-    }
-
-    if (!(await serverHasTaskChat(serverUrl, controller.signal))) {
-      return false;
-    }
-
-    return await serverHasRequiredBuiltinTools(serverUrl, controller.signal);
+    // Readiness is public. Protected routes and per-org catalogs are not liveness
+    // probes: worker credentials intentionally cannot enumerate global tools.
+    return payload.ok === true && payload.apiVersion === ATLAS_API_VERSION;
   } catch {
     return false;
   } finally {
@@ -125,91 +130,15 @@ export async function isServerHealthy(serverUrl: string): Promise<boolean> {
   }
 }
 
-async function serverHasRequiredBuiltinTools(
-  serverUrl: string,
-  signal?: AbortSignal
-): Promise<boolean> {
+async function serverEndpointResponds(serverUrl: string): Promise<boolean> {
   try {
-    const authHeaders = await localAuthHeaders();
-    if (!authHeaders) {
-      return false;
-    }
-
-    let toolsResponse = await fetch(`${serverUrl}/v1/tools`, {
-      headers: authHeaders,
-      signal,
+    await fetch(`${serverUrl}/health`, {
+      signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS),
     });
-
-    if (toolsResponse.status === 400) {
-      const orgId = await resolveLocalClientOrgId(
-        serverUrl,
-        authHeaders,
-        signal
-      );
-      if (!orgId) {
-        return false;
-      }
-
-      toolsResponse = await fetch(`${serverUrl}/v1/tools`, {
-        headers: {
-          ...authHeaders,
-          "X-Org-Id": orgId,
-        },
-        signal,
-      });
-    }
-
-    if (!toolsResponse.ok) {
-      return false;
-    }
-
-    const toolsPayload = (await toolsResponse.json()) as {
-      tools?: Array<{ name?: string }>;
-    };
-    const toolNames = new Set(
-      (toolsPayload.tools ?? [])
-        .map((tool) => tool.name)
-        .filter((name): name is string => typeof name === "string")
-    );
-
-    return REQUIRED_BUILTIN_TOOLS.every((name) => toolNames.has(name));
+    return true;
   } catch {
     return false;
   }
-}
-
-async function localAuthHeaders(): Promise<Record<string, string> | null> {
-  const token = await loadLocalAuthToken();
-  if (!token) {
-    return null;
-  }
-
-  return { Authorization: `Bearer ${token}` };
-}
-
-async function resolveLocalClientOrgId(
-  serverUrl: string,
-  headers: Record<string, string>,
-  signal?: AbortSignal
-): Promise<string | null> {
-  const response = await fetch(`${serverUrl}/v1/auth/orgs`, {
-    headers,
-    signal,
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const payload = (await response.json()) as {
-    orgs?: Array<{ id?: string }>;
-  };
-
-  const orgId = payload.orgs?.find(
-    (org) => typeof org.id === "string" && org.id.trim().length > 0
-  )?.id;
-
-  return orgId?.trim() || null;
 }
 
 async function waitForServer(timeoutMs: number): Promise<string | null> {

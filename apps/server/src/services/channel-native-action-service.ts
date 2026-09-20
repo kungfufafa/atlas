@@ -16,6 +16,8 @@ import {
 } from "@atlas/core/channel-native-actions";
 import type { DatabaseAdapter } from "@atlas/db";
 import { authorizeChannelAction } from "./channel-action-authorization";
+import { canGuestSearchKnowledgeBase } from "./channel-guest-knowledge-base-policy";
+import { normalizeExternalActor } from "./channel-guest-principal-service";
 import type { IdentityService } from "./identity-service";
 
 interface BoundContext extends ChannelActionActor {
@@ -51,6 +53,53 @@ export class ChannelNativeActionService {
     private readonly timeoutMs = 120_000
   ) {}
 
+  /** KB reads need a current worker-bound sender, including automatic grounding. */
+  async canGuestSearchKnowledgeBase(
+    orgId: string,
+    sessionId: string,
+    profileId: string,
+    userId: string
+  ): Promise<boolean> {
+    const binding = this.bindings.get(this.key(orgId, sessionId));
+    if (
+      !binding ||
+      binding.channel !== "whatsapp" ||
+      binding.profileId !== profileId ||
+      binding.userId !== userId ||
+      Date.now() - binding.updatedAt > CONTEXT_TTL_MS
+    ) {
+      return false;
+    }
+    if (
+      !(await canGuestSearchKnowledgeBase(this.db, {
+        actor: binding,
+        channel: "whatsapp",
+        orgId,
+        profileId,
+        userId,
+      }))
+    ) {
+      return false;
+    }
+    try {
+      await this.authorizeTool(
+        orgId,
+        sessionId,
+        "whatsapp",
+        "knowledge_base_search"
+      );
+      return true;
+    } catch (error) {
+      if (
+        error instanceof AtlasApiError &&
+        (error.status === 403 || error.status === 404)
+      ) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
   async authorizeTool(
     orgId: string,
     sessionId: string,
@@ -72,9 +121,20 @@ export class ChannelNativeActionService {
       ...binding,
       intent: "invoke",
     });
-    assertChannelIntegrationPolicy(policy, channel, binding, principal, {
-      tool,
-    });
+    const normalized = await normalizeExternalActor(binding);
+    assertChannelIntegrationPolicy(
+      policy,
+      channel,
+      {
+        ...binding,
+        channelUserAliases: normalized.channelUserIds.filter(
+          (id) => id !== normalized.primaryChannelUserId
+        ),
+        channelUserId: normalized.primaryChannelUserId,
+      },
+      principal,
+      { tool }
+    );
   }
 
   assertBoundActor(

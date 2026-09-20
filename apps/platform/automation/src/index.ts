@@ -31,7 +31,9 @@ registerCleanupHandlers(async () => {
 
 try {
   const config = loadConfig();
-  const { serverUrl, spawnedChild: child } = await ensureServerRunning();
+  const { serverUrl, spawnedChild: child } = await ensureServerRunning({
+    autoStart: false,
+  });
   spawnedChild = child;
 
   const client = createClient({

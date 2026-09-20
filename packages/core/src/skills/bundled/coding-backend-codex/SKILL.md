@@ -60,20 +60,15 @@ process(action="kill", session_id="<id>")
 |------|--------|
 | `exec "prompt"` | One-shot execution, exits when done |
 | `--full-auto` | Sandboxed but auto-approves file changes in workspace |
-| `--yolo` | No sandbox, no approvals (fastest, most dangerous) |
-| `--sandbox danger-full-access` | No Codex sandbox; useful when the host service context breaks bubblewrap |
+| `--sandbox workspace-write` | Keep file writes inside the configured workspace |
 
 ## Sandbox Caveat
 
-When invoking the Codex CLI from a service/gateway context, Codex `workspace-write` sandboxing may fail even when the same command works in an interactive shell. A typical symptom is bubblewrap/user-namespace errors such as `setting up uid map: Permission denied` or `loopback: Failed RTM_NEWADDR: Operation not permitted`.
+On Linux, Codex requires `bubblewrap` and permission to create the user namespaces used by its sandbox. A service can fail even when an interactive shell works, because container, systemd, seccomp, or AppArmor policy may differ.
 
-In that context, prefer:
+If Codex reports a missing `bwrap`, a user-namespace failure, or a sandbox startup error, keep the sandbox enabled and report the exact failed prerequisite. An administrator should install the distribution's `bubblewrap` package and check the service's namespace and AppArmor policy. On Ubuntu, use the distribution's `bwrap-userns-restrict` AppArmor profile where required. See [Codex sandbox prerequisites](https://learn.chatgpt.com/docs/sandboxing).
 
-```
-codex exec --sandbox danger-full-access "<task>"
-```
-
-Use process boundaries as the safety layer instead: explicit `workdir`, clean git status before launch, narrow task prompts, `git diff` review, targeted tests, and confirmation before committing broad changes.
+Do not automatically rerun with `--yolo`, `--sandbox danger-full-access`, or disabled host security controls. A working directory, clean git status, narrow prompt, and diff review do not enforce filesystem or network isolation. Continue only when the required sandbox works, or when the user explicitly authorizes a separately enforced execution environment.
 
 ## PR Reviews
 
@@ -91,8 +86,8 @@ git worktree add -b fix/issue-78 /tmp/issue-78 main
 git worktree add -b fix/issue-99 /tmp/issue-99 main
 
 # Launch Codex in each (background, pty)
-codex --yolo exec 'Fix issue #78: <description>. Commit when done.'   # workdir=/tmp/issue-78
-codex --yolo exec 'Fix issue #99: <description>. Commit when done.'   # workdir=/tmp/issue-99
+codex exec --full-auto 'Fix issue #78: <description>. Commit when done.'   # workdir=/tmp/issue-78
+codex exec --full-auto 'Fix issue #99: <description>. Commit when done.'   # workdir=/tmp/issue-99
 
 # After completion, push and create PRs
 cd /tmp/issue-78 && git push -u origin fix/issue-78

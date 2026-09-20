@@ -1,0 +1,24 @@
+#23 160.2 @atlas/web build: /usr/bin/bash: line 1:    15 Killed                  tsc --noEmit
+#23 160.2 @atlas/web build: Exited with code 137
+#23 ERROR: process "/bin/sh -c bun install --frozen-lockfile --ignore-scripts   && bun run --filter @atlas/web build" did not complete successfully: cannot allocate memory
+------
+ > [web-builder 7/7] RUN bun install --frozen-lockfile --ignore-scripts   && bun run --filter @atlas/web build:
+143.0 + playwright@1.62.1
+143.0 + typescript@5.9.3
+143.0 + ultracite@7.10.7
+143.0 + bcryptjs@3.0.3
+143.0 + hugeicons-react@0.4.0
+143.0 + jose@6.2.3
+143.0 
+143.0 3281 packages installed [142.78s]
+160.2 @atlas/web build: /usr/bin/bash: line 1:    15 Killed                  tsc --noEmit
+160.2 @atlas/web build: Exited with code 137
+------
+Dockerfile:15
+--------------------
+  14 |     
+  15 | >>> RUN bun install --frozen-lockfile --ignore-scripts \
+  16 | >>>   && bun run --filter @atlas/web build
+  17 |     
+--------------------
+ERROR: failed to build: failed to solve: ResourceExhausted: process "/bin/sh -c bun install --frozen-lockfile --ignore-scripts   && bun run --filter @atlas/web build" did not complete successfully: cannot allocate memory

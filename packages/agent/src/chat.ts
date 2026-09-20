@@ -83,6 +83,7 @@ export class ChatCapabilityError extends Error {
 }
 
 import {
+  extractLatestTurnMessages,
   getUserMessageText,
   isChannelGuestUserId,
   messageContentHasDocuments,
@@ -101,6 +102,7 @@ import {
 } from "@atlas/core";
 import {
   buildChatSystemPrompt,
+  type MessagingChatKind,
   UNTRUSTED_DOCUMENT_GUIDANCE,
 } from "./chat-prompt";
 import {
@@ -110,6 +112,11 @@ import {
   usableContextTokens,
 } from "./history-compaction";
 import { createRuntimeToolDispatcher } from "./runtime-tool-dispatcher";
+import {
+  composeSkillLearningPromptContext,
+  runSkillLearningTurn,
+  type SkillLearningSessionOptions,
+} from "./skill-learning-loop";
 import type { ToolExecutionLifecycle } from "./tool-execution-lifecycle";
 import {
   canRunToolCallsInParallel,
@@ -234,8 +241,12 @@ export interface ResolvePromptContextInput {
 
 export interface AgentChatSessionOptions {
   channel?: AgentRequest["channel"];
+  /** Private vs group audience for messaging channels. */
+  chatKind?: MessagingChatKind;
   compaction?: CompactionConfig;
   enableToolLoop?: boolean;
+  /** Defaults to true when omitted. Set false to omit the assigned-tool roster. */
+  includeAssignedToolsAllowlist?: boolean;
   initialHistory?: ChatMessage[];
   preprocessHistoryForTurn?: (
     messages: readonly ChatMessage[]
@@ -249,6 +260,8 @@ export interface AgentChatSessionOptions {
   resolvePromptContext?: (
     context?: ResolvePromptContextInput
   ) => string | Promise<string>;
+  /** Opt-in closed skill-learning loop. Default unset/disabled. */
+  skillLearning?: SkillLearningSessionOptions;
   soul?: boolean;
   systemPrompt?: string;
   toolContext?: ToolContext;
@@ -272,13 +285,37 @@ export function createAgentChatSession(
   const channel = options.channel ?? "cli";
   const tools = options.tools ?? dependencies.tools ?? [];
   const enableToolLoop = options.enableToolLoop ?? tools.length > 0;
+  const skillLearning = options.skillLearning;
+  const injectLearnedSkills =
+    skillLearning !== undefined && skillLearning.injectMatchedSkills !== false;
+  const resolvePromptContext = injectLearnedSkills
+    ? async (context?: ResolvePromptContextInput) => {
+        const parts: string[] = [];
+        if (options.resolvePromptContext) {
+          const extra = await options.resolvePromptContext(context);
+          if (extra?.trim()) {
+            parts.push(extra.trim());
+          }
+        }
+        const skillContext = await composeSkillLearningPromptContext({
+          store: skillLearning.store,
+          userMessage: context?.userMessage,
+        });
+        if (skillContext.trim()) {
+          parts.push(skillContext.trim());
+        }
+        return parts.join("\n\n");
+      }
+    : options.resolvePromptContext;
   const systemPrompt = buildChatSystemPrompt(tools, {
     basePrompt: options.systemPrompt,
     channel,
+    chatKind: options.chatKind,
     enableToolLoop,
     hasDocumentAttachments: messagesIncludeUserDocuments(
       options.initialHistory ?? []
     ),
+    includeAssignedToolsAllowlist: options.includeAssignedToolsAllowlist,
     soul: options.soul,
     userContext: options.userContext,
     userTimezone: options.userTimezone,
@@ -312,6 +349,7 @@ export function createAgentChatSession(
   let historyRevision = 0;
   const pendingHistoryArchives: CompactedHistoryArchive[] = [];
   let lastContextUsage: ChatContextUsage | null = null;
+  let lastToolLoopStop: ToolLoopStopReason | null = null;
   let lifecycle = new AbortController();
   let activeLifecycle: AbortController | undefined;
 
@@ -329,6 +367,38 @@ export function createAgentChatSession(
       if (activeLifecycle === turnLifecycle) {
         activeLifecycle = undefined;
       }
+    }
+  }
+
+  function bindOnToolLoopStop(
+    caller?: SendStreamOptions["onToolLoopStop"]
+  ): SendStreamOptions["onToolLoopStop"] {
+    return (reason) => {
+      lastToolLoopStop = reason;
+      return caller?.(reason);
+    };
+  }
+
+  async function maybeRunSkillLearning(): Promise<void> {
+    if (!skillLearning?.enabled) {
+      lastToolLoopStop = null;
+      return;
+    }
+    const stopReason = lastToolLoopStop;
+    lastToolLoopStop = null;
+    try {
+      await runSkillLearningTurn({
+        assignedToolNames: tools.map((tool) => tool.name),
+        channel,
+        enabled: true,
+        provider: dependencies.provider,
+        stopReason,
+        store: skillLearning.store,
+        turnMessages: extractLatestTurnMessages(history),
+        writeApprovalRequired: skillLearning.writeApprovalRequired,
+      });
+    } catch (error) {
+      console.error("Failed skill learning turn:", error);
     }
   }
 
@@ -534,7 +604,7 @@ export function createAgentChatSession(
           ? AbortSignal.any([sendOptions.signal, turnLifecycle.signal])
           : turnLifecycle.signal;
         await preprocessHistoryForTurn(signal);
-        return sendMessage(
+        const reply = await sendMessage(
           dependencies,
           tools,
           systemPrompt,
@@ -548,10 +618,10 @@ export function createAgentChatSession(
             onFailedSend: failedSendHandler(),
             onIncompleteCompletion: sendOptions?.onIncompleteCompletion,
             onToolCheckpoint: sendOptions?.onToolCheckpoint,
-            onToolLoopStop: sendOptions?.onToolLoopStop,
+            onToolLoopStop: bindOnToolLoopStop(sendOptions?.onToolLoopStop),
             preprocessUserContent: options.preprocessUserContent,
             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
-            resolvePromptContext: options.resolvePromptContext,
+            resolvePromptContext,
             runCompaction: (force) => runCompaction(force, signal),
             signal,
             toolContext: turnToolContext,
@@ -559,6 +629,8 @@ export function createAgentChatSession(
             userTimezone: options.userTimezone,
           }
         );
+        await maybeRunSkillLearning();
+        return reply;
       });
     },
     async sendStream(input, handlers, streamOptions) {
@@ -576,7 +648,7 @@ export function createAgentChatSession(
           ? AbortSignal.any([streamOptions.signal, turnLifecycle.signal])
           : turnLifecycle.signal;
         await preprocessHistoryForTurn(signal);
-        return sendMessage(
+        const reply = await sendMessage(
           dependencies,
           tools,
           systemPrompt,
@@ -591,10 +663,10 @@ export function createAgentChatSession(
             onFailedSend: failedSendHandler(),
             onIncompleteCompletion: streamOptions?.onIncompleteCompletion,
             onToolCheckpoint: streamOptions?.onToolCheckpoint,
-            onToolLoopStop: streamOptions?.onToolLoopStop,
+            onToolLoopStop: bindOnToolLoopStop(streamOptions?.onToolLoopStop),
             preprocessUserContent: options.preprocessUserContent,
             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
-            resolvePromptContext: options.resolvePromptContext,
+            resolvePromptContext,
             runCompaction: (force) => runCompaction(force, signal),
             signal,
             toolContext: turnToolContext,
@@ -602,6 +674,8 @@ export function createAgentChatSession(
             userTimezone: options.userTimezone,
           }
         );
+        await maybeRunSkillLearning();
+        return reply;
       });
     },
   };
@@ -1027,7 +1101,7 @@ async function runConversation(
           }
           if (runtimeToolsStopped || totalToolCalls >= MAX_TOOL_ITERATIONS) {
             throw new ToolExecutionLimitError(
-              runtimeToolsStopped ? "no_progress" : "iteration_limit",
+              runtimeToolsStopped ? progress.stop().reason : "iteration_limit",
               stopReason
             );
           }
@@ -1074,9 +1148,12 @@ async function runConversation(
           }
           if (progress.record([call], [toolResult])) {
             runtimeToolsStopped = true;
-            metrics.duplicateToolCallPreventionsTotal.inc();
-            stopReason =
-              "Repeated tool calls returned identical outcomes without observable progress.";
+            if (progress.stop().reason === "iteration_limit") {
+              metrics.agentLoopLimitTotal.inc();
+            } else {
+              metrics.duplicateToolCallPreventionsTotal.inc();
+            }
+            stopReason = progress.stop().message;
           }
           let success = true;
           try {
@@ -1210,7 +1287,11 @@ async function runConversation(
           batchHistory,
           isolateToolObservers(handlers),
           toolContext,
-          hooks?.toolExecutionLifecycle
+          hooks?.toolExecutionLifecycle,
+          (call, value) =>
+            progress.recordFormatting(call, value)
+              ? progress.stop().message
+              : undefined
         );
       } catch (error) {
         batchFailure = error;
@@ -1234,13 +1315,17 @@ async function runConversation(
       const stalled = progress.record(
         result.toolCalls,
         batchHistory.slice(1),
-        canRunToolCallsInParallel(tools, result.toolCalls)
+        canRunToolCallsInParallel(tools, result.toolCalls),
+        true
       );
       if (stalled) {
-        typedStopReason = "no_progress";
-        metrics.duplicateToolCallPreventionsTotal.inc();
-        stopReason =
-          "Repeated tool calls returned identical outcomes without observable progress.";
+        typedStopReason = progress.stop().reason;
+        if (typedStopReason === "iteration_limit") {
+          metrics.agentLoopLimitTotal.inc();
+        } else {
+          metrics.duplicateToolCallPreventionsTotal.inc();
+        }
+        stopReason = progress.stop().message;
       }
 
       if (iteration === MAX_TOOL_ITERATIONS - 1) {
@@ -1626,7 +1711,11 @@ async function executeToolCalls(
   history: ChatMessage[],
   handlers?: StreamHandlers,
   toolContext: ToolContext = {},
-  lifecycle?: ToolExecutionLifecycle
+  lifecycle?: ToolExecutionLifecycle,
+  afterSequentialResult?: (
+    call: ToolCall,
+    result: unknown
+  ) => string | undefined
 ): Promise<void> {
   const emittedArtifactPaths = new Set<string>();
   const contextForCall = (call: ToolCall): ToolContext => {
@@ -1723,18 +1812,24 @@ async function executeToolCalls(
     return;
   }
 
+  let skippedReason: string | undefined;
   for (const call of toolCalls) {
     const activity = mapToolCallToActivity(call.id, call.name, call.arguments);
     handlers?.onActivityStart?.(activity);
 
-    const result = await executeChatToolCall(
-      tools,
-      call,
-      history,
-      contextForCall(call),
-      handlers,
-      lifecycle
-    );
+    const result = skippedReason
+      ? { error: skippedReason, errorCode: "TOOL_ITERATION_LIMIT" }
+      : await executeChatToolCall(
+          tools,
+          call,
+          history,
+          contextForCall(call),
+          handlers,
+          lifecycle
+        );
+    if (!skippedReason) {
+      skippedReason = afterSequentialResult?.(call, result);
+    }
 
     history.push({
       content: serializeToolResult(result),

@@ -1021,7 +1021,17 @@ export interface SessionMessagesResponse {
 
 export interface SessionStatusResponse {
   active: boolean;
+  cancelling?: boolean;
   startedAt?: string;
+  turnId?: string;
+}
+
+export interface CancelSessionTurnRequest {
+  expectedTurnId: string;
+}
+
+export interface CancelSessionTurnResponse extends SessionStatusResponse {
+  cancelled: boolean;
 }
 
 export interface SessionSummary {
@@ -2926,6 +2936,8 @@ export interface ToolContext {
 export interface ToolDefinition<Input = unknown, Output = unknown> {
   /** Set only by the server wrapper that confines channel guest work-file access. */
   channelGuestFileSafe?: boolean;
+  /** Set only by the server wrapper after authorizing an allowlisted WhatsApp guest's profile knowledge access. */
+  channelGuestKnowledgeBaseSafe?: boolean;
   description: string;
   name: string;
   /** When true, this tool may run concurrently with other parallelSafe tools in the same turn. */

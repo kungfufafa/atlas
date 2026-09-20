@@ -296,6 +296,34 @@ test.skipIf(!(await officeConverter.resolveConverterBinary()))(
         action: "recalculate",
         path: created.path,
       });
+      const emptyCreated = await run({
+        action: "create",
+        data: [[0, '=IF(A1=0,"","text")', "=A1<>0"]],
+        path: "empty-results.xlsx",
+      });
+      const emptyCalculated = await run({
+        action: "recalculate",
+        path: emptyCreated.path,
+      });
+      const emptyRead = await run({
+        action: "read_range",
+        path: emptyCalculated.path,
+        range: "B1:C1",
+      });
+      expect(emptyRead.rows).toEqual([
+        [
+          {
+            cachedResult: "",
+            calculationStatus: "recalculated",
+            formula: '=IF(A1=0,"","text")',
+          },
+          {
+            cachedResult: false,
+            calculationStatus: "recalculated",
+            formula: "=A1<>0",
+          },
+        ],
+      ]);
       expect(recalculated.engine).toBe("LibreOffice Calc");
       expect(recalculated.formulaErrorCount).toBe(1);
       const read = await run({

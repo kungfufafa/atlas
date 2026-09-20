@@ -1,0 +1,22 @@
+#24 0.294 bun install v1.3.14 (0d9b296a)
+#24 0.327 Resolving dependencies
+#24 0.328 Resolved, downloaded and extracted [1]
+#24 140.2 
+#24 140.2 + bcryptjs@3.0.3
+#24 140.2 + jose@6.2.3
+#24 140.2 
+#24 140.2 1263 packages installed [139.88s]
+#24 DONE 142.4s
+
+#25 exporting to image
+#25 exporting layers
+#25 exporting layers 39.8s done
+#25 exporting manifest sha256:f66a3e67607feb686990f3dbc1963c4856f481ec9c3c292e59793f2ba3735ce5
+#25 exporting manifest sha256:f66a3e67607feb686990f3dbc1963c4856f481ec9c3c292e59793f2ba3735ce5 done
+#25 exporting config sha256:6b09a4b100e41435f64b727c1e9ea335d9c91d9bbcd9dd3196af14aa6c75ac8f done
+#25 exporting attestation manifest sha256:b6b67e8b671b824df1971c0590d35ca5a3b40bfa1a477637ea41a22caa6b2276 done
+#25 exporting manifest list sha256:bbc80f5665f4ecfbb29414994c7a555123a5c3b4348704a6da0e49bb433a6e18 done
+#25 naming to docker.io/library/atlas-findings-runtime:20260911 done
+#25 unpacking to docker.io/library/atlas-findings-runtime:20260911
+#25 unpacking to docker.io/library/atlas-findings-runtime:20260911 12.6s done
+#25 DONE 52.5s

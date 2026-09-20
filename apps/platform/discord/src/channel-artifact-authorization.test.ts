@@ -48,26 +48,32 @@ test("unmentioned file turn retains its origin when artifact delivery rechecks m
 type Change = "removed" | "room-disabled" | "viewer";
 type Flow = "tool" | "attach" | "turn";
 
-async function fixture(count = 1) {
+async function fixture(count = 1, format: "text" | "svg" = "text") {
   const h = await createNativeChannelHarness("discord");
   open.push(h);
   const directory = join(getProfileSoulDir(h.orgId, h.profileId), "artifacts");
   await mkdir(directory, { recursive: true });
+  const content =
+    format === "svg"
+      ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>'
+      : "tenant-secret";
+  const extension = format === "svg" ? "svg" : "txt";
+  const sizeBytes = Buffer.byteLength(content);
   const artifacts = Array.from({ length: count }, (_, index) => ({
-    filename: `report-${index}.txt`,
-    mimeType: "text/plain",
-    path: `report-${index}.txt`,
+    filename: `report-${index}.${extension}`,
+    mimeType: format === "svg" ? "image/svg+xml" : "text/plain",
+    path: `report-${index}.${extension}`,
     savedAt: new Date().toISOString(),
     sharePath: null,
     shareUrl: null,
-    sizeBytes: 13,
+    sizeBytes,
   }));
   const messages: ChatMessage[] = [{ content: "Save reports", role: "user" }];
   for (const [index, artifact] of artifacts.entries()) {
     const path = join(directory, artifact.path);
-    await writeFile(path, "tenant-secret");
+    await writeFile(path, content);
     messages.push({
-      content: JSON.stringify({ bytesWritten: 13, path }),
+      content: JSON.stringify({ bytesWritten: sizeBytes, path }),
       name: "write_file",
       role: "tool",
       toolCallId: `write-${index}`,
@@ -280,6 +286,20 @@ test("viewer retains ordinary artifact delivery and a previously published share
       .filter((r) => r.path.endsWith("/artifacts/shares"))
       .map((r) => r.status)
   ).toEqual([404]);
+});
+
+test("SVG artwork remains available through a share link", async () => {
+  const h = await fixture(1, "svg");
+  const path = h.artifacts[0]!.path;
+
+  await h.run("turn");
+
+  const [artifact] = h.store.getDeliverableArtifacts("conversation");
+  const sharePath = artifact?.sharePath ?? "";
+  expect(h.uploads).toEqual([]);
+  expect(sharePath).toMatch(/^\/s\//);
+  expect(h.sent.join("\n")).toContain(sharePath);
+  expect(artifact).toMatchObject({ mimeType: "image/svg+xml", path });
 });
 
 test("attach cannot deliver old session bytes after its local conversation is replaced", async () => {

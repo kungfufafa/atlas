@@ -34,6 +34,22 @@ const python = await runPythonExecute(
 assert.equal(python.success, true, python.stderr);
 assert.equal(python.exitCode, 0, python.stderr);
 assert.equal(JSON.parse(python.stdout.trim()).status, "passed");
+for (const [filename, mimeType] of [
+  ["edited.jpg", "image/jpeg"],
+  ["edited.png", "image/png"],
+] as const) {
+  const artifactPath = `artifacts/runtime-check/${filename}`;
+  const artifacts = python.artifacts.filter(
+    (artifact) => artifact.path === artifactPath
+  );
+  assert.equal(artifacts.length, 1);
+  assert.equal(artifacts[0]?.filename, filename);
+  assert.equal(artifacts[0]?.mimeType, mimeType);
+  assert.equal(
+    artifacts[0]?.sizeBytes,
+    (await readFile(join(workspaceRoot, artifactPath))).length
+  );
+}
 // A nonzero cat alone cannot distinguish a permission denial from another
 // failure. This child runs within Bash's inherited boundary and requires the
 // actual filesystem operations to fail with EPERM/EACCES, never ENOENT.

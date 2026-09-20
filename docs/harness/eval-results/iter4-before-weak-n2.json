@@ -1,0 +1,71 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T01:15:45.776Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": false,
+        "phase2_searched_sop": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 33467,
+      "gradedScore": 0.833,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "I didn't file it — I can't, and I won't pretend otherwise.\n\n**What I checked**\n- **T-42 (live):** `in_progress`, owner **Lee**, summary \"Waiting on hardware\", escalationKey **HW-LEAD**.\n- **KB, three queries** (\"quarantine hold procedure\", ",
+      "score": 0.5,
+      "toolCalls": [
+        "lookup_ticket",
+        "search_kb",
+        "search_kb",
+        "search_kb",
+        "write_note"
+      ],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": false,
+        "phase2_used_assigned_tools": true,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 13269,
+      "gradedScore": 0.806,
+      "id": "learn_unknown_tool_recovery",
+      "passed": false,
+      "replyPreview": "I can't stamp it — there is no `clearance_stamp` tool in this session. I won't pretend otherwise or simulate the stamp.\n\nWhat I can confirm about T-42 from the live ticket record:\n\n- **Status:** in_progress\n- **Owner:** Lee\n- **Escalation k",
+      "score": 0.75,
+      "toolCalls": [
+        "lookup_ticket",
+        "search_kb",
+        "search_kb",
+        "search_kb",
+        "write_note"
+      ],
+      "toolPrecision": 0.6666666666666666,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.82,
+    "meanScore": 0.625,
+    "meanToolPrecision": 0.833,
+    "meanToolRecall": 1,
+    "passed": 0,
+    "transportOk": false
+  }
+}

@@ -608,6 +608,9 @@ function createStreamSenders(
   let terminal: StreamEvent | null = null;
 
   const send = (event: StreamEvent) => {
+    if (terminal) {
+      return;
+    }
     sessionTurnRegistry.publish(sessionId, event, owner);
 
     if (event.type === "done" || event.type === "error") {
@@ -725,9 +728,16 @@ function buildAgentStreamHandlers(send: (event: StreamEvent) => void) {
   };
 }
 
-export function streamTurnSubscribe(sessionId: string): Response | null {
-  if (!sessionTurnRegistry.isActive(sessionId)) {
+export function streamTurnSubscribe(
+  sessionId: string,
+  expectedTurnId?: string
+): Response | null {
+  const status = sessionTurnRegistry.getStatus(sessionId);
+  if (!status.active) {
     return null;
+  }
+  if (expectedTurnId && status.turnId !== expectedTurnId) {
+    return errorResponse("The active session turn has changed.", 409);
   }
 
   if (!sessionTurnRegistry.canSubscribe(sessionId)) {
@@ -741,6 +751,7 @@ export function streamTurnSubscribe(sessionId: string): Response | null {
   const keepaliveIntervalMs = 4000;
   let subscription: { unsubscribe: () => void } | null = null;
   let keepalive: ReturnType<typeof setInterval> | undefined;
+  let completed = false;
 
   const stream = new ReadableStream<Uint8Array>({
     cancel() {
@@ -757,6 +768,7 @@ export function streamTurnSubscribe(sessionId: string): Response | null {
           );
 
           if (event.type === "done" || event.type === "error") {
+            completed = true;
             if (keepalive) {
               clearInterval(keepalive);
             }
@@ -764,6 +776,7 @@ export function streamTurnSubscribe(sessionId: string): Response | null {
             controller.close();
           }
         } catch {
+          completed = true;
           if (keepalive) {
             clearInterval(keepalive);
           }
@@ -773,6 +786,10 @@ export function streamTurnSubscribe(sessionId: string): Response | null {
 
       if (!subscription) {
         controller.close();
+        return;
+      }
+      if (completed) {
+        subscription.unsubscribe();
         return;
       }
 
@@ -954,21 +971,21 @@ export function streamMessage(
             })()
           : null;
 
+      let invocation: Promise<string> | undefined;
       try {
-        const raced: Promise<string>[] = [
-          session.sendStream(input, buildAgentStreamHandlers(send), {
-            ...turnOptions,
-            onToolCheckpoint: checkpoint,
-            signal: turnSignal,
-          }),
-          overallDeadline,
-        ];
+        invocation = session.sendStream(input, buildAgentStreamHandlers(send), {
+          ...turnOptions,
+          onToolCheckpoint: checkpoint,
+          signal: turnSignal,
+        });
+        const raced: Promise<string>[] = [invocation, overallDeadline];
 
         if (firstTokenDeadline) {
           raced.push(firstTokenDeadline);
         }
 
         const reply = await Promise.race(raced);
+        turnSignal.throwIfAborted();
 
         const contextUsage = session.getContextUsage() ?? undefined;
         send({
@@ -1006,12 +1023,15 @@ export function streamMessage(
             type: "error",
           } satisfies StreamEvent);
 
-        sessionTurnRegistry.endTurn(sessionId, terminal, turnAbort);
         try {
           controller.close();
         } catch {
           // Already closed by the client cancelling the stream.
         }
+        // A timeout may win the stream race before a provider or tool observes
+        // cancellation. Keep the session locked until its real cleanup settles.
+        await invocation?.catch(() => undefined);
+        sessionTurnRegistry.endTurn(sessionId, terminal, turnAbort);
         onComplete?.(terminal);
       }
     },

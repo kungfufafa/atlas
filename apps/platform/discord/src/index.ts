@@ -56,7 +56,9 @@ try {
   }
 
   const config = await loadConfig(process.env, workspaceId);
-  const { serverUrl, spawnedChild: child } = await ensureServerRunning();
+  const { serverUrl, spawnedChild: child } = await ensureServerRunning({
+    autoStart: false,
+  });
   spawnedChild = child;
 
   const client = createClient({

@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "atlas:channel-loop": "bun run scripts/channel-loop-harness/run.ts",
+    "atlas:harness-eval": "bun run scripts/harness-eval/run.ts",
     "atlas:live-human-e2e": "bun run scripts/live-human-e2e/run.ts",
     "atlas:production-readiness": "bun run scripts/production-readiness/run.ts",
     "atlas:release-gate": "bun run scripts/release-gate/index.ts",
@@ -61,5 +62,8 @@
   },
   "engines": {
     "bun": ">=1.3.14"
+  },
+  "patchedDependencies": {
+    "libsignal@6.0.0": "patches/libsignal@6.0.0.patch"
   }
 }

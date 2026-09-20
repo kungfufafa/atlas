@@ -1,0 +1,86 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:34:40.000Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 838,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": false,
+        "phase2_searched_sop": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 17626,
+      "gradedScore": 0.833,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "I can't file that hold \u2014 no hold action exists in my toolset. Straight answer rather than a silent no-op:\n\n**What T-42 actually is** (live lookup): owner **Lee**, status **in_progress**, summary **\"Waiting on hardware\"**, escalationKey **HW",
+      "score": 0.5,
+      "toolCalls": [
+        "lookup_ticket",
+        "search_kb",
+        "search_kb",
+        "search_kb",
+        "write_note"
+      ],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": false,
+        "phase2_used_assigned_tools": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 13392,
+      "gradedScore": 0.5,
+      "id": "learn_unknown_tool_recovery",
+      "passed": false,
+      "replyPreview": "I looked up the ticket, but I can't stamp it \u2014 there's no `clearance_stamp` tool in this session, so I won't claim the clearance went through. Here's what T-42 actually shows right now:\n\n| Field | Value |\n|---|---|\n| Ticket | T-42 |\n| Statu",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket", "search_kb"],
+      "toolPrecision": 0.5,
+      "toolRecall": 0.5
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.778,
+    "meanScore": 0.667,
+    "meanToolPrecision": 0.833,
+    "meanToolRecall": 0.833,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

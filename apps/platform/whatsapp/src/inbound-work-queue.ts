@@ -5,7 +5,7 @@ export class InboundQueueSaturatedError extends Error {
   }
 }
 
-interface BoundedWorkQueueOptions {
+export interface BoundedWorkQueueOptions {
   maxConcurrent: number;
   maxQueued: number;
   maxWaitMs: number;
@@ -13,12 +13,14 @@ interface BoundedWorkQueueOptions {
 
 interface QueuedWork {
   execute: () => Promise<void>;
+  key?: string;
   timeout: ReturnType<typeof setTimeout>;
 }
 
 /** Bounds concurrent Baileys event handlers and their queued message batches. */
 export class BoundedWorkQueue {
   private active = 0;
+  private readonly activeKeys = new Set<string>();
   private readonly pending: QueuedWork[] = [];
 
   constructor(private readonly options: BoundedWorkQueueOptions) {
@@ -36,9 +38,9 @@ export class BoundedWorkQueue {
     }
   }
 
-  run<T>(work: () => Promise<T>): Promise<T> {
-    if (this.active < this.options.maxConcurrent) {
-      return this.runNow(work);
+  run<T>(work: () => Promise<T>, key?: string): Promise<T> {
+    if (this.canStart(key)) {
+      return this.runNow(work, key);
     }
     if (this.pending.length >= this.options.maxQueued) {
       return Promise.reject(new InboundQueueSaturatedError());
@@ -48,11 +50,12 @@ export class BoundedWorkQueue {
       const queued: QueuedWork = {
         execute: async () => {
           try {
-            resolve(await this.runNow(work));
+            resolve(await this.runNow(work, key));
           } catch (error) {
             reject(error);
           }
         },
+        key,
         timeout: setTimeout(() => {
           const index = this.pending.indexOf(queued);
           if (index === -1) {
@@ -74,29 +77,43 @@ export class BoundedWorkQueue {
     return { active: this.active, queued: this.pending.length };
   }
 
-  private async runNow<T>(work: () => Promise<T>): Promise<T> {
+  private canStart(key?: string): boolean {
+    return (
+      this.active < this.options.maxConcurrent &&
+      (key === undefined || !this.activeKeys.has(key))
+    );
+  }
+
+  private async runNow<T>(work: () => Promise<T>, key?: string): Promise<T> {
     this.active += 1;
+    if (key !== undefined) {
+      this.activeKeys.add(key);
+    }
     try {
       return await work();
     } finally {
       this.active = Math.max(0, this.active - 1);
+      if (key !== undefined) {
+        this.activeKeys.delete(key);
+      }
       this.startNext();
     }
   }
 
   private startNext(): void {
-    if (
-      this.active >= this.options.maxConcurrent ||
-      this.pending.length === 0
-    ) {
-      return;
+    while (this.active < this.options.maxConcurrent) {
+      // Skip a busy chat without letting its waiters occupy global slots.
+      // The first eligible item preserves arrival order within each chat.
+      const index = this.pending.findIndex((work) => this.canStart(work.key));
+      if (index === -1) {
+        return;
+      }
+      const [next] = this.pending.splice(index, 1);
+      if (!next) {
+        return;
+      }
+      clearTimeout(next.timeout);
+      void next.execute();
     }
-
-    const next = this.pending.shift();
-    if (!next) {
-      return;
-    }
-    clearTimeout(next.timeout);
-    void next.execute();
   }
 }

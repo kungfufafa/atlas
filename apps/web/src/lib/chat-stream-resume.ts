@@ -1,4 +1,5 @@
 import type { StreamHandlers } from "@atlas/client";
+import { AtlasApiError } from "@atlas/core/api-error";
 import { nanoid } from "nanoid";
 import type { ChatListItem } from "@/lib/chat-history";
 import { client } from "@/lib/client";
@@ -83,6 +84,7 @@ export async function reconnectActiveSessionStream(input: {
   sessionId: string;
   messages: ChatListItem[];
   handlers: StreamHandlers;
+  onActiveTurn?: (turnId: string | undefined) => void;
   signal?: AbortSignal;
 }): Promise<{ reconnected: boolean }> {
   const status = await client.getSessionStatus(input.sessionId);
@@ -90,6 +92,7 @@ export async function reconnectActiveSessionStream(input: {
   if (!status.active) {
     return { reconnected: false };
   }
+  input.onActiveTurn?.(status.turnId);
 
   const replayHandlers = createReplayAwareHandlers(
     input.handlers,
@@ -100,6 +103,7 @@ export async function reconnectActiveSessionStream(input: {
     input.sessionId,
     replayHandlers,
     {
+      expectedTurnId: status.turnId,
       signal: input.signal,
     }
   );
@@ -107,6 +111,18 @@ export async function reconnectActiveSessionStream(input: {
   return { reconnected: result.reconnected };
 }
 
-export function isActiveTurnConflictError(message: string): boolean {
-  return message.includes("already in progress");
+export function isActiveTurnConflictError(error: unknown): boolean {
+  return (
+    error instanceof AtlasApiError &&
+    error.status === 409 &&
+    error.message.includes("already in progress")
+  );
+}
+
+export function isMissingChatSessionError(error: unknown): boolean {
+  return (
+    error instanceof AtlasApiError &&
+    error.status === 404 &&
+    error.message.includes("Session not found")
+  );
 }

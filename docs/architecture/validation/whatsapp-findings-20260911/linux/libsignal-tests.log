@@ -1,0 +1,13 @@
+bun test v1.3.14 (0d9b296a)
+
+apps/platform/whatsapp/src/libsignal-privacy.test.ts:
+(pass) libsignal private diagnostics > never logs ratchet keys when opening, closing, or reclosing a session [2.55ms]
+(pass) libsignal private diagnostics > failed decrypts retain failure semantics without raw error or stack dumps [1.11ms]
+
+apps/platform/whatsapp/src/signal-recovery.test.ts:
+(pass) real Signal state survives a restart and a failed MAC without losing the next valid message [58.56ms]
+
+ 3 pass
+ 0 fail
+ 12 expect() calls
+Ran 3 tests across 2 files. [535.00ms]

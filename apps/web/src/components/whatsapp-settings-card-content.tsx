@@ -130,6 +130,7 @@ function WhatsAppAccessModeSection({
 
 export function WhatsAppSettingsCardContent({
   embedded,
+  headerConnected,
   headerSubtitle,
   statusBadge,
   configured,
@@ -184,6 +185,7 @@ export function WhatsAppSettingsCardContent({
   copied: boolean;
   embedded: boolean;
   formError: string | null;
+  headerConnected: boolean;
   headerSubtitle: string;
   linkedNumber: string | null;
   linkingAfterScan: boolean;
@@ -225,7 +227,7 @@ export function WhatsAppSettingsCardContent({
         <IntegrationStatusHeader
           className={paneItemClass}
           configured={configured}
-          connected={paired && running}
+          connected={headerConnected}
           statusBadge={statusBadge}
           subtitle={headerSubtitle}
           title="WhatsApp"

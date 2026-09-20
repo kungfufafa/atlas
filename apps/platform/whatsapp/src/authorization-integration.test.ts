@@ -1709,8 +1709,8 @@ describe("WhatsApp authorized daily-work attachment pipeline", () => {
           expect(turns.length).toBe(requireMention ? 0 : 1);
           expect(h.downloads()).toBe(requireMention ? 0 : 1);
           if (requireMention) {
-            expect(JSON.stringify(h.sent)).toContain("ignored");
-            expect(JSON.stringify(h.sent)).toContain("mention");
+            expect(h.sent).toHaveLength(1);
+            expect(h.sent[0]).toMatchObject({ text: expect.any(String) });
           } else {
             expect(turns[0]?.message).toContain("WhatsApp group");
             expect(turns[0]?.message).toContain("artifacts/workbook.xlsx");

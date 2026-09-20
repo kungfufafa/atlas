@@ -195,6 +195,8 @@ export function formatHelpText(options?: {
 /start \u2014 welcome and show this message
 /help \u2014 show this message
 /stop \u2014 stop the agent's current reply (works during tool runs)
+/pause \u2014 stop and pause your replies in this chat
+/resume \u2014 resume your replies in this chat
 /clear \u2014 clear chat history
 /compact \u2014 compact conversation history
 /new \u2014 start a new conversation

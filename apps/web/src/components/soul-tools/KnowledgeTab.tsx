@@ -28,6 +28,7 @@ import { formatError } from "@/lib/client";
 import {
   fileToDocumentAttachment,
   isKnowledgeBaseFile,
+  KNOWLEDGE_BASE_SUPPORTED_TYPE_LABEL,
 } from "@/lib/knowledge-base-files";
 
 type DuplicatePrompt = KnowledgeBaseDuplicateContext & {
@@ -131,7 +132,7 @@ export function KnowledgeTab({ profileId }: { profileId: string | null }) {
       for (const file of Array.from(files)) {
         if (!isKnowledgeBaseFile(file)) {
           setError(
-            `Unsupported file type: ${file.name}. Allowed: txt, md, csv, pdf.`
+            `Unsupported file type: ${file.name}. Allowed: ${KNOWLEDGE_BASE_SUPPORTED_TYPE_LABEL}.`
           );
           continue;
         }

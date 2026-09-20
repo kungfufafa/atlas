@@ -6,6 +6,10 @@ import {
   type ToolDefinition,
 } from "@atlas/core";
 import { SYNTHETIC_SECRET_FIXTURES } from "@atlas/core/testing/synthetic-secret-fixtures";
+import {
+  runSendWhatsApp,
+  sendWhatsAppTool,
+} from "@atlas/core/tools/send-whatsapp";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { ChatToolApprovalService } from "./chat-tool-approval-service";
 import { ExecutionPlaneService } from "./execution-plane-service";
@@ -18,7 +22,7 @@ const principal = {
 };
 const sessionId = "approval-session";
 
-async function fixture() {
+async function fixture(customTool?: ToolDefinition) {
   const db = createInMemoryDatabaseAdapter();
   const now = new Date().toISOString();
   await db.upsertOrganization({
@@ -39,7 +43,7 @@ async function fixture() {
   const plane = new ExecutionPlaneService(db);
   const service = new ChatToolApprovalService(db, plane);
   let effects = 0;
-  const tool: ToolDefinition = {
+  const tool: ToolDefinition = customTool ?? {
     description: "Delete an artifact",
     name: "delete_file",
     run: () => {
@@ -50,6 +54,7 @@ async function fixture() {
   function begin(
     options: {
       beforeDecision?: () => Promise<void>;
+      args?: Record<string, unknown>;
       id?: string;
       signal?: AbortSignal;
     } = {}
@@ -66,7 +71,7 @@ async function fixture() {
         toolCallId: `call-${id}`,
       },
       call: {
-        arguments: { path: "artifacts/report.txt" },
+        arguments: options.args ?? { path: "artifacts/report.txt" },
         id: `call-${id}`,
         name: tool.name,
       },
@@ -202,9 +207,18 @@ describe("live chat tool approvals", () => {
     ).toHaveLength(1);
     const decision = await pending.waiting;
     expect(decision.decision).toBe("approved");
-    await expect(context.service.decide(input)).rejects.toMatchObject({
-      status: 409,
+    const originalGrant = (await context.db.getActionApproval(input.approvalId))
+      ?.grantId;
+    expect(await context.service.decide(input)).toEqual({
+      resumed: true,
+      status: "approved",
     });
+    expect(
+      (await context.db.getActionApproval(input.approvalId))?.grantId
+    ).toBe(originalGrant);
+    await expect(
+      context.service.decide({ ...input, decision: "denied" })
+    ).rejects.toMatchObject({ status: 409 });
   });
 
   test("cancel removes the waiter and a stored approval never resumes after restart", async () => {
@@ -462,3 +476,64 @@ test.each([
     expect(JSON.parse(step.resultJson!)).toEqual(payload);
   }
 );
+
+test("one batch approval binds every recipient and preserves partial results in the durable audit", async () => {
+  const sent: string[] = [];
+  const tool: ToolDefinition = {
+    ...sendWhatsAppTool,
+    run: (input, context) =>
+      runSendWhatsApp(input, context, async (payload) => {
+        sent.push(payload.to);
+        return payload.to.endsWith("2")
+          ? { error: "Unconfirmed worker response", ok: false }
+          : { ok: true };
+      }),
+  };
+  const context = await fixture(tool);
+  const args = {
+    text: "Meeting jam 3",
+    to: ["6289500000001", "6289500000002", "6289500000003"],
+  };
+  const pending = context.begin({ args });
+  await pending.ready;
+  await context.service.decide({
+    approvalId: pending.request.approval.id,
+    decision: "approved",
+    principal,
+    sessionId,
+  });
+  const decision = await pending.waiting;
+  if (decision.decision !== "approved") {
+    throw new Error("Expected approval");
+  }
+  const toolContext = {
+    approvalGrantId: decision.grantId,
+    orgId: principal.orgId,
+    runId: "approval-run",
+    sessionId,
+    userId: principal.userId,
+  };
+  const tampered = await executeProtectedTool(
+    tool,
+    { ...args, to: [...args.to, "6289500000004"] },
+    toolContext
+  );
+  expect(tampered.success).toBe(false);
+  expect(sent).toEqual([]);
+  const execution = await executeProtectedTool(tool, args, toolContext);
+  expect(sent).toEqual(args.to);
+  await context.service.complete("approval-run", "completed", [
+    { call: pending.request.call, content: JSON.stringify(execution.data) },
+  ]);
+  const steps = await context.db.listExecutionSteps("approval-run");
+  expect(steps).toHaveLength(1);
+  expect(steps[0]?.status).toBe("failed");
+  expect(JSON.parse(steps[0]?.resultJson ?? "null")).toMatchObject({
+    ok: false,
+    results: [
+      { status: "sent", to: args.to[0] },
+      { status: "unconfirmed", to: args.to[1] },
+      { status: "sent", to: args.to[2] },
+    ],
+  });
+});

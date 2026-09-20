@@ -12,6 +12,9 @@ export interface ChatSessionRecord {
   artifactShareUrls?: Record<string, string>;
   channelUserId?: string;
   deliverableArtifacts?: DeliverableChannelArtifact[];
+  discardMessagesThrough?: number;
+  /** Chat controls apply only to this sender's session, including in groups. */
+  paused?: boolean;
   profileId: string;
   /** True when /profile overrides the integration's configured reply profile. */
   profileOverride?: boolean;
@@ -226,6 +229,12 @@ function isChatSessionRecord(input: unknown): input is ChatSessionRecord {
     typeof record.profileId !== "string" ||
     typeof record.sessionId !== "string" ||
     typeof record.updatedAt !== "string" ||
+    (record.paused !== undefined && typeof record.paused !== "boolean") ||
+    (record.discardMessagesThrough !== undefined &&
+      !(
+        typeof record.discardMessagesThrough === "number" &&
+        Number.isFinite(record.discardMessagesThrough)
+      )) ||
     (record.channelUserId !== undefined &&
       typeof record.channelUserId !== "string") ||
     (record.deliverableArtifacts !== undefined &&

@@ -123,6 +123,9 @@ class HarnessCodexProcess extends EventEmitter implements JsonRpcStdioProcess {
   private receiveRequest(message: RpcMessage): void {
     let result: unknown;
     switch (message.method) {
+      case "config/read":
+        result = { config: {} };
+        break;
       case "account/read":
         result = { account: { type: "chatgpt" } };
         break;

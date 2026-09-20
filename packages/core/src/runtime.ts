@@ -50,7 +50,10 @@ export function resolveServerUrl(
   env: Record<string, string | undefined> = process.env
 ): string {
   return normalizeBaseUrl(
-    env.atlas_SERVER_URL?.trim() || readRuntimeServerUrl() || DEFAULT_SERVER_URL
+    env.ATLAS_SERVER_URL?.trim() ||
+      env.atlas_SERVER_URL?.trim() ||
+      readRuntimeServerUrl() ||
+      DEFAULT_SERVER_URL
   );
 }
 

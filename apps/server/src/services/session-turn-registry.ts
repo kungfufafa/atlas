@@ -10,7 +10,9 @@ export interface BeginTurnResult {
 
 export interface TurnStatus {
   active: boolean;
+  cancelling?: boolean;
   startedAt?: string;
+  turnId?: string;
 }
 
 type Subscriber = {
@@ -25,6 +27,7 @@ type ActiveTurn = {
   attachedAborts: Set<AbortController>;
   orgId?: string;
   startedAt: string;
+  turnId: string;
   events: StreamEvent[];
   bufferBytes: number;
   snapshotIndexes: Map<string, number>;
@@ -171,6 +174,7 @@ export class SessionTurnRegistry {
       snapshotIndexes: new Map(),
       startedAt: new Date().toISOString(),
       subscribers: new Set(),
+      turnId: crypto.randomUUID(),
     });
 
     return { started: true };
@@ -217,6 +221,25 @@ export class SessionTurnRegistry {
     this.endTurn(sessionId, { error: "Turn cancelled.", type: "error" });
   }
 
+  /** Request cancellation without releasing the invocation's session lock. */
+  requestCancellation(
+    sessionId: string,
+    expectedTurnId: string
+  ): "cancelled" | "idle" | "stale" {
+    const turn = this.turns.get(sessionId);
+    if (!turn) {
+      return "idle";
+    }
+    if (turn.turnId !== expectedTurnId) {
+      return "stale";
+    }
+    turn.abort.abort();
+    for (const abort of turn.attachedAborts) {
+      abort.abort();
+    }
+    return "cancelled";
+  }
+
   cancelTurnsForOrg(orgId: string): string[] {
     const sessionIds = [...this.turns.entries()]
       .filter(([, turn]) => turn.orgId === orgId)
@@ -235,7 +258,12 @@ export class SessionTurnRegistry {
       return { active: false };
     }
 
-    return { active: true, startedAt: turn.startedAt };
+    return {
+      active: true,
+      ...(turn.abort.signal.aborted ? { cancelling: true } : {}),
+      startedAt: turn.startedAt,
+      turnId: turn.turnId,
+    };
   }
 
   isActive(sessionId: string): boolean {

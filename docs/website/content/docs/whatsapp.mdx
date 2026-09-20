@@ -108,7 +108,9 @@ You can link with a phone number or a QR code. This step connects Atlas to Whats
 4. Go to **Settings → Linked Devices**
 5. Tap **Link a Device** and scan the QR code
 
-After you link, Atlas shows **Connected** and the linked account. The bridge can now receive messages.
+After you link, Atlas shows **Connected** only while the WhatsApp socket is live. The badge is not “paired and the worker process is running.” If the socket drops, **Integrations → WhatsApp** shows **Disconnected** even though the worker is still up. That is a down socket, not a ruined session. Wait for automatic reconnect, or restart the WhatsApp worker. Do not use **Reconnect with QR** for that recovery — it deletes the saved session and makes you scan **Linked Devices** again.
+
+Use **Reconnect with QR** only when you intend to replace the linked device: first-time link, a session WhatsApp has logged out or replaced, or damaged saved authentication. Restarting Atlas or PM2 must keep the existing WhatsApp session.
 
 The Linked Devices code (and the QR code) only connect Atlas to your WhatsApp account. They do not control who may chat.
 
@@ -149,13 +151,19 @@ WhatsApp works in **private chats** and **groups**.
 
 These rules let Atlas participate without interrupting ordinary group conversation. A group sender must still be allowed by the workspace's **Access mode**.
 
-Pairing does not replace workspace permissions. Removing a member or changing their role stops their active turns and pending approvals in that workspace. In denylist mode, a blocked phone cannot use a chat access code or bypass the block through its paired account or LID.
+Send `/stop` to cancel the current reply. Send `/pause`, or an addressed request such as “bisa diem dulu ga”, to stop and pause your replies until `/resume` (or “boleh jawab lagi”). In a group this pauses only your conversation with Atlas; other members can still use it. Pauses survive bridge restarts. Requests waiting before you resume are discarded, so send your next request after resuming.
+
+Pairing does not replace workspace permissions. Paired users still follow their workspace role, the profile's assigned tools, and **Channel controls**. Removing a member or changing their role stops their active turns and pending approvals in that workspace. In denylist mode, a blocked phone cannot use a chat access code or bypass the block through its paired account or LID.
 
 **Integrations → WhatsApp → Reply as** sets the default profile. Use `/profile` inside a private chat or group to override that default for that conversation. Starting a new conversation with `/new` preserves the conversation's selected profile while giving it a fresh session.
 
 ### Knowledge base answers
 
-WhatsApp uses the selected profile's knowledge base in the same way as web chat, Telegram, and Discord. Before answering a factual question, Atlas retrieves likely excerpts from ready uploaded documents. If those excerpts are not enough, the agent searches the knowledge base again with a more focused query instead of falling back to a guess.
+Add trusted senders to **Integrations → WhatsApp → Allowed numbers** so they can ask about the replying profile's uploaded references without pairing an Atlas account. Authorized senders on this list can read the profile's ready knowledge base documents when `knowledge_base_search` is assigned and permitted by **Channel controls**. This grants access to all ready uploaded documents available to that profile.
+
+An allowlisted sender without account pairing remains a channel guest. Their other tools stay limited to working with files in **Artifacts**; this does not grant memory, `send_whatsapp`, Bash, or MCP access. Other guests, including unlisted senders admitted by **Open** access, can submit supported work files but cannot search the profile's knowledge base.
+
+When the sender has knowledge base access, Atlas retrieves likely excerpts before answering a factual question. If those excerpts are not enough, the agent searches again with a more focused query instead of falling back to a guess.
 
 Knowledge base, tool, skill, MCP, prompt, and soul changes take effect on the next message while the existing channel conversation and history stay intact.
 
@@ -176,7 +184,7 @@ Atlas saves the original to the replying profile's **Artifacts**, reads it with 
 
 Documents can be up to **25 MB** and images up to **5 MB**. Voice notes and audio files up to **25 MB** are saved before their existing transcription flow. An unsupported type, failed download, or failed save gets a rejection instead of an answer guessing at missing content. A scanned PDF may require OCR that the document reader cannot provide; Atlas must report that limitation. Legacy Excel workbooks are read or converted to a new `.xlsx` for editing; macros are not executed or carried into the result. Self-hosted XLS/XLSB conversion requires LibreOffice, which is included in the Atlas container.
 
-In groups, include a mention or reply to Atlas when the mention rule is enabled. If an otherwise authorized attachment is ignored for this reason, Atlas explains how to resend it. Administrators can permit unaddressed messages in **Channel controls → Groups → Require mention or reply → Disabled**. Continue the file job in the same conversation.
+In groups, include a mention or reply to Atlas when the mention rule is enabled. If your file lacks a mention, Atlas can offer a reminder you can reply to within **15 minutes** with your request. This uses your original file in the same group and workspace after checking your current access. You can also mention Atlas while quoting the original file. If the reminder asks you to resend, the bridge restarted, or the temporary reference expired, resend the file with a mention. Administrators can permit unaddressed messages in **Channel controls → Groups → Require mention or reply → Disabled**. Continue the file job in the same conversation.
 
 Finished spreadsheets, Word documents, slide decks, summaries, and images return in the chat. Atlas attaches results up to **25 MB**; larger results need an available share link. The text reply stays brief and uses WhatsApp formatting. Send `/attach` or ask “send the file” to retrieve the latest result again.
 
@@ -191,6 +199,8 @@ How it works:
 3. Assign **send_whatsapp** to the profile that should send (new Default Agent profiles get it with the standard toolkit)
 4. If **Allowed numbers** is set (or access is allowlist), only those numbers can be contacted
 5. Ask the agent to send — it uses the workspace WhatsApp as sender
+
+You can ask Atlas to send the same message to several numbers together, up to 50 per request. Review all recipients and the message in the approval card, then select **Confirm** once. If sending is interrupted, Atlas reports each recipient's outcome. Check any unconfirmed deliveries before retrying to avoid duplicate messages.
 
 The recipient sees a chat from the **workspace number**, not from your personal login. The WhatsApp worker must be running. Meta can restrict unsolicited messages to numbers that have never chatted with that sender.
 
@@ -209,6 +219,8 @@ Useful WhatsApp commands:
 | `/new` | Starts a fresh conversation |
 | `/compact` | Compacts the current conversation history |
 | `/stop` | Stops an in-progress reply |
+| `/pause` | Stops and pauses your replies in this chat |
+| `/resume` | Resumes your replies; send a new request afterward |
 | `/attach` | Sends the latest file saved in this conversation |
 
 ## Troubleshooting
@@ -219,9 +231,27 @@ Check:
 
 1. the Atlas server is running
 2. the WhatsApp bridge is running with `bun run dev:whatsapp`
-3. **Integrations → WhatsApp** shows **Connected**
+3. **Integrations → WhatsApp** shows **Connected** (the socket is up). **Disconnected** means wait for reconnect or restart the worker — do not scan a new QR unless you mean to replace the device.
 4. Atlas has authorized the chat. If access is **Chat access code** and Atlas asks for a code, generate a chat access code and send it from that chat. **Open** does not use a chat access code.
 5. if access is an allowlist, confirm the sender's **phone number** is listed. WhatsApp may deliver the chat as a LID; Atlas still checks the resolved phone, and `/help` from an unmatched chat replies that the chat is not authorized
+
+### Integrations shows Disconnected
+
+**Disconnected** means the socket is down. The saved session is usually still valid. Wait for automatic reconnect, or restart the WhatsApp worker. Do not use **Reconnect with QR** unless you intend to delete the saved session and scan **Linked Devices** again.
+
+Atlas spaces out temporary connection retries, including unknown stream errors reported as **500**. After eight unsuccessful reconnects, it checks again every five minutes. A brief connection does not reset that backoff; five minutes of stable connection does.
+
+Automatic reconnect stops only when WhatsApp has ended the device session: **401** (logged out), **403** (forbidden), **411** (multi-device mismatch), or **440** (device replaced). Then check **Linked Devices** and use **Reconnect with QR**. If Atlas reports damaged saved authentication, restore a trusted backup or reconnect the linked device. Atlas preserves the damaged files instead of silently creating a new identity.
+
+### Connected, but a message is missing
+
+A connected bridge can still fail to decrypt an individual message. Atlas asks WhatsApp to resend it, with a limited retry budget that survives reconnects. Ask the sender to resend the original if it remains unavailable. If several new messages fail, restart the WhatsApp worker or wait for automatic reconnect. Use **Reconnect with QR** only when the device session itself must be replaced.
+
+Keep existing worker logs private: older versions could include linked-device key material. Share redacted error summaries instead of raw logs. If those keys were exposed, unlink the Atlas device in WhatsApp's **Linked Devices** before linking it again.
+
+### A channel worker cannot find the server
+
+Start the Atlas server before starting a channel worker, and check that the configured server address is reachable. A channel worker waits for the existing server; it does not start a second API process. For source installations, run `bun run dev:server` before `bun run dev:whatsapp`.
 
 ### Chat access code does not work
 
@@ -269,7 +299,9 @@ Open **Integrations → WhatsApp** and check the **Reply as** profile. That is t
 1. Check **Integrations → WhatsApp → Reply as** and confirm it is the same profile you tested in web chat
 2. Open that profile's **Knowledge** tab and confirm the document is ready
 3. Confirm `knowledge_base_search` is assigned to the profile
-4. Send the question again; you do not need to use `/new`
+4. For a sender without Atlas account pairing, confirm their phone number appears in **Integrations → WhatsApp → Allowed numbers**; **Open** access alone does not grant knowledge base access
+5. Check that tool restrictions in **Channel controls** permit `knowledge_base_search`; paired users must also have a workspace role that allows chatting
+6. Send the question again; you do not need to use `/new`
 
 ## Next steps
 

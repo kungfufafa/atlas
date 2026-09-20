@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import {
   DISCORD_ARTIFACT_ATTACHMENT_MAX_BYTES,
   isDiscordAttachableArtifact,
@@ -91,4 +91,27 @@ describe("sendDiscordArtifactAttachment limits", () => {
     expect(result.error).toMatch(/unsupported file type/i);
     expect(result.error).toMatch(/\.exe/i);
   });
+
+  test.each([
+    ["image/jpeg", "edited.jpg"],
+    ["image/png", "edited.png"],
+  ])(
+    "uploads %s artifacts with their original filename and bytes",
+    async (mimeType, filename) => {
+      const bytes = Buffer.from("photo transport fixture");
+      const send = mock(async () => ({ id: "uploaded" }));
+
+      const result = await sendDiscordArtifactAttachment({ send } as never, {
+        bytes,
+        filename,
+        mimeType,
+      });
+
+      expect(result).toEqual({ ok: true });
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(send).toHaveBeenCalledWith({
+        files: [expect.objectContaining({ attachment: bytes, name: filename })],
+      });
+    }
+  );
 });

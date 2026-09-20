@@ -456,18 +456,27 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
   try {
     context.signal?.throwIfAborted();
 
+    const scopedChannelGuestContext = Boolean(
+      context.orgId &&
+        context.profileId &&
+        context.workspaceRoot &&
+        context.beforeToolCall
+    );
     const scopedChannelFile =
+      scopedChannelGuestContext &&
       tool.channelGuestFileSafe === true &&
       (context.channel === "whatsapp" ||
         context.channel === "telegram" ||
-        context.channel === "discord") &&
-      Boolean(
-        context.orgId &&
-          context.profileId &&
-          context.workspaceRoot &&
-          context.beforeToolCall
-      );
-    if (isChannelGuestUserId(context.userId) && !scopedChannelFile) {
+        context.channel === "discord");
+    const scopedChannelKnowledgeBase =
+      scopedChannelGuestContext &&
+      tool.channelGuestKnowledgeBaseSafe === true &&
+      tool.name === "knowledge_base_search" &&
+      context.channel === "whatsapp";
+    if (
+      isChannelGuestUserId(context.userId) &&
+      !(scopedChannelFile || scopedChannelKnowledgeBase)
+    ) {
       const error = new Error(
         `Channel guest principals cannot execute tool "${tool.name}".`
       );

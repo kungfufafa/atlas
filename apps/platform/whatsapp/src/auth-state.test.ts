@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  open,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { usePrivateMultiFileAuthState } from "./auth-state";
@@ -50,6 +59,48 @@ async function expectPrivate(
 }
 
 describe("private WhatsApp auth state", () => {
+  test("refuses corrupt credentials without replacing the saved identity", async () => {
+    const directory = await createAuthDirectory();
+    await mkdir(directory);
+    const path = join(directory, "creds.json");
+    const truncated = '{"signedIdentityKey":';
+    await writeFile(path, truncated);
+    await expect(usePrivateMultiFileAuthState(directory)).rejects.toThrow();
+    expect(await readFile(path, "utf8")).toBe(truncated);
+  });
+
+  test("does not treat damaged Signal state as an absent session", async () => {
+    const directory = await createAuthDirectory();
+    const { state } = await usePrivateMultiFileAuthState(directory);
+    await writeFile(join(directory, "session-peer.json"), "{broken");
+    await expect(state.keys.get("session", ["peer"])).rejects.toThrow();
+    expect(await state.keys.get("session", ["missing"])).toEqual({});
+  });
+
+  test("serializes concurrent key writes and preserves the previous complete inode", async () => {
+    const directory = await createAuthDirectory();
+    const { state } = await usePrivateMultiFileAuthState(directory);
+    await state.keys.set({ "pre-key": { "1": PRE_KEY } });
+    const originalFile = await open(join(directory, "pre-key-1.json"), "r");
+    const originalBytes = await originalFile.readFile();
+    const firstInode = (await originalFile.stat()).ino;
+    const lastKey = { private: Buffer.from([9]), public: Buffer.from([8]) };
+    await Promise.all([
+      state.keys.set({ "pre-key": { "1": PRE_KEY } }),
+      state.keys.set({ "pre-key": { "1": lastKey } }),
+    ]);
+    expect(await state.keys.get("pre-key", ["1"])).toEqual({ "1": lastKey });
+    expect((await stat(join(directory, "pre-key-1.json"))).ino).not.toBe(
+      firstInode
+    );
+    const previousBytes = Buffer.alloc(originalBytes.length);
+    await originalFile.read(previousBytes, 0, previousBytes.length, 0);
+    expect(previousBytes).toEqual(originalBytes);
+    await originalFile.close();
+    await state.keys.set({ "pre-key": { "1": null } });
+    expect(await state.keys.get("pre-key", ["1"])).toEqual({});
+  });
+
   test.skipIf(!POSIX)(
     "creates fresh credentials and Signal keys privately",
     async () => {

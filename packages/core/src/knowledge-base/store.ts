@@ -25,6 +25,8 @@ import {
   buildExtractedTextHeader,
   extractText,
   isSupportedKnowledgeBaseMediaType,
+  KNOWLEDGE_BASE_PLAIN_TEXT_MEDIA_TYPES,
+  KNOWLEDGE_BASE_SUPPORTED_TYPE_LABEL,
   normalizeKnowledgeBaseMediaType,
 } from "./extract";
 import {
@@ -278,7 +280,7 @@ async function uploadKnowledgeBaseDocumentUnlocked(
 
   if (!isSupportedKnowledgeBaseMediaType(mediaType, filename)) {
     throw new Error(
-      `Unsupported knowledge base document type: ${attachment.mediaType}. Allowed: txt, md, csv, pdf.`
+      `Unsupported knowledge base document type: ${attachment.mediaType}. Allowed: ${KNOWLEDGE_BASE_SUPPORTED_TYPE_LABEL}.`
     );
   }
 
@@ -493,10 +495,9 @@ export async function readKnowledgeBaseDocumentContent(
     document.filename
   );
 
-  const isTextLike =
-    document.mediaType === "text/plain" ||
-    document.mediaType === "text/csv" ||
-    document.mediaType === "text/markdown";
+  const isTextLike = KNOWLEDGE_BASE_PLAIN_TEXT_MEDIA_TYPES.has(
+    document.mediaType
+  );
 
   if (options.render === "text") {
     if (isTextLike && (await pathExists(storedPath))) {

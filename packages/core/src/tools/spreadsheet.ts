@@ -57,6 +57,7 @@ import {
 } from "./spreadsheet-io";
 import { formatNewCsvWorksheet } from "./spreadsheet-layout";
 import {
+  restoreEmptyFormulaResults,
   spreadsheetPartsForCellRead,
   writeSpreadsheetCellsPreservingParts,
 } from "./spreadsheet-ooxml";
@@ -86,6 +87,49 @@ const RowsSchema = z
   );
 const CoordinateRow = z.number().int().min(1).max(MAX_SPREADSHEET_ROWS);
 const CoordinateColumn = z.number().int().min(1).max(MAX_SPREADSHEET_COLUMNS);
+const ColorSchema = z
+  .string()
+  // Unlike $, the absolute-end assertion also rejects a trailing newline.
+  .regex(/^#?[a-fA-F0-9]{6}(?![\s\S])/)
+  .transform((color) =>
+    (color.startsWith("#") ? color.slice(1) : color).toUpperCase()
+  )
+  .describe("Six-digit RGB hex, with or without # (for example #1F4E78).");
+const SpreadsheetFormatSchema = z
+  .object({
+    alignment: z.enum(["left", "center", "right"]).optional(),
+    bold: z.boolean().optional(),
+    columnWidth: z.number().min(1).max(255).optional(),
+    fillColor: ColorSchema.optional(),
+    fontColor: ColorSchema.optional(),
+    fontSize: z.number().min(6).max(96).optional(),
+    italic: z.boolean().optional(),
+    numberFormat: z.string().max(100).optional(),
+    rowHeight: z.number().min(1).max(409).optional(),
+    verticalAlignment: z.enum(["top", "middle", "bottom"]).optional(),
+    wrapText: z.boolean().optional(),
+  })
+  .strict();
+const SpreadsheetEditSchema = z
+  .object({
+    action: z.enum(["write_range", "format_range"]),
+    data: RowsSchema.optional(),
+    endCol: CoordinateColumn.optional(),
+    endRow: CoordinateRow.optional(),
+    format: SpreadsheetFormatSchema.optional(),
+    literalStrings: z.boolean().optional(),
+    range: z.string().max(30).optional(),
+    sheetName: z
+      .string()
+      .min(1)
+      .max(31)
+      .regex(/^[^[\]:*?/\\]+$/)
+      .optional(),
+    startCol: CoordinateColumn.optional(),
+    startRow: CoordinateRow.optional(),
+    values: RowsSchema.optional(),
+  })
+  .strict();
 const SpreadsheetInputSchema = z
   .object({
     action: z.enum([
@@ -94,6 +138,7 @@ const SpreadsheetInputSchema = z
       "read_range",
       "write_range",
       "format_range",
+      "batch_edit",
       "add_sheet",
       "delete_sheet",
       "import_csv",
@@ -118,7 +163,9 @@ const SpreadsheetInputSchema = z
       .describe("Keep the first CSV row as text when columnTypes is set."),
     csvPath: z.string().optional(),
     cwd: trimmedOptionalString,
-    data: RowsSchema.optional(),
+    data: RowsSchema.optional().describe(
+      "Rows for create/add_sheet. Also accepted as a write_range alias when values is omitted; supply only one."
+    ),
     decimalSeparator: z
       .enum([".", ","])
       .optional()
@@ -141,24 +188,7 @@ const SpreadsheetInputSchema = z
       .describe(
         "SHA-256 from inspect/read_range, required for in-place writes."
       ),
-    format: z
-      .object({
-        alignment: z.enum(["left", "center", "right"]).optional(),
-        bold: z.boolean().optional(),
-        fillColor: z
-          .string()
-          .regex(/^[a-fA-F0-9]{6}$/)
-          .optional(),
-        fontColor: z
-          .string()
-          .regex(/^[a-fA-F0-9]{6}$/)
-          .optional(),
-        italic: z.boolean().optional(),
-        numberFormat: z.string().max(100).optional(),
-        wrapText: z.boolean().optional(),
-      })
-      .strict()
-      .optional(),
+    format: SpreadsheetFormatSchema.optional(),
     formulaExport: z
       .enum(["formulas", "values"])
       .default("formulas")
@@ -169,6 +199,14 @@ const SpreadsheetInputSchema = z
       .boolean()
       .default(false)
       .describe("Store '=...' as text. CSV imports always use literal text."),
+    operations: z
+      .array(SpreadsheetEditSchema)
+      .min(1)
+      .max(100)
+      .optional()
+      .describe(
+        "For batch_edit: apply up to 100 range writes/formats atomically, saving one version. Group shared styles across whole ranges."
+      ),
     path: z
       .string()
       .trim()
@@ -187,7 +225,9 @@ const SpreadsheetInputSchema = z
     startRow: CoordinateRow.optional(),
     targetCsvPath: z.string().optional(),
     targetXlsxPath: z.string().optional(),
-    values: RowsSchema.optional(),
+    values: RowsSchema.optional().describe(
+      'Cell rows for write_range, for example [["Asset", 1391]]. Must contain at least one cell; null clears a cell. Required unless data is supplied.'
+    ),
     writeMode: z
       .enum(["versioned", "inplace"])
       .default("versioned")
@@ -197,6 +237,42 @@ const SpreadsheetInputSchema = z
   })
   .strict();
 export type SpreadsheetInput = z.infer<typeof SpreadsheetInputSchema>;
+
+function invalidSpreadsheetInput(message: string): Error {
+  return Object.assign(new Error(message), {
+    code: "INVALID_ARGUMENT",
+    retryable: false,
+  });
+}
+
+function parseSpreadsheetInput(input: unknown): SpreadsheetInput {
+  const result = SpreadsheetInputSchema.safeParse(input);
+  if (!result.success) {
+    const summary = result.error.issues
+      .slice(0, 3)
+      .map((issue) => `${issue.path.join(".") || "input"}: ${issue.message}`)
+      .join("; ");
+    throw invalidSpreadsheetInput(`Invalid spreadsheet input: ${summary}`);
+  }
+  const parsed = result.data;
+  if (parsed.action !== "write_range") {
+    return parsed;
+  }
+  if (parsed.values !== undefined && parsed.data !== undefined) {
+    throw invalidSpreadsheetInput(
+      "write_range accepts either values or its data alias, not both. Supply values with the intended cell rows."
+    );
+  }
+  // Normalize only this documented alias; never replace an explicit empty values array.
+  const values = parsed.values ?? parsed.data;
+  if (!values?.some((row) => row.length > 0)) {
+    throw invalidSpreadsheetInput(
+      'write_range requires a nonempty 2D values array, for example values: [["Asset", 1391]]. Use [[null]] to clear a cell.'
+    );
+  }
+  return { ...parsed, values };
+}
+
 export interface WorkbookSheetData {
   columns?: string[];
   name: string;
@@ -422,6 +498,7 @@ async function loadWorkbook(
           )
         ).buffer
       );
+      restoreEmptyFormulaResults(workbook, parts);
     }
   } else if (format === ".csv") {
     addRows(
@@ -620,18 +697,30 @@ function formatRange(
   const sheet = selectedSheet(workbook, parsed.sheetName);
   const range = resolveRange(parsed, sheet);
   const style = parsed.format;
+  if (style.columnWidth !== undefined) {
+    for (let column = range.startCol; column <= range.endCol; column += 1) {
+      sheet.getColumn(column).width = style.columnWidth;
+    }
+  }
   for (let r = range.startRow; r <= range.endRow; r += 1) {
+    if (style.rowHeight !== undefined) {
+      sheet.getRow(r).height = style.rowHeight;
+    }
     for (let c = range.startCol; c <= range.endCol; c += 1) {
       const cell = sheet.getCell(r, c);
       cell.font = {
         ...cell.font,
         ...(style.bold === undefined ? {} : { bold: style.bold }),
+        ...(style.fontSize === undefined ? {} : { size: style.fontSize }),
         ...(style.italic === undefined ? {} : { italic: style.italic }),
         ...(style.fontColor ? { color: { argb: `FF${style.fontColor}` } } : {}),
       };
       cell.alignment = {
         ...cell.alignment,
         ...(style.alignment ? { horizontal: style.alignment } : {}),
+        ...(style.verticalAlignment
+          ? { vertical: style.verticalAlignment }
+          : {}),
         ...(style.wrapText === undefined ? {} : { wrapText: style.wrapText }),
       };
       if (style.numberFormat !== undefined) {
@@ -690,12 +779,26 @@ function validateAction(parsed: SpreadsheetInput): void {
     );
   }
   if (
-    parsed.action === "write_range" &&
-    (!parsed.values ||
-      parsed.values.length === 0 ||
-      parsed.values.every((row) => row.length === 0))
+    parsed.action === "format_range" &&
+    (!parsed.format || Object.keys(parsed.format).length === 0)
   ) {
-    throw new Error("write_range requires nonempty values.");
+    throw invalidSpreadsheetInput(
+      'format_range requires a nonempty format object, for example format: {"fillColor":"#1F4E78","fontColor":"#FFFFFF"}.'
+    );
+  }
+  if (parsed.action === "batch_edit") {
+    if (!parsed.operations?.length) {
+      throw invalidSpreadsheetInput(
+        "batch_edit requires a nonempty operations array."
+      );
+    }
+    for (const operation of parseBatchOperations(parsed)) {
+      validateAction(operation);
+    }
+  } else if (parsed.operations !== undefined) {
+    throw invalidSpreadsheetInput(
+      "operations is only supported by batch_edit."
+    );
   }
   if (parsed.action === "delete_sheet" && !parsed.sheetName) {
     throw new Error("delete_sheet requires sheetName.");
@@ -723,11 +826,22 @@ function validateAction(parsed: SpreadsheetInput): void {
     );
   }
   if (
-    (parsed.action === "format_range" || parsed.action === "recalculate") &&
+    ["format_range", "batch_edit", "recalculate"].includes(parsed.action) &&
     spreadsheetFormat(parsed.path) !== ".xlsx"
   ) {
     throw new Error(`${parsed.action} requires an XLSX workbook.`);
   }
+}
+
+function parseBatchOperations(parsed: SpreadsheetInput): SpreadsheetInput[] {
+  return parsed.operations!.map((operation) =>
+    parseSpreadsheetInput({
+      literalStrings: parsed.literalStrings,
+      sheetName: parsed.sheetName,
+      ...operation,
+      path: parsed.path,
+    })
+  );
 }
 
 async function mutateWorkbook(
@@ -785,6 +899,35 @@ async function mutateWorkbook(
         status: "updated",
       };
     }
+    case "batch_edit": {
+      const operations = parseBatchOperations(parsed);
+      let cells = 0;
+      for (const operation of operations) {
+        const range = resolveRange(
+          operation,
+          selectedSheet(workbook, operation.sheetName)
+        );
+        cells +=
+          operation.action === "write_range"
+            ? operation.values!.reduce((total, row) => total + row.length, 0)
+            : (range.endRow - range.startRow + 1) *
+              (range.endCol - range.startCol + 1);
+        if (cells > MAX_SPREADSHEET_CELLS) {
+          throw invalidSpreadsheetInput(
+            "Batch edits exceed the 500000-cell operation limit. Use fewer ranges."
+          );
+        }
+      }
+      const results = [];
+      for (const operation of operations) {
+        results.push(await mutateWorkbook(workbook, operation, guardOptions));
+      }
+      return {
+        operationsApplied: results.length,
+        results,
+        status: "batch_edited",
+      };
+    }
     case "format_range":
       formatRange(workbook, parsed);
       return { status: "formatted" };
@@ -835,12 +978,12 @@ async function mutateWorkbook(
 
 export const spreadsheetTool: ToolDefinition = {
   description:
-    "Create, read, edit, format, recalculate, and export XLSX/CSV/JSON spreadsheets. Inspect/read XLS/XLSM/XLSB inputs and export_xlsx to a new editable XLSX; legacy macros are not preserved. Edits save a new version: follow the returned path. CSV imports preserve text; formula results carry calculation status. XLS/XLSB conversion and recalculation require LibreOffice on the Atlas host.",
+    "Create, read, edit, format, recalculate, and export XLSX/CSV/JSON spreadsheets. write_range uses nonempty values rows (data is an alias); create/add_sheet use data. Use batch_edit with operations for multiple range writes/formats: one call saves one version. Apply shared styles to whole ranges, not cell-by-cell calls. format_range uses a format object with fontSize, columnWidth, rowHeight, colors and alignment; colors accept RRGGBB or #RRGGBB. Inspect/read XLS/XLSM/XLSB inputs and export_xlsx to a new editable XLSX; legacy macros are not preserved. Edits save a new version: follow the returned path. CSV imports preserve text; formula results carry calculation status. XLS/XLSB conversion and recalculation require LibreOffice on the Atlas host.",
   name: "spreadsheet",
   parallelSafe: false,
   parameters: jsonSchemaFromZod(SpreadsheetInputSchema),
   async run(input: unknown, context: ToolContext) {
-    const parsed = SpreadsheetInputSchema.parse(input);
+    const parsed = parseSpreadsheetInput(input);
     validateAction(parsed);
     context.signal?.throwIfAborted();
     const requestedWorkspaceRoot =
@@ -947,6 +1090,7 @@ export const spreadsheetTool: ToolDefinition = {
           "create",
           "write_range",
           "format_range",
+          "batch_edit",
           "add_sheet",
           "delete_sheet",
           "import_csv",

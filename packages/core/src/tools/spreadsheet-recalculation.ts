@@ -27,6 +27,8 @@ import {
   readSpreadsheetBytes,
 } from "./spreadsheet-io";
 
+import { restoreEmptyFormulaResults } from "./spreadsheet-ooxml";
+
 const RECALCULATION_TIMEOUT_MS = 30_000;
 const CALCULATION_ENGINE = "LibreOffice Calc";
 
@@ -242,10 +244,11 @@ export async function recalculateSpreadsheet(
     const calculated = await readSpreadsheetBytes(
       path.join(output, "workbook.xlsx")
     );
-    inspectSpreadsheetArchive(calculated);
+    const calculatedParts = inspectSpreadsheetArchive(calculated);
     const verified = new ExcelJS.Workbook();
     await verified.xlsx.load(Uint8Array.from(calculated).buffer);
     assertWorkbookBounds(verified);
+    restoreEmptyFormulaResults(verified, calculatedParts);
     const formulaErrors: { address: string; error: string; sheet: string }[] =
       [];
     let formulaErrorCount = 0;

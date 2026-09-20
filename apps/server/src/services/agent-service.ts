@@ -8,6 +8,8 @@ import {
   draftTaskPromptFromFields,
   executeToolCall,
   expandLearnInLastUserMessage,
+  type MessagingChatKind,
+  resolveMessagingChatKind,
   suggestToolParamsFromPrompt,
   type ToolLoopStopReason,
   tryParseLearnCommand,
@@ -21,6 +23,7 @@ import type {
   AssignSkillRequest,
   AssignToolRequest,
   BranchSessionResponse,
+  CancelSessionTurnResponse,
   CanonicalPrincipal,
   CapabilityCatalogResponse,
   CapabilityMappingsResponse,
@@ -126,7 +129,7 @@ import {
   buildToolExecutionContext,
   buildUserContextStatus,
   composeKnowledgeBaseCatalog,
-  composeSoulSystemPrompt,
+  composeSoulSystemPromptWithSummary,
   composeTurnMemoryContext,
   createErrorTrackingSink,
   createSmtpSender,
@@ -165,6 +168,7 @@ import {
   loadUserVisionSettings,
   loadWhatsAppSettingsPublic,
   mapArtifactReadError,
+  memorySummarizationEnabled,
   messageContentHasImages,
   migrateCapabilityTargetProviderIds,
   migrateLegacyCapabilityConfig,
@@ -188,6 +192,8 @@ import {
   rehydrateAttachmentRefsInContent,
   replaceImagePartsWithDescriptions,
   resolveDiscordApplicationId,
+  resolveSkillFailureLearningEnabled,
+  resolveSkillWriteApprovalRequired,
   resolveSoulStackForProfile,
   runAsPrincipal,
   saveComposioConfig,
@@ -214,6 +220,7 @@ import {
   type DatabaseAdapter,
   type LlmUsageDimensions,
   mergeWorkspaceSettings,
+  parseStoredChatKind,
   type StoredProfileRecord,
   type StoredSessionRecord,
   type StoredTaskRecord,
@@ -275,6 +282,7 @@ import {
   transcribeAudio,
 } from "./audio-transcription";
 import type { AutomationRunner } from "./automation-runner";
+import { canGuestSearchKnowledgeBase } from "./channel-guest-knowledge-base-policy";
 import { resolveExecutableToolsForPrincipal } from "./channel-guest-tool-policy";
 import { ChannelNativeActionService } from "./channel-native-action-service";
 import { isChannelWorkFileTool } from "./channel-work-file-tools";
@@ -357,6 +365,7 @@ import {
 } from "./session-persistence";
 import { SessionTitleService } from "./session-title-service";
 import { sessionTurnRegistry } from "./session-turn-registry";
+import { createSkillsServiceLearningStore } from "./skill-learning-store";
 import { SkillPostTurnReviewService } from "./skill-post-turn-review-service";
 import type { SkillProposalService } from "./skill-proposal-service";
 import type { SkillSuggestionService } from "./skill-suggestion-service";
@@ -371,6 +380,7 @@ import {
 
 interface StoredSession {
   channel: AgentChannel;
+  chatKind?: MessagingChatKind;
   isPlatformAdmin: boolean;
   modelOverride: string | null;
   orgId: string;
@@ -457,6 +467,10 @@ export class AgentService {
   readonly learningPlane: LearningPlaneService;
   readonly subagents: SubagentService;
   private readonly sessions = new Map<string, StoredSession>();
+  private readonly guestKnowledgeBaseAvailability = new WeakMap<
+    AgentChatSession,
+    boolean
+  >();
   private readonly mcpAvailabilityVersions = new Map<string, number>();
   private readonly sessionInvalidationVersions = new Map<string, number>();
   private readonly profileToolInvalidationVersions = new Map<string, number>();
@@ -2883,10 +2897,15 @@ export class AgentService {
       );
     }
 
+    const chatKind = resolveMessagingChatKind(
+      channel,
+      access?.externalPrincipal?.channelIsGroup
+    );
     await this.db.upsertSession({
       agentQuestionnaire: null,
       agentTodos: [],
       channel,
+      ...(chatKind ? { chatKind } : {}),
       createdAt: new Date().toISOString(),
       id: sessionId,
       modelOverride,
@@ -2905,13 +2924,15 @@ export class AgentService {
       modelOverride,
       principalUserId,
       sessionOrgRole,
-      sessionIsPlatformAdmin
+      sessionIsPlatformAdmin,
+      chatKind
     );
 
     this.rememberSession(
       sessionId,
       {
         channel,
+        ...(chatKind ? { chatKind } : {}),
         isPlatformAdmin: sessionIsPlatformAdmin,
         modelOverride,
         orgId,
@@ -3156,10 +3177,15 @@ export class AgentService {
       ? `${sourceTitle} (Branch)`
       : "Untitled (Branch)";
 
+    const chatKind =
+      this.sessions.get(sessionId)?.chatKind ??
+      parseStoredChatKind(record.chatKind) ??
+      undefined;
     await this.db.upsertSession({
       agentQuestionnaire: null,
       agentTodos: [],
       channel: record.channel,
+      ...(chatKind ? { chatKind } : {}),
       createdAt: new Date().toISOString(),
       id: nextSessionId,
       modelOverride,
@@ -3191,12 +3217,14 @@ export class AgentService {
       modelOverride,
       branchUserId,
       branchOrgRole,
-      branchIsPlatformAdmin
+      branchIsPlatformAdmin,
+      chatKind
     );
     this.rememberSession(
       nextSessionId,
       {
         channel,
+        ...(chatKind ? { chatKind } : {}),
         isPlatformAdmin: branchIsPlatformAdmin,
         modelOverride,
         orgId,
@@ -3385,9 +3413,23 @@ export class AgentService {
     }
 
     const stored = this.sessions.get(sessionId);
+    // Refresh capabilities after allowlist changes while preserving live
+    // context/usage state when the guest's access has not changed.
+    const guestKnowledgeBaseChanged =
+      stored &&
+      channel === "whatsapp" &&
+      isChannelGuestUserId(actorUserId) &&
+      this.guestKnowledgeBaseAvailability.get(stored.session) !==
+        (await canGuestSearchKnowledgeBase(this.db, {
+          channel,
+          orgId,
+          profileId: record.profileId,
+          userId: actorUserId,
+        }));
 
     if (
       stored &&
+      !guestKnowledgeBaseChanged &&
       stored.profileId === record.profileId &&
       stored.modelOverride === modelOverride &&
       stored.userId === actorUserId &&
@@ -3398,6 +3440,8 @@ export class AgentService {
     }
 
     const mcpAvailabilityVersion = this.mcpAvailabilityVersions.get(orgId) ?? 0;
+    const chatKind =
+      stored?.chatKind ?? parseStoredChatKind(record.chatKind) ?? undefined;
     const session = await this.buildChatSession(
       channel,
       orgId,
@@ -3406,7 +3450,8 @@ export class AgentService {
       modelOverride,
       actorUserId,
       orgRole,
-      isPlatformAdmin
+      isPlatformAdmin,
+      chatKind
     );
 
     await this.requireActiveOrganizationForTurn(orgId);
@@ -3423,6 +3468,7 @@ export class AgentService {
       sessionId,
       {
         channel,
+        ...(chatKind ? { chatKind } : {}),
         isPlatformAdmin,
         modelOverride,
         orgId,
@@ -3505,6 +3551,35 @@ export class AgentService {
 
     await this.requireActiveOrganizationForTurn(orgId);
     return sessionTurnRegistry.beginTurn(sessionId, orgId).started;
+  }
+
+  async cancelSessionTurn(
+    orgId: string,
+    sessionId: string,
+    expectedTurnId: string,
+    actor: SessionActor
+  ): Promise<CancelSessionTurnResponse | null> {
+    if (
+      actor.workspaceWorkerChannel ||
+      !(await this.canAccessSession(orgId, sessionId, actor, "invoke"))
+    ) {
+      return null;
+    }
+    await this.requireActiveOrganizationForTurn(orgId);
+    const result = sessionTurnRegistry.requestCancellation(
+      sessionId,
+      expectedTurnId
+    );
+    if (result === "stale") {
+      throw new AtlasApiError("The active session turn has changed.", 409);
+    }
+    if (result === "cancelled") {
+      this.chatToolApprovals.cancelSession(sessionId);
+    }
+    return {
+      ...sessionTurnRegistry.getStatus(sessionId),
+      cancelled: result === "cancelled",
+    };
   }
 
   async clearSession(
@@ -5921,7 +5996,8 @@ export class AgentService {
     modelOverride: string | null,
     userId?: string | null,
     orgRole?: OrgRole | null,
-    isPlatformAdmin?: boolean
+    isPlatformAdmin?: boolean,
+    chatKind?: MessagingChatKind
   ): Promise<AgentChatSession> {
     let userConfig = await this.getOrgUserConfig(orgId);
     const profile = await this.requireProfile(orgId, profileId);
@@ -5955,6 +6031,15 @@ export class AgentService {
       }
     );
     const includeSkillManageTools = channel === "web" || channel === "cli";
+    const allowGuestKnowledgeBaseSearch = await canGuestSearchKnowledgeBase(
+      this.db,
+      {
+        channel,
+        orgId,
+        profileId,
+        userId,
+      }
+    );
     let tools = await resolveExecutableToolsForPrincipal(
       userId,
       () =>
@@ -5967,7 +6052,7 @@ export class AgentService {
           },
           userConfig
         ),
-      { channel }
+      { allowKnowledgeBaseSearch: allowGuestKnowledgeBaseSearch, channel }
     );
     if (channel === "discord" && !isGuestPrincipal) {
       tools = [...tools, ...createSendDiscordArtifactTools()];
@@ -6058,8 +6143,38 @@ export class AgentService {
     const expandLearnCommand = shouldExpandLearnCommand(channel, tools);
     let forceSkillWriteProposal = false;
 
+    const organization = await this.db.getOrganizationById(orgId);
+    const skillFailureLearningEnabled =
+      Boolean(this.skillsService) &&
+      includeSkillManageTools &&
+      !isGuestPrincipal &&
+      resolveSkillFailureLearningEnabled({
+        orgSkillsPostTurnReview: organization?.skillsPostTurnReview ?? false,
+        profileSkillsPostTurnReview: profile.skillsPostTurnReview ?? null,
+      });
+    const skillLearning =
+      skillFailureLearningEnabled && this.skillsService
+        ? {
+            enabled: true,
+            injectMatchedSkills: false,
+            store: createSkillsServiceLearningStore(this.skillsService, {
+              orgId,
+              profileId,
+              sessionId,
+              skillProposalService: this.skillProposalService,
+              userId: userId ?? null,
+            }),
+            writeApprovalRequired: resolveSkillWriteApprovalRequired({
+              orgSkillsWriteApproval:
+                organization?.skillsWriteApproval ?? false,
+              profileSkillsWriteApproval: profile.skillsWriteApproval ?? null,
+            }),
+          }
+        : undefined;
+
     const session = harness.createChatSession({
       channel,
+      chatKind,
       compaction,
       enableToolLoop: tools.length > 0,
       initialHistory,
@@ -6159,7 +6274,20 @@ export class AgentService {
           }
         }
 
-        if (knowledgeBaseSearchAvailable && context?.userMessage?.trim()) {
+        const canGroundKnowledgeBase =
+          knowledgeBaseSearchAvailable &&
+          (!isGuestPrincipal ||
+            (userId &&
+              (await this.channelNativeActions.canGuestSearchKnowledgeBase(
+                orgId,
+                sessionId,
+                profileId,
+                userId
+              ))));
+        if (canGroundKnowledgeBase && context?.userMessage?.trim()) {
+          if (isGuestPrincipal) {
+            await beforeToolCall();
+          }
           const knowledgeBaseGrounding =
             await composeKnowledgeBaseTurnGrounding({
               orgId,
@@ -6234,20 +6362,45 @@ export class AgentService {
 
         return parts.join("\n\n");
       },
+      skillLearning,
       soul: soulActive,
       systemPrompt: resolvedSystemPrompt,
       toolContext: buildToolExecutionContext({
         beforeToolCall: async (toolName) => {
+          const guestKnowledgeBaseCall =
+            isGuestPrincipal &&
+            allowGuestKnowledgeBaseSearch &&
+            toolName === "knowledge_base_search";
           if (
             isGuestPrincipal &&
-            !(toolName && isChannelWorkFileTool(toolName))
+            !(toolName && isChannelWorkFileTool(toolName)) &&
+            !guestKnowledgeBaseCall
           ) {
             throw new AtlasApiError(
-              "Channel guest tool is outside work-file scope",
+              "Channel guest tool is outside its authorized scope",
               403
             );
           }
           await beforeToolCall();
+          if (guestKnowledgeBaseCall) {
+            if (
+              !(
+                userId &&
+                (await this.channelNativeActions.canGuestSearchKnowledgeBase(
+                  orgId,
+                  sessionId,
+                  profileId,
+                  userId
+                ))
+              )
+            ) {
+              throw new AtlasApiError(
+                "WhatsApp knowledge base access is no longer allowed",
+                403
+              );
+            }
+            return;
+          }
           if (
             channel === "telegram" ||
             channel === "whatsapp" ||
@@ -6343,7 +6496,7 @@ export class AgentService {
       userTimezone,
     });
 
-    return wrapPersistedSession(sessionId, session, this.db, {
+    const persistedSession = wrapPersistedSession(sessionId, session, this.db, {
       beforePersist: () => this.requireActiveOrganizationForTurn(orgId),
       onBeginTurn: (id, userMessage) => {
         const attachmentTurnId = turnAttachments.beginTurn();
@@ -6370,6 +6523,11 @@ export class AgentService {
         return turnAttachments.runTurn(turnId, operation);
       },
     });
+    this.guestKnowledgeBaseAvailability.set(
+      persistedSession,
+      allowGuestKnowledgeBaseSearch
+    );
+    return persistedSession;
   }
 
   private async formatProfileAuthoringToolContext(
@@ -6500,9 +6658,31 @@ export class AgentService {
   ): Promise<{ systemPrompt: string; soulActive: boolean }> {
     const isGuestPrincipal = isChannelGuestUserId(userId);
     const stack = await resolveSoulStackForProfile(orgId, profileId);
+    let generateText: ((prompt: string) => Promise<string>) | undefined;
+    if (!isGuestPrincipal && stack && memorySummarizationEnabled()) {
+      try {
+        const profile = await this.requireProfile(orgId, profileId);
+        const client = this.resolveProviderClientForProfile(profile);
+        if (client) {
+          generateText = async (prompt) => {
+            const result = await client.generateText({
+              format: "text",
+              prompt,
+              system:
+                "You summarize profile continuity memory. Do not invent facts.",
+            });
+            return result.content;
+          };
+        }
+      } catch {
+        generateText = undefined;
+      }
+    }
     let systemPrompt = stack
-      ? composeSoulSystemPrompt(stack, {
+      ? await composeSoulSystemPromptWithSummary(stack, {
+          generateText,
           includeMemory: !isGuestPrincipal,
+          memorySummarization: Boolean(generateText),
           profilePrompt,
         })
       : profilePrompt;

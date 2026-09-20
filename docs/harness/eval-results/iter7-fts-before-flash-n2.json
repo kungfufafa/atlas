@@ -1,0 +1,50 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": false,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T04:10:52.490Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_search_chats": true,
+        "prompt_omits_fts_needle": true,
+        "recalled_fts_needle": false
+      },
+      "dimension": "memory",
+      "durationMs": 6177,
+      "gradedScore": 0.889,
+      "id": "memory_search_chats_fts",
+      "passed": false,
+      "replyPreview": "I can't provide a code — no retrieval code for the \"zephyric cipher locker\" exists in prior chats. Every search hit points to the same \"Weekly ops\" session, and it only mentions that a *checklist* was reviewed during stand-up; it never reco",
+      "score": 0.667,
+      "toolCalls": [
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats"
+      ],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.889,
+    "meanScore": 0.667,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 0,
+    "transportOk": false
+  }
+}

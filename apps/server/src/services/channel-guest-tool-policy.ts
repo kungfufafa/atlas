@@ -1,18 +1,34 @@
-import { isChannelGuestUserId, type ToolDefinition } from "@atlas/core";
+import {
+  builtinTools,
+  isChannelGuestUserId,
+  type ToolDefinition,
+} from "@atlas/core";
 
 import { channelWorkFileTools } from "./channel-work-file-tools";
 
-/** Authorized channel guests receive only the confined work-file capability. */
+/** Guest exceptions use known builtins without loading profile/MCP runtimes. */
 export async function resolveExecutableToolsForPrincipal(
   userId: string | null | undefined,
   loadTools: () => Promise<ToolDefinition[]>,
-  options: { channel?: string } = {}
+  options: { channel?: string; allowKnowledgeBaseSearch?: boolean } = {}
 ): Promise<ToolDefinition[]> {
   const messaging = ["telegram", "whatsapp", "discord"].includes(
     options.channel ?? ""
   );
   if (isChannelGuestUserId(userId)) {
-    return messaging ? channelWorkFileTools(true) : [];
+    if (!messaging) {
+      return [];
+    }
+    const files = channelWorkFileTools(true);
+    if (options.channel !== "whatsapp" || !options.allowKnowledgeBaseSearch) {
+      return files;
+    }
+    return [
+      ...files,
+      ...builtinTools
+        .filter((tool) => tool.name === "knowledge_base_search")
+        .map((tool) => ({ ...tool, channelGuestKnowledgeBaseSafe: true })),
+    ];
   }
   const assigned = await loadTools();
   if (!messaging) {
