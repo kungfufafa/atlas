@@ -1,0 +1,52 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": false,
+    "memoryRetrieval": true,
+    "memorySummarization": false,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:18:31.428Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_memory_search": true,
+        "prompt_omits_archive_needle": true,
+        "recalled_archive_badge": false
+      },
+      "dimension": "memory",
+      "durationMs": 9494,
+      "gradedScore": 0.722,
+      "id": "memory_archive_needle",
+      "passed": false,
+      "replyPreview": "No badge code found — I searched durable and archived memory (queries: badge, badge code, access code/PIN/door, fob/keycard/entry, code) and the KB, and nothing stores a badge code. I won't invent one; tell me where it came from (ticket, no",
+      "score": 0.667,
+      "toolCalls": [
+        "memory_search",
+        "memory_search",
+        "memory_search",
+        "memory_search",
+        "search_kb",
+        "memory_search",
+        "memory_search",
+        "search_kb",
+        "memory_search"
+      ],
+      "toolPrecision": 0.5,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.722,
+    "meanScore": 0.667,
+    "meanToolPrecision": 0.5,
+    "meanToolRecall": 1,
+    "passed": 0,
+    "transportOk": false
+  }
+}

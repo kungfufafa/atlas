@@ -108,7 +108,9 @@ You can link with a phone number or a QR code. This step connects Atlas to Whats
 4. Go to **Settings → Linked Devices**
 5. Tap **Link a Device** and scan the QR code
 
-After you link, Atlas shows **Connected** and the linked account. The bridge can now receive messages.
+After you link, Atlas shows **Connected** only while the WhatsApp socket is live. The badge is not “paired and the worker process is running.” If the socket drops, **Integrations → WhatsApp** shows **Disconnected** even though the worker is still up. That is a down socket, not a ruined session. Wait for automatic reconnect, or restart the WhatsApp worker. Do not use **Reconnect with QR** for that recovery — it deletes the saved session and makes you scan **Linked Devices** again.
+
+Use **Reconnect with QR** only when you intend to replace the linked device: first-time link, a session WhatsApp has logged out or replaced, or damaged saved authentication. Restarting Atlas or PM2 must keep the existing WhatsApp session.
 
 The Linked Devices code (and the QR code) only connect Atlas to your WhatsApp account. They do not control who may chat.
 
@@ -229,19 +231,21 @@ Check:
 
 1. the Atlas server is running
 2. the WhatsApp bridge is running with `bun run dev:whatsapp`
-3. **Integrations → WhatsApp** shows **Connected**
+3. **Integrations → WhatsApp** shows **Connected** (the socket is up). **Disconnected** means wait for reconnect or restart the worker — do not scan a new QR unless you mean to replace the device.
 4. Atlas has authorized the chat. If access is **Chat access code** and Atlas asks for a code, generate a chat access code and send it from that chat. **Open** does not use a chat access code.
 5. if access is an allowlist, confirm the sender's **phone number** is listed. WhatsApp may deliver the chat as a LID; Atlas still checks the resolved phone, and `/help` from an unmatched chat replies that the chat is not authorized
 
-### The bridge keeps disconnecting
+### Integrations shows Disconnected
 
-Atlas spaces out temporary connection retries. After eight unsuccessful reconnects, it checks again every five minutes. A brief connection does not reset that backoff; five minutes of stable connection does.
+**Disconnected** means the socket is down. The saved session is usually still valid. Wait for automatic reconnect, or restart the WhatsApp worker. Do not use **Reconnect with QR** unless you intend to delete the saved session and scan **Linked Devices** again.
 
-If the linked session is invalid or replaced, automatic reconnect stops. This includes **401** (logged out) and **500** (invalid session). Check WhatsApp's **Linked Devices**, then use **Integrations → WhatsApp → Reconnect with QR**. If Atlas reports damaged saved authentication, restore a trusted backup or reconnect the linked device. Atlas preserves the damaged files instead of silently creating a new identity.
+Atlas spaces out temporary connection retries, including unknown stream errors reported as **500**. After eight unsuccessful reconnects, it checks again every five minutes. A brief connection does not reset that backoff; five minutes of stable connection does.
+
+Automatic reconnect stops only when WhatsApp has ended the device session: **401** (logged out), **403** (forbidden), **411** (multi-device mismatch), or **440** (device replaced). Then check **Linked Devices** and use **Reconnect with QR**. If Atlas reports damaged saved authentication, restore a trusted backup or reconnect the linked device. Atlas preserves the damaged files instead of silently creating a new identity.
 
 ### Connected, but a message is missing
 
-A connected bridge can still fail to decrypt an individual message. Atlas asks WhatsApp to resend it, with a limited retry budget that survives reconnects. Ask the sender to resend the original if it remains unavailable. If several new messages fail, reconnect using **Reconnect with QR**.
+A connected bridge can still fail to decrypt an individual message. Atlas asks WhatsApp to resend it, with a limited retry budget that survives reconnects. Ask the sender to resend the original if it remains unavailable. If several new messages fail, restart the WhatsApp worker or wait for automatic reconnect. Use **Reconnect with QR** only when the device session itself must be replaced.
 
 Keep existing worker logs private: older versions could include linked-device key material. Share redacted error summaries instead of raw logs. If those keys were exposed, unlink the Atlas device in WhatsApp's **Linked Devices** before linking it again.
 

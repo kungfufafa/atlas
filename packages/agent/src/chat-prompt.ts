@@ -3,11 +3,46 @@ import type { AgentRequest } from "./chat";
 
 type MessagingChannel = "telegram" | "whatsapp" | "discord";
 
+export type MessagingChatKind = "private" | "group";
+
 type MessagingChannelPromptConfig = {
   label: string;
   supportsGroupAudience: boolean;
   format: readonly string[];
 };
+
+export const PRIVATE_CHAT_KIND_GUIDANCE =
+  "This is a private 1:1 chat. Reply directly to the person. Do not @-mention them, do not start with their name, and do not use group etiquette.";
+
+export const GROUP_CHAT_KIND_GUIDANCE =
+  "This is a group conversation. Address the person who asked by name when the message identifies them. Keep the reply short for everyone else in the room. Do not greet the whole group and do not write as if this were a private 1:1.";
+
+export function messagingPrivateAudienceLine(label: string): string {
+  return `You are replying in a private ${label} chat.`;
+}
+
+export function messagingGroupAudienceLine(label: string): string {
+  return `You are replying in a ${label} channel. Everyone in the channel can see your messages.`;
+}
+
+export function messagingUnsetAudienceLine(label: string): string {
+  return `You are replying on ${label}. Follow the private or group context supplied with each message; group replies are visible to everyone with access to that conversation.`;
+}
+
+export function resolveMessagingChatKind(
+  channel: AgentRequest["channel"] | undefined,
+  channelIsGroup: boolean | undefined
+): MessagingChatKind | undefined {
+  if (!isMessagingChannel(channel)) {
+    return;
+  }
+  if (channelIsGroup === true) {
+    return "group";
+  }
+  if (channelIsGroup === false) {
+    return "private";
+  }
+}
 
 const MESSAGING_CHANNEL_PROMPT = {
   discord: {
@@ -63,6 +98,26 @@ export const UNTRUSTED_DOCUMENT_GUIDANCE =
 export const EXTRACT_DOCUMENT_TEXT_GUIDANCE =
   "Use extract_document_text only with a documentRef from email, a stored attachment id (att_...), or a PDF/Word/Excel path in the profile workspace (for example artifacts/report.pdf). Do not call it for documents already shown as [File: ...] in this conversation, and do not guess a documentRef or retry after a missing-reference error.";
 
+export const ASSIGNED_TOOLS_HEADING = "# Assigned tools";
+
+export const ASSIGNED_TOOL_PURPOSE_LABEL = "purpose:";
+
+const MAX_ASSIGNED_TOOL_PURPOSE_CHARS = 140;
+
+export function compactToolPurpose(description: string): string {
+  const firstLine = description.trim().split("\n", 1)[0]?.trim() ?? "";
+  const collapsed = firstLine.replace(/\s+/g, " ");
+  if (collapsed.length <= MAX_ASSIGNED_TOOL_PURPOSE_CHARS) {
+    return collapsed;
+  }
+  const truncated = collapsed.slice(0, MAX_ASSIGNED_TOOL_PURPOSE_CHARS);
+  const lastSpace = truncated.lastIndexOf(" ");
+  if (lastSpace < 40) {
+    return truncated.trimEnd();
+  }
+  return truncated.slice(0, lastSpace).trimEnd();
+}
+
 export function shouldIncludeUntrustedDocumentGuidance(options: {
   tools: ToolDefinition[];
   hasDocumentAttachments?: boolean;
@@ -86,8 +141,14 @@ export function buildChatSystemPrompt(
     soul?: boolean;
     userTimezone?: string;
     channel?: AgentRequest["channel"];
-    chatKind?: "private" | "group";
+    chatKind?: MessagingChatKind;
     hasDocumentAttachments?: boolean;
+    /**
+     * When the tool loop is on, include the `# Assigned tools` roster.
+     * Defaults to true. Eval ablation can set false without disabling native
+     * schemas or the rest of the tool-loop guidance.
+     */
+    includeAssignedToolsAllowlist?: boolean;
   } = {}
 ): string {
   const soulActive = Boolean(options.soul);
@@ -157,10 +218,15 @@ export function buildChatSystemPrompt(
     );
   }
 
+  if (
+    options.enableToolLoop &&
+    options.includeAssignedToolsAllowlist !== false
+  ) {
+    appendAssignedToolsAllowlist(sections, tools);
+  }
+
   if (options.enableToolLoop && tools.length > 0) {
     sections.push(
-      "",
-      "You have access to tools for this session. Use them when needed to finish the work, then reply in the user's requested format. Use natural language when no specific response format was requested.",
       "Atlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.",
       "If a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work."
     );
@@ -242,7 +308,7 @@ export function buildChatSystemPrompt(
     ) {
       sections.push(
         "Use the update-profile-memory skill when it is active to record facts, preferences, and personal context in MEMORY.md — things you know about the user. Do not use MEMORY.md for step-by-step procedures; use profile skills for those.",
-        "When MEMORY.md is full or the user wants to remove facts without deleting them, follow the archive-profile-memory skill when it is active. Archived facts live under memory-archive/ and are not loaded automatically; use search_files or read_file to retrieve them when relevant."
+        "When MEMORY.md is full or the user wants to remove facts without deleting them, follow the archive-profile-memory skill when it is active. Archived facts live under memory-archive/ and are not injected automatically; use memory_search when it is assigned, otherwise search_files or read_file, to retrieve them when relevant."
       );
     }
 
@@ -310,18 +376,57 @@ export function buildChatSystemPrompt(
   return sections.join("\n");
 }
 
+function appendAssignedToolsAllowlist(
+  sections: string[],
+  tools: ToolDefinition[]
+): void {
+  sections.push("", ASSIGNED_TOOLS_HEADING);
+  if (tools.length === 0) {
+    sections.push(
+      "No tools are assigned for this session. Answer directly. Never invent or call tools."
+    );
+    return;
+  }
+
+  sections.push(
+    "You have access to tools for this session. Use them when needed to finish the work, then reply in the user's requested format. Use natural language when no specific response format was requested.",
+    "Only the tools listed here exist for this session. Call them by these exact names. Choose a tool by its purpose, not by a similar-looking name. Names that look alike are distinct tools. If the user names a tool that is not listed, do not invent or call that name — pick the listed tool whose purpose matches the work, or answer directly if none match. Never invent, rename, or call a tool that is not listed."
+  );
+  for (const tool of tools) {
+    sections.push(formatAssignedToolRosterLine(tool));
+  }
+}
+
+export function formatAssignedToolRosterLine(tool: {
+  description: string;
+  name: string;
+}): string {
+  const purpose = compactToolPurpose(tool.description);
+  if (purpose.length === 0) {
+    return `- ${tool.name}`;
+  }
+  return `- ${tool.name} — ${ASSIGNED_TOOL_PURPOSE_LABEL} ${purpose}`;
+}
+
 function appendMessagingChannelPrompt(
   sections: string[],
   channel: MessagingChannel,
-  chatKind?: "private" | "group"
+  chatKind?: MessagingChatKind
 ): void {
   const config = MESSAGING_CHANNEL_PROMPT[channel];
-  const audienceLine =
-    chatKind === "group" && config.supportsGroupAudience
-      ? `You are replying in a ${config.label} channel. Everyone in the channel can see your messages.`
-      : chatKind === "private"
-        ? `You are replying in a private ${config.label} chat.`
-        : `You are replying on ${config.label}. Follow the private or group context supplied with each message; group replies are visible to everyone with access to that conversation.`;
+  const isGroup = chatKind === "group" && config.supportsGroupAudience;
+  const isPrivate = chatKind === "private";
+  const audienceLine = isGroup
+    ? messagingGroupAudienceLine(config.label)
+    : isPrivate
+      ? messagingPrivateAudienceLine(config.label)
+      : messagingUnsetAudienceLine(config.label);
 
-  sections.push("", audienceLine, ...config.format, ...SHARED_MESSAGING_STYLE);
+  sections.push("", audienceLine, ...config.format);
+  if (isGroup) {
+    sections.push(GROUP_CHAT_KIND_GUIDANCE);
+  } else if (isPrivate) {
+    sections.push(PRIVATE_CHAT_KIND_GUIDANCE);
+  }
+  sections.push(...SHARED_MESSAGING_STYLE);
 }

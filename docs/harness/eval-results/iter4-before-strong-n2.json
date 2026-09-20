@@ -1,0 +1,59 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T01:36:16.513Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": false,
+        "phase2_searched_sop": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 25513,
+      "gradedScore": 0.722,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "I can’t file a quarantine hold with the tools available to me in this session — I only have read access to tickets and the knowledge base plus note-taking. I found T-42 is `in_progress`, owned by Lee, summary “Waiting on hardware.”\n\nI’ll re",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket", "search_kb"],
+      "toolPrecision": 1,
+      "toolRecall": 0.6666666666666666
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": false,
+        "phase2_used_assigned_tools": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 21018,
+      "gradedScore": 0.667,
+      "id": "learn_unknown_tool_recovery",
+      "passed": false,
+      "replyPreview": "I can see ticket **T-42** is owned by Lee, status `in_progress`, summary \"Waiting on hardware,\" escalation key `HW-LEAD`.\n\nHowever, I don't have a `clearance_stamp` tool available in this session. I can look up the ticket, take notes, or se",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 0.5
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.695,
+    "meanScore": 0.5,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 0.583,
+    "passed": 0,
+    "transportOk": false
+  }
+}

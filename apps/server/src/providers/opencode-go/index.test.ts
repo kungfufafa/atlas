@@ -48,6 +48,122 @@ describe("createOpenCodeGoProvider", () => {
     expect(result.content).toBe("Hello from OpenCode Go");
   });
 
+  test("sends x-opencode-session on chat completions", async () => {
+    let capturedSession: string | null = null;
+
+    mockFetch((request) => {
+      capturedSession = request.headers.get("x-opencode-session");
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { content: "ok" } }],
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    });
+
+    const provider = createOpenCodeGoProvider({
+      apiKey: "test",
+      model: "opencode-go/kimi-k2.7-code",
+      providerInstanceId: "harness-eval",
+    });
+
+    await provider.generateChat({
+      messages: [{ content: "Hi", role: "user" }],
+      system: "You are a helpful assistant.",
+    });
+
+    expect(capturedSession).toBe("atlas-opencode-go-harness-eval");
+  });
+
+  test("uses the Atlas conversation id as the OpenCode session", async () => {
+    let capturedSession: string | null = null;
+
+    mockFetch((request) => {
+      capturedSession = request.headers.get("x-opencode-session");
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { content: "ok" } }],
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    });
+
+    const provider = createOpenCodeGoProvider({
+      apiKey: "test",
+      model: "opencode-go/kimi-k2.7-code",
+    });
+
+    await provider.generateChat({
+      conversationId: "sess_live_turn",
+      messages: [{ content: "Hi", role: "user" }],
+      system: "You are a helpful assistant.",
+    });
+
+    expect(capturedSession).toBe("sess_live_turn");
+  });
+
+  test("sends x-opencode-session on the Anthropic-style messages path", async () => {
+    let capturedSession: string | null = null;
+
+    mockFetch((request) => {
+      capturedSession = request.headers.get("x-opencode-session");
+      return new Response(
+        JSON.stringify({
+          content: [{ text: "ok", type: "text" }],
+          id: "msg_test",
+          model: "qwen3.8-max",
+          role: "assistant",
+          stop_reason: "end_turn",
+          type: "message",
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    });
+
+    const provider = createOpenCodeGoProvider({
+      apiKey: "test",
+      model: "opencode-go/qwen3.8-max",
+    });
+
+    await provider.generateChat({
+      messages: [{ content: "Hi", role: "user" }],
+      system: "You are a helpful assistant.",
+    });
+
+    expect(capturedSession).toBe("atlas-opencode-go");
+  });
+
+  test("sends x-opencode-session on the Responses path", async () => {
+    let capturedSession: string | null = null;
+
+    mockFetch((request) => {
+      capturedSession = request.headers.get("x-opencode-session");
+      return new Response(
+        JSON.stringify({
+          output: [
+            {
+              content: [{ text: "ok", type: "output_text" }],
+              type: "message",
+            },
+          ],
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    });
+
+    const provider = createOpenCodeGoProvider({
+      apiKey: "test",
+      model: "opencode-go/grok-4.5",
+    });
+
+    await provider.generateChat({
+      messages: [{ content: "Hi", role: "user" }],
+      system: "You are a helpful assistant.",
+    });
+
+    expect(capturedSession).toBe("atlas-opencode-go");
+  });
+
   test("does not copy upstream DeepSeek reasoning assumptions into the Go gateway", async () => {
     let capturedBody: Record<string, unknown> | null = null;
 

@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { orgIdFromSkillSourcePath } from "@atlas/core";
 import { isProtectedToolId } from "@atlas/core/tools/protected";
+import { migrateConversationMessagesFts } from "./conversation-fts-index";
 import { normalizeMemoryText } from "./memory-search";
 export function migrateDatabase(db: Database): void {
   const schemaPath = resolveSchemaPath();
@@ -53,6 +54,8 @@ export function migrateDatabase(db: Database): void {
   runAtomicMigration(db, migrateComposioUserConnections);
   runAtomicMigration(db, migrateProfileChangeEventsTable);
   runAtomicMigration(db, migrateMemorySearchColumns);
+  runAtomicMigration(db, migrateSessionChatKindColumn);
+  migrateConversationMessagesFts(db);
 }
 
 /** Leave existing requests unclassified; zero defaults never imply reported usage. */
@@ -1539,6 +1542,15 @@ function migrateSessionsTable(db: Database): void {
       )
       WHERE updated_at IS NULL;
     `);
+  }
+}
+
+function migrateSessionChatKindColumn(db: Database): void {
+  const columns = db.prepare("PRAGMA table_info(sessions)").all() as Array<{
+    name: string;
+  }>;
+  if (!columns.some((column) => column.name === "chat_kind")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN chat_kind TEXT;");
   }
 }
 

@@ -1,0 +1,63 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:54:23.261Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_wording_trap": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3881,
+      "gradedScore": 1,
+      "id": "tool_avoid_wording_trap",
+      "passed": true,
+      "replyPreview": "I used the assigned lookup tool (`lookup_ticket`) rather than `lookup_ticket_live` — the latter is an experimental live-index preview, not the authoritative ticket lookup, so its output would be unreliable for a status check.\n\n**T-42**\n- St",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_unassigned_decoy": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true,
+        "prompt_omits_unassigned_decoy": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3924,
+      "gradedScore": 1,
+      "id": "tool_avoid_unassigned_decoy",
+      "passed": true,
+      "replyPreview": "Note: there's no `lookup_ticket_live` tool in this session — the ticket lookup tool here is `lookup_ticket`, so I used that for T-42.\n\n**T-42**\n- **Status:** in_progress\n- **Summary:** Waiting on hardware\n- **Owner:** Lee\n- **Escalation key",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 1,
+    "meanScore": 1,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 2,
+    "transportOk": false
+  }
+}

@@ -26,14 +26,21 @@ describe("WhatsApp reconnect policy", () => {
     expect(policy.closed(428, 300_002)).toBe(1000);
   });
 
-  test("requires operator recovery for invalid auth or replaced sessions", () => {
-    for (const code of [401, 403, 411, 440, 500]) {
+  test("requires operator recovery for logout, forbidden, mismatch, or replaced device", () => {
+    for (const code of [401, 403, 411, 440]) {
       const policy = new WhatsAppReconnectPolicy();
       expect(policy.closed(code)).toBeNull();
       expect(policy.isHalted).toBe(true);
       expect(policy.closed(408)).toBeNull();
     }
     expect(new WhatsAppReconnectPolicy().closed(515)).toBe(1000);
+  });
+
+  test("backs off unknown 500 stream errors instead of halting reconnect", () => {
+    const policy = new WhatsAppReconnectPolicy();
+    expect(policy.closed(500)).toBe(1000);
+    expect(policy.isHalted).toBe(false);
+    expect(policy.closed(500)).toBe(2000);
   });
 
   test("recognizes nested numeric and string transport codes without parsing messages", () => {

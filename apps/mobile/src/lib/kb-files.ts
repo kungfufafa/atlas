@@ -1,6 +1,4 @@
-const KB_EXTENSIONS = new Set([".pdf", ".docx", ".txt", ".md", ".csv"]);
-
-export function isKnowledgeBaseFilename(filename: string): boolean {
-  const extension = filename.slice(filename.lastIndexOf(".")).toLowerCase();
-  return KB_EXTENSIONS.has(extension);
-}
+export {
+  isKnowledgeBaseFilename,
+  KNOWLEDGE_BASE_SUPPORTED_TYPE_LABEL,
+} from "@atlas/core/knowledge-base/formats";

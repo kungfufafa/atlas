@@ -767,6 +767,7 @@ function getWhatsAppQrCodePath(orgId?: string | null): string {
   return join(getWhatsAppConfigDir(orgId), "worker-qr.txt");
 }
 
+/** Deletes auth/ and pairing. Used only by Reconnect with QR — never by worker or Atlas/PM2 restart. */
 export async function resetWhatsAppSessionForReconnect(
   orgId?: string | null
 ): Promise<WhatsAppSettingsPublic> {

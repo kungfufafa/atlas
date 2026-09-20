@@ -1,7 +1,8 @@
 const STABLE_CONNECTION_MS = 5 * 60_000;
 const MAX_FAST_RECONNECTS = 8;
 const RECOVERY_PROBE_DELAY_MS = 5 * 60_000;
-const TERMINAL_STATUS_CODES = new Set([401, 403, 411, 440, 500]);
+// Baileys maps unknown stream errors to 500. That is transient, not a wiped session.
+const TERMINAL_STATUS_CODES = new Set([401, 403, 411, 440]);
 
 export function whatsAppReconnectDelayMs(attempt: number): number {
   return Math.min(30_000, 1000 * 2 ** Math.min(attempt, 5));

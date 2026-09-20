@@ -8,7 +8,7 @@ Use this skill when the user wants to remove facts from active memory without de
 
 - Use the `update-profile-memory` skill to **add** facts to active `MEMORY.md`.
 - Use profile skills for repeatable procedures — not for archiving memory.
-- Archived facts live under `memory-archive/` and are **not** loaded into chat automatically. Use `search_files` or `read_file` to retrieve them later.
+- Archived facts live under `memory-archive/` and are **not** injected into chat automatically. Use `memory_search` to retrieve them later; `search_files` or `read_file` still work for a specific archive file.
 
 ## MEMORY.md shape
 

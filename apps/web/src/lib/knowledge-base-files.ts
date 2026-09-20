@@ -1,26 +1,21 @@
-import { DOCX_MEDIA_TYPE } from "@atlas/core/artifact-mime";
 import type { DocumentAttachment } from "@atlas/core/contract";
 import {
-  normalizeDocumentMediaType,
-  parseDocumentDataUrl,
-} from "@atlas/core/message-content";
+  isKnowledgeBaseFilename,
+  isSupportedKnowledgeBaseMediaType,
+} from "@atlas/core/knowledge-base/formats";
+import { parseDocumentDataUrl } from "@atlas/core/message-content";
 
-export const KNOWLEDGE_BASE_ACCEPT = `.pdf,.docx,.txt,.md,.csv,application/pdf,${DOCX_MEDIA_TYPE},text/plain,text/csv,text/markdown`;
-
-const KB_EXTENSIONS = new Set([".pdf", ".docx", ".txt", ".md", ".csv"]);
+export {
+  KNOWLEDGE_BASE_ACCEPT,
+  KNOWLEDGE_BASE_SUPPORTED_TYPE_LABEL,
+} from "@atlas/core/knowledge-base/formats";
 
 export function isKnowledgeBaseFile(file: File): boolean {
   const filename = file.name.trim();
-  const extension = filename.slice(filename.lastIndexOf(".")).toLowerCase();
-  const mediaType = normalizeDocumentMediaType(file.type, filename);
 
   return (
-    KB_EXTENSIONS.has(extension) ||
-    mediaType === "application/pdf" ||
-    mediaType === DOCX_MEDIA_TYPE ||
-    mediaType === "text/plain" ||
-    mediaType === "text/csv" ||
-    mediaType === "text/markdown"
+    isKnowledgeBaseFilename(filename) ||
+    isSupportedKnowledgeBaseMediaType(file.type, filename)
   );
 }
 

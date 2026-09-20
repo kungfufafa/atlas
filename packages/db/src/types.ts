@@ -105,6 +105,8 @@ export interface StoredSessionRecord {
   agentQuestionnaire: AgentQuestionnaire | null;
   agentTodos: AgentTodo[];
   channel: string;
+  /** Private vs group messaging kind. Null/omitted means unset. */
+  chatKind?: "group" | "private" | null;
   createdAt: string;
   id: string;
   modelOverride: string | null;
@@ -1410,8 +1412,10 @@ export interface DatabaseAdapter {
       before?: string;
       excludeSuperAgent?: boolean;
       limit?: number;
-      /** Native topic lookup opts into bounded lexical ranking; default stays literal. */
+      /** Native topic lookup opts into bounded ranking; default stays literal. */
       matchMode?: "literal" | "keywords";
+      /** Keywords mode uses FTS5 BM25 when available. False keeps lexical ranking. */
+      fts?: boolean;
       profileId?: string;
       userId?: string;
     }

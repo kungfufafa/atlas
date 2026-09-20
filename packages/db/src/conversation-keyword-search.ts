@@ -6,7 +6,11 @@ import {
 } from "./memory-search";
 import type { StoredConversationSearchResult } from "./types";
 
-type SearchIdentity = Omit<StoredConversationSearchResult, "matchedSnippet">;
+export type ConversationSearchIdentity = Omit<
+  StoredConversationSearchResult,
+  "matchedSnippet"
+>;
+type SearchIdentity = ConversationSearchIdentity;
 type RankedMatch = { result: StoredConversationSearchResult; score: number };
 
 export function readConversationMessagePayload(payload: unknown): {
@@ -38,7 +42,10 @@ function compareMatches(left: RankedMatch, right: RankedMatch): number {
   );
 }
 
-function snippet(text: string, terms: readonly string[]): string {
+export function conversationMatchSnippet(
+  text: string,
+  terms: readonly string[]
+): string {
   const lower = text.toLowerCase();
   let index = -1;
   for (const term of terms) {
@@ -87,7 +94,10 @@ export class ConversationKeywordSearch {
       return;
     }
     const match: RankedMatch = {
-      result: { ...identity, matchedSnippet: snippet(text, this.terms) },
+      result: {
+        ...identity,
+        matchedSnippet: conversationMatchSnippet(text, this.terms),
+      },
       score,
     };
     let low = 0;
