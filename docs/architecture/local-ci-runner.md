@@ -7,9 +7,10 @@ for arbitrary public pull requests.
 
 ## Preconditions
 
-- macOS with at least 8 GiB RAM and **35 GiB free disk**. The disk threshold is
-  conservative build headroom, not a measured minimum. The bootstrap never
-  deletes caches, existing VMs, or user data to satisfy it.
+- macOS with at least 8 GiB RAM and **35 GiB free disk before admission of one
+  bounded CI gate**. The disk threshold is conservative build headroom, not a
+  measured minimum. `preflight`, `provision`, and `refresh` also require 35 GiB.
+  The bootstrap never deletes caches, existing VMs, or user data to satisfy it.
 - Colima, QEMU, `lima-additional-guestagents`, `gh`, and `jq` installed through
   Homebrew. The additional guest agent is required for x86_64 on an ARM host.
   GitHub authentication
@@ -57,7 +58,37 @@ resolve that label. This variable change is a separate operator action; the
 bootstrap does not perform it. Docker publishing uses the same configurable
 routing and builds `linux/amd64` explicitly.
 
-Run `bash scripts/ci-local.sh run ACTIONS_RUN_ID FULL_REVIEWED_COMMIT_SHA`.
+Run `bash scripts/ci-local.sh run ACTIONS_RUN_ID FULL_REVIEWED_COMMIT_SHA RUN_ID:ATTEMPT [...]`.
+Supply the complete finite list of workflow run IDs and their `run_attempt`
+values from GitHub, intentionally including both required checks and any
+advisory workflow that requests this label. For example, a gate with runs 123
+and 456 on their first attempts uses `123:1 456:1`. Use that same list for every
+job in the gate, retaining completed members. The requested active run must be
+in the list. Every listed run, including completed ones, must still match the
+reviewed owner SHA and attempt; any currently targetable run outside the list
+blocks dispatch even when it has the same SHA.
+
+Before the first job, the launcher measures at least 35 GiB free on the host
+and writes a private, atomic admission receipt under
+`$(git rev-parse --absolute-git-dir)/atlas-ci/gate-admission.json`. The directory
+has mode `0700` and the file `0600`. The receipt binds the repository, guest
+profile, reviewed SHA, and exact run/attempt list to this fresh observation.
+It is an operator record, not CI success evidence. Do not edit it or import an
+earlier disk observation. Malformed, unmeasured, or unsafely permissioned
+receipts fail closed. A different SHA, run, attempt, or gate list requires a
+new measurement of at least 35 GiB; the launcher cannot waive that requirement.
+
+Later jobs in the same admitted gate may use its accumulated build caches.
+Before **every** job, the launcher still requires at least **10 GiB free on
+the host** and **5 GiB free on each guest root and data filesystem**. The data
+check targets the mounted `/mnt/lima-colima-atlas-ci` disk, and missing mounts
+or unreadable disk evidence block execution. These continuation reserves are
+conservative operator guards chosen for this runner, not user-specified limits
+or a guarantee that a remaining build will fit. If a reserve is exhausted,
+stop and report the actual blocker; no cleanup, override, or unattended retry
+is provided. A fresh gate also passes these guest reserve checks before its
+receipt is written.
+
 The launcher rejects pending jobs with the dedicated label from other or fork
 commits, and refuses an empty dispatch queue. The local checkout must be at that
 reviewed commit, and the launcher, guest bootstrap, and Landlock probe must match

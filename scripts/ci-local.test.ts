@@ -97,7 +97,6 @@ test.each([
   { args: ["preflight"] },
   { args: ["provision"] },
   { args: ["refresh"] },
-  { args: ["run", "123", "a".repeat(40)] },
 ])(
   "insufficient disk blocks %j before VM or GitHub access",
   async ({ args }) => {
@@ -182,12 +181,48 @@ process.exit(await child.exited);
   expect(observed).not.toContain("/tmp/atlas-ci-bootstrap");
 });
 
-async function reviewedRunFixture(mode: string) {
+interface RunState {
+  attempt: number;
+  completed: string[];
+  dataFreeKiB: number | string;
+  hostFreeKiB: number | string;
+  mode: string;
+  queue: string[];
+  rootFreeKiB: number | string;
+  sha: string;
+}
+
+const reviewedSha = "a".repeat(40);
+const gibInKiB = 1024 ** 2;
+
+async function runFixture() {
   if (!jq) {
     throw new Error("jq is required to exercise run metadata checks.");
   }
-  const directory = await hostFixture(35 * 1024 ** 2);
+  const directory = await hostFixture(35 * gibInKiB);
   const events = join(directory, "events");
+  const statePath = join(directory, "state.json");
+  const gitMetadata = join(directory, "git-metadata");
+  await mkdir(gitMetadata);
+  const state: RunState = {
+    attempt: 1,
+    completed: [],
+    dataFreeKiB: 5 * gibInKiB,
+    hostFreeKiB: 35 * gibInKiB,
+    mode: "pass",
+    queue: ["123", "456"],
+    rootFreeKiB: 5 * gibInKiB,
+    sha: reviewedSha,
+  };
+  const save = async () => {
+    await writeFile(statePath, JSON.stringify(state));
+  };
+  await save();
+  const loadState = `import { appendFileSync, readFileSync } from "node:fs";
+const state = JSON.parse(readFileSync(${JSON.stringify(statePath)}, "utf8"));
+const args = process.argv.slice(2);
+const log = value => appendFileSync(${JSON.stringify(events)}, value + "\\n");
+`;
   await executable(
     directory,
     "jq",
@@ -198,30 +233,45 @@ process.exit(await child.exited);
   );
   await executable(
     directory,
+    "df",
+    `#!${process.execPath}
+${loadState}
+log("df");
+if (state.mode === "host-evidence-failure") process.exit(9);
+console.log("Filesystem 1024-blocks Used Available Capacity Mounted on\\nfixture 999999999 0 " + state.hostFreeKiB + " 0% /");
+`
+  );
+  await executable(
+    directory,
     "gh",
     `#!${process.execPath}
-import { appendFileSync } from "node:fs";
-const args = process.argv.slice(2);
-appendFileSync(${JSON.stringify(events)}, JSON.stringify(args) + "\\n");
+${loadState}
+log(JSON.stringify(args));
 const route = args.find(value => value.startsWith("repos/")) ?? "";
-if (route.includes("registration-token")) throw new Error("Registration must not be reached");
-if (args[0] === "variable" || route.includes("/jobs?")) console.log("atlas-local-ci-amd64");
-else if (route.includes("?status=")) console.log("123");
-else console.log(JSON.stringify({head_sha: "a".repeat(40), head_repository: {full_name: "kungfufafa/atlas"}, status: "queued"}));
+if (route.includes("registration-token")) console.log("fixture_registration_token");
+else if (args[0] === "variable" || route.includes("/jobs?")) console.log("atlas-local-ci-amd64");
+else if (route.includes("?status=")) {
+  if (state.mode === "queue-unavailable") process.exit(9);
+  if (route.includes("status=queued")) console.log(state.queue.join("\\n"));
+} else {
+  const id = route.split("/").at(-1);
+  console.log(JSON.stringify({id:Number(id), run_attempt:state.attempt,
+    head_sha: state.mode === "wrong-sha" || (state.mode === "other-member-sha" && id === "456") ? "b".repeat(40) : state.sha,
+    head_repository:{full_name:state.mode === "fork" ? "outsider/atlas" : "kungfufafa/atlas"},
+    status:state.completed.includes(id) ? "completed" : "queued"}));
+}
 `
   );
   await executable(
     directory,
     "git",
     `#!${process.execPath}
-import { readFileSync } from "node:fs";
-const args = process.argv.slice(2);
-const mode = ${JSON.stringify(mode)};
-if (args[2] === "rev-parse") console.log((mode === "wrong-head" ? "b" : "a").repeat(40));
+${loadState}
+if (args[2] === "rev-parse") console.log(args[3] === "--absolute-git-dir" ? ${JSON.stringify(gitMetadata)} : state.mode === "wrong-head" ? "b".repeat(40) : state.sha);
 else if (args[2] === "show") {
   const name = args[3].split(":scripts/").at(-1);
   const source = readFileSync(${JSON.stringify(scriptsDirectory)} + "/" + name);
-  process.stdout.write(mode === "modified-source" ? "different reviewed source" : source);
+  process.stdout.write(state.mode === "modified-source" ? "different reviewed source" : source);
 } else process.exit(9);
 `
   );
@@ -229,86 +279,247 @@ else if (args[2] === "show") {
     directory,
     "colima",
     `#!${process.execPath}
-import { appendFileSync } from "node:fs";
-appendFileSync(${JSON.stringify(events)}, "colima\\n");
-process.exit(17);
+${loadState}
+const script = args.at(-1);
+if (script.includes("data_mount=")) {
+  log("colima:space");
+  if (state.mode === "guest-evidence-failure") process.exit(9);
+  console.log(state.rootFreeKiB + " " + state.dataFreeKiB);
+} else if (script.includes("tar -xf")) {
+  log("colima:refresh");
+  await new Response(Bun.stdin).arrayBuffer();
+  if (state.mode === "transfer-failure" || state.mode === "runner-lock") process.exit(17);
+} else if (script.includes("verify-linux-landlock.sh")) {
+  log("colima:probe");
+  if (state.mode === "landlock-failure") process.exit(2);
+} else if (script.includes("ci-local-guest.sh")) {
+  log("colima:run");
+  if ((await new Response(Bun.stdin).text()).trim() !== "fixture_registration_token") process.exit(9);
+} else process.exit(9);
 `
   );
-  return { directory, events };
+  return {
+    directory,
+    events,
+    receipt: join(gitMetadata, "atlas-ci/gate-admission.json"),
+    save,
+    state,
+  };
 }
 
-test.each(["wrong-head", "modified-source", "transfer-failure"])(
-  "%s prevents guest execution and registration",
-  async (mode) => {
-    const { directory, events } = await reviewedRunFixture(mode);
-    const result = await runScript(directory, "ci-local.sh", [
-      "run",
-      "123",
-      "a".repeat(40),
-    ]);
-    expect(result.exitCode).not.toBe(0);
+function runGate(
+  directory: string,
+  runId = "123",
+  sha = reviewedSha,
+  members = ["123:1", "456:1"]
+) {
+  return runScript(directory, "ci-local.sh", ["run", runId, sha, ...members]);
+}
+
+test("fresh admission records measured headroom privately and continues the same finite gate", async () => {
+  const { directory, events, receipt, save, state } = await runFixture();
+  const first = await runGate(directory);
+  expect(first.exitCode).toBe(0);
+  const admitted = await readFile(receipt, "utf8");
+  expect(JSON.parse(admitted)).toMatchObject({
+    hostFreeKiB: 35 * gibInKiB,
+    profile: "atlas-ci",
+    repository: "kungfufafa/atlas",
+    reviewedSha,
+    runs: [
+      { attempt: 1, id: "123" },
+      { attempt: 1, id: "456" },
+    ],
+    schema: 1,
+  });
+  expect((await stat(receipt)).mode % 0o1000).toBe(0o600);
+  expect((await stat(join(receipt, ".."))).mode % 0o1000).toBe(0o700);
+  expect(await readdir(join(receipt, ".."))).toEqual(["gate-admission.json"]);
+  state.hostFreeKiB = 10 * gibInKiB;
+  state.completed = ["123"];
+  state.queue = ["456"];
+  await save();
+  await writeFile(events, "");
+  const continuation = await runGate(directory, "456");
+  expect(continuation.exitCode).toBe(0);
+  expect(await readFile(receipt, "utf8")).toBe(admitted);
+  const observed = await readFile(events, "utf8");
+  expect(observed).toContain("colima:space");
+  expect(observed).toContain("colima:probe");
+  expect(observed).toContain("registration-token");
+  expect(observed).toContain("colima:run");
+});
+
+test("a fresh gate below 35 GiB refuses without creating or importing a receipt", async () => {
+  const { directory, events, receipt, save, state } = await runFixture();
+  state.hostFreeKiB = 35 * gibInKiB - 1;
+  await save();
+  expect((await runGate(directory)).exitCode).not.toBe(0);
+  expect(await Bun.file(receipt).exists()).toBe(false);
+  const observed = await readFile(events, "utf8");
+  expect(observed).not.toContain("colima:");
+  expect(observed).not.toContain("registration-token");
+});
+
+test.each(["sha", "run", "attempt", "repository", "profile"])(
+  "changed %s cannot reuse admission below 35 GiB",
+  async (field) => {
+    const { directory, events, receipt, save, state } = await runFixture();
+    expect((await runGate(directory)).exitCode).toBe(0);
+    let runId = "123";
+    let members = ["123:1", "456:1"];
+    if (field === "sha") {
+      state.sha = "b".repeat(40);
+    }
+    if (field === "run") {
+      runId = "789";
+      members = ["789:1"];
+      state.queue = ["789"];
+    }
+    if (field === "attempt") {
+      state.attempt = 2;
+      members = ["123:2", "456:2"];
+    }
+    if (field === "repository" || field === "profile") {
+      const altered = JSON.parse(await readFile(receipt, "utf8"));
+      altered[field] = "different";
+      await writeFile(receipt, JSON.stringify(altered));
+    }
+    state.hostFreeKiB = 35 * gibInKiB - 1;
+    await save();
+    await writeFile(events, "");
+    expect(
+      (await runGate(directory, runId, state.sha, members)).exitCode
+    ).not.toBe(0);
     const observed = await readFile(events, "utf8");
+    expect(observed).not.toContain("colima:");
     expect(observed).not.toContain("registration-token");
-    expect(observed.match(/colima/g)?.length ?? 0).toBe(
-      mode === "transfer-failure" ? 1 : 0
-    );
   }
 );
 
-test.each(["fork", "wrong-sha", "queue-unavailable", "other-queued-commit"])(
-  "runner registration is refused for %s",
-  async (failure) => {
-    if (!jq) {
-      throw new Error(
-        "jq is required to exercise the actual run metadata check."
-      );
-    }
-    const directory = await hostFixture(35 * 1024 ** 2);
-    const events = join(directory, "events");
-    await executable(
-      directory,
-      "jq",
-      `#!${process.execPath}
-const child = Bun.spawn([${JSON.stringify(jq)}, ...process.argv.slice(2)], {stdin:"inherit", stdout:"inherit", stderr:"inherit"});
-process.exit(await child.exited);
-`
-    );
-    await executable(
-      directory,
-      "gh",
-      `#!${process.execPath}
-import { appendFileSync } from "node:fs";
-const args = process.argv.slice(2);
-appendFileSync(${JSON.stringify(events)}, JSON.stringify(args) + "\\n");
-const mode = ${JSON.stringify(failure)};
-const route = args.find(value => value.startsWith("repos/")) ?? "";
-if (args[0] === "variable") {
-  console.log("atlas-local-ci-amd64");
-} else if (route.includes("registration-token")) {
-  throw new Error("Registration must not be reached");
-} else if (route.includes("/jobs?")) {
-  console.log("atlas-local-ci-amd64");
-} else if (route.includes("?status=")) {
-  if (mode === "queue-unavailable") process.exit(9);
-  console.log("456");
-} else {
-  console.log(JSON.stringify({
-    head_sha: mode === "wrong-sha" || route.endsWith("/456") ? "b".repeat(40) : "a".repeat(40),
-    head_repository: {full_name: mode === "fork" ? "outsider/atlas" : "kungfufafa/atlas"},
-    status: "queued"
-  }));
-}
-`
-    );
-    const result = await runScript(directory, "ci-local.sh", [
-      "run",
-      "123",
-      "a".repeat(40),
-    ]);
-    expect(result.exitCode).not.toBe(0);
-    const observed = await readFile(events, "utf8");
-    expect(observed).not.toContain("registration-token");
-    expect(observed).not.toContain("colima");
+test("a new reviewed SHA requires and records its own fresh observation", async () => {
+  const { directory, receipt, save, state } = await runFixture();
+  expect((await runGate(directory)).exitCode).toBe(0);
+  state.sha = "b".repeat(40);
+  state.hostFreeKiB = 36 * gibInKiB;
+  await save();
+  expect((await runGate(directory, "123", state.sha)).exitCode).toBe(0);
+  expect(JSON.parse(await readFile(receipt, "utf8"))).toMatchObject({
+    hostFreeKiB: 36 * gibInKiB,
+    reviewedSha: state.sha,
+  });
+});
+
+test.each([
+  "malformed",
+  "unmeasured",
+  "forged-low-space",
+  "public-mode",
+  "concatenated-objects",
+  "scalar-prefix",
+])("invalid %s receipt cannot admit a job", async (mode) => {
+  const { directory, events, receipt, save, state } = await runFixture();
+  expect((await runGate(directory)).exitCode).toBe(0);
+  const altered = JSON.parse(await readFile(receipt, "utf8"));
+  if (mode === "unmeasured") {
+    delete altered.hostFreeKiB;
+  }
+  if (mode === "forged-low-space") {
+    altered.hostFreeKiB = 10 * gibInKiB;
+  }
+  let content = JSON.stringify(altered);
+  if (mode === "malformed") {
+    content = "{";
+  }
+  if (mode === "concatenated-objects") {
+    content = `{}\n${content}`;
+  }
+  if (mode === "scalar-prefix") {
+    content = `42\n${content}`;
+  }
+  await writeFile(receipt, content);
+  state.hostFreeKiB = 20 * gibInKiB;
+  await save();
+  if (mode === "public-mode") {
+    await chmod(receipt, 0o644);
+  }
+  await writeFile(events, "");
+  expect((await runGate(directory)).exitCode).not.toBe(0);
+  expect(await readFile(events, "utf8")).not.toContain("registration-token");
+});
+
+test.each([
+  "host-low",
+  "host-unknown",
+  "host-evidence-failure",
+  "root-low",
+  "data-low",
+  "root-unknown",
+  "data-unknown",
+  "guest-evidence-failure",
+])("%s evidence blocks continuation before token", async (mode) => {
+  const { directory, events, save, state } = await runFixture();
+  expect((await runGate(directory)).exitCode).toBe(0);
+  state.hostFreeKiB = mode === "host-low" ? 10 * gibInKiB - 1 : 20 * gibInKiB;
+  if (mode === "host-unknown") {
+    state.hostFreeKiB = "unknown";
+  }
+  if (mode === "root-low") {
+    state.rootFreeKiB = 5 * gibInKiB - 1;
+  }
+  if (mode === "data-low") {
+    state.dataFreeKiB = 5 * gibInKiB - 1;
+  }
+  if (mode === "root-unknown") {
+    state.rootFreeKiB = "unknown";
+  }
+  if (mode === "data-unknown") {
+    state.dataFreeKiB = "unknown";
+  }
+  state.mode = mode;
+  await save();
+  await writeFile(events, "");
+  expect((await runGate(directory)).exitCode).not.toBe(0);
+  expect(await readFile(events, "utf8")).not.toContain("registration-token");
+});
+
+test.each([
+  "fork",
+  "wrong-sha",
+  "other-member-sha",
+  "queue-unavailable",
+  "wrong-head",
+  "modified-source",
+  "transfer-failure",
+  "landlock-failure",
+  "runner-lock",
+])("%s still prevents admission and registration", async (mode) => {
+  const { directory, events, receipt, save, state } = await runFixture();
+  state.mode = mode;
+  if (mode === "other-member-sha") {
+    state.completed = ["456"];
+  }
+  await save();
+  expect((await runGate(directory)).exitCode).not.toBe(0);
+  expect(await Bun.file(receipt).exists()).toBe(false);
+  expect(await readFile(events, "utf8")).not.toContain("registration-token");
+});
+
+test.each([
+  { members: ["456:1"], queue: ["123", "456"] },
+  { members: ["123:1"], queue: ["123", "789"] },
+  { members: ["123:1", "456:2"], queue: ["123"] },
+  { members: ["123:1", "123:1"], queue: ["123"] },
+])(
+  "an incomplete or mismatched explicit gate %j refuses registration",
+  async ({ members, queue }) => {
+    const { directory, events, save, state } = await runFixture();
+    state.queue = queue;
+    await save();
+    expect(
+      (await runGate(directory, "123", reviewedSha, members)).exitCode
+    ).not.toBe(0);
+    expect(await readFile(events, "utf8")).not.toContain("registration-token");
   }
 );
 
