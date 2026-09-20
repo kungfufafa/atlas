@@ -1,0 +1,42 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:16:50.928Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "prompt_contains_vault_hint": true,
+        "recalled_vault_hint": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "memory",
+      "durationMs": 10853,
+      "gradedScore": 1,
+      "id": "memory_summary_needle",
+      "passed": true,
+      "replyPreview": "CEDAR-FALCON-7",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 1,
+    "meanScore": 1,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 1,
+    "transportOk": false
+  }
+}

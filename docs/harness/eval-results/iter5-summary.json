@@ -1,0 +1,316 @@
+{
+  "generatedAt": "2026-09-17T02:35:00.000Z",
+  "iteration": 5,
+  "question": "Does wiring summarizeContinuityMemoryWithModel into over-cap MEMORY.md plus indexing profile memory-archive/ in production memory_search move Hermes-grade yardsticks from fail to pass without regressing 20/21 default and 22/23 with skill-learning?",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "models": {
+    "strong": "kimi-k2.7-code",
+    "weak": "deepseek-flash"
+  },
+  "ablation": {
+    "allowlist": true,
+    "archiveIndexDefault": true,
+    "memoryRetrieval": true,
+    "memorySummarizationDefault": true,
+    "nativeSchemas": true,
+    "skillLearningDefault": false,
+    "workRules": true
+  },
+  "yardstickIds": ["memory_summary_needle", "memory_archive_needle"],
+  "summarization": {
+    "before": {
+      "label": "extractive recency (--no-memory-summarization)",
+      "kimi-k2.7-code": {
+        "n": 3,
+        "passed": 0,
+        "failed": 3,
+        "passRate": 0.0,
+        "meanScore": 0.333,
+        "meanGradedScore": 0.778,
+        "files": [
+          "docs/harness/eval-results/iter5-summary-before-strong-n1.json",
+          "docs/harness/eval-results/iter5-summary-before-strong-n2.json",
+          "docs/harness/eval-results/iter5-summary-before-strong-n3.json"
+        ],
+        "byScenario": {
+          "memory_summary_needle": {
+            "passed": 0,
+            "n": 3,
+            "meanScore": 0.333,
+            "promptContainsVaultHint": false,
+            "recalledVaultHint": false
+          }
+        }
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "passed": 0,
+        "failed": 3,
+        "passRate": 0.0,
+        "meanScore": 0.333,
+        "meanGradedScore": 0.778,
+        "files": [
+          "docs/harness/eval-results/iter5-summary-before-weak-n1.json",
+          "docs/harness/eval-results/iter5-summary-before-weak-n2.json",
+          "docs/harness/eval-results/iter5-summary-before-weak-n3.json"
+        ],
+        "byScenario": {
+          "memory_summary_needle": {
+            "passed": 0,
+            "n": 3,
+            "meanScore": 0.333,
+            "promptContainsVaultHint": false,
+            "recalledVaultHint": false
+          }
+        }
+      }
+    },
+    "after": {
+      "label": "LLM summary (--memory-summarization, live OpenCode Go generateText)",
+      "kimi-k2.7-code": {
+        "n": 3,
+        "passed": 3,
+        "failed": 0,
+        "passRate": 1.0,
+        "meanScore": 1.0,
+        "meanGradedScore": 1.0,
+        "files": [
+          "docs/harness/eval-results/iter5-summary-after-strong-n1.json",
+          "docs/harness/eval-results/iter5-summary-after-strong-n2.json",
+          "docs/harness/eval-results/iter5-summary-after-strong-n3.json"
+        ],
+        "byScenario": {
+          "memory_summary_needle": {
+            "passed": 3,
+            "n": 3,
+            "meanScore": 1.0,
+            "promptContainsVaultHint": true,
+            "recalledVaultHint": true,
+            "reply": "CEDAR-FALCON-7"
+          }
+        }
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "passed": 3,
+        "failed": 0,
+        "passRate": 1.0,
+        "meanScore": 1.0,
+        "meanGradedScore": 1.0,
+        "files": [
+          "docs/harness/eval-results/iter5-summary-after-weak-n1.json",
+          "docs/harness/eval-results/iter5-summary-after-weak-n2.json",
+          "docs/harness/eval-results/iter5-summary-after-weak-n3.json"
+        ],
+        "byScenario": {
+          "memory_summary_needle": {
+            "passed": 3,
+            "n": 3,
+            "meanScore": 1.0,
+            "promptContainsVaultHint": true,
+            "recalledVaultHint": true,
+            "reply": "CEDAR-FALCON-7"
+          }
+        }
+      }
+    },
+    "delta": {
+      "kimi-k2.7-code": {
+        "beforePassRate": 0.0,
+        "afterPassRate": 1.0,
+        "scenarioRuns": 3
+      },
+      "deepseek-flash": {
+        "beforePassRate": 0.0,
+        "afterPassRate": 1.0,
+        "scenarioRuns": 3
+      }
+    }
+  },
+  "archiveIndex": {
+    "before": {
+      "label": "no archive index (--no-archive-index); memory_search over live facts only",
+      "kimi-k2.7-code": {
+        "n": 3,
+        "passed": 0,
+        "failed": 3,
+        "passRate": 0.0,
+        "meanScore": 0.667,
+        "meanGradedScore": 0.722,
+        "files": [
+          "docs/harness/eval-results/iter5-archive-before-strong-n1.json",
+          "docs/harness/eval-results/iter5-archive-before-strong-n2.json",
+          "docs/harness/eval-results/iter5-archive-before-strong-n3.json"
+        ],
+        "byScenario": {
+          "memory_archive_needle": {
+            "passed": 0,
+            "n": 3,
+            "meanScore": 0.667,
+            "calledMemorySearch": true,
+            "recalledArchiveBadge": false
+          }
+        }
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "passed": 0,
+        "failed": 3,
+        "passRate": 0.0,
+        "meanScore": 0.667,
+        "meanGradedScore": 0.722,
+        "files": [
+          "docs/harness/eval-results/iter5-archive-before-weak-n1.json",
+          "docs/harness/eval-results/iter5-archive-before-weak-n2.json",
+          "docs/harness/eval-results/iter5-archive-before-weak-n3.json"
+        ],
+        "byScenario": {
+          "memory_archive_needle": {
+            "passed": 0,
+            "n": 3,
+            "meanScore": 0.667,
+            "calledMemorySearch": true,
+            "recalledArchiveBadge": false
+          }
+        }
+      }
+    },
+    "after": {
+      "label": "archive index on (--archive-index); loadMemoryArchiveFacts + searchRankedMemories",
+      "kimi-k2.7-code": {
+        "n": 3,
+        "passed": 3,
+        "failed": 0,
+        "passRate": 1.0,
+        "meanScore": 1.0,
+        "meanGradedScore": 1.0,
+        "files": [
+          "docs/harness/eval-results/iter5-archive-after-strong-n1.json",
+          "docs/harness/eval-results/iter5-archive-after-strong-n2.json",
+          "docs/harness/eval-results/iter5-archive-after-strong-n3.json"
+        ],
+        "byScenario": {
+          "memory_archive_needle": {
+            "passed": 3,
+            "n": 3,
+            "meanScore": 1.0,
+            "calledMemorySearch": true,
+            "recalledArchiveBadge": true,
+            "reply": "QUARTZ-WALRUS-19"
+          }
+        }
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "passed": 3,
+        "failed": 0,
+        "passRate": 1.0,
+        "meanScore": 1.0,
+        "meanGradedScore": 1.0,
+        "files": [
+          "docs/harness/eval-results/iter5-archive-after-weak-n1.json",
+          "docs/harness/eval-results/iter5-archive-after-weak-n2.json",
+          "docs/harness/eval-results/iter5-archive-after-weak-n3.json"
+        ],
+        "byScenario": {
+          "memory_archive_needle": {
+            "passed": 3,
+            "n": 3,
+            "meanScore": 1.0,
+            "calledMemorySearch": true,
+            "recalledArchiveBadge": true,
+            "reply": "QUARTZ-WALRUS-19"
+          }
+        }
+      }
+    },
+    "delta": {
+      "kimi-k2.7-code": {
+        "beforePassRate": 0.0,
+        "afterPassRate": 1.0,
+        "scenarioRuns": 3
+      },
+      "deepseek-flash": {
+        "beforePassRate": 0.0,
+        "afterPassRate": 1.0,
+        "scenarioRuns": 3
+      }
+    }
+  },
+  "fullSuite": {
+    "kimi-k2.7-code": {
+      "n": 1,
+      "scenarioCount": 21,
+      "passed": 20,
+      "failed": 1,
+      "failedIds": ["tool_avoid_wording_trap"],
+      "original17Passed": 16,
+      "file": "docs/harness/eval-results/iter5-after-strong-full.json"
+    },
+    "deepseek-flash": {
+      "n": 1,
+      "scenarioCount": 21,
+      "passed": 20,
+      "failed": 1,
+      "failedIds": ["tool_avoid_absent_web_search"],
+      "original17Passed": 16,
+      "note": "wording_trap passed this run; absent_web_search failed (still 20/21, 16/17 original).",
+      "file": "docs/harness/eval-results/iter5-after-weak-full.json"
+    }
+  },
+  "learningSuite": {
+    "kimi-k2.7-code": {
+      "n": 1,
+      "scenarioCount": 23,
+      "passed": 22,
+      "failed": 1,
+      "failedIds": ["tool_avoid_wording_trap"],
+      "file": "docs/harness/eval-results/iter5-after-strong-learning.json"
+    },
+    "deepseek-flash": {
+      "n": 1,
+      "scenarioCount": 23,
+      "passed": 23,
+      "failed": 0,
+      "failedIds": [],
+      "note": "23/23 this run; required floor is 22/23. wording_trap and absent_web both passed.",
+      "file": "docs/harness/eval-results/iter5-after-weak-learning.json"
+    }
+  },
+  "validation": {
+    "typecheck": "pass (bun run typecheck)",
+    "focusedTests": {
+      "passed": 76,
+      "failed": 0,
+      "files": [
+        "packages/core/src/soul/continuity-memory.test.ts",
+        "packages/core/src/soul/memory-archive-index.test.ts",
+        "packages/core/src/soul/compose.test.ts",
+        "apps/server/src/services/memory-retrieval.test.ts",
+        "scripts/harness-eval/run.test.ts"
+      ]
+    }
+  },
+  "productionVsEval": {
+    "shared": [
+      "composeSoulSystemPromptWithSummary / resolveContinuityMemorySummary / summarizeContinuityMemoryWithModel",
+      "SHA-256 content-hash LRU cache keyed with byte cap and prompt version",
+      "extractive recency fallback when no model / ATLAS_MEMORY_SUMMARIZATION=0 / throw",
+      "AgentService.resolveProfileSystemPrompt live generateText for non-guest profiles",
+      "loadMemoryArchiveFacts / loadProfileMemoryArchiveFacts over YYYY-MM.md",
+      "MemoryService.searchMemories merges archive rows then searchRankedMemories",
+      "memory_search passes context.profileId"
+    ],
+    "evalOnly": [
+      "in-harness memory map (not tenant SQLite / org ACLs)",
+      "eval writes a temp memory-archive directory then deletes it",
+      "--memory-summarization forces the session flag; product needs a resolvable provider client",
+      "memory_summary_needle is extra and not in the 21-scenario default suite",
+      "no archive-profile-memory mutation, no write-approval, no org middleware"
+    ]
+  },
+  "commits": [
+    "85525665 Wire LLM MEMORY.md summarization and index profile memory-archive.",
+    "d2f6726b Add live eval yardsticks for summarization and archive indexing."
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T03:42:32.525Z",
+  "model": "glm-5.3",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": false,
+        "reply_no_at_mention": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 35540,
+      "gradedScore": 0.63,
+      "id": "channel_whatsapp_private",
+      "passed": false,
+      "replyPreview": "Send Jordan this:\n\n\"Hey Jordan — yep, the nightly backup ran and finished overnight. All good.\"\n\nI've noted the status on record too, so if anyone else asks we have it confirmed for tonight's run.",
+      "score": 0.889,
+      "toolCalls": ["search_kb", "write_note"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": false,
+        "reply_no_at_mention": true
+      },
+      "dimension": "channel",
+      "durationMs": 17820,
+      "gradedScore": 0.952,
+      "id": "channel_telegram_private",
+      "passed": false,
+      "replyPreview": "Yes — the nightly backup finished. You can let Jordan know it completed.",
+      "score": 0.857,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_absent_tools": true,
+        "did_not_call_wrong_assigned": false,
+        "zero_tool_calls": false
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 41334,
+      "gradedScore": 0.444,
+      "id": "tool_avoid_absent_web_search",
+      "passed": false,
+      "replyPreview": "**What happened:**\n- `web_search` — not available in this session\n- `send_email` — not available in this session\n- `search_kb` — checked; no email mechanism or weather source exists internally\n- Note saved: \"Blocked: Tokyo weather email to ",
+      "score": 0.333,
+      "toolCalls": ["search_kb", "search_kb", "write_note"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_wording_trap": false,
+        "mentioned_live_summary": false,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 13160,
+      "gradedScore": 0.667,
+      "id": "tool_avoid_wording_trap",
+      "passed": false,
+      "replyPreview": "I called `lookup_ticket_live` for T-42 as requested. Here's what came back, plus a cross-check with the assigned live lookup:\n\n**lookup_ticket_live (experimental preview):**\n- Status: unknown\n- Summary: \"Live-index preview stub\"\n- Owner: Pr",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket_live", "lookup_ticket"],
+      "toolPrecision": 0.5,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 4,
+    "meanGradedScore": 0.673,
+    "meanScore": 0.645,
+    "meanToolPrecision": 0.375,
+    "meanToolRecall": 1,
+    "passed": 0,
+    "transportOk": false
+  }
+}

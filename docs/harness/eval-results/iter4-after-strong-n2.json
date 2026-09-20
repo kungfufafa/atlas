@@ -1,0 +1,59 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T01:30:27.568Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": true,
+        "phase2_searched_sop": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 116064,
+      "gradedScore": 1,
+      "id": "learn_sop_acquisition",
+      "passed": true,
+      "replyPreview": "Quarantine hold filed for **T-42**.\n\n- **Ticket summary:** Waiting on hardware (escalationKey: HW-LEAD, owner: Lee, status: in_progress)\n- **KB SOP snippet:** Quarantine hold SOP token is Q-HOLD-ALPHA.\n- **Note title:** quarantine-hold\n- **",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": true,
+        "phase2_used_assigned_tools": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 82193,
+      "gradedScore": 1,
+      "id": "learn_unknown_tool_recovery",
+      "passed": true,
+      "replyPreview": "Done. `clearance_stamp` isn't assigned, so I used the fallback:\n\n1. Looked up **T-42**: \"Waiting on hardware\", owner Lee, status in_progress, escalationKey HW-LEAD.\n2. Saved a note titled **clearance-stamp** with the summary and token **STA",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 1,
+    "meanScore": 1,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 2,
+    "transportOk": false
+  }
+}

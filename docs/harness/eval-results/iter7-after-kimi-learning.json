@@ -1,0 +1,63 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T04:17:11.258Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": true,
+        "phase2_searched_sop": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 38520,
+      "gradedScore": 1,
+      "id": "learn_sop_acquisition",
+      "passed": true,
+      "replyPreview": "Quarantine hold filed for **T-42**.\n\n- **Ticket summary:** Waiting on hardware\n- **KB SOP:** Quarantine hold SOP token is Q-HOLD-ALPHA.\n- **Token:** Q-HOLD-ALPHA",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": true,
+        "phase2_used_assigned_tools": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 60143,
+      "gradedScore": 1,
+      "id": "learn_unknown_tool_recovery",
+      "passed": true,
+      "replyPreview": "The `clearance_stamp` tool isn’t available, so I recovered via the note fallback.\n\n- **Ticket T-42**\n  - Summary: Waiting on hardware\n  - Owner: Lee\n  - Status: in_progress\n  - Escalation key: HW-LEAD\n\n- **Note saved**: `clearance-stamp` wi",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 1,
+    "meanScore": 1,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 2,
+    "transportOk": false
+  }
+}

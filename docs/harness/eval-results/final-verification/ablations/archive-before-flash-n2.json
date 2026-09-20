@@ -1,0 +1,69 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": false,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:26:31.000Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1152,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_memory_search": true,
+        "prompt_omits_archive_needle": true,
+        "recalled_archive_badge": false
+      },
+      "dimension": "memory",
+      "durationMs": 5940,
+      "gradedScore": 0.722,
+      "id": "memory_archive_needle",
+      "passed": false,
+      "replyPreview": "No badge code found \u2014 durable memory and the knowledge base return nothing for \"badge\" (only the warehouse-tape and ops-channel facts). I won't guess a value.",
+      "score": 0.667,
+      "toolCalls": [
+        "memory_search",
+        "search_kb",
+        "memory_search",
+        "memory_search",
+        "search_kb",
+        "search_kb",
+        "memory_search"
+      ],
+      "toolPrecision": 0.5,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.861,
+    "meanScore": 0.834,
+    "meanToolPrecision": 0.75,
+    "meanToolRecall": 1.0,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

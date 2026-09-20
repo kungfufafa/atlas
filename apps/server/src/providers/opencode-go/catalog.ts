@@ -16,6 +16,10 @@ import {
   toOpenCodeGoApiModelId,
 } from "../models";
 import { DEFAULT_USER_AGENT } from "../shared";
+import {
+  OPENCODE_GO_SESSION_HEADER,
+  resolveOpenCodeGoSessionId,
+} from "./session";
 
 export const OPENCODE_GO_CHAT_BASE_URL = "https://opencode.ai/zen/go/v1";
 export const OPENCODE_GO_MESSAGES_BASE_URL = "https://opencode.ai/zen/go";
@@ -56,7 +60,10 @@ export async function fetchOpenCodeGoGatewayModels(
   }
 
   const response = await fetch(OPENCODE_GO_MODELS_URL, {
-    headers: { "User-Agent": DEFAULT_USER_AGENT },
+    headers: {
+      "User-Agent": DEFAULT_USER_AGENT,
+      [OPENCODE_GO_SESSION_HEADER]: resolveOpenCodeGoSessionId(),
+    },
     signal: options.signal,
   });
 

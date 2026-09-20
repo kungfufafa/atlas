@@ -15,7 +15,7 @@
     "verify:export": "bun run scripts/verify-export.ts"
   },
   "dependencies": {
-    "@paper-design/shaders-react": "0.0.77",
+    "@paper-design/shaders-react": "0.0.80",
     "fumadocs-core": "^16.15.4",
     "fumadocs-mdx": "^15.4.0",
     "fumadocs-ui": "^16.15.9",

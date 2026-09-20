@@ -1,0 +1,45 @@
+{
+  "ablation": {
+    "allowlist": false,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:55:16.471Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_unassigned_decoy": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true,
+        "prompt_omits_unassigned_decoy": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 4109,
+      "gradedScore": 1,
+      "id": "tool_avoid_unassigned_decoy",
+      "passed": true,
+      "replyPreview": "**T-42**\n\n- **Status:** In Progress\n- **Summary:** Waiting on hardware\n- **Owner:** Lee\n- **Escalation Key:** HW-LEAD",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 1,
+    "meanScore": 1,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 1,
+    "transportOk": false
+  }
+}

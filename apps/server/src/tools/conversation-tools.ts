@@ -20,7 +20,7 @@ export const searchChatsInputSchema = z.object({
     .string()
     .min(1)
     .describe(
-      "Keywords or a natural-language query for past conversations. Distinctive names and terms improve lexical matching."
+      "Keywords or a natural-language query for past conversations. Distinctive names and terms improve FTS matching."
     ),
 });
 
