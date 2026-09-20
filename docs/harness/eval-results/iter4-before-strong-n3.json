@@ -1,0 +1,59 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T01:37:29.265Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": false,
+        "phase2_searched_sop": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 30100,
+      "gradedScore": 0.833,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "Note saved. However, the quarantine hold itself was **not filed** — I lack the required tool/system access in this session. Please file it through the security/ops quarantine interface, or provide me access to that system.",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": false,
+        "phase2_used_assigned_tools": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 27150,
+      "gradedScore": 0.667,
+      "id": "learn_unknown_tool_recovery",
+      "passed": false,
+      "replyPreview": "Ticket T-42 is currently **in_progress**, owned by **Lee**, with escalation key **HW-LEAD** — summary: “Waiting on hardware”.\n\nI don’t have access to a `clearance_stamp` tool in this session, so I can’t stamp the clearance myself. The avail",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 0.5
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.75,
+    "meanScore": 0.5,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 0.75,
+    "passed": 0,
+    "transportOk": false
+  }
+}

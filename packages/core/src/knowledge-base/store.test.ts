@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { runKnowledgeBaseSearch } from "../tools/knowledge-base-search";
 import {
   getKnowledgeBaseExtractedPath,
   getKnowledgeBaseManifestPath,
@@ -95,6 +97,38 @@ describe("knowledge base store", () => {
     );
     expect(deleted).toBe(true);
     expect(await listKnowledgeBaseDocuments(ORG_ID, profileId)).toHaveLength(0);
+  });
+
+  test("uploads an xlsx document and makes it searchable", async () => {
+    const profileId = "profile_kb_xlsx";
+    await setupProfile(profileId);
+
+    const xlsx = readFileSync(
+      path.join(import.meta.dir, "..", "__fixtures__", "sample.xlsx")
+    );
+    const uploaded = await uploadKnowledgeBaseDocument(ORG_ID, profileId, {
+      data: xlsx.toString("base64"),
+      filename: "inventaris.xlsx",
+      mediaType: "application/octet-stream",
+    });
+
+    expect(uploaded.document.status).toBe("ready");
+    expect(uploaded.document.mediaType).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    const extracted = await readFile(
+      getKnowledgeBaseExtractedPath(ORG_ID, profileId, uploaded.document.id),
+      "utf8"
+    );
+    expect(extracted).toContain("Widget");
+
+    const search = await runKnowledgeBaseSearch(
+      { query: "Widget" },
+      { orgId: ORG_ID, profileId }
+    );
+    expect(search.matchCount).toBeGreaterThanOrEqual(1);
+    expect(search.matches[0]?.text).toContain("Widget");
   });
 
   test("rejects duplicate uploads and supports skip or replace", async () => {

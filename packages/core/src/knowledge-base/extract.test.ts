@@ -11,6 +11,9 @@ import {
 const SAMPLE_DOCX = readFileSync(
   path.join(import.meta.dir, "..", "__fixtures__", "sample.docx")
 );
+const SAMPLE_XLSX = readFileSync(
+  path.join(import.meta.dir, "..", "__fixtures__", "sample.xlsx")
+);
 
 describe("knowledge base extract", () => {
   test("normalizes media types from filename extensions", () => {
@@ -63,6 +66,62 @@ describe("knowledge base extract", () => {
       )
     ).toBe(
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+  });
+
+  test("accepts spreadsheet and presentation uploads", () => {
+    expect(
+      isSupportedKnowledgeBaseMediaType("application/octet-stream", "data.xlsx")
+    ).toBe(true);
+    expect(
+      normalizeKnowledgeBaseMediaType("application/octet-stream", "data.xlsx")
+    ).toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    expect(
+      isSupportedKnowledgeBaseMediaType("application/vnd.ms-excel", "lama.xls")
+    ).toBe(true);
+    expect(
+      isSupportedKnowledgeBaseMediaType("application/octet-stream", "m.xlsm")
+    ).toBe(true);
+    expect(
+      isSupportedKnowledgeBaseMediaType("application/octet-stream", "b.xlsb")
+    ).toBe(true);
+    expect(
+      isSupportedKnowledgeBaseMediaType("application/octet-stream", "s.pptx")
+    ).toBe(true);
+  });
+
+  test("accepts structured text uploads", () => {
+    expect(
+      isSupportedKnowledgeBaseMediaType("application/octet-stream", "d.tsv")
+    ).toBe(true);
+    expect(
+      isSupportedKnowledgeBaseMediaType("application/json", "config.json")
+    ).toBe(true);
+    expect(
+      isSupportedKnowledgeBaseMediaType("application/octet-stream", "l.jsonl")
+    ).toBe(true);
+  });
+
+  test("extracts xlsx content", async () => {
+    const text = await extractText(
+      "application/octet-stream",
+      "inventaris.xlsx",
+      SAMPLE_XLSX
+    );
+
+    expect(text).toContain("Widget");
+    expect(text).toContain("42");
+  });
+
+  test("extracts tsv and json verbatim", async () => {
+    const tsv = Buffer.from("name\tqty\nWidget\t42\n", "utf8");
+    expect(await extractText("application/octet-stream", "d.tsv", tsv)).toBe(
+      "name\tqty\nWidget\t42"
+    );
+
+    const json = Buffer.from('{"name":"Widget","qty":42}', "utf8");
+    expect(await extractText("application/json", "config.json", json)).toBe(
+      '{"name":"Widget","qty":42}'
     );
   });
 

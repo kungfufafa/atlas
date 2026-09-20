@@ -1,0 +1,123 @@
+{
+  "generatedAt": "2026-09-17T00:29:23.577Z",
+  "iteration": 3,
+  "question": "Does bounded MEMORY.md injection plus shared FTS/lexical memory_search and search_chats move Hermes-style retrieval yardsticks from fail to pass without regressing the 16/17 suite?",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "models": {
+    "strong": "kimi-k2.7-code",
+    "weak": "deepseek-flash"
+  },
+  "ablation": {
+    "allowlist": true,
+    "nativeSchemas": true,
+    "workRules": true
+  },
+  "yardstickIds": [
+    "memory_archive_needle",
+    "memory_conflict_recency",
+    "memory_search_chats",
+    "memory_bounded_dump"
+  ],
+  "before": {
+    "label": "dump-only (--no-memory-retrieval)",
+    "model": "kimi-k2.7-code",
+    "n": 1,
+    "passed": 0,
+    "failed": 4,
+    "passRate": 0,
+    "meanScore": 0.25,
+    "meanGradedScore": 0.083,
+    "file": "docs/harness/eval-results/iter3-before-strong-dump-only.json",
+    "scenarios": {
+      "memory_archive_needle": {
+        "passed": false,
+        "score": 0.333,
+        "recalled": false,
+        "calledRetrieval": false
+      },
+      "memory_conflict_recency": {
+        "passed": false,
+        "score": 0,
+        "reply": "Berlin",
+        "calledRetrieval": false
+      },
+      "memory_search_chats": {
+        "passed": false,
+        "score": 0.333,
+        "recalled": false,
+        "calledRetrieval": false
+      },
+      "memory_bounded_dump": {
+        "passed": false,
+        "score": 0.333,
+        "recalledFromDump": true,
+        "promptOmitsOverflow": false,
+        "calledRetrieval": false
+      }
+    }
+  },
+  "after": {
+    "memoryYardsticks": {
+      "kimi-k2.7-code": {
+        "n": 3,
+        "passed": 12,
+        "failed": 0,
+        "passRate": 1,
+        "meanScore": 1,
+        "meanGradedScore": 1,
+        "files": [
+          "docs/harness/eval-results/iter3-after-strong-memory-n1.json",
+          "docs/harness/eval-results/iter3-after-strong-memory-n2.json",
+          "docs/harness/eval-results/iter3-after-strong-memory-n3.json"
+        ]
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "passed": 12,
+        "failed": 0,
+        "passRate": 1,
+        "meanScore": 1,
+        "meanGradedScore": 0.958,
+        "notes": "memory_conflict_recency often also called search_kb (precision 0.5, still passed)",
+        "files": [
+          "docs/harness/eval-results/iter3-after-weak-memory-n1.json",
+          "docs/harness/eval-results/iter3-after-weak-memory-n2.json",
+          "docs/harness/eval-results/iter3-after-weak-memory-n3.json"
+        ]
+      }
+    },
+    "fullSuite": {
+      "kimi-k2.7-code": {
+        "n": 1,
+        "scenarioCount": 21,
+        "passed": 20,
+        "failed": 1,
+        "failedIds": ["tool_avoid_wording_trap"],
+        "original17Passed": 16,
+        "file": "docs/harness/eval-results/iter3-after-strong-full.json"
+      },
+      "deepseek-flash": {
+        "n": 1,
+        "scenarioCount": 21,
+        "passed": 20,
+        "failed": 1,
+        "failedIds": ["tool_avoid_wording_trap"],
+        "original17Passed": 16,
+        "file": "docs/harness/eval-results/iter3-after-weak-full.json"
+      }
+    }
+  },
+  "wordingTrap": "still fails on both models; assigned decoy lookup_ticket_live remains in the scenario catalog",
+  "productionVsEval": {
+    "shared": [
+      "composeContinuityMemorySection / composeSoulSystemPrompt bounding",
+      "searchRankedMemories (lexical + FTS5 boost + recency collapse)",
+      "ConversationKeywordSearch"
+    ],
+    "evalOnly": [
+      "in-process fact/transcript store (not SQLite MemoryService)",
+      "no AgentService, org ACLs, or memory_write preserve path",
+      "extractive summary default; LLM summarizer seam not live-called"
+    ]
+  }
+}

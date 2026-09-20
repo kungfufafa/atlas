@@ -1,0 +1,42 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "memoryRetrieval": true,
+    "memorySummarization": false,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:16:39.616Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "prompt_contains_vault_hint": false,
+        "recalled_vault_hint": false,
+        "zero_tool_calls": true
+      },
+      "dimension": "memory",
+      "durationMs": 7747,
+      "gradedScore": 0.778,
+      "id": "memory_summary_needle",
+      "passed": false,
+      "replyPreview": "No vault passphrase hint is present in the injected continuity.",
+      "score": 0.333,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.778,
+    "meanScore": 0.333,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 0,
+    "transportOk": false
+  }
+}

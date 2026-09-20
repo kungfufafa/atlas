@@ -1,0 +1,256 @@
+{
+  "generatedAt": "2026-09-17T04:25:00.000Z",
+  "iteration": 7,
+  "question": "Does FTS5 ranking over conversation messages (and compacted archives) surface a cross-session fact that weighted-lexical ranking misses inside the result limit, and does chatKind survive a SQLite cold rebuild, without regressing default 20/21, memory 6/6, or learning 22/23?",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "models": {
+    "strong": ["kimi-k2.7-code", "deepseek-v4-pro"],
+    "weak": "deepseek-flash"
+  },
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChatsDefault": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearningDefault": false,
+    "workRules": true
+  },
+  "ftsDesign": {
+    "persistentTable": "conversation_messages_fts",
+    "populateFrom": ["session_messages", "session_history_archives"],
+    "ranking": "temp FTS5 MATCH BM25 over authorized candidates, then lexical, then recency",
+    "whyNotSharedTableBm25": "tenant-safe IDF; same pattern as memory-rank-fts5",
+    "fallback": "ConversationKeywordSearch when fts:false or FTS unavailable",
+    "contract": {
+      "literalMatchMode": "unchanged LIKE",
+      "keywordsMatchMode": "FTS + lexical fallback (native search_chats)"
+    }
+  },
+  "chatKindDesign": {
+    "column": "sessions.chat_kind",
+    "values": ["private", "group"],
+    "upsert": "COALESCE so omit does not wipe",
+    "load": "parseStoredChatKind on adapter + AgentService rebuild/branch"
+  },
+  "yardstickIds": ["memory_search_chats_fts"],
+  "ftsChats": {
+    "needle": "ZEPHYRIC-LOCKER-77",
+    "query": "What is the zephyric cipher locker code we discussed?",
+    "distractorCount": 80,
+    "resultLimit": 10,
+    "discriminator": "equal lexical term hits + recency flood vs BM25 length-normalized short needle",
+    "before": {
+      "label": "weighted lexical ranking only (--no-fts-chats)",
+      "passed": 0,
+      "total": 9,
+      "passRate": 0.0,
+      "calledSearchChats": 9,
+      "promptOmitsNeedle": 9,
+      "recalledNeedle": 0,
+      "kimi-k2.7-code": {
+        "n": 3,
+        "passed": 0,
+        "failed": 3,
+        "passRate": 0.0,
+        "meanScore": 0.667,
+        "meanGradedScore": 0.778,
+        "files": [
+          "docs/harness/eval-results/iter7-fts-before-kimi-n1.json",
+          "docs/harness/eval-results/iter7-fts-before-kimi-n2.json",
+          "docs/harness/eval-results/iter7-fts-before-kimi-n3.json"
+        ]
+      },
+      "deepseek-v4-pro": {
+        "n": 3,
+        "passed": 0,
+        "failed": 3,
+        "passRate": 0.0,
+        "meanScore": 0.667,
+        "meanGradedScore": 0.722,
+        "files": [
+          "docs/harness/eval-results/iter7-fts-before-v4pro-n1.json",
+          "docs/harness/eval-results/iter7-fts-before-v4pro-n2.json",
+          "docs/harness/eval-results/iter7-fts-before-v4pro-n3.json"
+        ]
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "passed": 0,
+        "failed": 3,
+        "passRate": 0.0,
+        "meanScore": 0.667,
+        "meanGradedScore": 0.833,
+        "files": [
+          "docs/harness/eval-results/iter7-fts-before-flash-n1.json",
+          "docs/harness/eval-results/iter7-fts-before-flash-n2.json",
+          "docs/harness/eval-results/iter7-fts-before-flash-n3.json"
+        ]
+      }
+    },
+    "after": {
+      "label": "FTS5 BM25 + recency (--fts-chats); product default",
+      "passed": 9,
+      "total": 9,
+      "passRate": 1.0,
+      "calledSearchChats": 9,
+      "promptOmitsNeedle": 9,
+      "recalledNeedle": 9,
+      "reply": "ZEPHYRIC-LOCKER-77",
+      "kimi-k2.7-code": {
+        "n": 3,
+        "passed": 3,
+        "failed": 0,
+        "passRate": 1.0,
+        "meanScore": 1.0,
+        "meanGradedScore": 1.0,
+        "files": [
+          "docs/harness/eval-results/iter7-fts-after-kimi-n1.json",
+          "docs/harness/eval-results/iter7-fts-after-kimi-n2.json",
+          "docs/harness/eval-results/iter7-fts-after-kimi-n3.json"
+        ]
+      },
+      "deepseek-v4-pro": {
+        "n": 3,
+        "passed": 3,
+        "failed": 0,
+        "passRate": 1.0,
+        "meanScore": 1.0,
+        "meanGradedScore": 1.0,
+        "files": [
+          "docs/harness/eval-results/iter7-fts-after-v4pro-n1.json",
+          "docs/harness/eval-results/iter7-fts-after-v4pro-n2.json",
+          "docs/harness/eval-results/iter7-fts-after-v4pro-n3.json"
+        ]
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "passed": 3,
+        "failed": 0,
+        "passRate": 1.0,
+        "meanScore": 1.0,
+        "meanGradedScore": 1.0,
+        "files": [
+          "docs/harness/eval-results/iter7-fts-after-flash-n1.json",
+          "docs/harness/eval-results/iter7-fts-after-flash-n2.json",
+          "docs/harness/eval-results/iter7-fts-after-flash-n3.json"
+        ]
+      }
+    },
+    "delta": {
+      "beforePassRate": 0.0,
+      "afterPassRate": 1.0,
+      "scenarioRuns": 9,
+      "discriminatesFtsFromLexical": true
+    }
+  },
+  "fullSuite": {
+    "kimi-k2.7-code": {
+      "n": 1,
+      "scenarioCount": 21,
+      "passed": 20,
+      "failed": 1,
+      "failedIds": ["tool_avoid_wording_trap"],
+      "memory6Passed": 6,
+      "memorySearchChatsPassed": true,
+      "file": "docs/harness/eval-results/iter7-after-kimi-full21.json"
+    },
+    "deepseek-v4-pro": {
+      "n": 1,
+      "scenarioCount": 21,
+      "passed": 21,
+      "failed": 0,
+      "failedIds": [],
+      "memory6Passed": 6,
+      "memorySearchChatsPassed": true,
+      "file": "docs/harness/eval-results/iter7-after-v4pro-full21.json"
+    },
+    "deepseek-flash": {
+      "n": 1,
+      "scenarioCount": 21,
+      "passed": 20,
+      "failed": 1,
+      "failedIds": ["tool_avoid_wording_trap"],
+      "memory6Passed": 6,
+      "memorySearchChatsPassed": true,
+      "file": "docs/harness/eval-results/iter7-after-flash-full21.json"
+    }
+  },
+  "learningSuite": {
+    "kimi-k2.7-code": {
+      "n": 1,
+      "learningExtrasPassed": 2,
+      "learningExtrasTotal": 2,
+      "combinedWith21": "22/23",
+      "file": "docs/harness/eval-results/iter7-after-kimi-learning.json"
+    },
+    "deepseek-v4-pro": {
+      "n": 1,
+      "learningExtrasPassed": 2,
+      "learningExtrasTotal": 2,
+      "combinedWith21": "23/23",
+      "file": "docs/harness/eval-results/iter7-after-v4pro-learning.json"
+    },
+    "deepseek-flash": {
+      "n": 1,
+      "learningExtrasPassed": 1,
+      "learningExtrasTotal": 2,
+      "failedIds": ["learn_sop_acquisition"],
+      "error": "provider_error",
+      "combinedWith21": "21/23",
+      "file": "docs/harness/eval-results/iter7-after-flash-learning.json",
+      "retry": {
+        "learningExtrasPassed": 2,
+        "learningExtrasTotal": 2,
+        "combinedWith21": "22/23",
+        "file": "docs/harness/eval-results/iter7-after-flash-learning-retry.json",
+        "note": "First SOP failed with provider_error (transport). Retry 2/2; not a distill/match miss."
+      }
+    }
+  },
+  "validation": {
+    "typecheck": "pass (bun run typecheck)",
+    "focusedTests": {
+      "passed": 53,
+      "failed": 0,
+      "files": [
+        "packages/db/src/conversation-rank-fts5.test.ts",
+        "packages/db/src/session-chat-kind.test.ts",
+        "apps/server/src/services/agent-service-chat-kind.test.ts",
+        "scripts/harness-eval/run.test.ts"
+      ]
+    }
+  },
+  "productionVsEval": {
+    "shared": [
+      "searchRankedConversations on SQLite and in-memory adapters for matchMode keywords",
+      "native search_chats still matchMode keywords (FTS + lexical fallback)",
+      "conversation_messages_fts indexer/backfill on SQLite",
+      "literal matchMode unchanged LIKE",
+      "sessions.chat_kind upsert/load + parseStoredChatKind",
+      "AgentService persist on create; reload on rebuild/branch from DB"
+    ],
+    "evalOnly": [
+      "--no-fts-chats forces lexical ranking in the in-harness search_chats tool",
+      "memory_search_chats_fts is not in the 21-scenario default",
+      "in-harness chat store (not tenant SQLite / org ACLs); ranking function is shared",
+      "eval does not boot AgentService org middleware"
+    ]
+  },
+  "remainingGaps": [
+    "Assigned-decoy tool_avoid_wording_trap is a model-judgment limitation on kimi-k2.7-code and flash (v4-pro 21/21).",
+    "Private reply name-addressing remains a model-limitation; iter6 prompts already fire.",
+    "Skill learning remains default-off vs Hermes always-on (deliberate policy).",
+    "OpenClaw gateway policy language is broader than Landlock + assigned-tool roster (product-scope)."
+  ],
+  "closedHarnessGaps": [
+    "FTS session search for search_chats (Hermes residual e): lexical 0/9 → FTS 9/9 live.",
+    "chatKind SQLite persistence (residual d): column + load path + unit tests."
+  ],
+  "commits": [
+    "aecd8195b15087b73c1047a33a698c59875ebb76 Add FTS5 session search and persist chatKind across rebuilds.",
+    "078c25b44c4b847c85f473a5bbb319747dbe3d36 Include retrieval in the FTS chat needle so natural queries still match."
+  ]
+}

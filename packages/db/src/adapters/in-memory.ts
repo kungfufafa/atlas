@@ -10,6 +10,8 @@ import {
   ConversationKeywordSearch,
   readConversationMessagePayload,
 } from "../conversation-keyword-search";
+import type { ConversationSearchCandidate } from "../conversation-rank-fts5";
+import { searchRankedConversations } from "../conversation-rank-fts5";
 import { isExactMemoryFact } from "../memory-identity";
 import {
   boundedMemoryTerms,
@@ -2336,6 +2338,8 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       if (keywords?.empty) {
         return [];
       }
+      const ftsEnabled = options.fts !== false;
+      const keywordCandidates: ConversationSearchCandidate[] = [];
 
       const needle = clean.toLowerCase();
       const results = [];
@@ -2394,23 +2398,21 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
           }
           const parsed = readConversationMessagePayload(message.payload);
           if (keywords) {
-            keywords.add(
-              {
-                ...(message.archiveId
-                  ? {
-                      archivedAt: message.createdAt,
-                      archiveId: message.archiveId,
-                    }
-                  : {}),
-                createdAt: message.createdAt,
-                messageId: message.id,
-                profileId: session.profileId,
-                role: parsed.role,
-                sessionId: session.id,
-                sessionTitle: session.title ?? null,
-              },
-              parsed.text
-            );
+            keywordCandidates.push({
+              ...(message.archiveId
+                ? {
+                    archivedAt: message.createdAt,
+                    archiveId: message.archiveId,
+                  }
+                : {}),
+              createdAt: message.createdAt,
+              messageId: message.id,
+              profileId: session.profileId,
+              role: parsed.role,
+              sessionId: session.id,
+              sessionTitle: session.title ?? null,
+              text: parsed.text,
+            });
             continue;
           }
           const matchIndex = parsed.text.toLowerCase().indexOf(needle);
@@ -2438,7 +2440,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       }
 
       if (keywords) {
-        return keywords.results();
+        return searchRankedConversations(keywordCandidates, clean, {
+          fts: ftsEnabled,
+          limit: options.limit,
+        });
       }
       results.sort((left, right) =>
         right.createdAt.localeCompare(left.createdAt)
