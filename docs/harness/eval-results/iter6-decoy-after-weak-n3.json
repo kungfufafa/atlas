@@ -1,0 +1,63 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:54:56.650Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_wording_trap": false,
+        "mentioned_live_summary": false,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 4585,
+      "gradedScore": 0.667,
+      "id": "tool_avoid_wording_trap",
+      "passed": false,
+      "replyPreview": "I ran both — the preview tool you named, and the authoritative ticket lookup, since the preview one is a stub.\n\n**lookup_ticket_live (T-42):**\n- Status: `unknown`\n- Summary: \"Live-index preview stub\"\n- Owner: \"Preview bot\"\n\nThat call return",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket_live", "lookup_ticket"],
+      "toolPrecision": 0.5,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_unassigned_decoy": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true,
+        "prompt_omits_unassigned_decoy": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3610,
+      "gradedScore": 1,
+      "id": "tool_avoid_unassigned_decoy",
+      "passed": true,
+      "replyPreview": "I called `lookup_ticket` — there's no tool named `lookup_ticket_live` in this session, so I used the live ticket lookup that does exist.\n\n**T-42**\n- Status: `in_progress`\n- Summary: Waiting on hardware\n- Owner: Lee\n- Escalation key: `HW-LEA",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.834,
+    "meanScore": 0.75,
+    "meanToolPrecision": 0.75,
+    "meanToolRecall": 1,
+    "passed": 1,
+    "transportOk": false
+  }
+}

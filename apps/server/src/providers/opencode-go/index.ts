@@ -16,11 +16,22 @@ import {
   OPENCODE_GO_MESSAGES_BASE_URL,
 } from "./catalog";
 import { resolveOpenCodeGoApiKind } from "./protocol";
+import {
+  bindOpenCodeGoSession,
+  resolveOpenCodeGoSessionId,
+  wrapFetchWithOpenCodeGoSession,
+} from "./session";
 
 export {
   OPENCODE_GO_CHAT_BASE_URL,
   OPENCODE_GO_MESSAGES_BASE_URL,
 } from "./catalog";
+export {
+  DEFAULT_OPENCODE_GO_SESSION_ID,
+  OPENCODE_GO_SESSION_HEADER,
+  resolveOpenCodeGoSessionId,
+  wrapFetchWithOpenCodeGoSession,
+} from "./session";
 
 export interface OpenCodeGoProviderOptions {
   apiKey: string;
@@ -42,12 +53,23 @@ export function createOpenCodeGoProvider(
   }));
   const metadata = customModels?.find((entry) => entry.id === model);
   const supportsThinking = modelSupportsReasoning(model, customModels);
+  const fallbackSessionId = resolveOpenCodeGoSessionId({
+    providerInstanceId: options.providerInstanceId,
+  });
+  const fetchImpl = wrapFetchWithOpenCodeGoSession(fallbackSessionId);
+
+  const bind = (client: ProviderClient): ProviderClient =>
+    bindOpenCodeGoSession(client, {
+      fallbackSessionId,
+      providerInstanceId: options.providerInstanceId,
+    });
 
   if (apiKind === "messages") {
     const anthropic = createAnthropicProvider({
       apiKey: options.apiKey,
       baseUrl: OPENCODE_GO_MESSAGES_BASE_URL,
       customModels,
+      fetch: fetchImpl,
       model,
       providerInstanceId: options.providerInstanceId,
       providerLabel: "OpenCode Go",
@@ -55,14 +77,14 @@ export function createOpenCodeGoProvider(
       providerReplayRevision: options.providerReplayRevision,
     });
 
-    return {
+    return bind({
       generateChat: (input: GenerateChatInput) =>
         anthropic.generateChat(withoutNativeWebSearch(input)),
       generateText: (input: GenerateTextInput) => anthropic.generateText(input),
       name: "opencode_go",
       streamChat: (input: GenerateChatInput, handlers: StreamChatHandlers) =>
         anthropic.streamChat(withoutNativeWebSearch(input), handlers),
-    };
+    });
   }
 
   if (apiKind === "responses") {
@@ -72,13 +94,14 @@ export function createOpenCodeGoProvider(
       system: input.system,
     });
 
-    return {
+    return bind({
       generateChat: (input: GenerateChatInput) =>
         generateOpenAIResponsesChat({
           apiKey: options.apiKey,
           baseUrl: OPENCODE_GO_CHAT_BASE_URL,
           customModels,
           defaultReasoningEffort: metadata?.defaultReasoningEffort,
+          fetch: fetchImpl,
           input: withoutNativeWebSearch(input),
           label: "OpenCode Go",
           model,
@@ -95,6 +118,7 @@ export function createOpenCodeGoProvider(
           baseUrl: OPENCODE_GO_CHAT_BASE_URL,
           customModels,
           defaultReasoningEffort: metadata?.defaultReasoningEffort,
+          fetch: fetchImpl,
           input: withoutNativeWebSearch(toChatInput(input)),
           label: "OpenCode Go",
           model,
@@ -118,6 +142,7 @@ export function createOpenCodeGoProvider(
           baseUrl: OPENCODE_GO_CHAT_BASE_URL,
           customModels,
           defaultReasoningEffort: metadata?.defaultReasoningEffort,
+          fetch: fetchImpl,
           handlers,
           input: withoutNativeWebSearch(input),
           label: "OpenCode Go",
@@ -129,21 +154,24 @@ export function createOpenCodeGoProvider(
           stream: true,
           supportsThinking,
         }),
-    };
+    });
   }
 
-  return createOpenAICompatibleProvider({
-    apiKey: options.apiKey,
-    baseUrl: OPENCODE_GO_CHAT_BASE_URL,
-    defaultReasoningEffort: metadata?.defaultReasoningEffort,
-    displayName: "OpenCode Go",
-    model,
-    providerInstanceId: options.providerInstanceId,
-    providerName: "opencode_go",
-    providerReplayRevision: options.providerReplayRevision,
-    reasoningEffortValues: metadata?.reasoningEffortValues,
-    supportsThinking,
-  });
+  return bind(
+    createOpenAICompatibleProvider({
+      apiKey: options.apiKey,
+      baseUrl: OPENCODE_GO_CHAT_BASE_URL,
+      defaultReasoningEffort: metadata?.defaultReasoningEffort,
+      displayName: "OpenCode Go",
+      fetch: fetchImpl,
+      model,
+      providerInstanceId: options.providerInstanceId,
+      providerName: "opencode_go",
+      providerReplayRevision: options.providerReplayRevision,
+      reasoningEffortValues: metadata?.reasoningEffortValues,
+      supportsThinking,
+    })
+  );
 }
 
 function withoutNativeWebSearch(input: GenerateChatInput): GenerateChatInput {

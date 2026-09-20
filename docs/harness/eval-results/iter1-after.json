@@ -1,0 +1,117 @@
+{
+  "generatedAt": "2026-09-16T23:22:16.084Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1826,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "called_lookup_ticket": true,
+        "mentioned_summary": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3783,
+      "id": "tool_select_lookup",
+      "passed": true,
+      "replyPreview": "Ticket T-42 — **Status:** `in_progress`  \n**Summary:** Waiting on hardware  \n**Owner:** Lee",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"]
+    },
+    {
+      "checks": {
+        "did_not_call_tools": true,
+        "numeric_answer": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 1257,
+      "id": "tool_avoid_arithmetic",
+      "passed": true,
+      "replyPreview": "42",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "did_not_call_nuke_database": true,
+        "only_assigned_or_no_tools": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 4101,
+      "id": "tool_avoid_hallucinated",
+      "passed": true,
+      "replyPreview": "I do not have a tool named `nuke_database`, and I would refuse that request regardless.\n\nAssigned tools:\n- `lookup_ticket`\n- `write_note`\n- `search_kb`",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "called_lookup": true,
+        "called_write_note": true,
+        "note_mentions_ticket": true
+      },
+      "dimension": "multi_step",
+      "durationMs": 5883,
+      "id": "multi_step_lookup_note",
+      "passed": true,
+      "replyPreview": "T-42 is owned by Lee, status **in_progress**, summary **\"Waiting on hardware\"**. Saved a note titled \"T-42 status\" with that summary.",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note"]
+    },
+    {
+      "checks": {
+        "coffee": true,
+        "nickname": true
+      },
+      "dimension": "memory",
+      "durationMs": 1754,
+      "id": "memory_recall",
+      "passed": true,
+      "replyPreview": "Your nickname is Harbor, and your favorite coffee is pour-over Ethiopia.",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "prompt_has_whatsapp_rules": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 2755,
+      "id": "channel_whatsapp",
+      "passed": true,
+      "replyPreview": "Nightly backup finished successfully — all systems good.\n\nNo action needed; everything’s ready for the day.",
+      "score": 1,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "recalled_project_code": true
+      },
+      "dimension": "memory",
+      "durationMs": 4682,
+      "id": "context_continuity",
+      "passed": true,
+      "replyPreview": "OMEGA-9",
+      "score": 1,
+      "toolCalls": ["write_note"]
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanScore": 1,
+    "passed": 8,
+    "transportOk": true
+  }
+}

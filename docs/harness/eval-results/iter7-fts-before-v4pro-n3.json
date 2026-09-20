@@ -1,0 +1,57 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": false,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T04:10:30.153Z",
+  "model": "deepseek-v4-pro",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_search_chats": true,
+        "prompt_omits_fts_needle": true,
+        "recalled_fts_needle": false
+      },
+      "dimension": "memory",
+      "durationMs": 23881,
+      "gradedScore": 0.722,
+      "id": "memory_search_chats_fts",
+      "passed": false,
+      "replyPreview": "No retrieval code for the zephyric cipher locker is recorded in prior chats or the knowledge base. The only match is a \"Weekly ops\" log referencing a \"zephyric cipher locker code checklist,\" with no actual code value.",
+      "score": 0.667,
+      "toolCalls": [
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_kb",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_kb",
+        "search_kb",
+        "search_chats",
+        "search_chats"
+      ],
+      "toolPrecision": 0.5,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.722,
+    "meanScore": 0.667,
+    "meanToolPrecision": 0.5,
+    "meanToolRecall": 1,
+    "passed": 0,
+    "transportOk": false
+  }
+}

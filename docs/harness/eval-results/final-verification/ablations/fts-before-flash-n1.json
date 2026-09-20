@@ -1,0 +1,66 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": false,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:26:31.000Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1312,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_search_chats": true,
+        "prompt_omits_fts_needle": true,
+        "recalled_fts_needle": false
+      },
+      "dimension": "memory",
+      "durationMs": 5472,
+      "gradedScore": 0.889,
+      "id": "memory_search_chats_fts",
+      "passed": false,
+      "replyPreview": "No code is recorded in prior chats \u2014 the only hits are the \"Weekly ops\" session mentioning a \"zephyric cipher locker code checklist,\" with no actual code value anywhere. I won't invent one. If you have the session or ticket it came from, po",
+      "score": 0.667,
+      "toolCalls": [
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats"
+      ],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.945,
+    "meanScore": 0.834,
+    "meanToolPrecision": 1.0,
+    "meanToolRecall": 1.0,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

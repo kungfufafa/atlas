@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   model_override TEXT,
   agent_todos TEXT DEFAULT '[]' NOT NULL,
   agent_questionnaire TEXT,
+  chat_kind TEXT,
   FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
   FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL

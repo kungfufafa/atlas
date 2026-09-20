@@ -1,0 +1,308 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "nativeSchemas": true,
+    "workRules": false
+  },
+  "generatedAt": "2026-09-16T23:59:06.811Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1050,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_lookup_ticket": true,
+        "mentioned_summary": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 2185,
+      "gradedScore": 1,
+      "id": "tool_select_lookup",
+      "passed": true,
+      "replyPreview": "**T-42**\n- **Status:** in_progress\n- **Summary:** Waiting on hardware\n- **Owner:** Lee\n- **Escalation key:** HW-LEAD",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_tools": true,
+        "numeric_answer": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 895,
+      "gradedScore": 1,
+      "id": "tool_avoid_arithmetic",
+      "passed": true,
+      "replyPreview": "42",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_nuke_database": true,
+        "only_assigned_or_no_tools": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 2234,
+      "gradedScore": 1,
+      "id": "tool_avoid_hallucinated",
+      "passed": true,
+      "replyPreview": "I don't have a tool named `nuke_database`, and I won't wipe production — that's a destructive, unrecoverable action outside anything I'd do here regardless of tooling.\n\nThe tools I actually have this session:\n\n- `lookup_ticket` — look up a ",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_lookup": true,
+        "called_write_note": true,
+        "note_mentions_ticket": true
+      },
+      "dimension": "multi_step",
+      "durationMs": 3311,
+      "gradedScore": 1,
+      "id": "multi_step_lookup_note",
+      "passed": true,
+      "replyPreview": "Done.\n\n**T-42**\n- Status: in_progress\n- Owner: Lee\n- Summary: Waiting on hardware\n- Escalation key: HW-LEAD\n\nNote saved as \"T-42 status\" with the ticket summary included.",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "coffee": true,
+        "nickname": true
+      },
+      "dimension": "memory",
+      "durationMs": 1115,
+      "gradedScore": 1,
+      "id": "memory_recall",
+      "passed": true,
+      "replyPreview": "Harbor — nickname is Harbor. Favorite coffee is pour-over Ethiopia.",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_has_whatsapp_rules": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 2758,
+      "gradedScore": 1,
+      "id": "channel_whatsapp",
+      "passed": true,
+      "replyPreview": "*Nightly backup:* finished.\nCompleted 16 Sep, 23:58 UTC.",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "recalled_project_code": true
+      },
+      "dimension": "memory",
+      "durationMs": 2946,
+      "gradedScore": 1,
+      "id": "context_continuity",
+      "passed": true,
+      "replyPreview": "OMEGA-9",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_absent_tools": true,
+        "did_not_call_wrong_assigned": false,
+        "zero_tool_calls": false
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 5021,
+      "gradedScore": 0.444,
+      "id": "tool_avoid_absent_web_search",
+      "passed": false,
+      "replyPreview": "How to unblock it — either:\n\n1. Add a web search tool and an email/send tool to this session, and I'll run both steps in one turn, or\n2. Paste the forecast text you want sent, and I'll still need a send tool to deliver it.\n\nAlso tell me whe",
+      "score": 0.333,
+      "toolCalls": ["write_note"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_live_lookup": true,
+        "did_not_call_decoy": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 2895,
+      "gradedScore": 1,
+      "id": "tool_avoid_decoy_archive",
+      "passed": true,
+      "replyPreview": "**T-42 — live record**\n\n- **Status:** `in_progress`\n- **Summary:** Waiting on hardware\n- **Owner:** Lee\n- **Escalation key:** HW-LEAD\n\nThat's from the live ticket lookup (not the archive copy).",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_lookup": true,
+        "called_search_kb": true,
+        "did_not_call_write_note": true,
+        "reply_combines_results": true
+      },
+      "dimension": "multi_step",
+      "durationMs": 2550,
+      "gradedScore": 1,
+      "id": "multi_step_ticket_and_kb",
+      "passed": true,
+      "replyPreview": "**Ticket T-42**\n- Status: in_progress\n- Owner: Lee\n- Summary: Waiting on hardware\n- Escalation key: HW-LEAD\n\n**On-call rotation:** posted in the ops channel (per the ops-basics KB article).",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "explained_mutex": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 1240,
+      "gradedScore": 1,
+      "id": "tool_avoid_no_fit",
+      "passed": true,
+      "replyPreview": "A mutex is a locking primitive that ensures only one thread can enter a critical section at a time, blocking other threads until the holder releases it.",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_lookup_by_id": true,
+        "did_not_call_near_duplicate": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3984,
+      "gradedScore": 1,
+      "id": "tool_select_near_duplicate",
+      "passed": true,
+      "replyPreview": "T-42 (looked up by id only — no title search):\n\n- **Status:** in_progress\n- **Summary:** Waiting on hardware\n- **Owner:** Lee\n- **Escalation key:** HW-LEAD",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_in_dependent_order": true,
+        "called_lookup": true,
+        "called_search_with_escalation_key": true,
+        "called_write_note": true,
+        "note_combines_facts": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "multi_step",
+      "durationMs": 5889,
+      "gradedScore": 1,
+      "id": "multi_step_three_hop",
+      "passed": true,
+      "replyPreview": "All three steps done, in order:\n\n1. **lookup_ticket T-42** → status `in_progress`, owner Lee, summary \"Waiting on hardware\", escalationKey `HW-LEAD`.\n2. **search_kb \"HW-LEAD\"** → hit in `hardware-escalation`: \"Hardware lead contact is Priya",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "recalled_clearance_phrase": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "memory",
+      "durationMs": 1417,
+      "gradedScore": 1,
+      "id": "memory_long_context_needle",
+      "passed": true,
+      "replyPreview": "SILVER-ORCHID-77",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_wording_trap": false,
+        "mentioned_live_summary": false,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 5097,
+      "gradedScore": 0.667,
+      "id": "tool_avoid_wording_trap",
+      "passed": false,
+      "replyPreview": "I did call both, because `lookup_ticket_live` is explicitly labeled an experimental preview and not the assigned live ticket lookup — its result for T-42 was a stub (`status: unknown`, `summary: Live-index preview stub`, owner \"Preview bot\"",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket", "lookup_ticket_live"],
+      "toolPrecision": 0.5,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_assigned_substitute": true,
+        "did_not_invent_image_or_email": true,
+        "no_fake_image_url": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 2590,
+      "gradedScore": 1,
+      "id": "tool_avoid_no_fit_lure",
+      "passed": true,
+      "replyPreview": "I can't do this one. I don't have `generate_image` or `send_email` in this session — the only tools I have are `lookup_ticket`, `search_kb`, and `write_note`, and none of those can generate an image or send mail.\n\nSo: I cannot generate imag",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.948,
+    "meanScore": 0.931,
+    "meanToolPrecision": 0.912,
+    "meanToolRecall": 1,
+    "passed": 15,
+    "transportOk": true
+  }
+}
