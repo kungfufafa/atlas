@@ -1,4 +1,5 @@
 import {
+  DEFAULT_WHATSAPP_PROFILE_ID,
   isChannelGuestUserId,
   isWhatsAppUserAuthorized,
   loadWhatsAppConfigFile,
@@ -20,7 +21,8 @@ export interface ChannelGuestKnowledgeBaseInput {
 
 /**
  * Catalog eligibility only: execution also requires the currently bound sender
- * and channel policy. A whitelist grant never changes the guest's identity.
+ * and channel policy. A whitelist grant never changes the guest's identity and
+ * never follows `/profile` onto another agent.
  */
 export async function canGuestSearchKnowledgeBase(
   db: DatabaseAdapter,
@@ -31,16 +33,17 @@ export async function canGuestSearchKnowledgeBase(
     return false;
   }
 
-  const [organization, user, member, profile, assigned, mappings, config] =
+  const [organization, user, member, profiles, assigned, mappings, config] =
     await Promise.all([
       db.getOrganizationById(orgId),
       db.getUserById(userId),
       db.getOrgMember(orgId, userId),
-      db.getProfileForOrg(profileId, orgId),
+      db.listProfilesForOrg(orgId),
       db.listToolsForProfile(profileId),
       db.listChannelOrgMappingsForOrg(orgId),
       loadWhatsAppConfigFile(orgId),
     ]);
+  const profile = profiles.find((candidate) => candidate.id === profileId);
   if (
     !organization ||
     organization.archivedAt ||
@@ -51,6 +54,7 @@ export async function canGuestSearchKnowledgeBase(
     !profile ||
     profile.isSuper ||
     !config ||
+    !isWhatsAppReplyProfile(profileId, config.profileId, profiles) ||
     !assigned.some(
       (tool) =>
         tool.name === "knowledge_base_search" &&
@@ -112,4 +116,23 @@ export async function canGuestSearchKnowledgeBase(
     }
     throw error;
   }
+}
+
+function isWhatsAppReplyProfile(
+  profileId: string,
+  configuredProfileId: string,
+  profiles: Array<{ id: string; isDefault?: boolean; isSuper: boolean }>
+): boolean {
+  const selectable = profiles.filter((candidate) => !candidate.isSuper);
+  const configured = configuredProfileId.trim();
+  const exact = selectable.find((candidate) => candidate.id === configured);
+  if (exact) {
+    return exact.id === profileId;
+  }
+  if (configured !== DEFAULT_WHATSAPP_PROFILE_ID) {
+    return false;
+  }
+  const fallback =
+    selectable.find((candidate) => candidate.isDefault) ?? selectable[0];
+  return fallback?.id === profileId;
 }

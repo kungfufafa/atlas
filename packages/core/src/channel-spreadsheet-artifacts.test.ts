@@ -123,6 +123,55 @@ describe("spreadsheet channel delivery", () => {
     }
   });
 
+  test("supersedes the create source after a successful batch_edit", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "atlas-sheet-batch-"));
+    try {
+      const workspaceRoot = await realpath(directory);
+      const context = {
+        orgId: "org_test",
+        profileId: "profile_test",
+        workspaceRoot,
+      };
+      const createInput = {
+        action: "create",
+        columns: ["Domain"],
+        path: "artifacts/domain.xlsx",
+        sheetName: "Domains",
+      };
+      const created = (await spreadsheetTool.run(
+        createInput,
+        context
+      )) as Record<string, unknown> & { path: string };
+      const editInput = {
+        action: "batch_edit",
+        operations: [
+          {
+            action: "write_range",
+            range: "A2",
+            values: [["example.com"]],
+          },
+        ],
+        path: created.path,
+      };
+      const edited = (await spreadsheetTool.run(editInput, context)) as Record<
+        string,
+        unknown
+      > & { path: string; sourcePath?: string };
+
+      expect(edited.path).not.toBe(created.path);
+      expect(edited.sourcePath).toBe(created.path);
+      expect(
+        deliverablePaths([
+          { content: "Create and fill the workbook", role: "user" },
+          ...spreadsheetStep("create", createInput, created),
+          ...spreadsheetStep("batch", editInput, edited),
+        ])
+      ).toEqual([edited.path.replace(/^artifacts\//, "")]);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
   test("filters legacy stacked versions even when embedded and streamed", () => {
     const messages = [
       ...createdWorkbook(),
@@ -211,6 +260,7 @@ describe("spreadsheet channel delivery", () => {
     "delete_sheet",
     "import_csv",
     "recalculate",
+    "batch_edit",
   ])("supersedes successful %s input", (action) => {
     expect(
       deliverablePaths([

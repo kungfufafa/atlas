@@ -3,6 +3,7 @@ import type {
   WhatsAppPairingPrincipalBinder,
 } from "@atlas/core/whatsapp-config";
 import {
+  expandWhatsAppSenderIdentities,
   isWhatsAppUserAuthorized,
   loadWhatsAppConfigFile,
   loadWhatsAppLidMap,
@@ -58,6 +59,12 @@ export class WhatsAppAuthStore {
       },
       { ...this.config, accessMode: "pairing" }
     );
+  }
+
+  expandSenderIdentities(
+    identities: Iterable<string | null | undefined>
+  ): string[] {
+    return expandWhatsAppSenderIdentities(this.lidMap, identities);
   }
 
   async rememberSenderPn(

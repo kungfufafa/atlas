@@ -159,7 +159,7 @@ Pairing does not replace workspace permissions. Paired users still follow their 
 
 ### Knowledge base answers
 
-Add trusted senders to **Integrations → WhatsApp → Allowed numbers** so they can ask about the replying profile's uploaded references without pairing an Atlas account. Authorized senders on this list can read the profile's ready knowledge base documents when `knowledge_base_search` is assigned and permitted by **Channel controls**. This grants access to all ready uploaded documents available to that profile.
+Add trusted senders to **Integrations → WhatsApp → Allowed numbers** so they can ask about the **Reply as** profile's uploaded references without pairing an Atlas account. Authorized senders on this list can read that profile's ready knowledge base documents when `knowledge_base_search` is assigned and permitted by **Channel controls**. This grant stays on the **Reply as** profile; `/profile` does not open another agent's knowledge base.
 
 An allowlisted sender without account pairing remains a channel guest. Their other tools stay limited to working with files in **Artifacts**; this does not grant memory, `send_whatsapp`, Bash, or MCP access. Other guests, including unlisted senders admitted by **Open** access, can submit supported work files but cannot search the profile's knowledge base.
 
