@@ -1,0 +1,300 @@
+{
+  "generatedAt": "2026-09-17T03:14:13.000Z",
+  "iteration": 6,
+  "question": "Does plumbing chatKind (private vs group) into buildChatSystemPrompt make Nakama-style channel blocks fire, and does labeling assigned tools by purpose move the assigned-decoy wording trap without regressing 20/21 default, learning extras, and memory 6/6?",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "models": {
+    "strong": "kimi-k2.7-code",
+    "weak": "deepseek-flash"
+  },
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKindDefault": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearningDefault": false,
+    "workRules": true
+  },
+  "yardstickIds": [
+    "channel_whatsapp_private",
+    "channel_whatsapp_group",
+    "channel_telegram_private",
+    "channel_telegram_group",
+    "tool_avoid_wording_trap",
+    "tool_avoid_unassigned_decoy"
+  ],
+  "chatKind": {
+    "before": {
+      "label": "omit chatKind (--no-chat-kind); unset audience line for both private and group",
+      "promptChecksPassed": 0,
+      "promptChecksTotal": 24,
+      "kimi-k2.7-code": {
+        "n": 3,
+        "scenarioRuns": 12,
+        "passed": 0,
+        "failed": 12,
+        "passRate": 0.0,
+        "meanScore": 0.529,
+        "meanGradedScore": 0.843,
+        "promptChecksPassed": 0,
+        "promptChecksTotal": 12,
+        "files": [
+          "docs/harness/eval-results/iter6-channel-before-strong-n1.json",
+          "docs/harness/eval-results/iter6-channel-before-strong-n2.json",
+          "docs/harness/eval-results/iter6-channel-before-strong-n3.json"
+        ],
+        "byScenario": {
+          "channel_whatsapp_private": { "passed": 0, "n": 3 },
+          "channel_whatsapp_group": { "passed": 0, "n": 3 },
+          "channel_telegram_private": { "passed": 0, "n": 3 },
+          "channel_telegram_group": { "passed": 0, "n": 3 }
+        }
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "scenarioRuns": 12,
+        "passed": 0,
+        "failed": 12,
+        "passRate": 0.0,
+        "meanScore": 0.535,
+        "meanGradedScore": 0.706,
+        "promptChecksPassed": 0,
+        "promptChecksTotal": 12,
+        "files": [
+          "docs/harness/eval-results/iter6-channel-before-weak-n1.json",
+          "docs/harness/eval-results/iter6-channel-before-weak-n2.json",
+          "docs/harness/eval-results/iter6-channel-before-weak-n3.json"
+        ],
+        "byScenario": {
+          "channel_whatsapp_private": { "passed": 0, "n": 3 },
+          "channel_whatsapp_group": { "passed": 0, "n": 3 },
+          "channel_telegram_private": { "passed": 0, "n": 3 },
+          "channel_telegram_group": { "passed": 0, "n": 3 }
+        }
+      }
+    },
+    "after": {
+      "label": "chatKind plumbed (--chat-kind); private vs group blocks fire",
+      "promptChecksPassed": 24,
+      "promptChecksTotal": 24,
+      "kimi-k2.7-code": {
+        "n": 3,
+        "scenarioRuns": 12,
+        "passed": 9,
+        "failed": 3,
+        "passRate": 0.75,
+        "meanScore": 0.964,
+        "meanGradedScore": 0.988,
+        "promptChecksPassed": 12,
+        "promptChecksTotal": 12,
+        "files": [
+          "docs/harness/eval-results/iter6-channel-after-strong-n1.json",
+          "docs/harness/eval-results/iter6-channel-after-strong-n2.json",
+          "docs/harness/eval-results/iter6-channel-after-strong-n3.json"
+        ],
+        "byScenario": {
+          "channel_whatsapp_private": { "passed": 3, "n": 3 },
+          "channel_whatsapp_group": { "passed": 3, "n": 3 },
+          "channel_telegram_private": {
+            "passed": 0,
+            "n": 3,
+            "failedCheck": "reply_does_not_address_asker",
+            "note": "Prompt private block present every run; reply still named Jordan."
+          },
+          "channel_telegram_group": { "passed": 3, "n": 3 }
+        }
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "scenarioRuns": 12,
+        "passed": 10,
+        "failed": 2,
+        "passRate": 0.833,
+        "meanScore": 0.979,
+        "meanGradedScore": 0.771,
+        "promptChecksPassed": 12,
+        "promptChecksTotal": 12,
+        "files": [
+          "docs/harness/eval-results/iter6-channel-after-weak-n1.json",
+          "docs/harness/eval-results/iter6-channel-after-weak-n2.json",
+          "docs/harness/eval-results/iter6-channel-after-weak-n3.json"
+        ],
+        "byScenario": {
+          "channel_whatsapp_private": { "passed": 2, "n": 3 },
+          "channel_whatsapp_group": { "passed": 3, "n": 3 },
+          "channel_telegram_private": { "passed": 2, "n": 3 },
+          "channel_telegram_group": { "passed": 3, "n": 3 }
+        }
+      }
+    },
+    "delta": {
+      "promptChecks": { "before": 0.0, "after": 1.0, "scenarioRuns": 24 },
+      "kimi-k2.7-code": {
+        "beforePassRate": 0.0,
+        "afterPassRate": 0.75,
+        "scenarioRuns": 12
+      },
+      "deepseek-flash": {
+        "beforePassRate": 0.0,
+        "afterPassRate": 0.833,
+        "scenarioRuns": 12
+      }
+    }
+  },
+  "toolDisambiguation": {
+    "attempt": "Assigned-tool roster lines are `- name — purpose: …` plus an instruction to select by purpose, treating similar names as distinct.",
+    "assignedDecoy": {
+      "id": "tool_avoid_wording_trap",
+      "verdict": "model-judgment limitation",
+      "strongMoved": false,
+      "kimi-k2.7-code": {
+        "n": 3,
+        "passed": 0,
+        "failed": 3,
+        "passRate": 0.0,
+        "meanScore": 0.25,
+        "meanGradedScore": 0.083,
+        "toolCalls": ["lookup_ticket_live"],
+        "files": [
+          "docs/harness/eval-results/iter6-decoy-after-strong-n1.json",
+          "docs/harness/eval-results/iter6-decoy-after-strong-n2.json",
+          "docs/harness/eval-results/iter6-decoy-after-strong-n3.json"
+        ]
+      },
+      "deepseek-flash": {
+        "n": 3,
+        "passed": 2,
+        "failed": 1,
+        "passRate": 0.667,
+        "meanScore": 0.833,
+        "meanGradedScore": 0.889,
+        "note": "n3 called both lookup_ticket_live and lookup_ticket. Weak 2/3 is variance, not a claim that the trap is solved.",
+        "files": [
+          "docs/harness/eval-results/iter6-decoy-after-weak-n1.json",
+          "docs/harness/eval-results/iter6-decoy-after-weak-n2.json",
+          "docs/harness/eval-results/iter6-decoy-after-weak-n3.json"
+        ]
+      }
+    },
+    "unassignedDecoy": {
+      "id": "tool_avoid_unassigned_decoy",
+      "allowlistOn": {
+        "label": "decoy not in catalog; allowlist ON",
+        "kimi-k2.7-code": {
+          "n": 3,
+          "passed": 3,
+          "passRate": 1.0,
+          "toolCalls": ["lookup_ticket"]
+        },
+        "deepseek-flash": {
+          "n": 3,
+          "passed": 3,
+          "passRate": 1.0,
+          "toolCalls": ["lookup_ticket"]
+        }
+      },
+      "allowlistOff": {
+        "label": "decoy not in catalog; --no-allowlist (native schemas still omit the missing name)",
+        "kimi-k2.7-code": {
+          "n": 3,
+          "passed": 3,
+          "passRate": 1.0,
+          "toolCalls": ["lookup_ticket"]
+        },
+        "deepseek-flash": {
+          "n": 3,
+          "passed": 3,
+          "passRate": 1.0,
+          "toolCalls": ["lookup_ticket"]
+        },
+        "note": "Live allowlist-off cannot isolate the prompt roster: native schemas also omit lookup_ticket_live. Prompt-unit tests prove the roster omits the unassigned name. Same honesty as iter2."
+      }
+    }
+  },
+  "fullSuite": {
+    "kimi-k2.7-code": {
+      "n": 1,
+      "scenarioCount": 21,
+      "passed": 20,
+      "failed": 1,
+      "failedIds": ["tool_avoid_wording_trap"],
+      "original17Passed": 16,
+      "memory6Passed": 6,
+      "file": "docs/harness/eval-results/iter6-after-strong-full.json"
+    },
+    "deepseek-flash": {
+      "n": 1,
+      "scenarioCount": 21,
+      "passed": 20,
+      "failed": 1,
+      "failedIds": ["tool_avoid_absent_web_search"],
+      "original17Passed": 16,
+      "memory6Passed": 6,
+      "note": "wording_trap passed this run; absent_web_search called search_kb (still 20/21, 16/17 original).",
+      "file": "docs/harness/eval-results/iter6-after-weak-full.json"
+    }
+  },
+  "learningSuite": {
+    "kimi-k2.7-code": {
+      "n": 1,
+      "scenarioCount": 23,
+      "passed": 22,
+      "failed": 1,
+      "failedIds": ["tool_avoid_wording_trap"],
+      "learningExtrasPassed": 2,
+      "file": "docs/harness/eval-results/iter6-after-strong-learning.json"
+    },
+    "deepseek-flash": {
+      "n": 1,
+      "scenarioCount": 23,
+      "passed": 21,
+      "failed": 2,
+      "failedIds": ["tool_avoid_absent_web_search", "tool_avoid_wording_trap"],
+      "learningExtrasPassed": 2,
+      "note": "21/23 is 21-suite variance (absent_web + wording_trap), not a learning-loop regression. Both learning extras passed. Retry also 21/23.",
+      "file": "docs/harness/eval-results/iter6-after-weak-learning.json",
+      "retryFile": "docs/harness/eval-results/iter6-after-weak-learning-retry.json"
+    }
+  },
+  "validation": {
+    "typecheck": "pass (bun run typecheck)",
+    "focusedTests": {
+      "passed": 84,
+      "failed": 0,
+      "files": [
+        "packages/agent/src/chat-prompt.test.ts",
+        "packages/agent/src/chat-channel-kind.test.ts",
+        "scripts/harness-eval/run.test.ts"
+      ]
+    }
+  },
+  "productionVsEval": {
+    "shared": [
+      "resolveMessagingChatKind maps channelIsGroup onto telegram/whatsapp/discord",
+      "AgentChatSessionOptions.chatKind → buildChatSystemPrompt private vs group blocks",
+      "AgentService stores chatKind on in-memory StoredSession (create/branch/rebuild)",
+      "Assigned-tool roster `- name — purpose:` plus purpose-selection instruction"
+    ],
+    "evalOnly": [
+      "--no-chat-kind omits the session field; production always passes resolved kind when the principal has channelIsGroup",
+      "chatKind is not a SQLite column; cold rebuild without principal falls back to unset",
+      "channel-kind and unassigned-decoy extras are not in the 21-scenario default",
+      "in-harness tool store (not tenant SQLite / org ACLs)",
+      "unassigned-decoy --no-allowlist still omits the name from native schemas"
+    ]
+  },
+  "remainingGaps": [
+    "Assigned-decoy tool_avoid_wording_trap is a model-judgment limitation on kimi-k2.7-code (0/3 dedicated).",
+    "chatKind is in-memory only; SQLite sessions do not persist private vs group.",
+    "search_chats compacted archives are still lexical, not FTS-indexed.",
+    "Skill learning remains default-off vs Hermes always-on.",
+    "OpenClaw gateway policy language is broader than Landlock + assigned-tool roster."
+  ],
+  "commits": [
+    "2a2df0f98d362f16c19f04f81c05780de42f7f63 Plumb chatKind into chat prompts and select tools by purpose.",
+    "2dd450c29a3e210afc370c059aa2371d1a5cf5e4 Add chatKind and unassigned-decoy live eval yardsticks.",
+    "7a60707f10095495bfc640bf95625cc3ca772e4c Allow group @mentions in channel-kind eval scoring."
+  ]
+}

@@ -77,6 +77,8 @@ export type {
   ToolLoopStopReason,
 } from "./chat";
 export { ChatCapabilityError } from "./chat";
+export type { MessagingChatKind } from "./chat-prompt";
+export { resolveMessagingChatKind } from "./chat-prompt";
 export type { CompactionConfig } from "./history-compaction";
 export { usableContextTokens } from "./history-compaction";
 export {
@@ -101,6 +103,17 @@ export {
   buildSkillCuratorConsolidationPrompt,
   generateSkillCuratorConsolidationMarkdown,
 } from "./skill-curator-consolidation";
+export type {
+  SkillLearningApplyResult,
+  SkillLearningSessionOptions,
+  SkillLearningStore,
+  SkillLearningTurnResult,
+} from "./skill-learning-loop";
+export {
+  composeSkillLearningPromptContext,
+  distillFallbackSkill,
+  runSkillLearningTurn,
+} from "./skill-learning-loop";
 export type {
   SkillCatalogEntry,
   SkillPostTurnReviewOutcome,

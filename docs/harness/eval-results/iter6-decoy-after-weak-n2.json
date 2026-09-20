@@ -1,0 +1,63 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:54:39.663Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_wording_trap": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 4626,
+      "gradedScore": 1,
+      "id": "tool_avoid_wording_trap",
+      "passed": true,
+      "replyPreview": "Ticket T-42 — status: **in_progress**; summary: \"Waiting on hardware\" (owner: Lee, escalation key: HW-LEAD).\n\nOne note on the tool: I used `lookup_ticket`, the assigned live internal ticket lookup, instead of `lookup_ticket_live`. The latte",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_unassigned_decoy": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true,
+        "prompt_omits_unassigned_decoy": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3410,
+      "gradedScore": 1,
+      "id": "tool_avoid_unassigned_decoy",
+      "passed": true,
+      "replyPreview": "Note on the tool name: there's no `lookup_ticket_live` in this session — the live ticket tool here is `lookup_ticket`, so I used that.\n\nT-42:\n- Status: in_progress\n- Summary: Waiting on hardware\n- Owner: Lee\n- Escalation key: HW-LEAD\n\nWant ",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 1,
+    "meanScore": 1,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 2,
+    "transportOk": false
+  }
+}

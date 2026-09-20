@@ -3,6 +3,7 @@ import {
   type ChatMessage,
   getUserMessageText,
   type ProviderClient,
+  type SkillLearningSignal,
 } from "@atlas/core";
 
 const TURN_SNIPPET_MAX = 4000;
@@ -30,9 +31,11 @@ const REVIEW_SYSTEM = [
   "Rules:",
   "- Prefer patch over create when an existing profile skill clearly matches",
   "- Prefer noop when the turn is routine, already covered, or low confidence",
+  "- When learning signals list unknown tools, a requested unassigned tool, a mechanical stop, or a taught SOP, prefer create or patch over noop",
+  "- Learned create content MUST include YAML frontmatter with name, description, and include-body-on-match: true",
+  "- Capture exact tool names, queries, note titles, and tokens from the turn so a later similar request can follow the procedure without the original briefing",
   "- Never delete skills; never target bundled/global system skills",
   "- create name must match ^[a-z0-9-]{1,64}$",
-  "- create content must include frontmatter with name and description",
   "- patch oldString must be unique in the current skill body you would expect",
   "- Do not wrap JSON in markdown fences",
 ].join("\n");
@@ -46,8 +49,10 @@ function truncate(value: string, max: number): string {
 }
 
 export function buildSkillPostTurnReviewPrompt(input: {
-  turnMessages: ChatMessage[];
+  assignedToolNames?: readonly string[];
   catalog: SkillCatalogEntry[];
+  signals?: readonly SkillLearningSignal[];
+  turnMessages: ChatMessage[];
 }): string {
   const lines: string[] = ["## Assigned profile skills", ""];
 
@@ -60,6 +65,35 @@ export function buildSkillPostTurnReviewPrompt(input: {
       if (body) {
         lines.push(`  body: ${truncate(body, 400)}`);
       }
+    }
+  }
+
+  if (input.assignedToolNames && input.assignedToolNames.length > 0) {
+    lines.push("", "## Assigned tools", "", input.assignedToolNames.join(", "));
+  }
+
+  if (input.signals && input.signals.length > 0) {
+    lines.push("", "## Learning signals", "");
+    for (const signal of input.signals) {
+      if (signal.kind === "unknown_tool") {
+        lines.push(`- unknown_tool: ${signal.toolName}`);
+        continue;
+      }
+      if (signal.kind === "requested_unassigned_tool") {
+        lines.push(`- requested_unassigned_tool: ${signal.toolName}`);
+        continue;
+      }
+      if (signal.kind === "tool_loop_stop") {
+        lines.push(`- tool_loop_stop: ${signal.reason}`);
+        continue;
+      }
+      if (signal.kind === "tool_error") {
+        lines.push(
+          `- tool_error${signal.toolName ? `: ${signal.toolName}` : ""}`
+        );
+        continue;
+      }
+      lines.push("- taught_procedure");
     }
   }
 
@@ -174,12 +208,16 @@ export function parseSkillPostTurnReviewResponse(
 }
 
 export async function generateSkillPostTurnReview(input: {
-  turnMessages: ChatMessage[];
+  assignedToolNames?: readonly string[];
   catalog: SkillCatalogEntry[];
   provider: ProviderClient;
+  signals?: readonly SkillLearningSignal[];
+  turnMessages: ChatMessage[];
 }): Promise<SkillPostTurnReviewOutcome> {
   const prompt = buildSkillPostTurnReviewPrompt({
+    assignedToolNames: input.assignedToolNames,
     catalog: input.catalog,
+    signals: input.signals,
     turnMessages: input.turnMessages,
   });
   const catalogNames = new Set(input.catalog.map((skill) => skill.name));

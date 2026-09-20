@@ -1,0 +1,66 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": false,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:29:53.000Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1159,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_search_chats": true,
+        "prompt_omits_fts_needle": true,
+        "recalled_fts_needle": false
+      },
+      "dimension": "memory",
+      "durationMs": 6168,
+      "gradedScore": 0.889,
+      "id": "memory_search_chats_fts",
+      "passed": false,
+      "replyPreview": "No retrieval code found \u2014 prior chats only mention a \"zephyric cipher locker code checklist\" in the Weekly ops session, with no actual code recorded.",
+      "score": 0.667,
+      "toolCalls": [
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats"
+      ],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.945,
+    "meanScore": 0.834,
+    "meanToolPrecision": 1.0,
+    "meanToolRecall": 1.0,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

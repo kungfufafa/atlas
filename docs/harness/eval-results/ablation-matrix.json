@@ -1,0 +1,453 @@
+{
+  "cells": [
+    {
+      "allowlist": false,
+      "model": "kimi-k2.7-code",
+      "modelClass": "strong",
+      "nativeSchemas": true,
+      "workRules": false,
+      "dimensionPassRate": {
+        "transport": 1,
+        "tool_selection": 0.75,
+        "tool_avoidance": 1,
+        "multi_step": 1,
+        "memory": 1,
+        "channel": 1
+      },
+      "failed": 1,
+      "generatedAt": "2026-09-16T23:53:38.598Z",
+      "hallucinationRate": 0.143,
+      "meanGradedScore": 0.926,
+      "meanScore": 0.956,
+      "meanToolPrecision": 0.882,
+      "meanToolRecall": 0.941,
+      "passed": 16,
+      "passRate": 0.941,
+      "reportPath": "docs/harness/eval-results/ablation-kimi-k2.7-code-allowlist-off-workrules-off.json",
+      "scenarioCount": 17,
+      "transportOk": true,
+      "failedScenarioIds": ["tool_avoid_wording_trap"],
+      "extraToolScenarioIds": ["context_continuity"]
+    },
+    {
+      "allowlist": false,
+      "model": "kimi-k2.7-code",
+      "modelClass": "strong",
+      "nativeSchemas": true,
+      "workRules": true,
+      "dimensionPassRate": {
+        "transport": 1,
+        "tool_selection": 0.75,
+        "tool_avoidance": 1,
+        "multi_step": 1,
+        "memory": 1,
+        "channel": 1
+      },
+      "failed": 1,
+      "generatedAt": "2026-09-16T23:54:47.629Z",
+      "hallucinationRate": 0.143,
+      "meanGradedScore": 0.946,
+      "meanScore": 0.956,
+      "meanToolPrecision": 0.941,
+      "meanToolRecall": 0.941,
+      "passed": 16,
+      "passRate": 0.941,
+      "reportPath": "docs/harness/eval-results/ablation-kimi-k2.7-code-allowlist-off-workrules-on.json",
+      "scenarioCount": 17,
+      "transportOk": true,
+      "failedScenarioIds": ["tool_avoid_wording_trap"],
+      "extraToolScenarioIds": []
+    },
+    {
+      "allowlist": true,
+      "model": "kimi-k2.7-code",
+      "modelClass": "strong",
+      "nativeSchemas": true,
+      "workRules": false,
+      "dimensionPassRate": {
+        "transport": 1,
+        "tool_selection": 0.75,
+        "tool_avoidance": 1,
+        "multi_step": 1,
+        "memory": 1,
+        "channel": 1
+      },
+      "failed": 1,
+      "generatedAt": "2026-09-16T23:55:46.458Z",
+      "hallucinationRate": 0.143,
+      "meanGradedScore": 0.946,
+      "meanScore": 0.956,
+      "meanToolPrecision": 0.941,
+      "meanToolRecall": 0.941,
+      "passed": 16,
+      "passRate": 0.941,
+      "reportPath": "docs/harness/eval-results/ablation-kimi-k2.7-code-allowlist-on-workrules-off.json",
+      "scenarioCount": 17,
+      "transportOk": true,
+      "failedScenarioIds": ["tool_avoid_wording_trap"],
+      "extraToolScenarioIds": []
+    },
+    {
+      "allowlist": true,
+      "model": "kimi-k2.7-code",
+      "modelClass": "strong",
+      "nativeSchemas": true,
+      "workRules": true,
+      "dimensionPassRate": {
+        "transport": 1,
+        "tool_selection": 0.75,
+        "tool_avoidance": 1,
+        "multi_step": 1,
+        "memory": 1,
+        "channel": 1
+      },
+      "failed": 1,
+      "generatedAt": "2026-09-16T23:56:46.695Z",
+      "hallucinationRate": 0.143,
+      "meanGradedScore": 0.926,
+      "meanScore": 0.956,
+      "meanToolPrecision": 0.882,
+      "meanToolRecall": 0.941,
+      "passed": 16,
+      "passRate": 0.941,
+      "reportPath": "docs/harness/eval-results/ablation-kimi-k2.7-code-allowlist-on-workrules-on.json",
+      "scenarioCount": 17,
+      "transportOk": true,
+      "failedScenarioIds": ["tool_avoid_wording_trap"],
+      "extraToolScenarioIds": ["context_continuity"]
+    },
+    {
+      "allowlist": false,
+      "model": "deepseek-flash",
+      "modelClass": "weak",
+      "nativeSchemas": true,
+      "workRules": false,
+      "dimensionPassRate": {
+        "transport": 1,
+        "tool_selection": 0.75,
+        "tool_avoidance": 0.8,
+        "multi_step": 1,
+        "memory": 1,
+        "channel": 1
+      },
+      "failed": 2,
+      "generatedAt": "2026-09-16T23:57:30.668Z",
+      "hallucinationRate": 0.286,
+      "meanGradedScore": 0.948,
+      "meanScore": 0.931,
+      "meanToolPrecision": 0.912,
+      "meanToolRecall": 1,
+      "passed": 15,
+      "passRate": 0.882,
+      "reportPath": "docs/harness/eval-results/ablation-deepseek-flash-allowlist-off-workrules-off.json",
+      "scenarioCount": 17,
+      "transportOk": true,
+      "failedScenarioIds": [
+        "tool_avoid_absent_web_search",
+        "tool_avoid_wording_trap"
+      ],
+      "extraToolScenarioIds": []
+    },
+    {
+      "allowlist": false,
+      "model": "deepseek-flash",
+      "modelClass": "weak",
+      "nativeSchemas": true,
+      "workRules": true,
+      "dimensionPassRate": {
+        "transport": 1,
+        "tool_selection": 0.75,
+        "tool_avoidance": 0.8,
+        "multi_step": 1,
+        "memory": 1,
+        "channel": 1
+      },
+      "failed": 2,
+      "generatedAt": "2026-09-16T23:58:19.634Z",
+      "hallucinationRate": 0.286,
+      "meanGradedScore": 0.948,
+      "meanScore": 0.931,
+      "meanToolPrecision": 0.912,
+      "meanToolRecall": 1,
+      "passed": 15,
+      "passRate": 0.882,
+      "reportPath": "docs/harness/eval-results/ablation-deepseek-flash-allowlist-off-workrules-on.json",
+      "scenarioCount": 17,
+      "transportOk": true,
+      "failedScenarioIds": [
+        "tool_avoid_absent_web_search",
+        "tool_avoid_wording_trap"
+      ],
+      "extraToolScenarioIds": []
+    },
+    {
+      "allowlist": true,
+      "model": "deepseek-flash",
+      "modelClass": "weak",
+      "nativeSchemas": true,
+      "workRules": false,
+      "dimensionPassRate": {
+        "transport": 1,
+        "tool_selection": 0.75,
+        "tool_avoidance": 0.8,
+        "multi_step": 1,
+        "memory": 1,
+        "channel": 1
+      },
+      "failed": 2,
+      "generatedAt": "2026-09-16T23:59:06.811Z",
+      "hallucinationRate": 0.286,
+      "meanGradedScore": 0.948,
+      "meanScore": 0.931,
+      "meanToolPrecision": 0.912,
+      "meanToolRecall": 1,
+      "passed": 15,
+      "passRate": 0.882,
+      "reportPath": "docs/harness/eval-results/ablation-deepseek-flash-allowlist-on-workrules-off.json",
+      "scenarioCount": 17,
+      "transportOk": true,
+      "failedScenarioIds": [
+        "tool_avoid_absent_web_search",
+        "tool_avoid_wording_trap"
+      ],
+      "extraToolScenarioIds": []
+    },
+    {
+      "allowlist": true,
+      "model": "deepseek-flash",
+      "modelClass": "weak",
+      "nativeSchemas": true,
+      "workRules": true,
+      "dimensionPassRate": {
+        "transport": 1,
+        "tool_selection": 0.75,
+        "tool_avoidance": 1,
+        "multi_step": 1,
+        "memory": 1,
+        "channel": 1
+      },
+      "failed": 1,
+      "generatedAt": "2026-09-16T23:59:52.101Z",
+      "hallucinationRate": 0.143,
+      "meanGradedScore": 0.961,
+      "meanScore": 0.971,
+      "meanToolPrecision": 0.912,
+      "meanToolRecall": 1,
+      "passed": 16,
+      "passRate": 0.941,
+      "reportPath": "docs/harness/eval-results/ablation-deepseek-flash-allowlist-on-workrules-on.json",
+      "scenarioCount": 17,
+      "transportOk": true,
+      "failedScenarioIds": ["tool_avoid_wording_trap"],
+      "extraToolScenarioIds": ["context_continuity"]
+    }
+  ],
+  "deltas": [
+    {
+      "allowlistOff": 0.941,
+      "allowlistOn": 0.941,
+      "delta": 0,
+      "metric": "passRate",
+      "modelClass": "strong",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.956,
+      "allowlistOn": 0.956,
+      "delta": 0,
+      "metric": "meanScore",
+      "modelClass": "strong",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.926,
+      "allowlistOn": 0.946,
+      "delta": 0.02,
+      "metric": "meanGradedScore",
+      "modelClass": "strong",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.882,
+      "allowlistOn": 0.941,
+      "delta": 0.059,
+      "metric": "meanToolPrecision",
+      "modelClass": "strong",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.941,
+      "allowlistOn": 0.941,
+      "delta": 0,
+      "metric": "meanToolRecall",
+      "modelClass": "strong",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.143,
+      "allowlistOn": 0.143,
+      "delta": 0,
+      "metric": "hallucinationRate",
+      "modelClass": "strong",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.941,
+      "allowlistOn": 0.941,
+      "delta": 0,
+      "metric": "passRate",
+      "modelClass": "strong",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.956,
+      "allowlistOn": 0.956,
+      "delta": 0,
+      "metric": "meanScore",
+      "modelClass": "strong",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.946,
+      "allowlistOn": 0.926,
+      "delta": -0.02,
+      "metric": "meanGradedScore",
+      "modelClass": "strong",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.941,
+      "allowlistOn": 0.882,
+      "delta": -0.059,
+      "metric": "meanToolPrecision",
+      "modelClass": "strong",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.941,
+      "allowlistOn": 0.941,
+      "delta": 0,
+      "metric": "meanToolRecall",
+      "modelClass": "strong",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.143,
+      "allowlistOn": 0.143,
+      "delta": 0,
+      "metric": "hallucinationRate",
+      "modelClass": "strong",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.882,
+      "allowlistOn": 0.882,
+      "delta": 0,
+      "metric": "passRate",
+      "modelClass": "weak",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.931,
+      "allowlistOn": 0.931,
+      "delta": 0,
+      "metric": "meanScore",
+      "modelClass": "weak",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.948,
+      "allowlistOn": 0.948,
+      "delta": 0,
+      "metric": "meanGradedScore",
+      "modelClass": "weak",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.912,
+      "allowlistOn": 0.912,
+      "delta": 0,
+      "metric": "meanToolPrecision",
+      "modelClass": "weak",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 1,
+      "allowlistOn": 1,
+      "delta": 0,
+      "metric": "meanToolRecall",
+      "modelClass": "weak",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.286,
+      "allowlistOn": 0.286,
+      "delta": 0,
+      "metric": "hallucinationRate",
+      "modelClass": "weak",
+      "workRules": false
+    },
+    {
+      "allowlistOff": 0.882,
+      "allowlistOn": 0.941,
+      "delta": 0.059,
+      "metric": "passRate",
+      "modelClass": "weak",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.931,
+      "allowlistOn": 0.971,
+      "delta": 0.04,
+      "metric": "meanScore",
+      "modelClass": "weak",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.948,
+      "allowlistOn": 0.961,
+      "delta": 0.013,
+      "metric": "meanGradedScore",
+      "modelClass": "weak",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.912,
+      "allowlistOn": 0.912,
+      "delta": 0,
+      "metric": "meanToolPrecision",
+      "modelClass": "weak",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 1,
+      "allowlistOn": 1,
+      "delta": 0,
+      "metric": "meanToolRecall",
+      "modelClass": "weak",
+      "workRules": true
+    },
+    {
+      "allowlistOff": 0.286,
+      "allowlistOn": 0.143,
+      "delta": -0.143,
+      "metric": "hallucinationRate",
+      "modelClass": "weak",
+      "workRules": true
+    }
+  ],
+  "generatedAt": "2026-09-16T23:59:52.102Z",
+  "nativeSchemas": true,
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "question": "Does the iteration-2 assigned-tool allowlist reduce tool hallucination when work-rules are OFF and/or on a weaker model?",
+  "strongModel": "kimi-k2.7-code",
+  "weakModel": "deepseek-flash",
+  "interpretation": {
+    "allowlistAlone": "No. With work-rules OFF, allowlist ON vs OFF is a zero delta on both models for passRate, meanScore, and hallucinationRate.",
+    "allowlistWithWorkRulesWeak": "Yes, small and localized. On deepseek-flash with work-rules ON, allowlist ON flipped tool_avoid_absent_web_search from fail to pass (15/17 → 16/17, hallucinationRate 0.286 → 0.143).",
+    "allowlistWithWorkRulesStrong": "No pass-rate change. Both cells 16/17; the only fail is tool_avoid_wording_trap (assigned decoy named in the user prompt).",
+    "precisionNoise": "meanToolPrecision on kimi moves ±0.059 because context_continuity sometimes calls write_note. That is extra-tool use on a passing memory turn, not a hallucination scenario flip.",
+    "wordingTrap": "Fails in all 8 cells. lookup_ticket_live is in the scenario catalog (native schemas include it), so this measures following the user-named assigned decoy, not unassigned-tool invention.",
+    "n": 1
+  }
+}

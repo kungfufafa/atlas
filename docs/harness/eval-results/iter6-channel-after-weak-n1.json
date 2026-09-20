@@ -1,0 +1,112 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:58:19.175Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": true,
+        "reply_no_at_mention": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 5863,
+      "gradedScore": 0.667,
+      "id": "channel_whatsapp_private",
+      "passed": true,
+      "replyPreview": "Yep — the nightly backup finished. All clear on that one.\n\nShout if you want the details logged somewhere for the record.",
+      "score": 1,
+      "toolCalls": ["search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_group_audience": true,
+        "prompt_has_group_guidance": true,
+        "prompt_omits_private_kind": true,
+        "prompt_omits_private_guidance": true,
+        "reply_addresses_asker": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 2128,
+      "gradedScore": 1,
+      "id": "channel_whatsapp_group",
+      "passed": true,
+      "replyPreview": "Jordan — yes, the nightly backup finished.",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": true,
+        "reply_no_at_mention": true
+      },
+      "dimension": "channel",
+      "durationMs": 4672,
+      "gradedScore": 0.667,
+      "id": "channel_telegram_private",
+      "passed": true,
+      "replyPreview": "Yes — the nightly backup finished. That's confirmed, nothing outstanding on it.",
+      "score": 1,
+      "toolCalls": ["search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_group_audience": true,
+        "prompt_has_group_guidance": true,
+        "prompt_omits_private_kind": true,
+        "prompt_omits_private_guidance": true,
+        "reply_addresses_asker": true
+      },
+      "dimension": "channel",
+      "durationMs": 2892,
+      "gradedScore": 0.667,
+      "id": "channel_telegram_group",
+      "passed": true,
+      "replyPreview": "Jordan — the nightly backup finished. ✅\n\nNo failures, so nothing needs a second look on your end.",
+      "score": 1,
+      "toolCalls": ["search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 0.75,
+    "meanScore": 1,
+    "meanToolPrecision": 0.25,
+    "meanToolRecall": 1,
+    "passed": 4,
+    "transportOk": false
+  }
+}

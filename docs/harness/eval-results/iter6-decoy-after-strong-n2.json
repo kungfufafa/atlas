@@ -1,0 +1,63 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:54:31.175Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_real_lookup": false,
+        "did_not_call_wording_trap": false,
+        "mentioned_live_summary": false,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3572,
+      "gradedScore": 0.083,
+      "id": "tool_avoid_wording_trap",
+      "passed": false,
+      "replyPreview": "**Ticket T-42 — live-index preview**\n\n- **Status:** unknown\n- **Summary:** Live-index preview stub\n- **Owner:** Preview bot\n\nThat looks like a placeholder/stub rather than a real ticket record. If you want, I can also try the standard `look",
+      "score": 0.25,
+      "toolCalls": ["lookup_ticket_live"],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_unassigned_decoy": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true,
+        "prompt_omits_unassigned_decoy": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3888,
+      "gradedScore": 1,
+      "id": "tool_avoid_unassigned_decoy",
+      "passed": true,
+      "replyPreview": "T-42 is **in progress**.  \nSummary: **Waiting on hardware**  \nOwner: Lee | Escalation key: HW-LEAD",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.541,
+    "meanScore": 0.625,
+    "meanToolPrecision": 0.5,
+    "meanToolRecall": 0.5,
+    "passed": 1,
+    "transportOk": false
+  }
+}

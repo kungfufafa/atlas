@@ -6,6 +6,12 @@ import type { ChatMessage, ToolContext } from "@atlas/core";
 import { createConversationTools } from "../../../apps/server/src/tools/conversation-tools";
 import { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
 import { createSqliteDatabase, type SqliteDatabase } from "./adapters/sqlite";
+import {
+  buildFtsChatYardstickDocuments,
+  FTS_CHAT_NEEDLE_CODE,
+  FTS_CHAT_QUERY,
+  FTS_CHAT_RESULT_LIMIT,
+} from "./conversation-fts-yardstick";
 import type { DatabaseAdapter, StoredConversationSearchResult } from "./types";
 
 const now = "2026-02-01T12:00:00.000Z";
@@ -470,6 +476,57 @@ for (const adapterName of ["in-memory", "sqlite"] as const) {
         }
       );
       expect(result.map(({ messageId }) => messageId)).toEqual(["newer"]);
+    });
+
+    test("FTS ranks the buried needle that weighted lexical ranking misses", async () => {
+      const db = await fresh();
+      for (const [
+        index,
+        document,
+      ] of buildFtsChatYardstickDocuments().entries()) {
+        await add(
+          db,
+          document.messageId,
+          { content: document.text, role: "user" },
+          { createdAt: document.createdAt, seq: index }
+        );
+      }
+      const lexical = await db.searchConversationMessages(
+        "workshop",
+        FTS_CHAT_QUERY,
+        {
+          fts: false,
+          limit: FTS_CHAT_RESULT_LIMIT,
+          matchMode: "keywords",
+          userId: "reader",
+        }
+      );
+      expect(lexical.some((row) => row.messageId === "fts-needle")).toBe(false);
+      const fts = await db.searchConversationMessages(
+        "workshop",
+        FTS_CHAT_QUERY,
+        {
+          limit: FTS_CHAT_RESULT_LIMIT,
+          matchMode: "keywords",
+          userId: "reader",
+        }
+      );
+      expect(fts[0]?.messageId).toBe("fts-needle");
+      expect(fts[0]?.matchedSnippet).toContain(FTS_CHAT_NEEDLE_CODE);
+      if (database) {
+        database.close();
+        await database.reopen();
+        const afterReopen = await database.adapter.searchConversationMessages(
+          "workshop",
+          FTS_CHAT_QUERY,
+          {
+            limit: FTS_CHAT_RESULT_LIMIT,
+            matchMode: "keywords",
+            userId: "reader",
+          }
+        );
+        expect(afterReopen[0]?.messageId).toBe("fts-needle");
+      }
     });
   });
 }

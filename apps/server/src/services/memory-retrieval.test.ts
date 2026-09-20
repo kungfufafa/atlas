@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { afterEach, expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -429,5 +429,68 @@ test("zero, negative, fractional and excessive result limits stay bounded in bot
         USER
       )
     ).toEqual([]);
+  }
+});
+
+test("searchVisibleMemories ranks profile memory-archive files on the production path", async () => {
+  const previous = process.env.ATLAS_CONFIG_DIR;
+  const { db, service } = await fixture();
+  const root = roots.at(-1);
+  if (!root) {
+    throw new Error("expected fixture root");
+  }
+  process.env.ATLAS_CONFIG_DIR = root;
+  try {
+    const archiveDir = join(
+      root,
+      "orgs",
+      ORG,
+      "profiles",
+      PROFILE,
+      "memory-archive"
+    );
+    await mkdir(archiveDir, { recursive: true });
+    await writeFile(
+      join(archiveDir, "2026-08.md"),
+      `# Archived Memory
+
+---
+
+## 2026-08-15
+
+- The badge code is QUARTZ-WALRUS-19.
+`,
+      "utf8"
+    );
+    await seed(db, [
+      record("noise-bin", {
+        content: "Warehouse bin 014 holds spare tape.",
+        ownerId: PROFILE,
+        scope: "agent",
+      }),
+    ]);
+    const hits = await service.searchVisibleMemories(
+      ORG,
+      "badge code QUARTZ-WALRUS",
+      visible
+    );
+    expect(hits[0]?.content).toContain("QUARTZ-WALRUS-19");
+    expect(hits[0]?.source).toBe("memory-archive");
+
+    const off = new MemoryService(db, { indexProfileArchive: false });
+    const missed = await off.searchVisibleMemories(
+      ORG,
+      "badge code QUARTZ-WALRUS",
+      visible
+    );
+    expect(missed.some((row) => row.content.includes("QUARTZ-WALRUS-19"))).toBe(
+      false
+    );
+  } finally {
+    if (previous === undefined) {
+      delete process.env.ATLAS_CONFIG_DIR;
+    } else {
+      process.env.ATLAS_CONFIG_DIR = previous;
+    }
   }
 });

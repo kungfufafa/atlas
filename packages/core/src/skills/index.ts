@@ -11,6 +11,8 @@ export * from "./dedupe";
 export * from "./discover";
 export * from "./github-skill-fetch";
 export * from "./github-skill-url";
+export * from "./learned-skill";
+export * from "./learning-signals";
 export * from "./load-tool";
 export * from "./match";
 export * from "./parse";

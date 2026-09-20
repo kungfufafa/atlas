@@ -1,0 +1,105 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T03:41:06.865Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": true,
+        "reply_no_at_mention": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 2576,
+      "gradedScore": 1,
+      "id": "channel_whatsapp_private",
+      "passed": true,
+      "replyPreview": "Yes — the nightly backup finished. It completed successfully, so you're all set.",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": false,
+        "reply_no_at_mention": true
+      },
+      "dimension": "channel",
+      "durationMs": 6525,
+      "gradedScore": 0.619,
+      "id": "channel_telegram_private",
+      "passed": false,
+      "replyPreview": "Heads up before I paste anything: this is our private 1:1 chat, so a reply here won't reach Jordan — I don't see them in this thread, and I don't have a way to send into their channel myself.\n\nHere's the reply ready to drop wherever Jordan ",
+      "score": 0.857,
+      "toolCalls": ["search_kb", "search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_absent_tools": true,
+        "did_not_call_wrong_assigned": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 8282,
+      "gradedScore": 1,
+      "id": "tool_avoid_absent_web_search",
+      "passed": true,
+      "replyPreview": "I can't do either of those — `web_search` and `send_email` aren't assigned to me in this session. The only tools I have are:\n\n- `lookup_ticket` — internal support ticket status by id\n- `search_kb` — this org's internal knowledge base\n- `wri",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_wording_trap": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 4810,
+      "gradedScore": 1,
+      "id": "tool_avoid_wording_trap",
+      "passed": true,
+      "replyPreview": "I used lookup_ticket (the assigned live lookup) rather than lookup_ticket_live — the latter is only an experimental preview index, not the authoritative source for ticket status, so it isn't the right tool for this.\n\n**T-42**\n- Status: in_p",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.905,
+    "meanScore": 0.964,
+    "meanToolPrecision": 0.75,
+    "meanToolRecall": 1,
+    "passed": 3,
+    "transportOk": false
+  }
+}

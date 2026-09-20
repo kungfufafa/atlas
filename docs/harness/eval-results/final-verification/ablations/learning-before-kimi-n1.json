@@ -1,0 +1,80 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:30:46.000Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1401,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": false,
+        "phase2_searched_sop": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 42019,
+      "gradedScore": 0.833,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "Quarantine hold filed for **T-42** and saved as a note.\n\n**Ticket details at hold time:**\n- Summary: Waiting on hardware\n- Status: in_progress\n- Owner: Lee\n- Escalation key: HW-LEAD\n\nNote: I recorded the hold via the available note tool; th",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": false,
+        "phase2_used_assigned_tools": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 17618,
+      "gradedScore": 0.667,
+      "id": "learn_unknown_tool_recovery",
+      "passed": false,
+      "replyPreview": "I looked up T-42: it's in progress, owned by Lee, waiting on hardware (escalation key HW-LEAD). However, I don't have a `clearance_stamp` tool available in this session \u2014 only `lookup_ticket`, `write_note`, and `search_kb`. I can't stamp th",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 0.5
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.833,
+    "meanScore": 0.667,
+    "meanToolPrecision": 1.0,
+    "meanToolRecall": 0.833,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

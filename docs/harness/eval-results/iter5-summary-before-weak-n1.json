@@ -1,0 +1,42 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "memoryRetrieval": true,
+    "memorySummarization": false,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T02:17:11.757Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "prompt_contains_vault_hint": false,
+        "recalled_vault_hint": false,
+        "zero_tool_calls": true
+      },
+      "dimension": "memory",
+      "durationMs": 1502,
+      "gradedScore": 0.778,
+      "id": "memory_summary_needle",
+      "passed": false,
+      "replyPreview": "No vault passphrase hint is in my continuity notes — the only facts I have there are warehouse bin counts (bins 052–080). I can't give you a code I don't have.",
+      "score": 0.333,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.778,
+    "meanScore": 0.333,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 0,
+    "transportOk": false
+  }
+}

@@ -333,7 +333,7 @@ Search text in files under the profile workspace.
 
 ### `knowledge_base_search`
 
-Search uploaded knowledge base documents for relevant facts. The Knowledge tab can also show inherited URL sources, such as the Atlas documentation index at `llms.txt`; use `web_fetch` on that index and on specific `.md` pages — not `knowledge_base_search`.
+Search uploaded knowledge base documents for relevant facts. Uploads accept PDF, Word (`.docx`), PowerPoint (`.pptx`), Excel (`.xlsx`, `.xls`, `.xlsm`, `.xlsb`), CSV, TSV, JSON, JSON Lines, Markdown, and plain text files up to 5 MB; text is extracted at upload time so every format is searchable the same way. The Knowledge tab can also show inherited URL sources, such as the Atlas documentation index at `llms.txt`; use `web_fetch` on that index and on specific `.md` pages — not `knowledge_base_search`.
 
 When this tool is assigned, permitted for the current sender, and ready documents exist, Atlas retrieves likely excerpts before each factual answer across web chat, CLI, Telegram, WhatsApp, and Discord. The agent uses `knowledge_base_search` again when it needs a narrower or alternative query.
 

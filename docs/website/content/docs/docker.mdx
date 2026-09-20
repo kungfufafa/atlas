@@ -14,6 +14,8 @@ docker run -d -p 4310:4310 -v atlas-data:/atlas/data --name atlas ghcr.io/kungfu
 
 Open `http://localhost:4310`. The container serves the API, web dashboard, and platform workers together. The image includes **LibreOffice** so PowerPoint, Word, and Excel artifacts can generate fidelity previews and thumbnails.
 
+If the dashboard spinner never finishes after a rebuild, restart the container so Atlas serves the compressed dashboard. On a public URL, `curl -sSI -H 'Accept-Encoding: gzip' https://YOUR_HOST/assets/index-*.js` must include `Content-Encoding: gzip`. A hard-refresh clears an old uncompressed bundle stuck in the browser.
+
 Data is stored at `/atlas/data` inside the container. The `-v atlas-data:/atlas/data` volume persists orgs, profiles, sessions, provider settings, and the local SQLite database across restarts.
 
 ## Build from source
