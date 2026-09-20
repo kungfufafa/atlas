@@ -150,8 +150,12 @@ jobs:
       - name: Run unit tests
         run: |
           # Piped core handlers ignore RLIMIT_CORE; cap dumps on this ephemeral runner.
-          cat /proc/sys/kernel/core_pattern
-          sudo sysctl -w kernel.core_pattern=core
+          if [[ -r /proc/sys/kernel/core_pattern ]]; then
+            cat /proc/sys/kernel/core_pattern
+            sudo sysctl -w kernel.core_pattern=core
+          else
+            echo "::warning::core_pattern is unavailable; relying on ulimit only"
+          fi
           ulimit -c 0
           bun run test --shard=${{ matrix.shard }}/4
 
