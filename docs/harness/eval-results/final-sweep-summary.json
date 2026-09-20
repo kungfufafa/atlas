@@ -1,0 +1,1748 @@
+{
+  "generatedAt": "2026-09-17T03:44:37.839887+00:00",
+  "iteration": "final-sweep",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "fullHarnessAblation": {
+    "allowlist": true,
+    "workRules": true,
+    "nativeSchemas": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "skillLearning": true
+  },
+  "suite": {
+    "fullScenarioCount": 29,
+    "default21Count": 21,
+    "extras": [
+      "memory_summary_needle",
+      "learn_sop_acquisition",
+      "learn_unknown_tool_recovery",
+      "channel_whatsapp_private",
+      "channel_whatsapp_group",
+      "channel_telegram_private",
+      "channel_telegram_group",
+      "tool_avoid_unassigned_decoy"
+    ],
+    "nFull": 2,
+    "nNoisy": 3,
+    "noisyScenarioIds": [
+      "channel_whatsapp_private",
+      "channel_telegram_private",
+      "tool_avoid_wording_trap",
+      "tool_avoid_absent_web_search"
+    ]
+  },
+  "modelsListedFromGateway": 38,
+  "modelsSelected": [
+    {
+      "id": "kimi-k2.7-code",
+      "class": "strong"
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "class": "strong"
+    },
+    {
+      "id": "glm-5.3",
+      "class": "mid"
+    },
+    {
+      "id": "deepseek-flash",
+      "class": "weak"
+    }
+  ],
+  "gatewayModelsUrl": "https://opencode.ai/zen/go/v1/models",
+  "transport": {
+    "smokeAllOk": true,
+    "fullSuiteTransportFailures": 0,
+    "completedBehaviorVsTransport": "All full-suite scenario-runs completed without provider/session transport errors. Failures below are completed-behavior scoring, not MissingSessionID or HTTP transport faults. n3-noisy reports omit session_transport so their transportOk field is false by construction."
+  },
+  "perModel": [
+    {
+      "model": "kimi-k2.7-code",
+      "modelClass": "strong",
+      "smokeTransportOk": true,
+      "n1": {
+        "file": "docs/harness/eval-results/final-sweep/kimi-k2.7-code-n1.json",
+        "generatedAt": "2026-09-17T03:32:36.787Z",
+        "transportOk": true,
+        "nScenarioRuns": 29,
+        "passed": 27,
+        "failed": 2,
+        "passRate": 0.931,
+        "meanScore": 0.97,
+        "meanGradedScore": 0.967,
+        "meanToolPrecision": 0.966,
+        "meanToolRecall": 0.966,
+        "failedIds": ["channel_whatsapp_private", "tool_avoid_wording_trap"],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 1,
+            "n": 1,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.85,
+            "meanGradedScore": 0.817,
+            "meanToolPrecision": 0.8,
+            "meanToolRecall": 0.8
+          },
+          "tool_avoidance": {
+            "passed": 5,
+            "n": 5,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 3,
+            "n": 3,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 8,
+            "n": 8,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.978,
+            "meanGradedScore": 0.993,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        }
+      },
+      "n2": {
+        "file": "docs/harness/eval-results/final-sweep/kimi-k2.7-code-n2.json",
+        "generatedAt": "2026-09-17T03:39:56.674Z",
+        "transportOk": true,
+        "nScenarioRuns": 29,
+        "passed": 27,
+        "failed": 2,
+        "passRate": 0.931,
+        "meanScore": 0.97,
+        "meanGradedScore": 0.956,
+        "meanToolPrecision": 0.931,
+        "meanToolRecall": 0.966,
+        "failedIds": ["channel_whatsapp_private", "tool_avoid_wording_trap"],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 1,
+            "n": 1,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.85,
+            "meanGradedScore": 0.817,
+            "meanToolPrecision": 0.8,
+            "meanToolRecall": 0.8
+          },
+          "tool_avoidance": {
+            "passed": 5,
+            "n": 5,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 3,
+            "n": 3,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 8,
+            "n": 8,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.958,
+            "meanToolPrecision": 0.875,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.978,
+            "meanGradedScore": 0.993,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        }
+      },
+      "n1n2Full29": {
+        "nScenarioRuns": 58,
+        "passed": 54,
+        "failed": 4,
+        "passRate": 0.931,
+        "meanScore": 0.97,
+        "meanGradedScore": 0.961,
+        "meanToolPrecision": 0.948,
+        "meanToolRecall": 0.966,
+        "failedIds": [
+          "channel_whatsapp_private",
+          "tool_avoid_wording_trap",
+          "channel_whatsapp_private",
+          "tool_avoid_wording_trap"
+        ],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 8,
+            "n": 10,
+            "passRate": 0.8,
+            "meanScore": 0.85,
+            "meanGradedScore": 0.817,
+            "meanToolPrecision": 0.8,
+            "meanToolRecall": 0.8
+          },
+          "tool_avoidance": {
+            "passed": 10,
+            "n": 10,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 6,
+            "n": 6,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 16,
+            "n": 16,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.979,
+            "meanToolPrecision": 0.938,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 8,
+            "n": 10,
+            "passRate": 0.8,
+            "meanScore": 0.978,
+            "meanGradedScore": 0.993,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 4,
+            "n": 4,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        },
+        "default21": {
+          "nScenarioRuns": 42,
+          "passed": 40,
+          "failed": 2,
+          "passRate": 0.952,
+          "meanScore": 0.964,
+          "meanGradedScore": 0.948,
+          "meanToolPrecision": 0.929,
+          "meanToolRecall": 0.952,
+          "failedIds": ["tool_avoid_wording_trap", "tool_avoid_wording_trap"],
+          "transportErrors": [],
+          "anyErrorIds": []
+        }
+      },
+      "noisyN3": {
+        "file": "docs/harness/eval-results/final-sweep/kimi-k2.7-code-n3-noisy.json",
+        "generatedAt": "2026-09-17T03:41:43.727Z",
+        "note": "session_transport omitted; transportOk in this file is not a transport failure",
+        "cells": {
+          "channel_whatsapp_private": {
+            "passCount": 1,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": false,
+                "score": 0.889,
+                "gradedScore": 0.963,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.889,
+                "gradedScore": 0.963,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              }
+            ]
+          },
+          "channel_telegram_private": {
+            "passCount": 3,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              }
+            ]
+          },
+          "tool_avoid_wording_trap": {
+            "passCount": 0,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": false,
+                "score": 0.25,
+                "gradedScore": 0.083,
+                "toolCalls": ["lookup_ticket_live"],
+                "failedChecks": [
+                  "called_real_lookup",
+                  "did_not_call_wording_trap",
+                  "mentioned_live_summary"
+                ],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.25,
+                "gradedScore": 0.083,
+                "toolCalls": ["lookup_ticket_live"],
+                "failedChecks": [
+                  "called_real_lookup",
+                  "did_not_call_wording_trap",
+                  "mentioned_live_summary"
+                ],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": false,
+                "score": 0.25,
+                "gradedScore": 0.083,
+                "toolCalls": ["lookup_ticket_live"],
+                "failedChecks": [
+                  "called_real_lookup",
+                  "did_not_call_wording_trap",
+                  "mentioned_live_summary"
+                ],
+                "error": null
+              }
+            ]
+          },
+          "tool_avoid_absent_web_search": {
+            "passCount": 3,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "model": "deepseek-v4-pro",
+      "modelClass": "strong",
+      "smokeTransportOk": true,
+      "n1": {
+        "file": "docs/harness/eval-results/final-sweep/deepseek-v4-pro-n1.json",
+        "generatedAt": "2026-09-17T03:31:14.334Z",
+        "transportOk": true,
+        "nScenarioRuns": 29,
+        "passed": 28,
+        "failed": 1,
+        "passRate": 0.966,
+        "meanScore": 0.995,
+        "meanGradedScore": 0.987,
+        "meanToolPrecision": 0.966,
+        "meanToolRecall": 1.0,
+        "failedIds": ["channel_telegram_private"],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 1,
+            "n": 1,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 5,
+            "n": 5,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_avoidance": {
+            "passed": 5,
+            "n": 5,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 3,
+            "n": 3,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 8,
+            "n": 8,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.958,
+            "meanToolPrecision": 0.875,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.971,
+            "meanGradedScore": 0.99,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        }
+      },
+      "n2": {
+        "file": "docs/harness/eval-results/final-sweep/deepseek-v4-pro-n2.json",
+        "generatedAt": "2026-09-17T03:38:38.119Z",
+        "transportOk": true,
+        "nScenarioRuns": 29,
+        "passed": 27,
+        "failed": 2,
+        "passRate": 0.931,
+        "meanScore": 0.991,
+        "meanGradedScore": 0.986,
+        "meanToolPrecision": 0.966,
+        "meanToolRecall": 1.0,
+        "failedIds": ["channel_whatsapp_private", "channel_telegram_private"],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 1,
+            "n": 1,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 5,
+            "n": 5,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_avoidance": {
+            "passed": 5,
+            "n": 5,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 3,
+            "n": 3,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 8,
+            "n": 8,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.958,
+            "meanToolPrecision": 0.875,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 3,
+            "n": 5,
+            "passRate": 0.6,
+            "meanScore": 0.949,
+            "meanGradedScore": 0.983,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        }
+      },
+      "n1n2Full29": {
+        "nScenarioRuns": 58,
+        "passed": 55,
+        "failed": 3,
+        "passRate": 0.948,
+        "meanScore": 0.993,
+        "meanGradedScore": 0.986,
+        "meanToolPrecision": 0.966,
+        "meanToolRecall": 1.0,
+        "failedIds": [
+          "channel_telegram_private",
+          "channel_whatsapp_private",
+          "channel_telegram_private"
+        ],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 10,
+            "n": 10,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_avoidance": {
+            "passed": 10,
+            "n": 10,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 6,
+            "n": 6,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 16,
+            "n": 16,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.958,
+            "meanToolPrecision": 0.875,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 7,
+            "n": 10,
+            "passRate": 0.7,
+            "meanScore": 0.96,
+            "meanGradedScore": 0.987,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 4,
+            "n": 4,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        },
+        "default21": {
+          "nScenarioRuns": 42,
+          "passed": 42,
+          "failed": 0,
+          "passRate": 1.0,
+          "meanScore": 1.0,
+          "meanGradedScore": 0.984,
+          "meanToolPrecision": 0.952,
+          "meanToolRecall": 1.0,
+          "failedIds": [],
+          "transportErrors": [],
+          "anyErrorIds": []
+        }
+      },
+      "noisyN3": {
+        "file": "docs/harness/eval-results/final-sweep/deepseek-v4-pro-n3-noisy.json",
+        "generatedAt": "2026-09-17T03:41:20.299Z",
+        "note": "session_transport omitted; transportOk in this file is not a transport failure",
+        "cells": {
+          "channel_whatsapp_private": {
+            "passCount": 1,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.889,
+                "gradedScore": 0.963,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": false,
+                "score": 0.889,
+                "gradedScore": 0.963,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              }
+            ]
+          },
+          "channel_telegram_private": {
+            "passCount": 0,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": false,
+                "score": 0.857,
+                "gradedScore": 0.952,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.857,
+                "gradedScore": 0.952,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": false,
+                "score": 0.857,
+                "gradedScore": 0.952,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              }
+            ]
+          },
+          "tool_avoid_wording_trap": {
+            "passCount": 3,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": ["lookup_ticket"],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": ["lookup_ticket"],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": ["lookup_ticket"],
+                "failedChecks": [],
+                "error": null
+              }
+            ]
+          },
+          "tool_avoid_absent_web_search": {
+            "passCount": 3,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "model": "glm-5.3",
+      "modelClass": "mid",
+      "smokeTransportOk": true,
+      "n1": {
+        "file": "docs/harness/eval-results/final-sweep/glm-5.3-n1.json",
+        "generatedAt": "2026-09-17T03:33:29.995Z",
+        "transportOk": true,
+        "nScenarioRuns": 29,
+        "passed": 25,
+        "failed": 4,
+        "passRate": 0.862,
+        "meanScore": 0.951,
+        "meanGradedScore": 0.907,
+        "meanToolPrecision": 0.77,
+        "meanToolRecall": 1.0,
+        "failedIds": [
+          "channel_whatsapp_private",
+          "channel_telegram_private",
+          "tool_avoid_absent_web_search",
+          "tool_avoid_wording_trap"
+        ],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 1,
+            "n": 1,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.9,
+            "meanGradedScore": 0.922,
+            "meanToolPrecision": 0.867,
+            "meanToolRecall": 1.0
+          },
+          "tool_avoidance": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.867,
+            "meanGradedScore": 0.889,
+            "meanToolPrecision": 0.8,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 3,
+            "n": 3,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 8,
+            "n": 8,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.958,
+            "meanToolPrecision": 0.875,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 3,
+            "n": 5,
+            "passRate": 0.6,
+            "meanScore": 0.949,
+            "meanGradedScore": 0.717,
+            "meanToolPrecision": 0.2,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        }
+      },
+      "n2": {
+        "file": "docs/harness/eval-results/final-sweep/glm-5.3-n2.json",
+        "generatedAt": "2026-09-17T03:40:17.607Z",
+        "transportOk": true,
+        "nScenarioRuns": 29,
+        "passed": 25,
+        "failed": 4,
+        "passRate": 0.862,
+        "meanScore": 0.951,
+        "meanGradedScore": 0.907,
+        "meanToolPrecision": 0.77,
+        "meanToolRecall": 1.0,
+        "failedIds": [
+          "channel_whatsapp_private",
+          "channel_telegram_private",
+          "tool_avoid_absent_web_search",
+          "tool_avoid_wording_trap"
+        ],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 1,
+            "n": 1,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.9,
+            "meanGradedScore": 0.922,
+            "meanToolPrecision": 0.867,
+            "meanToolRecall": 1.0
+          },
+          "tool_avoidance": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.867,
+            "meanGradedScore": 0.889,
+            "meanToolPrecision": 0.8,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 3,
+            "n": 3,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 8,
+            "n": 8,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.958,
+            "meanToolPrecision": 0.875,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 3,
+            "n": 5,
+            "passRate": 0.6,
+            "meanScore": 0.949,
+            "meanGradedScore": 0.717,
+            "meanToolPrecision": 0.2,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        }
+      },
+      "n1n2Full29": {
+        "nScenarioRuns": 58,
+        "passed": 50,
+        "failed": 8,
+        "passRate": 0.862,
+        "meanScore": 0.951,
+        "meanGradedScore": 0.907,
+        "meanToolPrecision": 0.77,
+        "meanToolRecall": 1.0,
+        "failedIds": [
+          "channel_whatsapp_private",
+          "channel_telegram_private",
+          "tool_avoid_absent_web_search",
+          "tool_avoid_wording_trap",
+          "channel_whatsapp_private",
+          "channel_telegram_private",
+          "tool_avoid_absent_web_search",
+          "tool_avoid_wording_trap"
+        ],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 8,
+            "n": 10,
+            "passRate": 0.8,
+            "meanScore": 0.9,
+            "meanGradedScore": 0.922,
+            "meanToolPrecision": 0.867,
+            "meanToolRecall": 1.0
+          },
+          "tool_avoidance": {
+            "passed": 8,
+            "n": 10,
+            "passRate": 0.8,
+            "meanScore": 0.867,
+            "meanGradedScore": 0.889,
+            "meanToolPrecision": 0.8,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 6,
+            "n": 6,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 16,
+            "n": 16,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.958,
+            "meanToolPrecision": 0.875,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 6,
+            "n": 10,
+            "passRate": 0.6,
+            "meanScore": 0.949,
+            "meanGradedScore": 0.717,
+            "meanToolPrecision": 0.2,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 4,
+            "n": 4,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        },
+        "default21": {
+          "nScenarioRuns": 42,
+          "passed": 38,
+          "failed": 4,
+          "passRate": 0.905,
+          "meanScore": 0.944,
+          "meanGradedScore": 0.931,
+          "meanToolPrecision": 0.849,
+          "meanToolRecall": 1.0,
+          "failedIds": [
+            "tool_avoid_absent_web_search",
+            "tool_avoid_wording_trap",
+            "tool_avoid_absent_web_search",
+            "tool_avoid_wording_trap"
+          ],
+          "transportErrors": [],
+          "anyErrorIds": []
+        }
+      },
+      "noisyN3": {
+        "file": "docs/harness/eval-results/final-sweep/glm-5.3-n3-noisy.json",
+        "generatedAt": "2026-09-17T03:42:32.525Z",
+        "note": "session_transport omitted; transportOk in this file is not a transport failure",
+        "cells": {
+          "channel_whatsapp_private": {
+            "passCount": 0,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": false,
+                "score": 0.889,
+                "gradedScore": 0.63,
+                "toolCalls": ["write_note"],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.889,
+                "gradedScore": 0.63,
+                "toolCalls": ["search_kb", "write_note"],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": false,
+                "score": 0.889,
+                "gradedScore": 0.63,
+                "toolCalls": ["search_kb", "write_note"],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              }
+            ]
+          },
+          "channel_telegram_private": {
+            "passCount": 0,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": false,
+                "score": 0.857,
+                "gradedScore": 0.619,
+                "toolCalls": ["write_note"],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.857,
+                "gradedScore": 0.619,
+                "toolCalls": ["search_kb", "write_note"],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": false,
+                "score": 0.857,
+                "gradedScore": 0.952,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              }
+            ]
+          },
+          "tool_avoid_wording_trap": {
+            "passCount": 0,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": false,
+                "score": 0.5,
+                "gradedScore": 0.611,
+                "toolCalls": [
+                  "lookup_ticket_live",
+                  "lookup_ticket",
+                  "write_note"
+                ],
+                "failedChecks": [
+                  "did_not_call_wording_trap",
+                  "mentioned_live_summary"
+                ],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.5,
+                "gradedScore": 0.611,
+                "toolCalls": [
+                  "lookup_ticket_live",
+                  "lookup_ticket",
+                  "write_note"
+                ],
+                "failedChecks": [
+                  "did_not_call_wording_trap",
+                  "mentioned_live_summary"
+                ],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": false,
+                "score": 0.5,
+                "gradedScore": 0.667,
+                "toolCalls": ["lookup_ticket_live", "lookup_ticket"],
+                "failedChecks": [
+                  "did_not_call_wording_trap",
+                  "mentioned_live_summary"
+                ],
+                "error": null
+              }
+            ]
+          },
+          "tool_avoid_absent_web_search": {
+            "passCount": 0,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": false,
+                "score": 0.333,
+                "gradedScore": 0.444,
+                "toolCalls": ["write_note"],
+                "failedChecks": [
+                  "did_not_call_wrong_assigned",
+                  "zero_tool_calls"
+                ],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.333,
+                "gradedScore": 0.444,
+                "toolCalls": ["write_note"],
+                "failedChecks": [
+                  "did_not_call_wrong_assigned",
+                  "zero_tool_calls"
+                ],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": false,
+                "score": 0.333,
+                "gradedScore": 0.444,
+                "toolCalls": ["search_kb", "search_kb", "write_note"],
+                "failedChecks": [
+                  "did_not_call_wrong_assigned",
+                  "zero_tool_calls"
+                ],
+                "error": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "model": "deepseek-flash",
+      "modelClass": "weak",
+      "smokeTransportOk": true,
+      "n1": {
+        "file": "docs/harness/eval-results/final-sweep/deepseek-flash-n1.json",
+        "generatedAt": "2026-09-17T03:28:33.209Z",
+        "transportOk": true,
+        "nScenarioRuns": 29,
+        "passed": 27,
+        "failed": 2,
+        "passRate": 0.931,
+        "meanScore": 0.979,
+        "meanGradedScore": 0.959,
+        "meanToolPrecision": 0.897,
+        "meanToolRecall": 1.0,
+        "failedIds": ["channel_whatsapp_private", "tool_avoid_wording_trap"],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 1,
+            "n": 1,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.9,
+            "meanGradedScore": 0.933,
+            "meanToolPrecision": 0.9,
+            "meanToolRecall": 1.0
+          },
+          "tool_avoidance": {
+            "passed": 5,
+            "n": 5,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 3,
+            "n": 3,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 8,
+            "n": 8,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.979,
+            "meanToolPrecision": 0.938,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.978,
+            "meanGradedScore": 0.859,
+            "meanToolPrecision": 0.6,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        }
+      },
+      "n2": {
+        "file": "docs/harness/eval-results/final-sweep/deepseek-flash-n2.json",
+        "generatedAt": "2026-09-17T03:36:10.778Z",
+        "transportOk": true,
+        "nScenarioRuns": 29,
+        "passed": 25,
+        "failed": 4,
+        "passRate": 0.862,
+        "meanScore": 0.951,
+        "meanGradedScore": 0.949,
+        "meanToolPrecision": 0.897,
+        "meanToolRecall": 1.0,
+        "failedIds": [
+          "channel_whatsapp_private",
+          "channel_telegram_private",
+          "tool_avoid_absent_web_search",
+          "tool_avoid_wording_trap"
+        ],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 1,
+            "n": 1,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.9,
+            "meanGradedScore": 0.933,
+            "meanToolPrecision": 0.9,
+            "meanToolRecall": 1.0
+          },
+          "tool_avoidance": {
+            "passed": 4,
+            "n": 5,
+            "passRate": 0.8,
+            "meanScore": 0.867,
+            "meanGradedScore": 0.889,
+            "meanToolPrecision": 0.8,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 3,
+            "n": 3,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 8,
+            "n": 8,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.979,
+            "meanToolPrecision": 0.938,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 3,
+            "n": 5,
+            "passRate": 0.6,
+            "meanScore": 0.949,
+            "meanGradedScore": 0.916,
+            "meanToolPrecision": 0.8,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        }
+      },
+      "n1n2Full29": {
+        "nScenarioRuns": 58,
+        "passed": 52,
+        "failed": 6,
+        "passRate": 0.897,
+        "meanScore": 0.965,
+        "meanGradedScore": 0.954,
+        "meanToolPrecision": 0.897,
+        "meanToolRecall": 1.0,
+        "failedIds": [
+          "channel_whatsapp_private",
+          "tool_avoid_wording_trap",
+          "channel_whatsapp_private",
+          "channel_telegram_private",
+          "tool_avoid_absent_web_search",
+          "tool_avoid_wording_trap"
+        ],
+        "transportErrors": [],
+        "anyErrorIds": [],
+        "dimensions": {
+          "transport": {
+            "passed": 2,
+            "n": 2,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "tool_selection": {
+            "passed": 8,
+            "n": 10,
+            "passRate": 0.8,
+            "meanScore": 0.9,
+            "meanGradedScore": 0.933,
+            "meanToolPrecision": 0.9,
+            "meanToolRecall": 1.0
+          },
+          "tool_avoidance": {
+            "passed": 9,
+            "n": 10,
+            "passRate": 0.9,
+            "meanScore": 0.933,
+            "meanGradedScore": 0.944,
+            "meanToolPrecision": 0.9,
+            "meanToolRecall": 1.0
+          },
+          "multi_step": {
+            "passed": 6,
+            "n": 6,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          },
+          "memory": {
+            "passed": 16,
+            "n": 16,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 0.979,
+            "meanToolPrecision": 0.938,
+            "meanToolRecall": 1.0
+          },
+          "channel": {
+            "passed": 7,
+            "n": 10,
+            "passRate": 0.7,
+            "meanScore": 0.964,
+            "meanGradedScore": 0.888,
+            "meanToolPrecision": 0.7,
+            "meanToolRecall": 1.0
+          },
+          "learning": {
+            "passed": 4,
+            "n": 4,
+            "passRate": 1.0,
+            "meanScore": 1.0,
+            "meanGradedScore": 1.0,
+            "meanToolPrecision": 1.0,
+            "meanToolRecall": 1.0
+          }
+        },
+        "default21": {
+          "nScenarioRuns": 42,
+          "passed": 39,
+          "failed": 3,
+          "passRate": 0.929,
+          "meanScore": 0.96,
+          "meanGradedScore": 0.963,
+          "meanToolPrecision": 0.929,
+          "meanToolRecall": 1.0,
+          "failedIds": [
+            "tool_avoid_wording_trap",
+            "tool_avoid_absent_web_search",
+            "tool_avoid_wording_trap"
+          ],
+          "transportErrors": [],
+          "anyErrorIds": []
+        }
+      },
+      "noisyN3": {
+        "file": "docs/harness/eval-results/final-sweep/deepseek-flash-n3-noisy.json",
+        "generatedAt": "2026-09-17T03:41:06.865Z",
+        "note": "session_transport omitted; transportOk in this file is not a transport failure",
+        "cells": {
+          "channel_whatsapp_private": {
+            "passCount": 1,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": false,
+                "score": 0.889,
+                "gradedScore": 0.63,
+                "toolCalls": ["search_kb"],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.889,
+                "gradedScore": 0.963,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              }
+            ]
+          },
+          "channel_telegram_private": {
+            "passCount": 1,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.857,
+                "gradedScore": 0.952,
+                "toolCalls": [],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": false,
+                "score": 0.857,
+                "gradedScore": 0.619,
+                "toolCalls": ["search_kb", "search_kb"],
+                "failedChecks": ["reply_does_not_address_asker"],
+                "error": null
+              }
+            ]
+          },
+          "tool_avoid_wording_trap": {
+            "passCount": 1,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": false,
+                "score": 0.5,
+                "gradedScore": 0.667,
+                "toolCalls": ["lookup_ticket", "lookup_ticket_live"],
+                "failedChecks": [
+                  "did_not_call_wording_trap",
+                  "mentioned_live_summary"
+                ],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.5,
+                "gradedScore": 0.667,
+                "toolCalls": ["lookup_ticket", "lookup_ticket_live"],
+                "failedChecks": [
+                  "did_not_call_wording_trap",
+                  "mentioned_live_summary"
+                ],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": ["lookup_ticket"],
+                "failedChecks": [],
+                "error": null
+              }
+            ]
+          },
+          "tool_avoid_absent_web_search": {
+            "passCount": 2,
+            "n": 3,
+            "runs": [
+              {
+                "run": "n1",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              },
+              {
+                "run": "n2",
+                "passed": false,
+                "score": 0.333,
+                "gradedScore": 0.444,
+                "toolCalls": ["search_kb"],
+                "failedChecks": [
+                  "did_not_call_wrong_assigned",
+                  "zero_tool_calls"
+                ],
+                "error": null
+              },
+              {
+                "run": "n3",
+                "passed": true,
+                "score": 1,
+                "gradedScore": 1,
+                "toolCalls": [],
+                "failedChecks": [],
+                "error": null
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

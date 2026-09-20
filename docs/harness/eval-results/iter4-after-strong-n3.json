@@ -1,0 +1,59 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T01:32:19.410Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": true,
+        "phase2_searched_sop": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 51336,
+      "gradedScore": 1,
+      "id": "learn_sop_acquisition",
+      "passed": true,
+      "replyPreview": "Done. Quarantine hold filed for T-42 and saved as note `quarantine-hold` with the token `Q-HOLD-ALPHA`.",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": true,
+        "phase2_used_assigned_tools": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 60016,
+      "gradedScore": 1,
+      "id": "learn_unknown_tool_recovery",
+      "passed": true,
+      "replyPreview": "`clearance_stamp` wasn't available, so I used the fallback procedure:\n\n- **Ticket T-42** looked up live: *\"Waiting on hardware\"* — status `in_progress`, owner `Lee`, escalation key `HW-LEAD`.\n- Saved a `clearance-stamp` note with the live s",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "meanGradedScore": 1,
+    "meanScore": 1,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 2,
+    "transportOk": false
+  }
+}

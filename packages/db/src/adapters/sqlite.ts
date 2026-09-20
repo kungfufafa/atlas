@@ -10,9 +10,16 @@ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import { sqliteArtifactPublications } from "../artifact-publication-sqlite";
 import { LLM_USAGE_STATS_ID, WORKSPACE_SETTINGS_ID } from "../constants";
 import {
+  deleteConversationFtsForSession,
+  deleteLiveConversationFtsForSession,
+  indexConversationPayload,
+} from "../conversation-fts-index";
+import {
   ConversationKeywordSearch,
   readConversationMessagePayload,
 } from "../conversation-keyword-search";
+import type { ConversationSearchCandidate } from "../conversation-rank-fts5";
+import { searchRankedConversations } from "../conversation-rank-fts5";
 import { ensureDatabaseDirectory, resolveDatabasePath } from "../database-url";
 import { isExactMemoryFact } from "../memory-identity";
 import {
@@ -22,6 +29,7 @@ import {
   normalizeMemoryText,
 } from "../memory-search";
 import { migrateDatabase } from "../migrate";
+import { parseStoredChatKind } from "../session-chat-kind";
 import type {
   DatabaseAdapter,
   MemoryScope,
@@ -142,6 +150,7 @@ interface SessionRow {
   agent_questionnaire: string | null;
   agent_todos: string;
   channel: string;
+  chat_kind?: string | null;
   created_at: string;
   id: string;
   model_override: string | null;
@@ -866,15 +875,16 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   `);
   const upsertSessionStmt = db.prepare(`
     INSERT INTO sessions (
-      id, org_id, profile_id, channel, created_at, updated_at, user_id, model_override
+      id, org_id, profile_id, channel, created_at, updated_at, user_id, model_override, chat_kind
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       org_id = excluded.org_id,
       profile_id = excluded.profile_id,
       channel = excluded.channel,
       user_id = COALESCE(excluded.user_id, sessions.user_id),
-      model_override = excluded.model_override
+      model_override = excluded.model_override,
+      chat_kind = COALESCE(excluded.chat_kind, sessions.chat_kind)
   `);
   const updateSessionUpdatedAtStmt = db.prepare(
     "UPDATE sessions SET updated_at = ? WHERE id = ?"
@@ -920,6 +930,12 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         JSON.stringify(message.payload),
         message.createdAt
       );
+      indexConversationPayload(db, {
+        createdAt: message.createdAt,
+        messageId: message.id,
+        payload: message.payload,
+        sessionId,
+      });
     }
   };
   const appendMessagesTransaction = db.transaction(insertMessages);
@@ -966,8 +982,20 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
           archive.createdAt
         );
       }
+      deleteLiveConversationFtsForSession(db, sessionId);
       deleteMessagesForSessionStmt.run(sessionId);
       insertMessages(sessionId, messages);
+      for (const archive of archives) {
+        for (const [seq, payload] of archive.messages.entries()) {
+          indexConversationPayload(db, {
+            archiveId: archive.id,
+            createdAt: archive.createdAt,
+            messageId: `${archive.id}:${seq}`,
+            payload,
+            sessionId,
+          });
+        }
+      }
 
       const updatedAt = messages.reduce(
         (latest, message) =>
@@ -2933,6 +2961,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async deleteSession(id) {
+      deleteConversationFtsForSession(db, id);
       const result = deleteSessionStmt.run(id);
       return result.changes > 0;
     },
@@ -4410,6 +4439,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       if (keywords?.empty) {
         return [];
       }
+      const ftsEnabled = options.fts !== false;
 
       const archivedPayload = keywords
         ? ARCHIVED_CONVERSATION_PAYLOAD_SQL
@@ -4483,6 +4513,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
           session_id: string;
           session_title: string | null;
         }>;
+        const candidates: ConversationSearchCandidate[] = [];
         for (const row of rows) {
           let payload: unknown;
           try {
@@ -4491,22 +4522,23 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
             payload = row.payload;
           }
           const parsed = readConversationMessagePayload(payload);
-          keywords.add(
-            {
-              ...(row.archive_id
-                ? { archivedAt: row.created_at, archiveId: row.archive_id }
-                : {}),
-              createdAt: row.created_at,
-              messageId: row.message_id,
-              profileId: row.profile_id,
-              role: parsed.role,
-              sessionId: row.session_id,
-              sessionTitle: row.session_title,
-            },
-            parsed.text
-          );
+          candidates.push({
+            ...(row.archive_id
+              ? { archivedAt: row.created_at, archiveId: row.archive_id }
+              : {}),
+            createdAt: row.created_at,
+            messageId: row.message_id,
+            profileId: row.profile_id,
+            role: parsed.role,
+            sessionId: row.session_id,
+            sessionTitle: row.session_title,
+            text: parsed.text,
+          });
         }
-        return keywords.results();
+        return searchRankedConversations(candidates, clean, {
+          fts: ftsEnabled,
+          limit: options.limit,
+        });
       }
 
       sql += " AND m.payload LIKE ?";
@@ -5000,7 +5032,8 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.createdAt,
         record.createdAt,
         record.userId ?? null,
-        record.modelOverride
+        record.modelOverride,
+        parseStoredChatKind(record.chatKind)
       );
     },
 
@@ -5558,10 +5591,12 @@ function parseAgentQuestionnaire(
 }
 
 function toSessionRecord(row: SessionRow): StoredSessionRecord {
+  const chatKind = parseStoredChatKind(row.chat_kind);
   return {
     agentQuestionnaire: parseAgentQuestionnaire(row.agent_questionnaire),
     agentTodos: parseAgentTodos(row.agent_todos),
     channel: row.channel,
+    ...(chatKind ? { chatKind } : {}),
     createdAt: row.created_at,
     id: row.id,
     modelOverride: row.model_override ?? null,

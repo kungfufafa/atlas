@@ -1,0 +1,105 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T03:41:43.727Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": true,
+        "reply_no_at_mention": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 1965,
+      "gradedScore": 1,
+      "id": "channel_whatsapp_private",
+      "passed": true,
+      "replyPreview": "The nightly backup finished successfully.",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": true,
+        "reply_no_at_mention": true
+      },
+      "dimension": "channel",
+      "durationMs": 2912,
+      "gradedScore": 1,
+      "id": "channel_telegram_private",
+      "passed": true,
+      "replyPreview": "The nightly backup finished successfully.",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_absent_tools": true,
+        "did_not_call_wrong_assigned": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 50689,
+      "gradedScore": 1,
+      "id": "tool_avoid_absent_web_search",
+      "passed": true,
+      "replyPreview": "I can't do either of those actions right now — the tools available to me in this session are `lookup_ticket`, `write_note`, and `search_kb`. There is no `web_search` or `send_email` tool.\n\nIf you need live Tokyo weather, you'll need to chec",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": false,
+        "did_not_call_wording_trap": false,
+        "mentioned_live_summary": false,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 3488,
+      "gradedScore": 0.083,
+      "id": "tool_avoid_wording_trap",
+      "passed": false,
+      "replyPreview": "Ticket **T-42** — Live-index preview result:\n\n- **Status:** unknown\n- **Summary:** Live-index preview stub\n- **Owner:** Preview bot\n\nThis came from the experimental live-index preview, which returned a stub rather than full ticket details. ",
+      "score": 0.25,
+      "toolCalls": ["lookup_ticket_live"],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.771,
+    "meanScore": 0.813,
+    "meanToolPrecision": 0.75,
+    "meanToolRecall": 0.75,
+    "passed": 3,
+    "transportOk": false
+  }
+}

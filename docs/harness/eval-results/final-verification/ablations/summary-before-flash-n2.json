@@ -1,0 +1,61 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": true,
+    "memorySummarization": false,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:24:12.000Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1197,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_contains_vault_hint": false,
+        "recalled_vault_hint": false,
+        "zero_tool_calls": true
+      },
+      "dimension": "memory",
+      "durationMs": 1898,
+      "gradedScore": 0.778,
+      "id": "memory_summary_needle",
+      "passed": false,
+      "replyPreview": "No vault passphrase hint exists in your continuity facts \u2014 the memory I hold covers warehouse bins 052\u2013080 only. I won't invent a code.",
+      "score": 0.333,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.889,
+    "meanScore": 0.666,
+    "meanToolPrecision": 1.0,
+    "meanToolRecall": 1.0,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

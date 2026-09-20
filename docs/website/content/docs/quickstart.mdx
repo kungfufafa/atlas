@@ -91,6 +91,14 @@ After Atlas is running:
 
 See [First-time setup](/first-time-setup) for the wizard walkthrough and [Providers](/providers) for supported LLM backends.
 
+If the dashboard spinner never finishes, the browser is often waiting on an uncompressed JavaScript bundle (~4 MB). After you rebuild the web app, restart the Atlas process. Check the public URL, not only localhost:
+
+```bash
+curl -sSI -H 'Accept-Encoding: gzip' https://YOUR_HOST/assets/index-*.js | grep -i content-encoding
+```
+
+That must show `gzip`. If it does and the spinner still sits there, hard-refresh or clear the browser cache — an older uncompressed file can stay cached.
+
 ## Common next steps
 
 ### Connect a channel

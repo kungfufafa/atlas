@@ -1,0 +1,112 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": false,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:21:31.000Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 972,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_memory_search": false,
+        "prompt_omits_archive_needle": true,
+        "recalled_archive_badge": false
+      },
+      "dimension": "memory",
+      "durationMs": 4698,
+      "gradedScore": 0.111,
+      "id": "memory_archive_needle",
+      "passed": false,
+      "replyPreview": "No badge code found. I searched the knowledge base (queries: \"badge code\", \"badge\", \"code\") \u2014 the only hit is a generic ops note that doesn't contain one. I don't have a \"durable/archived memory\" tool; the ones I have are lookup_ticket, sea",
+      "score": 0.333,
+      "toolCalls": ["search_kb", "search_kb", "search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_memory_search": false,
+        "recalled_current_city": false,
+        "rejected_stale_city": false
+      },
+      "dimension": "memory",
+      "durationMs": 2648,
+      "gradedScore": 0,
+      "id": "memory_conflict_recency",
+      "passed": false,
+      "replyPreview": "Berlin",
+      "score": 0,
+      "toolCalls": ["search_kb", "search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_search_chats": false,
+        "prompt_omits_dossier": true,
+        "recalled_dossier": false
+      },
+      "dimension": "memory",
+      "durationMs": 3771,
+      "gradedScore": 0.111,
+      "id": "memory_search_chats",
+      "passed": false,
+      "replyPreview": "I can't retrieve that. I have no tool to search prior chats, and the vendor dossier code isn't in MEMORY.md \u2014 my knowledge base search returned nothing on it either.\n\nI won't guess a code. If you can paste the earlier thread or tell me wher",
+      "score": 0.333,
+      "toolCalls": ["search_kb", "search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    },
+    {
+      "checks": {
+        "called_memory_search": false,
+        "prompt_omits_overflow_code": false,
+        "recalled_overflow_code": true
+      },
+      "dimension": "memory",
+      "durationMs": 2192,
+      "gradedScore": 0.111,
+      "id": "memory_bounded_dump",
+      "passed": false,
+      "replyPreview": "MANGROVE-DELTA-5",
+      "score": 0.333,
+      "toolCalls": [],
+      "toolPrecision": 0,
+      "toolRecall": 0
+    }
+  ],
+  "summary": {
+    "failed": 4,
+    "meanGradedScore": 0.267,
+    "meanScore": 0.4,
+    "meanToolPrecision": 0.2,
+    "meanToolRecall": 0.2,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

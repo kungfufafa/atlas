@@ -155,6 +155,7 @@ export function createMemoryTools(
         ? await memoryService.searchMemories(orgId, parsed.query, {
             limit: parsed.limit,
             ownerId: resolveOwnerId(parsed.scope, context),
+            profileId: context.profileId,
             scope: parsed.scope,
           })
         : await memoryService.searchVisibleMemories(orgId, parsed.query, {

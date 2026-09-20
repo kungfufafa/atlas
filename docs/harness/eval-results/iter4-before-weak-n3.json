@@ -1,0 +1,66 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "memoryRetrieval": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T01:16:15.765Z",
+  "model": "deepseek-flash",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": false,
+        "phase2_searched_sop": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 15510,
+      "gradedScore": 0.833,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "I couldn't file it — and I won't guess at a hold I can't document. Here's where it stands.\n\n**T-42 (live lookup)**\n- Status: `in_progress`\n- Owner: Lee\n- Escalation key: `HW-LEAD`\n- Summary: Waiting on hardware\n\n**Why the hold didn't get fi",
+      "score": 0.5,
+      "toolCalls": [
+        "lookup_ticket",
+        "search_kb",
+        "search_kb",
+        "search_kb",
+        "search_kb",
+        "write_note"
+      ],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": false,
+        "phase2_used_assigned_tools": true,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 13987,
+      "gradedScore": 0.806,
+      "id": "learn_unknown_tool_recovery",
+      "passed": false,
+      "replyPreview": "Note saved. Net: T-42 is untouched — still `in_progress`, owner Lee, blocked on hardware with the HW-LEAD escalation open. Get the clearance stamp executed by whoever owns that tool, and confirm the hardware dependency is cleared first.",
+      "score": 0.75,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 0.6666666666666666,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.82,
+    "meanScore": 0.625,
+    "meanToolPrecision": 0.833,
+    "meanToolRecall": 1,
+    "passed": 0,
+    "transportOk": false
+  }
+}

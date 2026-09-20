@@ -1,0 +1,80 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:35:35.000Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1938,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": false,
+        "phase2_searched_sop": false,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 64799,
+      "gradedScore": 0.722,
+      "id": "learn_sop_acquisition",
+      "passed": false,
+      "replyPreview": "I can\u2019t file the quarantine hold directly \u2014 the tools I have only let me look up tickets, search the KB, and save notes, and there\u2019s no quarantine-hold action available.\n\nTicket T-42 details:\n- Status: **in_progress**\n- Owner: **Lee**\n- Sum",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket", "search_kb", "search_kb", "search_kb"],
+      "toolPrecision": 1,
+      "toolRecall": 0.6666666666666666
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": false,
+        "phase2_used_assigned_tools": true,
+        "learned_skill_absent": true
+      },
+      "dimension": "learning",
+      "durationMs": 20040,
+      "gradedScore": 0.806,
+      "id": "learn_unknown_tool_recovery",
+      "passed": false,
+      "replyPreview": "I looked up T-42 and saved a note, but I can\u2019t stamp the clearance because the `clearance_stamp` tool isn\u2019t available in this session.\n\n**T-42 status:**\n- Status: `in_progress`\n- Owner: Lee\n- Summary: Waiting on hardware\n- Escalation key: H",
+      "score": 0.75,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 0.6666666666666666,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.843,
+    "meanScore": 0.75,
+    "meanToolPrecision": 0.889,
+    "meanToolRecall": 0.889,
+    "passed": 1,
+    "transportOk": true
+  },
+  "_transportRetries": [],
+  "_remainingTransportFailures": []
+}

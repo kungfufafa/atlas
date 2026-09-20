@@ -1123,6 +1123,13 @@ export class SkillsService {
       .filter((skill): skill is DiscoveredSkill => skill !== null);
   }
 
+  async listAssignedDiscoveredSkills(
+    orgId: string,
+    profileId: string
+  ): Promise<DiscoveredSkill[]> {
+    return this.getAssignedDiscoveredSkills(orgId, profileId);
+  }
+
   private async syncSkillRecordFromDirectory(
     directory: string,
     name: string,

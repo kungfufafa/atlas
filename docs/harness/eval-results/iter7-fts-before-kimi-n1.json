@@ -1,0 +1,59 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": false,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": false,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T04:07:42.312Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "called_search_chats": true,
+        "prompt_omits_fts_needle": true,
+        "recalled_fts_needle": false
+      },
+      "dimension": "memory",
+      "durationMs": 73267,
+      "gradedScore": 0.722,
+      "id": "memory_search_chats_fts",
+      "passed": false,
+      "replyPreview": "No retrieval code was recorded.",
+      "score": 0.667,
+      "toolCalls": [
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_kb",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats",
+        "search_chats"
+      ],
+      "toolPrecision": 0.5,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "meanGradedScore": 0.722,
+    "meanScore": 0.667,
+    "meanToolPrecision": 0.5,
+    "meanToolRecall": 1,
+    "passed": 0,
+    "transportOk": false
+  }
+}

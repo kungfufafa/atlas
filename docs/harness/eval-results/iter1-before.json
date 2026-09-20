@@ -1,0 +1,117 @@
+{
+  "generatedAt": "2026-09-16T23:19:27.373Z",
+  "model": "kimi-k2.7-code",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": false
+      },
+      "dimension": "transport",
+      "durationMs": 192,
+      "error": "missing_opencode_session",
+      "id": "session_transport",
+      "passed": false,
+      "replyPreview": "",
+      "score": 0,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "completed": false
+      },
+      "dimension": "tool_selection",
+      "durationMs": 528,
+      "error": "missing_opencode_session",
+      "id": "tool_select_lookup",
+      "passed": false,
+      "replyPreview": "",
+      "score": 0,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "completed": false
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 151,
+      "error": "missing_opencode_session",
+      "id": "tool_avoid_arithmetic",
+      "passed": false,
+      "replyPreview": "",
+      "score": 0,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "completed": false
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 178,
+      "error": "missing_opencode_session",
+      "id": "tool_avoid_hallucinated",
+      "passed": false,
+      "replyPreview": "",
+      "score": 0,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "completed": false
+      },
+      "dimension": "multi_step",
+      "durationMs": 153,
+      "error": "missing_opencode_session",
+      "id": "multi_step_lookup_note",
+      "passed": false,
+      "replyPreview": "",
+      "score": 0,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "completed": false
+      },
+      "dimension": "memory",
+      "durationMs": 161,
+      "error": "missing_opencode_session",
+      "id": "memory_recall",
+      "passed": false,
+      "replyPreview": "",
+      "score": 0,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "completed": false
+      },
+      "dimension": "channel",
+      "durationMs": 146,
+      "error": "missing_opencode_session",
+      "id": "channel_whatsapp",
+      "passed": false,
+      "replyPreview": "",
+      "score": 0,
+      "toolCalls": []
+    },
+    {
+      "checks": {
+        "completed": false
+      },
+      "dimension": "memory",
+      "durationMs": 394,
+      "error": "missing_opencode_session",
+      "id": "context_continuity",
+      "passed": false,
+      "replyPreview": "",
+      "score": 0,
+      "toolCalls": []
+    }
+  ],
+  "summary": {
+    "failed": 8,
+    "meanScore": 0,
+    "passed": 0,
+    "transportOk": false
+  }
+}

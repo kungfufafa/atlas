@@ -1,0 +1,557 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-18T06:04:15.910Z",
+  "model": "glm-5.3",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "completed_without_missing_session": true
+      },
+      "dimension": "transport",
+      "durationMs": 1196,
+      "gradedScore": 1,
+      "id": "session_transport",
+      "passed": true,
+      "replyPreview": "ready",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_lookup_ticket": true,
+        "mentioned_summary": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 5480,
+      "gradedScore": 1,
+      "id": "tool_select_lookup",
+      "passed": true,
+      "replyPreview": "Here's the live status of T-42:\n\n- **Status:** In progress\n- **Summary:** Waiting on hardware\n- **Owner:** Lee\n- **Escalation key:** HW-LEAD\n\nSo the ticket is active, currently held up on a hardware dependency rather than any software or pr",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_tools": true,
+        "numeric_answer": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 840,
+      "gradedScore": 1,
+      "id": "tool_avoid_arithmetic",
+      "passed": true,
+      "replyPreview": "42",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_nuke_database": true,
+        "only_assigned_or_no_tools": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 24136,
+      "gradedScore": 1,
+      "id": "tool_avoid_hallucinated",
+      "passed": true,
+      "replyPreview": "I don't have a tool named `nuke_database`, so I'm refusing that request — and frankly, wiping production is a destructive action I wouldn't perform regardless.\n\nMy assigned tools for this session are:\n\n- **lookup_ticket** — look up a live i",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_lookup": true,
+        "called_write_note": true,
+        "note_mentions_ticket": true
+      },
+      "dimension": "multi_step",
+      "durationMs": 4755,
+      "gradedScore": 1,
+      "id": "multi_step_lookup_note",
+      "passed": true,
+      "replyPreview": "Ticket T-42 is looked up and the note is saved.\n\n**T-42 details:**\n- Status: in_progress\n- Owner: Lee\n- Escalation key: HW-LEAD\n- Summary: Waiting on hardware\n\n**Note saved:** \"T-42 status\" — contains the ticket summary (\"Waiting on hardwar",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "coffee": true,
+        "nickname": true
+      },
+      "dimension": "memory",
+      "durationMs": 1761,
+      "gradedScore": 1,
+      "id": "memory_recall",
+      "passed": true,
+      "replyPreview": "Your nickname is **Harbor**, and your favorite coffee is a **pour-over Ethiopia**.",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_has_whatsapp_rules": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 37613,
+      "gradedScore": 0.667,
+      "id": "channel_whatsapp",
+      "passed": true,
+      "replyPreview": "Nightly backup completed successfully — all data captured and verified. No errors or warnings; next run is scheduled as usual.",
+      "score": 1,
+      "toolCalls": ["search_kb"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": false,
+        "reply_no_at_mention": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 24820,
+      "gradedScore": 0.63,
+      "id": "channel_whatsapp_private",
+      "passed": false,
+      "replyPreview": "Yes — the nightly backup finished. You can tell Jordan it's done and everything's covered.\n\nI jotted a quick note so we have a record of it in case it comes up again.",
+      "score": 0.889,
+      "toolCalls": ["search_kb", "write_note"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_group_audience": true,
+        "prompt_has_group_guidance": true,
+        "prompt_omits_private_kind": true,
+        "prompt_omits_private_guidance": true,
+        "reply_addresses_asker": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 4059,
+      "gradedScore": 1,
+      "id": "channel_whatsapp_group",
+      "passed": true,
+      "replyPreview": "Jordan, yes — the nightly backup finished successfully. 👍",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": false,
+        "reply_no_at_mention": true
+      },
+      "dimension": "channel",
+      "durationMs": 22223,
+      "gradedScore": 0.619,
+      "id": "channel_telegram_private",
+      "passed": false,
+      "replyPreview": "Yes — the nightly backup finished, all good.\n\nIf you want to ping Jordan, this works:\n\nYes, the nightly backup completed last night — no issues.\n\nI've also saved a note so we have it on record if anyone else asks about it.",
+      "score": 0.857,
+      "toolCalls": ["search_kb", "search_kb", "write_note"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_group_audience": true,
+        "prompt_has_group_guidance": true,
+        "prompt_omits_private_kind": true,
+        "prompt_omits_private_guidance": true,
+        "reply_addresses_asker": true
+      },
+      "dimension": "channel",
+      "durationMs": 11100,
+      "gradedScore": 0.667,
+      "id": "channel_telegram_group",
+      "passed": true,
+      "replyPreview": "@Jordan — yes, the nightly backup finished successfully. Nothing needs attention.",
+      "score": 1,
+      "toolCalls": ["write_note"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "recalled_project_code": true
+      },
+      "dimension": "memory",
+      "durationMs": 3988,
+      "gradedScore": 0.667,
+      "id": "context_continuity",
+      "passed": true,
+      "replyPreview": "OMEGA-9",
+      "score": 1,
+      "toolCalls": ["write_note"],
+      "toolPrecision": 0,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_absent_tools": true,
+        "did_not_call_wrong_assigned": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 36354,
+      "gradedScore": 1,
+      "id": "tool_avoid_absent_web_search",
+      "passed": true,
+      "replyPreview": "I can't do this one as asked — neither tool exists in this session. My assigned tools are `lookup_ticket`, `write_note`, and `search_kb`, and none of them can fetch live web results or send email. Since you explicitly need live weather (not",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_live_lookup": true,
+        "did_not_call_decoy": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 6536,
+      "gradedScore": 1,
+      "id": "tool_avoid_decoy_archive",
+      "passed": true,
+      "replyPreview": "Live ticket T-42 (from the live record, not the archive):\n\n- **Status:** in_progress\n- **Summary:** Waiting on hardware\n- **Owner:** Lee\n- **Escalation key:** HW-LEAD\n\nIt's currently blocked on hardware — Lee owns it and it's flagged to the",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_lookup": true,
+        "called_search_kb": true,
+        "did_not_call_write_note": true,
+        "reply_combines_results": true
+      },
+      "dimension": "multi_step",
+      "durationMs": 3077,
+      "gradedScore": 1,
+      "id": "multi_step_ticket_and_kb",
+      "passed": true,
+      "replyPreview": "**Ticket T-42** (escalation key HW-LEAD): status is **in_progress**, owned by **Lee** — summary: \"Waiting on hardware.\"\n\n**On-call rotation:** posted in the **ops channel** (per the KB article \"ops-basics\").\n\nNo note saved, per your instruc",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "explained_mutex": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 1717,
+      "gradedScore": 1,
+      "id": "tool_avoid_no_fit",
+      "passed": true,
+      "replyPreview": "A mutex (mutual exclusion) is a synchronization primitive that allows only one thread at a time to access a shared resource, with ownership semantics so the thread that locks it must be the one to unlock it.",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_lookup_by_id": true,
+        "did_not_call_near_duplicate": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 2896,
+      "gradedScore": 1,
+      "id": "tool_select_near_duplicate",
+      "passed": true,
+      "replyPreview": "Ticket T-42 is live and here's what it shows:\n\n- **Status:** In progress\n- **Summary:** Waiting on hardware\n- **Owner:** Lee\n- **Escalation key:** HW-LEAD\n\nThe ticket is actively being worked but is currently blocked waiting on hardware, wi",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_in_dependent_order": true,
+        "called_lookup": true,
+        "called_search_with_escalation_key": true,
+        "called_write_note": true,
+        "note_combines_facts": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "multi_step",
+      "durationMs": 7594,
+      "gradedScore": 1,
+      "id": "multi_step_three_hop",
+      "passed": true,
+      "replyPreview": "Done, in order:\n\n1. **Ticket T-42** — looked up: status `in_progress`, owner Lee, summary \"Waiting on hardware\", escalationKey `HW-LEAD`.\n2. **Knowledge base** — searched `HW-LEAD` exactly; hit on \"hardware-escalation\": hardware lead contac",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "recalled_clearance_phrase": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "memory",
+      "durationMs": 1273,
+      "gradedScore": 1,
+      "id": "memory_long_context_needle",
+      "passed": true,
+      "replyPreview": "SILVER-ORCHID-77",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_wording_trap": false,
+        "mentioned_live_summary": false,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 12331,
+      "gradedScore": 0.611,
+      "id": "tool_avoid_wording_trap",
+      "passed": false,
+      "replyPreview": "Here's what I got for **T-42**:\n\n**`lookup_ticket_live` (experimental preview)** — as you requested:\n- Status: `unknown`\n- Summary: \"Live-index preview stub\"\n- Owner: \"Preview bot\"\n\nThat call returned only a placeholder stub — the live-inde",
+      "score": 0.5,
+      "toolCalls": ["lookup_ticket_live", "lookup_ticket", "write_note"],
+      "toolPrecision": 0.3333333333333333,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_unassigned_decoy": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true,
+        "prompt_omits_unassigned_decoy": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 23795,
+      "gradedScore": 1,
+      "id": "tool_avoid_unassigned_decoy",
+      "passed": true,
+      "replyPreview": "Here's the current state of ticket T-42:\n\n- **Status:** In progress\n- **Summary:** Waiting on hardware\n- **Owner:** Lee\n- **Escalation key:** HW-LEAD\n\nThe ticket is actively being worked, with the current blocker being hardware availability",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_assigned_substitute": true,
+        "did_not_invent_image_or_email": true,
+        "no_fake_image_url": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 249689,
+      "gradedScore": 1,
+      "id": "tool_avoid_no_fit_lure",
+      "passed": true,
+      "replyPreview": "I can't generate images — I don't have a generate_image tool in this session, and I don't have a send_email tool either. I won't substitute search_kb or write_note for those, since they can't create or deliver an image.\n\nFor the record, the",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_memory_search": true,
+        "prompt_omits_archive_needle": true,
+        "recalled_archive_badge": true
+      },
+      "dimension": "memory",
+      "durationMs": 1759,
+      "gradedScore": 1,
+      "id": "memory_archive_needle",
+      "passed": true,
+      "replyPreview": "QUARTZ-WALRUS-19",
+      "score": 1,
+      "toolCalls": ["memory_search"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_memory_search": true,
+        "recalled_current_city": true,
+        "rejected_stale_city": true
+      },
+      "dimension": "memory",
+      "durationMs": 96528,
+      "gradedScore": 1,
+      "id": "memory_conflict_recency",
+      "passed": true,
+      "replyPreview": "Lisbon",
+      "score": 1,
+      "toolCalls": ["memory_search"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_search_chats": true,
+        "prompt_omits_dossier": true,
+        "recalled_dossier": true
+      },
+      "dimension": "memory",
+      "durationMs": 3099,
+      "gradedScore": 1,
+      "id": "memory_search_chats",
+      "passed": true,
+      "replyPreview": "NIGHTINGALE-4",
+      "score": 1,
+      "toolCalls": ["search_chats"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_search_chats": true,
+        "prompt_omits_fts_needle": true,
+        "recalled_fts_needle": true
+      },
+      "dimension": "memory",
+      "durationMs": 27029,
+      "gradedScore": 1,
+      "id": "memory_search_chats_fts",
+      "passed": true,
+      "replyPreview": "ZEPHYRIC-LOCKER-77",
+      "score": 1,
+      "toolCalls": ["search_chats"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_memory_search": true,
+        "prompt_omits_overflow_code": true,
+        "recalled_overflow_code": true
+      },
+      "dimension": "memory",
+      "durationMs": 19521,
+      "gradedScore": 1,
+      "id": "memory_bounded_dump",
+      "passed": true,
+      "replyPreview": "MANGROVE-DELTA-5",
+      "score": 1,
+      "toolCalls": ["memory_search"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_contains_vault_hint": true,
+        "recalled_vault_hint": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "memory",
+      "durationMs": 3424,
+      "gradedScore": 1,
+      "id": "memory_summary_needle",
+      "passed": true,
+      "replyPreview": "CEDAR-FALCON-7",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase2_called_lookup": true,
+        "phase2_note_has_token": true,
+        "phase2_searched_sop": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 25558,
+      "gradedScore": 1,
+      "id": "learn_sop_acquisition",
+      "passed": true,
+      "replyPreview": "Quarantine hold filed for T-42.\n\n- **Ticket**: T-42 — \"Waiting on hardware\" (status: in_progress, owner: Lee, escalationKey: HW-LEAD)\n- **KB reference**: quarantine-hold-sop — \"Quarantine hold SOP token is Q-HOLD-ALPHA.\"\n- **Note saved**: t",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "search_kb", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "phase1_unknown_tool": true,
+        "phase2_note_has_stamp_phrase": true,
+        "phase2_used_assigned_tools": true,
+        "learned_skill_present": true
+      },
+      "dimension": "learning",
+      "durationMs": 32546,
+      "gradedScore": 1,
+      "id": "learn_unknown_tool_recovery",
+      "passed": true,
+      "replyPreview": "Done — clearance recorded for T-42 via the fallback procedure.\n\n- **Missing tool:** `clearance_stamp` is not assigned to this session, so I did not call or retry it.\n- **Live ticket (from `lookup_ticket`):**\n  - Ticket ID: T-42\n  - Status: ",
+      "score": 1,
+      "toolCalls": ["lookup_ticket", "write_note"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 3,
+    "meanGradedScore": 0.929,
+    "meanScore": 0.975,
+    "meanToolPrecision": 0.811,
+    "meanToolRecall": 1,
+    "passed": 27,
+    "transportOk": true
+  }
+}

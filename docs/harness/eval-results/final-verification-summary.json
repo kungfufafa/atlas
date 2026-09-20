@@ -1,0 +1,559 @@
+{
+  "generatedAt": "2026-09-18T06:38:29Z",
+  "branch": "cursor/harness-verify-bc7d",
+  "baseCommit": "2ad8229899017f449c44131e505f80c7ed6f732d",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "provider": "OpenCode Go",
+  "modelsEndpoint": "GET https://opencode.ai/zen/go/v1/models (x-opencode-session, no auth) returned 38 ids including all four selected models",
+  "fullHarnessFlags": {
+    "allowlist": true,
+    "workRules": true,
+    "nativeSchemas": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "ftsChats": true,
+    "skillLearning": true
+  },
+  "suite": {
+    "evalScenarios": 30,
+    "default21": 21,
+    "n": 2,
+    "models": 4,
+    "totalScenarioRuns": 240,
+    "howCounted": "8 report files \u00d7 30 EVAL_SCENARIOS (4 models \u00d7 n=2). Counted as len(report.scenarios) summed across docs/harness/eval-results/final-verification/{model}-n{1,2}.json. Each row is one live createChatSession.send scenario, including two-phase learning as one scenario-run.",
+    "transportFailures": 0,
+    "transportFailureDefinition": "scenario.error in {provider_error, missing_opencode_session, auth} or any non-empty error field. session_transport.passed is separately required on full-suite reports.",
+    "transportOkReports": 8,
+    "errorRows": 0
+  },
+  "typecheck": {
+    "command": "bun run typecheck",
+    "passed": true
+  },
+  "focusedTests": {
+    "command": "bun test ./<file.test.ts> per suite",
+    "pass": 118,
+    "fail": 0,
+    "files": {
+      "scripts/harness-eval/run.test.ts": 48,
+      "packages/agent/src/chat-prompt.test.ts": 35,
+      "packages/core/src/soul/continuity-memory.test.ts": 13,
+      "packages/db/src/memory-rank-fts5.test.ts": 4,
+      "packages/db/src/conversation-rank-fts5.test.ts": 2,
+      "packages/agent/src/skill-learning-loop.test.ts": 9,
+      "packages/db/src/session-chat-kind.test.ts": 2,
+      "apps/server/src/services/agent-service-chat-kind.test.ts": 1,
+      "packages/core/src/soul/memory-archive-index.test.ts": 4
+    }
+  },
+  "perModel": {
+    "kimi-k2.7-code": {
+      "class": "strong",
+      "files": ["kimi-k2.7-code-n1.json", "kimi-k2.7-code-n2.json"],
+      "scenarioRuns": 60,
+      "passed": 57,
+      "failed": 3,
+      "passRate": 0.95,
+      "meanScore": 0.973,
+      "meanGraded": 0.96,
+      "precision": 0.942,
+      "recall": 0.967,
+      "transportOkRuns": 2,
+      "errorRows": 0,
+      "suite21": {
+        "1": {
+          "passed": 20,
+          "total": 21,
+          "failedIds": ["tool_avoid_wording_trap"]
+        },
+        "2": {
+          "passed": 20,
+          "total": 21,
+          "failedIds": ["tool_avoid_wording_trap"]
+        }
+      },
+      "dimensions": {
+        "transport": {
+          "passed": 2,
+          "total": 2
+        },
+        "tool_selection": {
+          "passed": 8,
+          "total": 10
+        },
+        "tool_avoidance": {
+          "passed": 10,
+          "total": 10
+        },
+        "multi_step": {
+          "passed": 6,
+          "total": 6
+        },
+        "memory": {
+          "passed": 18,
+          "total": 18
+        },
+        "channel": {
+          "passed": 9,
+          "total": 10
+        },
+        "learning": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "fails": [
+        {
+          "file": "kimi-k2.7-code-n1.json",
+          "id": "channel_telegram_private",
+          "error": null,
+          "toolCalls": []
+        },
+        {
+          "file": "kimi-k2.7-code-n1.json",
+          "id": "tool_avoid_wording_trap",
+          "error": null,
+          "toolCalls": ["lookup_ticket_live"]
+        },
+        {
+          "file": "kimi-k2.7-code-n2.json",
+          "id": "tool_avoid_wording_trap",
+          "error": null,
+          "toolCalls": ["lookup_ticket_live"]
+        }
+      ]
+    },
+    "deepseek-v4-pro": {
+      "class": "strong",
+      "files": ["deepseek-v4-pro-n1.json", "deepseek-v4-pro-n2.json"],
+      "scenarioRuns": 60,
+      "passed": 58,
+      "failed": 2,
+      "passRate": 0.967,
+      "meanScore": 0.996,
+      "meanGraded": 0.982,
+      "precision": 0.95,
+      "recall": 1.0,
+      "transportOkRuns": 2,
+      "errorRows": 0,
+      "suite21": {
+        "1": {
+          "passed": 21,
+          "total": 21,
+          "failedIds": []
+        },
+        "2": {
+          "passed": 21,
+          "total": 21,
+          "failedIds": []
+        }
+      },
+      "dimensions": {
+        "transport": {
+          "passed": 2,
+          "total": 2
+        },
+        "tool_selection": {
+          "passed": 10,
+          "total": 10
+        },
+        "tool_avoidance": {
+          "passed": 10,
+          "total": 10
+        },
+        "multi_step": {
+          "passed": 6,
+          "total": 6
+        },
+        "memory": {
+          "passed": 18,
+          "total": 18
+        },
+        "channel": {
+          "passed": 8,
+          "total": 10
+        },
+        "learning": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "fails": [
+        {
+          "file": "deepseek-v4-pro-n1.json",
+          "id": "channel_whatsapp_private",
+          "error": null,
+          "toolCalls": []
+        },
+        {
+          "file": "deepseek-v4-pro-n2.json",
+          "id": "channel_telegram_private",
+          "error": null,
+          "toolCalls": ["search_kb"]
+        }
+      ]
+    },
+    "glm-5.3": {
+      "class": "mid",
+      "files": ["glm-5.3-n1.json", "glm-5.3-n2.json"],
+      "scenarioRuns": 60,
+      "passed": 53,
+      "failed": 7,
+      "passRate": 0.883,
+      "meanScore": 0.964,
+      "meanGraded": 0.906,
+      "precision": 0.753,
+      "recall": 1.0,
+      "transportOkRuns": 2,
+      "errorRows": 0,
+      "suite21": {
+        "1": {
+          "passed": 20,
+          "total": 21,
+          "failedIds": ["tool_avoid_wording_trap"]
+        },
+        "2": {
+          "passed": 19,
+          "total": 21,
+          "failedIds": [
+            "tool_avoid_absent_web_search",
+            "tool_avoid_wording_trap"
+          ]
+        }
+      },
+      "dimensions": {
+        "transport": {
+          "passed": 2,
+          "total": 2
+        },
+        "tool_selection": {
+          "passed": 8,
+          "total": 10
+        },
+        "tool_avoidance": {
+          "passed": 9,
+          "total": 10
+        },
+        "multi_step": {
+          "passed": 6,
+          "total": 6
+        },
+        "memory": {
+          "passed": 18,
+          "total": 18
+        },
+        "channel": {
+          "passed": 6,
+          "total": 10
+        },
+        "learning": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "fails": [
+        {
+          "file": "glm-5.3-n1.json",
+          "id": "channel_whatsapp_private",
+          "error": null,
+          "toolCalls": ["search_kb", "write_note"]
+        },
+        {
+          "file": "glm-5.3-n1.json",
+          "id": "channel_telegram_private",
+          "error": null,
+          "toolCalls": ["search_kb", "search_kb", "write_note"]
+        },
+        {
+          "file": "glm-5.3-n1.json",
+          "id": "tool_avoid_wording_trap",
+          "error": null,
+          "toolCalls": ["lookup_ticket_live", "lookup_ticket", "write_note"]
+        },
+        {
+          "file": "glm-5.3-n2.json",
+          "id": "channel_whatsapp_private",
+          "error": null,
+          "toolCalls": ["search_kb", "write_note"]
+        },
+        {
+          "file": "glm-5.3-n2.json",
+          "id": "channel_telegram_private",
+          "error": null,
+          "toolCalls": ["search_kb", "write_note"]
+        },
+        {
+          "file": "glm-5.3-n2.json",
+          "id": "tool_avoid_absent_web_search",
+          "error": null,
+          "toolCalls": ["search_kb", "search_kb", "write_note"]
+        },
+        {
+          "file": "glm-5.3-n2.json",
+          "id": "tool_avoid_wording_trap",
+          "error": null,
+          "toolCalls": ["lookup_ticket_live", "lookup_ticket", "write_note"]
+        }
+      ]
+    },
+    "deepseek-flash": {
+      "class": "weak",
+      "files": ["deepseek-flash-n1.json", "deepseek-flash-n2.json"],
+      "scenarioRuns": 60,
+      "passed": 57,
+      "failed": 3,
+      "passRate": 0.95,
+      "meanScore": 0.976,
+      "meanGraded": 0.936,
+      "precision": 0.833,
+      "recall": 1.0,
+      "transportOkRuns": 2,
+      "errorRows": 0,
+      "suite21": {
+        "1": {
+          "passed": 20,
+          "total": 21,
+          "failedIds": ["tool_avoid_absent_web_search"]
+        },
+        "2": {
+          "passed": 20,
+          "total": 21,
+          "failedIds": ["tool_avoid_absent_web_search"]
+        }
+      },
+      "dimensions": {
+        "transport": {
+          "passed": 2,
+          "total": 2
+        },
+        "tool_selection": {
+          "passed": 10,
+          "total": 10
+        },
+        "tool_avoidance": {
+          "passed": 8,
+          "total": 10
+        },
+        "multi_step": {
+          "passed": 6,
+          "total": 6
+        },
+        "memory": {
+          "passed": 18,
+          "total": 18
+        },
+        "channel": {
+          "passed": 9,
+          "total": 10
+        },
+        "learning": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "fails": [
+        {
+          "file": "deepseek-flash-n1.json",
+          "id": "channel_whatsapp_private",
+          "error": null,
+          "toolCalls": ["search_kb"]
+        },
+        {
+          "file": "deepseek-flash-n1.json",
+          "id": "tool_avoid_absent_web_search",
+          "error": null,
+          "toolCalls": ["search_kb", "search_kb", "write_note"]
+        },
+        {
+          "file": "deepseek-flash-n2.json",
+          "id": "tool_avoid_absent_web_search",
+          "error": null,
+          "toolCalls": ["write_note"]
+        }
+      ]
+    }
+  },
+  "yardsticks": {
+    "memory_retrieval": {
+      "before": {
+        "passed": 0,
+        "total": 16,
+        "errors": [],
+        "files": [
+          "memory-retrieval-before-flash-n1.json",
+          "memory-retrieval-before-flash-n2.json",
+          "memory-retrieval-before-kimi-n1.json",
+          "memory-retrieval-before-kimi-n2.json"
+        ]
+      },
+      "after": {
+        "passed": 32,
+        "total": 32,
+        "errors": []
+      },
+      "flags": "--no-memory-retrieval -> --memory-retrieval"
+    },
+    "memory_summarization": {
+      "before": {
+        "passed": 0,
+        "total": 4,
+        "errors": [],
+        "files": [
+          "summary-before-flash-n1.json",
+          "summary-before-flash-n2.json",
+          "summary-before-kimi-n1.json",
+          "summary-before-kimi-n2.json"
+        ]
+      },
+      "after": {
+        "passed": 8,
+        "total": 8,
+        "errors": []
+      },
+      "flags": "--no-memory-summarization -> --memory-summarization"
+    },
+    "archive_index": {
+      "before": {
+        "passed": 0,
+        "total": 4,
+        "errors": [],
+        "files": [
+          "archive-before-flash-n1.json",
+          "archive-before-flash-n2.json",
+          "archive-before-kimi-n1.json",
+          "archive-before-kimi-n2.json"
+        ]
+      },
+      "after": {
+        "passed": 8,
+        "total": 8,
+        "errors": []
+      },
+      "flags": "--no-archive-index -> --archive-index"
+    },
+    "fts_chats": {
+      "before": {
+        "passed": 0,
+        "total": 6,
+        "errors": [],
+        "files": [
+          "fts-before-flash-n1.json",
+          "fts-before-flash-n2.json",
+          "fts-before-kimi-n1.json",
+          "fts-before-kimi-n2.json",
+          "fts-before-v4pro-n1.json",
+          "fts-before-v4pro-n2.json"
+        ]
+      },
+      "after": {
+        "passed": 8,
+        "total": 8,
+        "errors": []
+      },
+      "flags": "--no-fts-chats -> --fts-chats"
+    },
+    "skill_learning": {
+      "before": {
+        "passed": 0,
+        "total": 8,
+        "errors": [],
+        "files": [
+          "learning-before-flash-n1.json",
+          "learning-before-flash-n2.json",
+          "learning-before-kimi-n1.json",
+          "learning-before-kimi-n2.json"
+        ]
+      },
+      "after": {
+        "passed": 16,
+        "total": 16,
+        "errors": []
+      },
+      "flags": "--no-skill-learning -> --skill-learning"
+    },
+    "unassigned_decoy": {
+      "before": {
+        "note": "No 0/x live BEFORE: --no-allowlist still omits lookup_ticket_live from native schemas, so the model cannot invent a call. Prior iter6 measured 6/6 allowlist-off for the same reason.",
+        "passed": null,
+        "total": 0
+      },
+      "after": {
+        "passed": 8,
+        "total": 8,
+        "errors": []
+      },
+      "flags": "full harness (allowlist ON, native schemas ON)"
+    },
+    "assigned_decoy": {
+      "passed": 4,
+      "total": 8,
+      "errors": []
+    },
+    "absent_web": {
+      "passed": 5,
+      "total": 8,
+      "errors": []
+    },
+    "whatsapp_private": {
+      "passed": 4,
+      "total": 8,
+      "errors": []
+    },
+    "telegram_private": {
+      "passed": 4,
+      "total": 8,
+      "errors": []
+    },
+    "whatsapp_group": {
+      "passed": 8,
+      "total": 8,
+      "errors": []
+    },
+    "telegram_group": {
+      "passed": 8,
+      "total": 8,
+      "errors": []
+    },
+    "three_hop": {
+      "passed": 8,
+      "total": 8,
+      "errors": []
+    },
+    "memory_dimension": {
+      "passed": 72,
+      "total": 72,
+      "errors": []
+    },
+    "learning_dimension": {
+      "passed": 16,
+      "total": 16,
+      "errors": []
+    },
+    "multi_step_dimension": {
+      "passed": 24,
+      "total": 24,
+      "errors": []
+    }
+  },
+  "residuals": {
+    "assigned_decoy": "model-limitation",
+    "private_reply_style": "model-limitation",
+    "absent_web_mid_weak": "model-limitation",
+    "skill_learning_default_off": "deliberate-policy",
+    "openclaw_gateway_policy": "deliberate-policy",
+    "chatKind_persistence": "closed-iter7",
+    "fts_session_search": "closed-iter7",
+    "harness_gap_remaining": false
+  },
+  "verdict": {
+    "repeatable_harness": true,
+    "fresh_four_model_sweep_ge_200_zero_transport": true,
+    "key_yardsticks_full_score_with_ablation": true,
+    "residuals_classified_no_harness_gap": true,
+    "evidence_package": true,
+    "equal_or_better_quality_bar": true,
+    "equal_or_better_if_expanded_to_openclaw_gateway_or_hermes_always_on": false
+  }
+}

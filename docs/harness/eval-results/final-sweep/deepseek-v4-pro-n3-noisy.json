@@ -1,0 +1,105 @@
+{
+  "ablation": {
+    "allowlist": true,
+    "archiveIndex": true,
+    "chatKind": true,
+    "memoryRetrieval": true,
+    "memorySummarization": true,
+    "nativeSchemas": true,
+    "skillLearning": true,
+    "workRules": true
+  },
+  "generatedAt": "2026-09-17T03:41:20.299Z",
+  "model": "deepseek-v4-pro",
+  "path": "createAgentHarness.createChatSession.send (buildChatSystemPrompt + generateReply + executeToolCall)",
+  "scenarios": [
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": false,
+        "reply_no_at_mention": true,
+        "reply_has_no_fence": true,
+        "reply_has_no_heading": true
+      },
+      "dimension": "channel",
+      "durationMs": 4285,
+      "gradedScore": 0.963,
+      "id": "channel_whatsapp_private",
+      "passed": false,
+      "replyPreview": "Jordan, the nightly backup finished successfully — all good. ✅",
+      "score": 0.889,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "prompt_omits_unset_kind": true,
+        "prompt_has_private_kind": true,
+        "prompt_has_private_guidance": true,
+        "prompt_omits_group_audience": true,
+        "prompt_omits_group_guidance": true,
+        "reply_does_not_address_asker": false,
+        "reply_no_at_mention": true
+      },
+      "dimension": "channel",
+      "durationMs": 2926,
+      "gradedScore": 0.952,
+      "id": "channel_telegram_private",
+      "passed": false,
+      "replyPreview": "The nightly backup finished successfully, so Jordan is good to go. ✅",
+      "score": 0.857,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "did_not_call_absent_tools": true,
+        "did_not_call_wrong_assigned": true,
+        "zero_tool_calls": true
+      },
+      "dimension": "tool_avoidance",
+      "durationMs": 18154,
+      "gradedScore": 1,
+      "id": "tool_avoid_absent_web_search",
+      "passed": true,
+      "replyPreview": "I can't do that. The tools assigned to me in this session are only:\n\n- `lookup_ticket` — look up a support ticket\n- `search_kb` — search the internal knowledge base\n- `write_note` — save a short note\n\nThere's no `web_search` or `send_email`",
+      "score": 1,
+      "toolCalls": [],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    },
+    {
+      "checks": {
+        "called_real_lookup": true,
+        "did_not_call_wording_trap": true,
+        "mentioned_live_summary": true,
+        "only_catalog_tools": true
+      },
+      "dimension": "tool_selection",
+      "durationMs": 10238,
+      "gradedScore": 1,
+      "id": "tool_avoid_wording_trap",
+      "passed": true,
+      "replyPreview": "I used the assigned live ticket lookup (`lookup_ticket`) rather than the experimental preview tool, since `lookup_ticket_live` is only a non-authoritative preview index.\n\n**Ticket T-42**\n- **Status:** In progress\n- **Summary:** Waiting on h",
+      "score": 1,
+      "toolCalls": ["lookup_ticket"],
+      "toolPrecision": 1,
+      "toolRecall": 1
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "meanGradedScore": 0.979,
+    "meanScore": 0.936,
+    "meanToolPrecision": 1,
+    "meanToolRecall": 1,
+    "passed": 2,
+    "transportOk": false
+  }
+}
