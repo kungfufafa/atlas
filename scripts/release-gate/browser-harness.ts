@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   type Browser,
@@ -7,6 +8,7 @@ import {
 } from "playwright";
 
 export interface BrowserHarnessOptions {
+  executablePath?: string;
   headless?: boolean;
   screenshotsDir: string;
 }
@@ -18,6 +20,7 @@ export interface AuthenticatedPageResult {
   pageErrors: string[];
   screenshot: (filename: string) => Promise<string>;
   sendMessage: (text: string) => Promise<void>;
+  writeEvidence: (filename: string, evidence: unknown) => Promise<string>;
 }
 
 export class BrowserHarness {
@@ -28,6 +31,7 @@ export class BrowserHarness {
   async launch(): Promise<Browser> {
     if (!this.browser) {
       this.browser = await chromium.launch({
+        executablePath: this.options.executablePath,
         headless: this.options.headless ?? true,
       });
     }
@@ -109,6 +113,11 @@ export class BrowserHarness {
       pageErrors,
       screenshot,
       sendMessage,
+      writeEvidence: async (filename, evidence) => {
+        const destination = join(this.options.screenshotsDir, filename);
+        await writeFile(destination, JSON.stringify(evidence, null, 2));
+        return destination;
+      },
     };
   }
 

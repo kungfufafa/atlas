@@ -13,6 +13,7 @@ image="atlas-file-verification:$(date +%Y%m%d%H%M%S)-$$"
 docker buildx build --load --platform="${ATLAS_DOCKER_VERIFY_PLATFORM:-linux/amd64}" \
   --tag "$image" "$@" "$repository"
 docker image inspect "$image" --format 'Built image: {{.Id}}; platform: {{.Os}}/{{.Architecture}}; size: {{.Size}} bytes; repository digests: {{json .RepoDigests}}'
+bash "$repository/scripts/verify-linux-landlock.sh" "$image"
 docker run --rm --network none --read-only \
   --tmpfs /tmp:rw,exec,nosuid,size=512m \
   --tmpfs /atlas/data:rw,exec,nosuid,uid=1000,gid=1000,size=512m \

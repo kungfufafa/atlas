@@ -17,7 +17,7 @@ env:
 jobs:
   docs:
     timeout-minutes: 15
-    runs-on: ${{ vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,7 +52,7 @@ jobs:
 
   mobile:
     timeout-minutes: 15
-    runs-on: ${{ vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -82,7 +82,7 @@ jobs:
 
   docker-files:
     timeout-minutes: 35
-    runs-on: ${{ vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -95,7 +95,7 @@ jobs:
 
   static:
     timeout-minutes: 10
-    runs-on: ${{ vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -120,7 +120,7 @@ jobs:
   unit-shards:
     name: unit shard ${{ matrix.shard }}/4
     timeout-minutes: 15
-    runs-on: ${{ vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -147,6 +147,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ffmpeg fonts-liberation libreoffice-calc libreoffice-impress libreoffice-writer
 
+      - name: Verify Linux process isolation prerequisite
+        run: bash scripts/verify-linux-landlock.sh
+
       - name: Run unit tests
         run: |
           # Piped core handlers ignore RLIMIT_CORE; cap dumps on this ephemeral runner.
@@ -169,7 +172,7 @@ jobs:
     if: ${{ always() }}
     needs: [unit-shards]
     timeout-minutes: 5
-    runs-on: ${{ vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Require every unit shard to succeed
         env:
@@ -178,7 +181,7 @@ jobs:
 
   smoke:
     timeout-minutes: 15
-    runs-on: ${{ vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -196,7 +199,7 @@ jobs:
 
   heavy:
     timeout-minutes: 25
-    runs-on: ${{ vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || vars.ATLAS_CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

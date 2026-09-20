@@ -1,6 +1,28 @@
-import type { BrowserHarness } from "../browser-harness";
+import { randomUUID } from "node:crypto";
+import type { Page } from "playwright";
+import type { SessionMessagesResponse } from "../../../packages/core/src/contract";
+import { createPptxBuffer } from "../../../packages/core/src/presentation-engine";
+import type {
+  AuthenticatedPageResult,
+  BrowserHarness,
+} from "../browser-harness";
 import type { ReleaseGateCheck } from "../decision-engine";
+import {
+  artifactDigest,
+  type JourneyTurnEvidence,
+  requireAcceptedCancellation,
+  requireCancelledStream,
+  requireCompletedReply,
+  requireCurrentArtifact,
+  requireFetchRecovery,
+  requireHistoryRetrieval,
+  requireMemoryRoundTrip,
+  requirePersistedTool,
+  requireUploadedDocument,
+  verifyOfficeContent,
+} from "../golden-journey-evidence";
 import type { TestTenantData } from "../test-factories";
+import { recoveryFixtureUrls } from "../web-fetch-fixture";
 
 interface ParsedStreamEvent {
   type: string;
@@ -82,47 +104,80 @@ export function requirePendingDeleteApproval(
   }
 }
 
+const latestTurns = new WeakMap<Page, JourneyTurnEvidence>();
+const SESSION_MESSAGE_PATH = /\/v1\/sessions\/([^/]+)\/messages$/;
+
+function latestTurn(page: Page): JourneyTurnEvidence {
+  const turn = latestTurns.get(page);
+  if (!turn) {
+    throw new Error("No completed browser turn was observed.");
+  }
+  return turn;
+}
+
 async function requireAssistantTokens(
-  page: {
-    textContent: (selector: string) => Promise<string | null>;
-    waitForFunction: (
-      fn: (expected: string[]) => boolean,
-      arg: string[],
-      options: { timeout: number }
-    ) => Promise<unknown>;
-  },
+  page: Page,
   tokens: string[]
 ): Promise<void> {
-  await page.waitForFunction(
-    (expected: string[]) => {
-      const text = document.body.innerText;
-      return expected.some((token) => text.includes(token));
-    },
-    tokens,
-    { timeout: 25_000 }
-  );
-  const content = (await page.textContent("body")) as string | null;
-  if (!tokens.some((token) => content?.includes(token))) {
+  const content = requireCompletedReply(latestTurn(page));
+  if (!tokens.some((token) => content.includes(token))) {
     throw new Error(
       `Assistant reply missing expected tokens: ${tokens.join(", ")}`
     );
   }
 }
 
+interface JourneyPage extends Omit<AuthenticatedPageResult, "sendMessage"> {
+  runId: string;
+  sendMessage: (text: string) => Promise<void>;
+  startMessage: (text: string) => Promise<void>;
+}
+
+async function downloadArtifact(
+  page: Page,
+  orgId: string,
+  runId: string,
+  tool: string,
+  extension: string
+): Promise<Buffer> {
+  const turn = latestTurn(page);
+  const artifact = requireCurrentArtifact(turn, { extension, runId, tool });
+  const route = new URL(page.url()).pathname.split("/");
+  if (route[1] !== "chat" || route[3] !== turn.sessionId || !route[2]) {
+    throw new Error("Artifact download is not bound to the active chat route.");
+  }
+  const response = await page.request.get(
+    `${new URL(page.url()).origin}/v1/profiles/${encodeURIComponent(route[2])}/artifacts/content`,
+    {
+      headers: { "X-Org-Id": orgId },
+      params: { path: artifact.path.replace(/^artifacts\//, "") },
+    }
+  );
+  if (!response.ok()) {
+    throw new Error(`Current artifact download failed (${response.status()}).`);
+  }
+  return response.body();
+}
+
 export async function runGoldenJourneysSuite(
   browserHarness: BrowserHarness,
   serverBaseUrl: string,
-  tenant: TestTenantData
+  tenant: TestTenantData,
+  options: { journeyIds?: ReadonlySet<string> } = {}
 ): Promise<ReleaseGateCheck[]> {
   const checks: ReleaseGateCheck[] = [];
 
   const runJourney = async (
     id: string,
     title: string,
-    fn: (pageRes: any) => Promise<void>
+    fn: (pageRes: JourneyPage) => Promise<void>
   ) => {
+    if (options.journeyIds && !options.journeyIds.has(id)) {
+      return;
+    }
     const start = Date.now();
-    let pageRes: any = null;
+    let pageRes: AuthenticatedPageResult | null = null;
+    const evidenceFiles: string[] = [];
 
     try {
       pageRes = await browserHarness.createAuthenticatedPage(serverBaseUrl, {
@@ -130,23 +185,108 @@ export async function runGoldenJourneysSuite(
         password: tenant.adminPassword,
       });
 
-      await fn(pageRes);
+      const runId = randomUUID();
+      const currentPage = pageRes;
+      let turnCount = 0;
+      // Every journey starts fresh; memory/history explicitly open another session.
+      await currentPage.page.goto(`${serverBaseUrl}/chat?new=1`);
+      const withRun = (text: string) => `${text}\nrelease-gate-run: ${runId}`;
+      const sendMessage = async (text: string) => {
+        const prompt = withRun(text);
+        const pending = currentPage.page.waitForResponse(
+          (response) => {
+            const request = response.request();
+            return (
+              request.method() === "POST" &&
+              SESSION_MESSAGE_PATH.test(new URL(response.url()).pathname) &&
+              request.postDataJSON()?.message === prompt
+            );
+          },
+          { timeout: 30_000 }
+        );
+        await currentPage.sendMessage(prompt);
+        const response = await pending;
+        if (!response.ok()) {
+          throw new Error(
+            `Current chat request failed (${response.status()}).`
+          );
+        }
+        const sessionId = decodeURIComponent(
+          SESSION_MESSAGE_PATH.exec(new URL(response.url()).pathname)![1]!
+        );
+        const events = parseChatStreamEvents(await response.text());
+        let messages: SessionMessagesResponse["messages"] = [];
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+          const persisted = await currentPage.page.request.get(
+            `${serverBaseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/messages`,
+            {
+              headers: { "X-Org-Id": tenant.orgId },
+            }
+          );
+          if (!persisted.ok()) {
+            throw new Error(
+              "Could not read the current session's persisted history."
+            );
+          }
+          messages = ((await persisted.json()) as SessionMessagesResponse)
+            .messages;
+          const evidence = { events, messages, prompt, sessionId };
+          latestTurns.set(currentPage.page, evidence);
+          try {
+            requireCompletedReply(evidence);
+            turnCount += 1;
+            evidenceFiles.push(
+              await currentPage.writeEvidence(`${id}-turn-${turnCount}.json`, {
+                evidenceKind:
+                  "deterministic mock-provider integration, no live inference",
+                networkFixture:
+                  id === "golden_journey_l"
+                    ? "Test-only DNS/HTTP responses: first source 503, alternative 200. Real web_fetch and tool loop execute."
+                    : null,
+                runId,
+                toolAssignments:
+                  "Existing isolated tenant profile; no journey-specific additions",
+                ...evidence,
+              })
+            );
+            return;
+          } catch (error) {
+            if (attempt === 19) {
+              throw error;
+            }
+            await currentPage.page.waitForTimeout(100);
+          }
+        }
+      };
+      await fn({
+        ...currentPage,
+        runId,
+        screenshot: async (filename) => {
+          const path = await currentPage.screenshot(filename);
+          evidenceFiles.push(path);
+          return path;
+        },
+        sendMessage,
+        startMessage: (text) => currentPage.sendMessage(withRun(text)),
+      });
 
       checks.push({
         category: "Golden Journeys",
         durationMs: Date.now() - start,
+        evidence: evidenceFiles,
         id,
-        message: `${title} passed with behavioral verification`,
+        message: `${title}: deterministic local-provider journey verified; no live inference claim`,
         required: true,
         status: "pass",
       });
-    } catch (error: any) {
+    } catch (error) {
       checks.push({
         category: "Golden Journeys",
         durationMs: Date.now() - start,
+        evidence: evidenceFiles,
         failureCode: "JOURNEY_FAILURE",
         id,
-        message: `${title} failed: ${error.message}`,
+        message: `${title} failed: ${error instanceof Error ? error.message : String(error)}`,
         required: true,
         status: "fail",
       });
@@ -164,7 +304,7 @@ export async function runGoldenJourneysSuite(
   // JOURNEY A: Simple Answer
   await runJourney(
     "golden_journey_a",
-    "Journey A: Simple Answer",
+    "Journey A: Canned answer transport and persistence only",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage("Explain what a vector database is.");
       await requireAssistantTokens(page, [
@@ -179,7 +319,7 @@ export async function runGoldenJourneysSuite(
   // JOURNEY B: Fresh Web Question
   await runJourney(
     "golden_journey_b",
-    "Journey B: Fresh Web Question",
+    "Journey B: Canned Bun answer transport only; web lookup unproven",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage(
         "Search the web for the official Bun documentation and tell me the command used to install a package."
@@ -192,7 +332,7 @@ export async function runGoldenJourneysSuite(
   // JOURNEY C: Deep Research
   await runJourney(
     "golden_journey_c",
-    "Journey C: Deep Research",
+    "Journey C: Canned report transport only; research quality unproven",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage(
         "Research three competitors, compare pricing, security, integrations and enterprise positioning."
@@ -206,15 +346,20 @@ export async function runGoldenJourneysSuite(
     }
   );
 
-  // JOURNEY D: Research -> Presentation
+  // JOURNEY D: Presentation artifact creation (no research-quality claim)
   await runJourney(
     "golden_journey_d",
-    "Journey D: Research -> Presentation",
-    async ({ page, sendMessage, screenshot }) => {
-      await sendMessage(
-        "Turn that research into a board-ready 8-slide presentation."
+    "Journey D: Eight-slide presentation artifact",
+    async ({ page, sendMessage, screenshot, runId }) => {
+      await sendMessage("Create an 8-slide presentation about Atlas.");
+      const bytes = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "write_pptx",
+        ".pptx"
       );
-      await requireAssistantTokens(page, ["competitive_analysis.pptx"]);
+      verifyOfficeContent(bytes, { expected: [runId], slideCount: 8 });
       await screenshot("journey_d_presentation.png");
     }
   );
@@ -223,14 +368,46 @@ export async function runGoldenJourneysSuite(
   await runJourney(
     "golden_journey_e",
     "Journey E: Artifact Revision",
-    async ({ page, sendMessage, screenshot }) => {
+    async ({ page, sendMessage, screenshot, runId }) => {
       await sendMessage("Make a presentation about Atlas.");
-      await requireAssistantTokens(page, ["atlas_overview.pptx"]);
+      const before = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "write_pptx",
+        ".pptx"
+      );
+      verifyOfficeContent(before, {
+        expected: [runId, "Detailed architecture explanation"],
+        slideCount: 4,
+      });
+      await page
+        .getByRole("button", { exact: true, name: `Atlas ${runId} slide 4 4` })
+        .click();
+      await screenshot("journey_e_before_revision.png");
       await sendMessage("Make slide 4 more visual and cut the text by half.");
-      await requireAssistantTokens(page, [
-        "atlas_overview.pptx",
-        "executive summary",
-      ]);
+      const after = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "office_document",
+        ".pptx"
+      );
+      verifyOfficeContent(
+        after,
+        {
+          expected: [runId, "Visual architecture summary"],
+          forbidden: ["Detailed architecture explanation"],
+          slideCount: 4,
+        },
+        before
+      );
+      await page
+        .getByRole("button", { exact: true, name: `Atlas ${runId} slide 4 4` })
+        .click();
+      await page
+        .getByText("Visual architecture summary", { exact: true })
+        .waitFor({ state: "visible" });
       await screenshot("journey_e_artifact_revision.png");
     }
   );
@@ -239,11 +416,30 @@ export async function runGoldenJourneysSuite(
   await runJourney(
     "golden_journey_f",
     "Journey F: Spreadsheet",
-    async ({ page, sendMessage, screenshot }) => {
+    async ({ page, sendMessage, screenshot, runId }) => {
       await sendMessage("Create a financial model from these assumptions.");
-      await requireAssistantTokens(page, ["financial_model.xlsx"]);
+      const before = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "spreadsheet",
+        ".xlsx"
+      );
+      verifyOfficeContent(before, { expected: [runId, "100000"] });
+      await screenshot("journey_f_before_revision.png");
       await sendMessage("Add a downside case.");
-      await requireAssistantTokens(page, ["scenario projections"]);
+      const after = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "spreadsheet",
+        ".xlsx"
+      );
+      verifyOfficeContent(
+        after,
+        { expected: [runId, "Downside Case", "90000", "100000"] },
+        before
+      );
       await screenshot("journey_f_spreadsheet.png");
     }
   );
@@ -251,7 +447,7 @@ export async function runGoldenJourneysSuite(
   // JOURNEY G: Browser Agent
   await runJourney(
     "golden_journey_g",
-    "Journey G: Browser Agent",
+    "Journey G: Canned pricing answer transport only; browser capability unproven",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage(
         "Open the pricing page and check which plan has SSO and audit logs."
@@ -261,17 +457,20 @@ export async function runGoldenJourneysSuite(
     }
   );
 
-  // JOURNEY H: Memory
+  // JOURNEY H: Actual database persistence and new-session retrieval
   await runJourney(
     "golden_journey_h",
-    "Journey H: Memory",
-    async ({ page, sendMessage, screenshot }) => {
+    "Journey H: Cross-session database memory write/search",
+    async ({ page, sendMessage, screenshot, runId }) => {
       await sendMessage(
         "For future presentations, keep them concise and executive-friendly."
       );
-      await requireAssistantTokens(page, ["saved your preference"]);
+      const saved = latestTurn(page);
+      requirePersistedTool(saved, "memory_write");
+      await screenshot("journey_h_saved_memory.png");
+      await page.goto(`${serverBaseUrl}/chat?new=1`);
       await sendMessage("How should you present technical explanations?");
-      await requireAssistantTokens(page, ["saved preferences"]);
+      requireMemoryRoundTrip(saved, latestTurn(page), runId);
       await screenshot("journey_h_memory.png");
     }
   );
@@ -280,9 +479,14 @@ export async function runGoldenJourneysSuite(
   await runJourney(
     "golden_journey_i",
     "Journey I: History Retrieval",
-    async ({ page, sendMessage, screenshot }) => {
+    async ({ page, sendMessage, screenshot, runId }) => {
+      const fact = `Apollo ${runId} launches October 12.`;
+      await sendMessage(`History fixture: ${fact}`);
+      const seeded = latestTurn(page);
+      await screenshot("journey_i_seeded_history.png");
+      await page.goto(`${serverBaseUrl}/chat?new=1`);
       await sendMessage("When did I say Apollo launches?");
-      await requireAssistantTokens(page, ["October 12"]);
+      requireHistoryRetrieval(seeded, latestTurn(page), fact);
       await screenshot("journey_i_history_retrieval.png");
     }
   );
@@ -337,20 +541,89 @@ export async function runGoldenJourneysSuite(
   await runJourney(
     "golden_journey_k",
     "Journey K: Cancellation",
-    async ({ page, sendMessage, screenshot }) => {
-      await sendMessage(
+    async ({ page, sendMessage, startMessage, screenshot }) => {
+      const startedRequest = page.waitForRequest(
+        (request) =>
+          request.method() === "POST" &&
+          SESSION_MESSAGE_PATH.test(new URL(request.url()).pathname) &&
+          request.postDataJSON()?.message?.includes("Start long research")
+      );
+      await startMessage(
         "Start long research on artificial general intelligence."
       );
-      await page.waitForTimeout(400);
-      const stopBtn = page
-        .locator('button:has-text("Stop"), button[aria-label*="Stop"]')
-        .first();
-      if (await stopBtn.isVisible()) {
-        await stopBtn.click();
-        await page.waitForTimeout(400);
+      const request = await startedRequest;
+      const sessionId = decodeURIComponent(
+        SESSION_MESSAGE_PATH.exec(new URL(request.url()).pathname)![1]!
+      );
+      const statusUrl = `${serverBaseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/status`;
+      const active = await page.request.get(statusUrl, {
+        headers: { "X-Org-Id": tenant.orgId },
+      });
+      const status = await active.json();
+      if (
+        !active.ok() ||
+        status.active !== true ||
+        typeof status.turnId !== "string"
+      ) {
+        throw new Error(
+          "The cancellation fixture never reached an active server turn."
+        );
+      }
+      const stopBtn = page.getByRole("button", {
+        exact: true,
+        name: "Stop response",
+      });
+      await stopBtn.waitFor({ state: "visible", timeout: 10_000 });
+      await screenshot("journey_k_before_cancellation.png");
+      const cancellation = page
+        .waitForResponse(
+          (response) =>
+            response.request().method() === "POST" &&
+            new URL(response.url()).pathname ===
+              `/v1/sessions/${sessionId}/cancel`
+        )
+        .then((response) => ({ kind: "response" as const, response }));
+      const aborted = page
+        .waitForEvent("requestfailed", {
+          predicate: (candidate) => candidate === request,
+          timeout: 10_000,
+        })
+        .then((failed) => ({ failed, kind: "abort" as const }));
+      await stopBtn.click();
+      const cancelled = await Promise.race([cancellation, aborted]);
+      if (cancelled.kind === "response") {
+        if (!cancelled.response.ok()) {
+          throw new Error(
+            `Cancellation request failed (${cancelled.response.status()}).`
+          );
+        }
+        requireAcceptedCancellation(
+          cancelled.response.request().postDataJSON(),
+          await cancelled.response.json(),
+          status.turnId
+        );
+      }
+      await stopBtn.waitFor({ state: "hidden", timeout: 10_000 });
+      const stopped = await page.request.get(statusUrl, {
+        headers: { "X-Org-Id": tenant.orgId },
+      });
+      const stoppedStatus = await stopped.json();
+      if (!stopped.ok() || stoppedStatus.active !== false) {
+        throw new Error("The cancelled server turn remained active.");
+      }
+      if (cancelled.kind === "abort") {
+        requireCancelledStream(
+          cancelled.failed.failure()?.errorText ?? null,
+          stoppedStatus,
+          status.turnId
+        );
       }
       await sendMessage("What is 2 + 2?");
-      await requireAssistantTokens(page, ["4"]);
+      if (requireCompletedReply(latestTurn(page)).trim() !== "4") {
+        throw new Error(
+          "The post-cancellation follow-up did not complete with the expected reply."
+        );
+      }
       await screenshot("journey_k_cancellation.png");
     }
   );
@@ -358,16 +631,21 @@ export async function runGoldenJourneysSuite(
   // JOURNEY L: Failure Recovery
   await runJourney(
     "golden_journey_l",
-    "Journey L: Failure Recovery",
-    async ({ page, sendMessage, screenshot }) => {
+    "Journey L: Sequential fetch recovery with deterministic HTTP/DNS fixtures",
+    async ({ page, sendMessage, screenshot, runId }) => {
+      const urls = recoveryFixtureUrls(runId);
       await sendMessage(
-        "Fetch data from broken-source.example.com and alternative-source.com."
+        `Fetch data from ${urls.failure} and continue with ${urls.success} if the first source fails.`
       );
-      await requireAssistantTokens(page, [
-        "couldn't reach",
-        "continued with the others",
-      ]);
+      requireFetchRecovery(latestTurn(page), urls, runId);
       await screenshot("journey_l_failure_recovery.png");
+      await sendMessage("What is 2 + 2?");
+      if (requireCompletedReply(latestTurn(page)).trim() !== "4") {
+        throw new Error(
+          "Chat did not accept a follow-up after fetch recovery."
+        );
+      }
+      await screenshot("journey_l_follow_up.png");
     }
   );
 
@@ -375,9 +653,16 @@ export async function runGoldenJourneysSuite(
   await runJourney(
     "golden_journey_m",
     "Journey M: Generated Office Artifact",
-    async ({ page, sendMessage, screenshot }) => {
+    async ({ page, sendMessage, screenshot, runId }) => {
       await sendMessage("Create a 3-slide presentation about Atlas.");
-      await requireAssistantTokens(page, ["atlas_overview.pptx"]);
+      const bytes = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "write_pptx",
+        ".pptx"
+      );
+      verifyOfficeContent(bytes, { expected: [runId], slideCount: 3 });
       await screenshot("journey_m_generated_office.png");
     }
   );
@@ -386,49 +671,118 @@ export async function runGoldenJourneysSuite(
   await runJourney(
     "golden_journey_n",
     "Journey N: Uploaded Office Artifact",
-    async ({ page, screenshot }) => {
-      await page.goto(`${serverBaseUrl}/chat`, {
-        waitUntil: "domcontentloaded",
-      });
+    async ({ page, sendMessage, screenshot, runId }) => {
       await page.locator("textarea").first().waitFor({
         state: "visible",
         timeout: 10_000,
       });
       const fileInput = page.locator('input[type="file"]').first();
-      if ((await fileInput.count()) === 0) {
+      const filename = `gate-${runId}-upload.pptx`;
+      const bytes = await createPptxBuffer({
+        slides: [{ layout: "title", title: `Uploaded ${runId}` }],
+        themeColor: "3B82F6",
+        title: "Upload fixture",
+      });
+      await fileInput.setInputFiles({
+        buffer: bytes,
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        name: filename,
+      });
+      await page
+        .getByText(filename, { exact: true })
+        .first()
+        .waitFor({ state: "visible" });
+      await screenshot("journey_n_before_send.png");
+      await sendMessage(
+        "Inspect the uploaded Office fixture and report its slide title."
+      );
+      const turn = latestTurn(page);
+      const attachmentId = requireUploadedDocument(turn, filename);
+      const original = await page.request.get(
+        `${serverBaseUrl}/v1/sessions/${encodeURIComponent(turn.sessionId)}/attachments/${encodeURIComponent(attachmentId)}`,
+        { headers: { "X-Org-Id": tenant.orgId } }
+      );
+      if (
+        !original.ok() ||
+        artifactDigest(await original.body()) !== artifactDigest(bytes)
+      ) {
         throw new Error(
-          "Chat has no file upload control; uploaded-office journey was not exercised."
+          "Persisted upload differs from the original Office bytes."
+        );
+      }
+      const reads = requirePersistedTool(turn, "office_document");
+      if (
+        !reads.some((event) =>
+          JSON.stringify(event.result).includes(`Uploaded ${runId}`)
+        )
+      ) {
+        throw new Error(
+          "The actual Office reader did not read this upload's slide title."
         );
       }
       await screenshot("journey_n_uploaded_office.png");
     }
   );
 
-  // JOURNEY O: Multi-Capability Request
+  // JOURNEY O: Two actual artifact formats from one request
   await runJourney(
     "golden_journey_o",
-    "Journey O: Multi-Capability Request",
-    async ({ page, sendMessage, screenshot }) => {
-      await sendMessage(
-        "Research our competitors, check their current pricing pages directly, summarize the findings, and build a spreadsheet plus presentation."
+    "Journey O: Presentation and spreadsheet artifact creation",
+    async ({ page, sendMessage, screenshot, runId }) => {
+      await sendMessage("Build a spreadsheet plus presentation about Atlas.");
+      const deck = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "write_pptx",
+        ".pptx"
       );
-      await requireAssistantTokens(page, [
-        "competitive_analysis.pptx",
-        "financial_model.xlsx",
-      ]);
+      const sheet = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "spreadsheet",
+        ".xlsx"
+      );
+      verifyOfficeContent(deck, { expected: [runId], slideCount: 4 });
+      verifyOfficeContent(sheet, { expected: [runId, "100000"] });
       await screenshot("journey_o_multi_capability.png");
     }
   );
 
-  // JOURNEY P: Follow-Up Continuity
+  // JOURNEY P: Persisted deck edit in the same conversation
   await runJourney(
     "golden_journey_p",
-    "Journey P: Follow-Up Continuity",
-    async ({ page, sendMessage, screenshot }) => {
-      await sendMessage(
-        "Update the deck with the pricing changes you found and add the source links to the appendix."
+    "Journey P: Same-session deck appendix edit",
+    async ({ page, sendMessage, screenshot, runId }) => {
+      await sendMessage("Make a presentation about Atlas.");
+      const before = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "write_pptx",
+        ".pptx"
       );
-      await requireAssistantTokens(page, ["appendix"]);
+      await sendMessage(
+        "Update the deck and add https://bun.sh/docs to the appendix."
+      );
+      const after = await downloadArtifact(
+        page,
+        tenant.orgId,
+        runId,
+        "office_document",
+        ".pptx"
+      );
+      verifyOfficeContent(
+        after,
+        {
+          expected: [runId, "Appendix: https://bun.sh/docs"],
+          forbidden: ["Detailed architecture explanation"],
+          slideCount: 4,
+        },
+        before
+      );
       await screenshot("journey_p_follow_up_continuity.png");
     }
   );

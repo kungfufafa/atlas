@@ -1,5 +1,34 @@
 import { type Server, serve } from "bun";
 import { getFreePort } from "./free-port";
+import { recoveryFixtureUrls } from "./web-fetch-fixture";
+
+function parseToolRecord(content: unknown): Record<string, unknown> {
+  if (typeof content !== "string") {
+    return {};
+  }
+  try {
+    const parsed: unknown = JSON.parse(content);
+    return typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function resultTexts(value: unknown, field: string): string[] {
+  return Array.isArray(value)
+    ? value.flatMap((item) =>
+        typeof item === "object" &&
+        item !== null &&
+        typeof item[field] === "string"
+          ? [item[field]]
+          : []
+      )
+    : [];
+}
 
 export interface MockScenario {
   handler: (req: MockChatRequest) => MockResponseResult;
@@ -24,6 +53,8 @@ export interface MockChatRequest {
 
 export interface MockResponseResult {
   content?: string;
+  /** Keeps a deterministic turn active long enough to exercise real UI cancellation. */
+  delayMs?: number;
   error?: { message: string; status: number };
   toolCalls?: Array<{
     args: Record<string, unknown>;
@@ -75,6 +106,20 @@ export class MockLLMServerHarness {
           this.recordedRequests.push(body);
 
           const result = this.resolveResponse(body);
+
+          if (result.delayMs) {
+            await new Promise<void>((resolve) => {
+              const timer = setTimeout(resolve, result.delayMs);
+              req.signal.addEventListener(
+                "abort",
+                () => {
+                  clearTimeout(timer);
+                  resolve();
+                },
+                { once: true }
+              );
+            });
+          }
 
           if (result.error) {
             return new Response(
@@ -166,6 +211,205 @@ export class MockLLMServerHarness {
       textPrompt = lastMsg.content;
     }
 
+    const runId = /release-gate-run: ([a-f0-9-]+)/i.exec(textPrompt)?.[1];
+    const artifactPrefix = runId ? `artifacts/gate-${runId}-` : "artifacts/";
+    const marker = runId ?? "deterministic-fixture";
+
+    // These fixtures exercise Atlas's real tools and persisted bytes. They are
+    // deterministic transport inputs, never evidence of model intelligence.
+    if (runId && !isPostTool) {
+      if (textPrompt.startsWith("History fixture: Apollo")) {
+        return { content: "Recorded in this conversation." };
+      }
+      if (textPrompt.includes("For future presentations")) {
+        return {
+          toolCalls: [
+            {
+              args: {
+                content: `User prefers concise, executive-friendly deliverables. Fixture ${runId}`,
+                subject: `presentation_style_${runId}`,
+              },
+              name: "memory_write",
+            },
+          ],
+        };
+      }
+      if (
+        textPrompt.includes("How should you present technical explanations")
+      ) {
+        return {
+          toolCalls: [{ args: { query: runId }, name: "memory_search" }],
+        };
+      }
+      if (textPrompt.includes("When did I say Apollo launches")) {
+        return {
+          toolCalls: [
+            { args: { query: `Apollo ${runId}` }, name: "search_chats" },
+          ],
+        };
+      }
+      if (textPrompt.includes("broken-source.atlas-gate.test")) {
+        return {
+          toolCalls: [
+            {
+              args: { url: recoveryFixtureUrls(runId).failure },
+              name: "web_fetch",
+            },
+          ],
+        };
+      }
+      if (textPrompt.includes("Inspect the uploaded Office fixture")) {
+        const documentRef = /"documentRef"\s*:\s*"([^"]+)"/.exec(
+          textPrompt
+        )?.[1];
+        return documentRef
+          ? {
+              toolCalls: [
+                {
+                  args: { documentRef, operation: "read" },
+                  name: "office_document",
+                },
+              ],
+            }
+          : { content: "No original attachment reference was provided." };
+      }
+      if (textPrompt.includes("Start long research")) {
+        return {
+          content: "Deterministic long turn completed without cancellation.",
+          delayMs: 30_000,
+        };
+      }
+      if (
+        textPrompt.includes("Make slide 4 more visual") ||
+        textPrompt.includes("Update the deck")
+      ) {
+        return {
+          toolCalls: [
+            {
+              args: {
+                documentRef: `${artifactPrefix}atlas_overview.pptx`,
+                edits: [
+                  {
+                    expectedMatches: 1,
+                    find: "Detailed architecture explanation with repeated implementation details",
+                    kind: "replace_text",
+                    replace: textPrompt.includes("appendix")
+                      ? "Appendix: https://bun.sh/docs"
+                      : "Visual architecture summary",
+                    unit: 4,
+                  },
+                ],
+                operation: "edit",
+                outputFilename: `gate-${runId}-atlas_overview_revised.pptx`,
+              },
+              name: "office_document",
+            },
+          ],
+        };
+      }
+      if (textPrompt.includes("Add a downside case")) {
+        return {
+          toolCalls: [
+            {
+              args: {
+                action: "add_sheet",
+                columns: ["Scenario", "Revenue"],
+                data: [
+                  ["Downside Case", 90_000],
+                  ["Run", marker],
+                ],
+                path: `${artifactPrefix}financial_model.xlsx`,
+                sheetName: "Scenarios",
+              },
+              name: "spreadsheet",
+            },
+          ],
+        };
+      }
+      const wantsBoth = textPrompt.includes("spreadsheet plus presentation");
+      const wantsDeck =
+        wantsBoth ||
+        textPrompt.includes("Make a presentation") ||
+        textPrompt.includes("Create a 3-slide presentation") ||
+        textPrompt.includes("Create an 8-slide presentation") ||
+        textPrompt.includes("board-ready");
+      const wantsSheet = wantsBoth || textPrompt.includes("financial model");
+      if (wantsDeck || wantsSheet) {
+        const toolCalls: NonNullable<MockResponseResult["toolCalls"]> = [];
+        if (wantsDeck) {
+          const slideCount = textPrompt.includes("8-slide")
+            ? 8
+            : textPrompt.includes("3-slide")
+              ? 3
+              : 4;
+          toolCalls.push({
+            args: {
+              path: `${artifactPrefix}${wantsBoth || textPrompt.includes("board-ready") ? "competitive_analysis" : "atlas_overview"}.pptx`,
+              slides: Array.from({ length: slideCount }, (_, index) => ({
+                bulletPoints: [
+                  index === 3
+                    ? "Detailed architecture explanation with repeated implementation details"
+                    : `Verified fixture content ${marker}`,
+                ],
+                layout: "content",
+                title: `Atlas ${marker} slide ${index + 1}`,
+              })),
+              title: `Atlas fixture ${marker}`,
+            },
+            name: "write_pptx",
+          });
+        }
+        if (wantsSheet) {
+          toolCalls.push({
+            args: {
+              action: "create",
+              columns: ["Period", "Revenue"],
+              data: [
+                ["Q1", 100_000],
+                ["Run", marker],
+              ],
+              path: `${artifactPrefix}financial_model.xlsx`,
+              sheetName: "Projections",
+            },
+            name: "spreadsheet",
+          });
+        }
+        return { toolCalls };
+      }
+    }
+
+    if (runId && isPostTool && toolMsg) {
+      const content =
+        typeof toolMsg.content === "string" ? toolMsg.content : "";
+      if (textPrompt.includes("broken-source.atlas-gate.test")) {
+        const result = parseToolRecord(content);
+        const urls = recoveryFixtureUrls(runId);
+        if (typeof result.error === "string") {
+          return {
+            toolCalls: [{ args: { url: urls.success }, name: "web_fetch" }],
+          };
+        }
+        return result.status === 200 &&
+          result.url === urls.success &&
+          typeof result.content === "string"
+          ? { content: `Alternative source returned: ${result.content}` }
+          : {
+              content: "No successful alternative-source result was observed.",
+            };
+      }
+      if (content.includes('"error"')) {
+        return { content: `Deterministic tool failed: ${content}` };
+      }
+      // Preserve the executed output in the fixture reply; journey assertions
+      // independently require tool receipts and inspect downloaded Office bytes.
+      if (
+        /gate-|office_document/.test(content) ||
+        textPrompt.includes("Inspect the uploaded Office fixture")
+      ) {
+        return { content: `Deterministic tool result: ${content}` };
+      }
+    }
+
     // 2. Post-tool execution synthesis
     if (isPostTool && toolMsg) {
       const toolContent =
@@ -188,15 +432,25 @@ export class MockLLMServerHarness {
         };
       }
       if (toolName === "search_chats") {
-        if (toolContent.includes("Apollo") || textPrompt.includes("Apollo")) {
-          return {
-            content:
-              "Based on our past discussions in previous chats, the Apollo launch is scheduled for October 12.",
-          };
-        }
+        const snippets = resultTexts(
+          parseToolRecord(toolContent).results,
+          "matchedSnippet"
+        );
         return {
-          content:
-            "Based on our past discussions in previous chats, the launch date for project Titan is November 15.",
+          content: snippets.length
+            ? `Retrieved chat excerpts:\n${snippets.join("\n")}`
+            : "No matching chat history was retrieved.",
+        };
+      }
+      if (toolName === "memory_search") {
+        const memories = resultTexts(
+          parseToolRecord(toolContent).memories,
+          "content"
+        );
+        return {
+          content: memories.length
+            ? `Retrieved preferences:\n${memories.join("\n")}`
+            : "No saved preference was retrieved.",
         };
       }
       if (
@@ -507,8 +761,9 @@ export class MockLLMServerHarness {
       prompt.includes("present technical explanations")
     ) {
       return {
-        content:
-          "Based on your saved preferences, I will present technical explanations with concise examples and executive-friendly technical depth.",
+        toolCalls: [
+          { args: { query: "presentation_style" }, name: "memory_search" },
+        ],
       };
     }
 
@@ -528,8 +783,7 @@ export class MockLLMServerHarness {
 
     if (prompt.includes("broken-source")) {
       return {
-        content:
-          "I couldn't reach broken-source.example.com, but continued with the others successfully.",
+        content: "No deterministic recovery fixture was provided.",
       };
     }
 

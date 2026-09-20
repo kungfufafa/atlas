@@ -2,7 +2,6 @@ import {
   type Citation,
   createPptxBuffer,
   type EvidenceItem,
-  ResearchEngine,
   resolveArtifactOrDisambiguate,
   type SourceItem,
   validateCitationIntegrity,
@@ -14,7 +13,6 @@ export async function runCapabilitiesSuite(): Promise<ReleaseGateCheck> {
 
   try {
     // 1. Test Research Engine & Citation Integrity
-    const engine = new ResearchEngine();
     const sources: SourceItem[] = [
       { id: "src-1", title: "OpenAI Documentation", url: "https://openai.com" },
       {
@@ -61,19 +59,16 @@ export async function runCapabilitiesSuite(): Promise<ReleaseGateCheck> {
         evidenceIds: ["ev-1"],
         id: "cite-1",
         sourceId: "src-1",
-        text: "OpenAI Codex function calling",
       },
       {
         evidenceIds: ["ev-2"],
         id: "cite-2",
         sourceId: "src-2",
-        text: "Claude computer use",
       },
       {
         evidenceIds: ["ev-3"],
         id: "cite-3",
         sourceId: "src-3",
-        text: "Gemini 2M token context",
       },
     ];
 
@@ -107,6 +102,7 @@ export async function runCapabilitiesSuite(): Promise<ReleaseGateCheck> {
           title: "Key Platform Capabilities",
         },
       ],
+      themeColor: "2563EB",
       title: "Atlas Architecture",
     });
 

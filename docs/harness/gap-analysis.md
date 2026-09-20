@@ -1,12 +1,16 @@
-# Atlas agent harness — gap analysis (iteration 1)
+# Atlas agent harness — historical gap analysis (iterations 1–7)
+
+**Status correction — 2026-09-21:** this is the historical reasoning and Atlas-only OpenCode Go evidence from iterations 1–7, not a current cross-system verdict. Preserve the recorded measurements as history. Current priority is **Nakama → OpenClaw → Hermes**, with product journeys and reliability included. Reference systems were not run on these fixtures; parity, superiority, and goal completion are unproven. New model proof must use `https://router.rizqis.com/v1`. See [Foundation audit](foundation-audit.md) for pinned references and the **blocked** Phase 0 gate.
+
+Earlier sections describe gaps at their iteration's date. Iteration 7 subsequently implemented persistent `chatKind` and conversation FTS over live messages and compacted archives; statements below saying these are missing are retained only as chronology. Skill learning remains opt-in, and the direct learning path must be reconciled with the separate suggestion/proposal path and its documented UX.
 
 This document compares the Atlas agent loop to three reference harnesses:
 
-- **Hermes Agent** (NousResearch): learning loop, skill self-improvement, FTS5 memory + LLM summarization
-- **OpenClaw**: multi-channel gateway, policy/sandbox, skills ecosystem
-- **Nakama** (upstream of this fork): soul system, skill post-turn review + consolidation, channel-aware prompts
+- **Nakama** (upstream of this fork): shared soul, review, and channel-aware prompt lineage
+- **OpenClaw**: multi-channel gateway, policy/sandbox, memory and skills
+- **Hermes Agent** (NousResearch): learning, skills, bounded memory and FTS5 session retrieval
 
-Citations are to current Atlas files and functions. Rankings are about **response quality**, not product surface area: tool-hallucination rate, multi-step reasoning, context-awareness, long-session behavior.
+The original rankings below were prioritization estimates, not measured cross-system scores. Atlas paths and historical results focus on **response quality**, not product surface area: tool-hallucination rate, multi-step reasoning, context-awareness, long-session behavior.
 
 ## What Atlas already has (do not rebuild)
 
@@ -73,7 +77,7 @@ Remaining vs Hermes:
 
 **Iteration 4 shipped the closed loop, still default-off.** `runSkillLearningTurn` on `createAgentChatSession` distills Unknown tool / requested unassigned tool / `no_progress` / taught SOP into a skill (LLM review + deterministic fallback), consolidates, and injects via matched-skill compose. Live two-phase eval: **0/6 → 6/6** with `--skill-learning` on both models.
 
-Remaining vs Hermes always-on:
+Historical differences from Hermes default-on review:
 
 - Product still requires opted-in post-turn review + assigned `manage-skills` (eval `--skill-learning` forces the session flag)
 - `/learn` remains the user-invoked path
@@ -85,7 +89,7 @@ Remaining vs Hermes always-on:
 
 ### P1. Long-session compaction is structured but not retrieval-backed
 
-`compactHistory` produces a fixed Markdown template (Goal / Constraints / Progress / …). That is better than naive truncation. Gaps vs Hermes:
+`compactHistory` produces a fixed Markdown template (Goal / Constraints / Progress / …). Its relative behavior was not measured against a reference runtime. Historical gaps identified at this point:
 
 - Compacted archives are not FTS-indexed for later `search_chats`
 - Compaction is token-window triggered, not “learning distill”
@@ -105,7 +109,7 @@ Remaining vs Hermes always-on:
 
 ### P2. OpenClaw policy/sandbox vs Atlas process sandbox
 
-Atlas: Landlock (`linux-landlock-abi3-v2`), `ATLAS_PROCESS_NETWORK`, profile `workspaceRoot` via `buildToolExecutionContext`. OpenClaw’s gateway policy language (per-channel allow/deny, skill trust tiers) is broader. This is mostly **safety**, but it also reduces tool hallucination when the model is told a tool is unavailable vs calling it and getting a sandbox error.
+Atlas: Landlock (`linux-landlock-abi3-v2`), `ATLAS_PROCESS_NETWORK`, profile `workspaceRoot` via `buildToolExecutionContext`. OpenClaw documents gateway tool policy and sandbox scopes; their breadth and operator cost were not measured here. Any safety or tool-selection improvement from a different policy surface needs a concrete task and authorization test; it cannot be inferred from the number of controls.
 
 | H | R | C | L |
 |---|---|---|---|
@@ -113,7 +117,7 @@ Atlas: Landlock (`linux-landlock-abi3-v2`), `ATLAS_PROCESS_NETWORK`, profile `wo
 
 ### P2. Skills ecosystem breadth
 
-Atlas: bundled skills, profile SKILL.md, Composio, `skill_manage`, curator. OpenClaw’s public skill registry is larger. Quality impact is tool **selection** when the catalog is huge (`tool_search` exists but is optional).
+Atlas: bundled skills, profile SKILL.md, Composio, `skill_manage`, curator. The earlier audit described OpenClaw’s public skill registry as larger without a pinned count; treat breadth as unmeasured. Quality impact is tool **selection** when the catalog is huge (`tool_search` exists but is optional).
 
 | H | R | C | L |
 |---|---|---|---|
@@ -165,7 +169,7 @@ Live OpenCode Go: `memory_summary_needle` **0/6 → 6/6** per model (n=3, extrac
 
 **Shipped:** plumb `chatKind` from `externalPrincipal.channelIsGroup` through `AgentService` / `createAgentChatSession` into `buildChatSystemPrompt`, with explicit private 1:1 vs group etiquette blocks. Assigned-tool roster now labels each line `purpose:` and instructs selection by purpose, not similar names. Eval extras: private/group WhatsApp + Telegram yardsticks (`--no-chat-kind` baseline) and `tool_avoid_unassigned_decoy` (close name absent from the catalog).
 
-Live OpenCode Go: channel prompt checks **0/24 → 24/24**; live pass/fail **0/12 → 9/12** strong and **0/12 → 10/12** weak (residual private name-addressing). Assigned decoy `tool_avoid_wording_trap` **did not move** on `kimi-k2.7-code` (0/3 dedicated, still `lookup_ticket_live`) — model-judgment limitation. Unassigned decoy **6/6** with allowlist on (and 6/6 with allowlist off, because native schemas also omit the missing name). Default 21-suite **20/21**; memory **6/6**; strong learning **22/23**; weak learning extras **2/2** (21-suite flash variance made the 23-count 21/23). Details: `docs/harness/eval-results/iter6-summary.md`.
+Live OpenCode Go: channel prompt checks **0/24 → 24/24**; live pass/fail **0/12 → 9/12** strong and **0/12 → 10/12** weak (residual private name-addressing). Assigned decoy `tool_avoid_wording_trap` **did not move** on `kimi-k2.7-code` (0/3 dedicated, still `lookup_ticket_live`) — cause unresolved by this experiment. Unassigned decoy **6/6** with allowlist on (and 6/6 with allowlist off, because native schemas also omit the missing name). Default 21-suite **20/21**; memory **6/6**; strong learning **22/23**; weak learning extras **2/2** (21-suite flash variance made the 23-count 21/23). Details: `docs/harness/eval-results/iter6-summary.md`.
 
 ## Eval coverage this iteration
 
@@ -175,6 +179,6 @@ Scenarios: original 12 plus near-duplicate, 3-hop, 90-bin MEMORY.md needle, word
 
 Honest limit: this path does **not** boot `AgentService` (no org middleware, no `appendRuntimeProfileRules` unless the eval injects them, no SQLite `memory_write`). Soul is composed in-process via the same `composeSoulSystemPromptWithSummary` AgentService uses. Memory tools in the eval use an in-harness store over the **same** `searchRankedMemories` / `searchRankedConversations` / `ConversationKeywordSearch` / `loadMemoryArchiveFacts` functions as production. Native schemas stay on in the published matrix. See the eval summary JSON `path` field.
 
-## Fresh verification (2026-09-18)
+## Historical verification (2026-09-18)
 
-Re-ran the full 30-scenario suite live on OpenCode Go (`kimi-k2.7-code`, `deepseek-v4-pro`, `glm-5.3`, `deepseek-flash`, n=2, all harness flags ON including `--skill-learning` and `--fts-chats`): **240 scenario-runs, 0 transport failures**. Memory **18/18**, multi-step **6/6**, learning **4/4** per model. Discriminating ablations: retrieval **0/16 → 32/32**, summarization **0/4 → 8/8**, archive **0/4 → 8/8**, FTS **0/6 → 8/8**, skill-learning **0/8 → 16/16**, unassigned decoy **8/8**. Residuals remain model-limitation (assigned decoy on kimi/glm; private name-addressing; mid/weak absent-web) or deliberate policy (skill-learning opt-in; OpenClaw gateway breadth). No harness-gap. Details: `docs/harness/eval-results/final-verification-summary.md`.
+Re-ran the full 30-scenario suite live on OpenCode Go (`kimi-k2.7-code`, `deepseek-v4-pro`, `glm-5.3`, `deepseek-flash`, n=2, all harness flags ON including `--skill-learning` and `--fts-chats`): **240 scenario-runs, 0 transport failures**. Memory **18/18**, multi-step **6/6**, learning **4/4** per model. Discriminating ablations: retrieval **0/16 → 32/32**, summarization **0/4 → 8/8**, archive **0/4 → 8/8**, FTS **0/6 → 8/8**, skill-learning **0/8 → 16/16**, unassigned decoy **8/8**. Residual assigned-decoy, private-name-addressing, and absent-tool failures remain; the samples do not establish intrinsic model limitations. Skill-learning defaults and gateway scope still need user-journey evaluation. These Atlas-only passes do not establish that no harness gap remains or that any reference has been matched. Details: `docs/harness/eval-results/final-verification-summary.md`.

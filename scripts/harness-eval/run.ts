@@ -113,6 +113,8 @@ export interface RunHarnessEvalOptions {
   model?: string;
   nativeSchemas?: boolean;
   promptOnly?: boolean;
+  /** Explicit provider for a measured endpoint; bypasses historical Go configuration. */
+  provider?: ProviderClient;
   scenarioIds?: string[];
   skillLearning?: boolean;
   workRules?: boolean;
@@ -250,8 +252,14 @@ function providerGenerateText(
 export async function runHarnessEval(
   options: RunHarnessEvalOptions = {}
 ): Promise<HarnessEvalReport> {
-  const env = options.env ?? loadOpenCodeGoEvalEnv();
-  const model = options.model ?? env.model ?? DEFAULT_HARNESS_EVAL_MODEL;
+  const env =
+    options.env ?? (options.provider ? undefined : loadOpenCodeGoEvalEnv());
+  const model = options.model ?? env?.model ?? DEFAULT_HARNESS_EVAL_MODEL;
+  if (options.provider && !options.model) {
+    throw new Error(
+      "An injected evaluation provider requires its exact model ID."
+    );
+  }
   const workRules = options.workRules !== false;
   const allowlist = options.allowlist !== false;
   const nativeSchemas = options.nativeSchemas !== false;
@@ -277,15 +285,25 @@ export async function runHarnessEval(
       ? options.scenarioIds.includes(scenario.id)
       : true
   );
+  if (
+    scenarios.length === 0 ||
+    options.scenarioIds?.some(
+      (id) => !scenarios.some((scenario) => scenario.id === id)
+    )
+  ) {
+    throw new Error("Every requested evaluation scenario must exist.");
+  }
   const summaryCache = new ContinuityMemorySummaryCache();
 
   let provider: ProviderClient | undefined;
   if (!options.promptOnly) {
-    const live = createOpenCodeGoProvider({
-      apiKey: env.apiKey,
-      model: `opencode-go/${model}`,
-      providerInstanceId: "harness-eval",
-    });
+    const live =
+      options.provider ??
+      createOpenCodeGoProvider({
+        apiKey: env!.apiKey,
+        model: `opencode-go/${model}`,
+        providerInstanceId: "harness-eval",
+      });
     provider = nativeSchemas ? live : omitNativeToolSchemas(live);
   }
 

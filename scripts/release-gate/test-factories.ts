@@ -77,12 +77,19 @@ export class TestTenantFactory {
       admin: {
         email: adminEmail,
         name: adminName,
-        password: adminPassword,
         phone: "",
       },
       name: orgName,
       slug,
     });
+    if (!res.adminMember) {
+      throw new Error("Tenant fixture did not create its administrator.");
+    }
+    await this.db.updateUserPassword(
+      res.adminMember.member.userId,
+      await this.authService.hashPassword(adminPassword),
+      new Date().toISOString()
+    );
 
     return {
       adminEmail: res.adminMember?.member.email ?? adminEmail,
@@ -110,9 +117,14 @@ export class TestTenantFactory {
       email: options.email,
       name: options.name,
       orgId,
-      password,
+      phone: "",
       role,
     });
+    await this.db.updateUserPassword(
+      res.member.userId,
+      await this.authService.hashPassword(password),
+      new Date().toISOString()
+    );
 
     return {
       email: res.member.email,
