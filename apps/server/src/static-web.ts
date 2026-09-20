@@ -168,7 +168,7 @@ function fileResponse(
     if (request.method === "HEAD") {
       return new Response(null, { headers });
     }
-    return new Response(gzipped, { headers });
+    return new Response(Uint8Array.from(gzipped).buffer, { headers });
   }
 
   if (request.method === "HEAD") {

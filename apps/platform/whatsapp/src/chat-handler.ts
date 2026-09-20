@@ -2555,18 +2555,15 @@ function listSenderSessionKeys(
 }
 
 function mergePauseStates(
-  current: { discardMessagesThrough?: number; paused?: boolean },
-  incoming: { discardMessagesThrough?: number; paused?: boolean }
-): { discardMessagesThrough?: number; paused?: boolean } {
-  const discardCandidates = [
-    current.discardMessagesThrough,
-    incoming.discardMessagesThrough,
-  ].filter((value): value is number => value !== undefined);
+  current: { discardMessagesThrough: number; paused: boolean },
+  incoming: { discardMessagesThrough: number; paused: boolean }
+): { discardMessagesThrough: number; paused: boolean } {
   return {
-    paused: Boolean(current.paused || incoming.paused),
-    ...(discardCandidates.length > 0
-      ? { discardMessagesThrough: Math.max(...discardCandidates) }
-      : {}),
+    discardMessagesThrough: Math.max(
+      current.discardMessagesThrough,
+      incoming.discardMessagesThrough
+    ),
+    paused: current.paused || incoming.paused,
   };
 }
 
