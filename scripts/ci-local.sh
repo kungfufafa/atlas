@@ -21,7 +21,7 @@ preflight() {
   [[ "$memory_bytes" =~ ^[0-9]+$ ]] || blocked 'could not determine host memory'
   (( memory_bytes >= 8 * 1024 * 1024 * 1024 )) || blocked 'at least 8 GiB host memory is required for the 4 GiB guest'
   local dependency
-  for dependency in colima qemu-system-x86_64 gh jq brew; do
+  for dependency in colima qemu-system-x86_64 gh jq brew git; do
     command -v "$dependency" >/dev/null || blocked "missing prerequisite: $dependency"
   done
   guestagents="$(HOMEBREW_NO_AUTO_UPDATE=1 brew list --versions lima-additional-guestagents)" || blocked 'install lima-additional-guestagents before creating an x86_64 VM'
@@ -36,10 +36,34 @@ provision() {
     --disk 40 --root-disk 20 --runtime docker --mount none --ssh-agent=false \
     --ssh-config=false --activate=false --template=false --binfmt=false \
     --port-forwarder=none
-  tar -C "$script_dir" -cf - ci-local-guest.sh verify-linux-landlock.sh | \
-    colima --profile "$profile" ssh -- sh -c \
-      'umask 077; mkdir -p /tmp/atlas-ci-bootstrap; tar -xf - -C /tmp/atlas-ci-bootstrap'
-  colima --profile "$profile" ssh -- bash /tmp/atlas-ci-bootstrap/ci-local-guest.sh provision
+  refresh_bootstrap
+  colima --profile "$profile" ssh -- sh -c \
+    'exec bash "$HOME/.local/share/atlas-ci-bootstrap/ci-local-guest.sh" provision'
+}
+
+refresh_bootstrap() {
+  # SSH must already work; this never starts or reprovisions an existing VM.
+  # Copy only the named source files, not the host checkout, home or credentials.
+  COPYFILE_DISABLE=1 tar -C "$script_dir" -cf - ci-local-guest.sh verify-linux-landlock.sh | \
+    colima --profile "$profile" ssh -- sh -c '
+      set -eu
+      umask 077
+      test ! -e "$HOME/.atlas-ci-runner-lock" || { echo "BLOCKED: a runner lock already exists." >&2; exit 2; }
+      bootstrap="$HOME/.local/share/atlas-ci-bootstrap"
+      mkdir -p "$bootstrap"
+      chmod 700 "$bootstrap"
+      tar -xf - -C "$bootstrap"
+      chmod 600 "$bootstrap/ci-local-guest.sh" "$bootstrap/verify-linux-landlock.sh"
+    '
+}
+
+check_source() {
+  local expected_sha="$1" script
+  [[ "$(git -C "$script_dir" rev-parse HEAD)" == "$expected_sha" ]] || blocked 'local checkout must match the reviewed commit'
+  for script in ci-local.sh ci-local-guest.sh verify-linux-landlock.sh; do
+    git -C "$script_dir" show "$expected_sha:scripts/$script" | cmp -s - "$script_dir/$script" || \
+      blocked "local $script differs from the reviewed commit"
+  done
 }
 
 check_run() {
@@ -72,14 +96,17 @@ run_once() {
     done <<< "$pending_ids"
   done
   (( targetable_jobs > 0 )) || blocked 'no queued jobs currently request the dedicated runner label'
-  colima --profile "$profile" ssh -- bash /tmp/atlas-ci-bootstrap/verify-linux-landlock.sh
+  check_source "$expected_sha"
+  refresh_bootstrap
+  colima --profile "$profile" ssh -- sh -c \
+    'exec bash "$HOME/.local/share/atlas-ci-bootstrap/verify-linux-landlock.sh"'
   # Fetch the short-lived registration token only after every preflight passes.
   # No host PAT, SSH agent, provider key, or host home is copied into the guest.
   token="$(gh api --method POST "repos/$repository/actions/runners/registration-token" --jq .token)"
   [[ "$token" =~ ^[A-Za-z0-9_=-]+$ ]] || blocked 'invalid registration token response'
   local result=0
   printf '%s\n' "$token" | colima --profile "$profile" ssh -- \
-    bash /tmp/atlas-ci-bootstrap/ci-local-guest.sh run || result=$?
+    sh -c 'exec bash "$HOME/.local/share/atlas-ci-bootstrap/ci-local-guest.sh" run' || result=$?
   unset token
   return "$result"
 }
@@ -87,6 +114,7 @@ run_once() {
 case "${1:-preflight}" in
   preflight) preflight ;;
   provision) provision ;;
+  refresh) preflight; refresh_bootstrap ;;
   run) shift; run_once "$@" ;;
-  *) blocked 'usage: bash scripts/ci-local.sh {preflight|provision|run RUN_ID REVIEWED_SHA}' ;;
+  *) blocked 'usage: bash scripts/ci-local.sh {preflight|provision|refresh|run RUN_ID REVIEWED_SHA}' ;;
 esac

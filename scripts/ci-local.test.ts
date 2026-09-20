@@ -1,5 +1,14 @@
 import { afterEach, expect, test } from "bun:test";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -87,6 +96,7 @@ process.stdout.write(${JSON.stringify(`${output}\n`)});
 test.each([
   { args: ["preflight"] },
   { args: ["provision"] },
+  { args: ["refresh"] },
   { args: ["run", "123", "a".repeat(40)] },
 ])(
   "insufficient disk blocks %j before VM or GitHub access",
@@ -123,6 +133,127 @@ test("the exact disk threshold permits only a host preflight", async () => {
     "uname\ndf\nsysctl\nbrew\n"
   );
 });
+
+test("refresh persists only the two current scripts and refuses an active runner", async () => {
+  const directory = await hostFixture(35 * 1024 ** 2);
+  const guestDirectory = join(directory, "guest");
+  const bootstrap = join(guestDirectory, ".local/share/atlas-ci-bootstrap");
+  const events = join(directory, "events");
+  await executable(
+    directory,
+    "colima",
+    `#!${process.execPath}
+import { appendFileSync } from "node:fs";
+const args = process.argv.slice(2);
+appendFileSync(${JSON.stringify(events)}, JSON.stringify(args) + "\\n");
+if (JSON.stringify(args.slice(0, 6)) !== JSON.stringify(["--profile", "atlas-ci", "ssh", "--", "sh", "-c"])) process.exit(9);
+// Model the remote shell's guest-home expansion without changing host HOME.
+const script = args[6].replaceAll("$HOME", ${JSON.stringify(guestDirectory)});
+const child = Bun.spawn(["/bin/sh", "-c", script], {stdin:"inherit", stdout:"inherit", stderr:"inherit"});
+process.exit(await child.exited);
+`
+  );
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const result = await runScript(directory, "ci-local.sh", ["refresh"]);
+    expect(result.exitCode).toBe(0);
+    expect((await readdir(bootstrap)).sort()).toEqual([
+      "ci-local-guest.sh",
+      "verify-linux-landlock.sh",
+    ]);
+    for (const name of await readdir(bootstrap)) {
+      expect(await readFile(join(bootstrap, name), "utf8")).toBe(
+        await readFile(join(scriptsDirectory, name), "utf8")
+      );
+      expect((await stat(join(bootstrap, name))).mode % 0o1000).toBe(0o600);
+    }
+    expect((await stat(bootstrap)).mode % 0o1000).toBe(0o700);
+    // A later refresh must replace stale guest bytes with the current source.
+    await writeFile(join(bootstrap, "ci-local-guest.sh"), "stale guest source");
+  }
+  await mkdir(join(guestDirectory, ".atlas-ci-runner-lock"));
+  const locked = await runScript(directory, "ci-local.sh", ["refresh"]);
+  expect(locked.exitCode).not.toBe(0);
+  expect(await readFile(join(bootstrap, "ci-local-guest.sh"), "utf8")).toBe(
+    "stale guest source"
+  );
+  const observed = await readFile(events, "utf8");
+  expect(observed).not.toContain("start");
+  expect(observed).not.toContain("gh");
+  expect(observed).not.toContain("/tmp/atlas-ci-bootstrap");
+});
+
+async function reviewedRunFixture(mode: string) {
+  if (!jq) {
+    throw new Error("jq is required to exercise run metadata checks.");
+  }
+  const directory = await hostFixture(35 * 1024 ** 2);
+  const events = join(directory, "events");
+  await executable(
+    directory,
+    "jq",
+    `#!${process.execPath}
+const child = Bun.spawn([${JSON.stringify(jq)}, ...process.argv.slice(2)], {stdin:"inherit", stdout:"inherit", stderr:"inherit"});
+process.exit(await child.exited);
+`
+  );
+  await executable(
+    directory,
+    "gh",
+    `#!${process.execPath}
+import { appendFileSync } from "node:fs";
+const args = process.argv.slice(2);
+appendFileSync(${JSON.stringify(events)}, JSON.stringify(args) + "\\n");
+const route = args.find(value => value.startsWith("repos/")) ?? "";
+if (route.includes("registration-token")) throw new Error("Registration must not be reached");
+if (args[0] === "variable" || route.includes("/jobs?")) console.log("atlas-local-ci-amd64");
+else if (route.includes("?status=")) console.log("123");
+else console.log(JSON.stringify({head_sha: "a".repeat(40), head_repository: {full_name: "kungfufafa/atlas"}, status: "queued"}));
+`
+  );
+  await executable(
+    directory,
+    "git",
+    `#!${process.execPath}
+import { readFileSync } from "node:fs";
+const args = process.argv.slice(2);
+const mode = ${JSON.stringify(mode)};
+if (args[2] === "rev-parse") console.log((mode === "wrong-head" ? "b" : "a").repeat(40));
+else if (args[2] === "show") {
+  const name = args[3].split(":scripts/").at(-1);
+  const source = readFileSync(${JSON.stringify(scriptsDirectory)} + "/" + name);
+  process.stdout.write(mode === "modified-source" ? "different reviewed source" : source);
+} else process.exit(9);
+`
+  );
+  await executable(
+    directory,
+    "colima",
+    `#!${process.execPath}
+import { appendFileSync } from "node:fs";
+appendFileSync(${JSON.stringify(events)}, "colima\\n");
+process.exit(17);
+`
+  );
+  return { directory, events };
+}
+
+test.each(["wrong-head", "modified-source", "transfer-failure"])(
+  "%s prevents guest execution and registration",
+  async (mode) => {
+    const { directory, events } = await reviewedRunFixture(mode);
+    const result = await runScript(directory, "ci-local.sh", [
+      "run",
+      "123",
+      "a".repeat(40),
+    ]);
+    expect(result.exitCode).not.toBe(0);
+    const observed = await readFile(events, "utf8");
+    expect(observed).not.toContain("registration-token");
+    expect(observed.match(/colima/g)?.length ?? 0).toBe(
+      mode === "transfer-failure" ? 1 : 0
+    );
+  }
+);
 
 test.each(["fork", "wrong-sha", "queue-unavailable", "other-queued-commit"])(
   "runner registration is refused for %s",

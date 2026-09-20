@@ -34,6 +34,15 @@ and its GitHub SHA-256 digest. No host PAT, provider credential, or home directo
 is copied. The scripts use Ubuntu package repositories as configured by the
 official Colima image; package or kernel failures remain failures.
 
+The two guest scripts live at `$HOME/.local/share/atlas-ci-bootstrap` inside
+`atlas-ci`, so they survive a guest reboot. To install or refresh them in an
+existing running `atlas-ci`, run `bash scripts/ci-local.sh refresh` from the
+current checkout after reviewing and testing its scripts. This copies only
+`ci-local-guest.sh` and `verify-linux-landlock.sh`; it does not start, recreate,
+or reprovision the VM, install packages, register a runner, or remove existing
+data. It refuses an existing runner lock. This also repairs older guests whose
+bootstrap was stored under `/tmp` and disappeared on restart.
+
 The guest must return Landlock ABI >=3 from the real syscall. The production
 image must independently pass `verify-linux-landlock.sh IMAGE` under default
 container confinement and the existing filesystem isolation tests. Do not use
@@ -50,8 +59,12 @@ routing and builds `linux/amd64` explicitly.
 
 Run `bash scripts/ci-local.sh run ACTIONS_RUN_ID FULL_REVIEWED_COMMIT_SHA`.
 The launcher rejects pending jobs with the dedicated label from other or fork
-commits, and refuses an empty dispatch queue. A short-lived registration token
-is passed over stdin only after preflight. Registration has no default labels,
+commits, and refuses an empty dispatch queue. The local checkout must be at that
+reviewed commit, and the launcher, guest bootstrap, and Landlock probe must match
+its committed bytes. Each run refreshes the persistent guest scripts from that
+verified source before executing them, so an older installed script cannot be
+used silently. A short-lived registration token is passed over stdin only after
+these checks and the guest probe succeed. Registration has no default labels,
 and the listener has a one-hour deadline. Repeat the explicit command for each
 job; there is no unattended loop. Do not enqueue unreviewed workflows while this
 scoped listener is active: queue inspection is not an atomic GitHub dispatch lock.
