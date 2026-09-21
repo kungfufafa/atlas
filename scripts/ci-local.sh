@@ -77,7 +77,7 @@ check_run() {
       --argjson attempt "$attempt" --argjson pending "$pending" '
       (.id | tostring) == $id and .run_attempt == $attempt and
       .head_sha == $sha and .head_repository.full_name == $repo and
-      (.status == "queued" or .status == "in_progress" or ($pending == false and .status == "completed"))
+      (.status == "queued" or .status == "pending" or .status == "in_progress" or ($pending == false and .status == "completed"))
       ' >/dev/null || blocked "run $run_id does not match the reviewed owner commit, attempt or required status"
 }
 
@@ -171,7 +171,7 @@ run_once() {
   [[ "$(gh variable get ATLAS_CI_RUNNER --repo "$repository")" == "$label" ]] || blocked "ATLAS_CI_RUNNER must explicitly route the reviewed run to $label"
   # Labels cannot bind a runner to one run. Refuse other/fork commits that could
   # currently claim this label; do not run an unattended listener or daemon.
-  for status in queued in_progress; do
+  for status in queued pending in_progress; do
     pending_ids="$(gh api --paginate "repos/$repository/actions/runs?status=$status&per_page=100" --jq '.workflow_runs[].id')"
     while IFS= read -r pending_id; do
       [[ -n "$pending_id" ]] || continue

@@ -187,6 +187,8 @@ interface RunState {
   dataFreeKiB: number | string;
   hostFreeKiB: number | string;
   mode: string;
+  noQueuedJobs: string[];
+  pending: string[];
   queue: string[];
   rootFreeKiB: number | string;
   sha: string;
@@ -210,6 +212,8 @@ async function runFixture() {
     dataFreeKiB: 5 * gibInKiB,
     hostFreeKiB: 35 * gibInKiB,
     mode: "pass",
+    noQueuedJobs: [],
+    pending: [],
     queue: ["123", "456"],
     rootFreeKiB: 5 * gibInKiB,
     sha: reviewedSha,
@@ -249,16 +253,29 @@ ${loadState}
 log(JSON.stringify(args));
 const route = args.find(value => value.startsWith("repos/")) ?? "";
 if (route.includes("registration-token")) console.log("fixture_registration_token");
-else if (args[0] === "variable" || route.includes("/jobs?")) console.log("atlas-local-ci-amd64");
+else if (args[0] === "variable") console.log("atlas-local-ci-amd64");
+else if (route.includes("/jobs?")) {
+  const job = {
+    status: state.noQueuedJobs.includes(route.split("/").at(-2)) ? "in_progress" : "queued",
+    labels: [state.mode === "no-dedicated-label" ? "self-hosted" : "atlas-local-ci-amd64"]
+  };
+  const child = Bun.spawn([${JSON.stringify(jq)}, "-r", args[args.indexOf("--jq") + 1]], {
+    stdin: new Blob([JSON.stringify({jobs:[job]})]), stdout:"inherit", stderr:"inherit"
+  });
+  process.exit(await child.exited);
+}
 else if (route.includes("?status=")) {
   if (state.mode === "queue-unavailable") process.exit(9);
   if (route.includes("status=queued")) console.log(state.queue.join("\\n"));
+  if (route.includes("status=pending")) console.log(state.pending.join("\\n"));
 } else {
   const id = route.split("/").at(-1);
-  console.log(JSON.stringify({id:Number(id), run_attempt:state.attempt,
-    head_sha: state.mode === "wrong-sha" || (state.mode === "other-member-sha" && id === "456") ? "b".repeat(40) : state.sha,
-    head_repository:{full_name:state.mode === "fork" ? "outsider/atlas" : "kungfufafa/atlas"},
-    status:state.completed.includes(id) ? "completed" : "queued"}));
+  const pendingWasEnumerated = id === "456" && readFileSync(${JSON.stringify(events)}, "utf8").includes("/runs/456/jobs?");
+  console.log(JSON.stringify({id:Number(state.mode === "wrong-pending-id" && id === "456" ? "789" : id),
+    run_attempt:state.attempt + (state.mode === "changed-pending-attempt" && pendingWasEnumerated ? 1 : 0),
+    head_sha: state.mode === "wrong-sha" || (state.mode === "other-member-sha" && id === "456") || (state.mode === "changed-pending-sha" && pendingWasEnumerated) ? "b".repeat(40) : state.sha,
+    head_repository:{full_name:state.mode === "fork" || (state.mode === "changed-pending-owner" && pendingWasEnumerated) ? "outsider/atlas" : "kungfufafa/atlas"},
+    status:state.mode === "unknown-pending-status" && id === "456" ? "waiting" : state.completed.includes(id) ? "completed" : state.pending.includes(id) ? "pending" : "queued"}));
 }
 `
   );
@@ -315,6 +332,60 @@ function runGate(
 ) {
   return runScript(directory, "ci-local.sh", ["run", runId, sha, ...members]);
 }
+
+test.each(["123", "456"])(
+  "a listed pending workflow permits target %s only with queued gate jobs",
+  async (runId) => {
+    const { directory, events, save, state } = await runFixture();
+    state.queue = ["123"];
+    state.pending = ["456"];
+    await save();
+    expect((await runGate(directory, runId)).exitCode).toBe(0);
+    const observed = await readFile(events, "utf8");
+    expect(observed).toContain("runs?status=pending&per_page=100");
+    expect(observed).toContain("runs/456/jobs?per_page=100");
+    expect(observed).toContain("registration-token");
+  }
+);
+
+test.each([
+  "unlisted-pending",
+  "other-member-sha",
+  "wrong-pending-id",
+  "wrong-pending-attempt",
+  "changed-pending-sha",
+  "changed-pending-attempt",
+  "changed-pending-owner",
+  "unknown-pending-status",
+  "completed-target",
+  "no-queued-jobs",
+  "no-dedicated-label",
+])("%s fails before admission or token", async (mode) => {
+  const { directory, events, receipt, save, state } = await runFixture();
+  state.mode = mode;
+  state.queue = ["123"];
+  state.pending = mode === "unlisted-pending" ? ["456", "789"] : ["456"];
+  if (mode === "completed-target") {
+    state.completed = ["456"];
+    state.pending = [];
+  }
+  if (mode === "no-queued-jobs") {
+    state.noQueuedJobs = ["123", "456"];
+  }
+  await save();
+  const members = [
+    "123:1",
+    mode === "wrong-pending-attempt" ? "456:2" : "456:1",
+  ];
+  const runId = mode === "completed-target" ? "456" : "123";
+  expect(
+    (await runGate(directory, runId, reviewedSha, members)).exitCode
+  ).not.toBe(0);
+  expect(await Bun.file(receipt).exists()).toBe(false);
+  const observed = await readFile(events, "utf8");
+  expect(observed).not.toContain("registration-token");
+  expect(observed).not.toContain("colima:run");
+});
 
 test("fresh admission records measured headroom privately and continues the same finite gate", async () => {
   const { directory, events, receipt, save, state } = await runFixture();
