@@ -3,6 +3,8 @@
   "include": [
     "./*.ts",
     "../harness-channel-audit/live-claude.ts",
+    "../harness-eval/*.ts",
+    "../release-gate/**/*.ts",
     "../live-human-e2e/run.ts"
   ]
 }

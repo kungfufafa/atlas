@@ -63,6 +63,7 @@ test("preserves application, package and selected script scopes without collecti
     "apps/platform/telegram/src/channel.spec.ts",
     "packages/core/src/core_test.ts",
     "scripts/release-gate/nested/gate.test.ts",
+    "scripts/harness-eval/budget.test.ts",
     ...UNIT_TEST_SCOPES.filter((scope) => scope.endsWith(".test.ts")),
   ];
   for (const path of [

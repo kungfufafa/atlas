@@ -65,6 +65,8 @@ async function main() {
     atlasServer = new AtlasServerHarness({
       env,
       preferredPort: serverPort,
+      preloadPath: new URL("./web-fetch-fixture-preload.ts", import.meta.url)
+        .pathname,
     });
     const { baseUrl: serverBaseUrl } = await atlasServer.start(30_000);
     console.log(`[Atlas Server] Isolated server running on ${serverBaseUrl}`);

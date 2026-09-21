@@ -1,12 +1,12 @@
 # Goal audit — Atlas harness vs Hermes / OpenClaw / Nakama
 
-Goal: make the Atlas agent harness **match or exceed** Hermes Agent, OpenClaw, and Nakama on four quality dimensions, **proven by live OpenCode Go evals**.
+This historical harness audit covers four Atlas quality dimensions using OpenCode Go evals through **2026-09-18**. The current goal prioritizes **Nakama, then OpenClaw, then Hermes Agent**, including stability, maintainability, and user journeys; these four dimensions cover only part of that goal.
 
-This audit treats completion as unproven until each requirement has current-state evidence. Rankings are about **response quality** (tool hallucination, multi-step, context, long-session), not OpenClaw’s gateway surface or Hermes’ public skill registry size.
+**Cross-system parity and goal completion are unproven.** The reference systems were not live-tested in these experiments. Atlas ablations show changes on the recorded fixtures, not equal or better reference behavior. New model proof must use the goal's `https://router.rizqis.com/v1` endpoint; the older OpenCode Go results remain historical evidence. Retaining an Atlas difference also requires evidence of its user journey and how that journey can be shortened.
 
 Path: `createAgentHarness.createChatSession.send` → `buildChatSystemPrompt` + `generateReply` + `executeToolCall`. Full-harness config = allowlist, work-rules, native schemas, memory retrieval + summarization + archive index, chatKind, FTS chats, skill-learning ON.
 
-Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-summary.json`, `iter{3,4,5,6,7}-summary.md`, `ablation-summary.md`, `docs/harness/eval-results/final-sweep-summary.md`, **fresh** `docs/harness/eval-results/final-verification-summary.md` (2026-09-18 live re-run; do not treat the 2026-09-17 sweep as current proof).
+Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-summary.json`, `iter{3,4,5,6,7}-summary.md`, `ablation-summary.md`, `docs/harness/eval-results/final-sweep-summary.md`, `docs/harness/eval-results/final-verification-summary.md` (2026-09-18 live re-run). Neither dated sweep is current-goal proof. The harness path does not boot `AgentService`, org middleware, or tenant SQLite `memory_write`; it is not a full product or user-journey evaluation.
 
 ---
 
@@ -22,20 +22,20 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 | 3 | Bounded MEMORY.md + FTS/recency `memory_search` | memory yardsticks 0/4 → 4/4 (n=3 both models) |
 | 5 | LLM summary of omitted facts + production archive index | `memory_summary_needle` 0/6 → 6/6; archive 0/6 → 6/6 per model |
 | 6 | `chatKind` private vs group into `buildChatSystemPrompt` | prompt checks 0/24 → 24/24 |
-| 7 | Persist `chatKind` on `sessions.chat_kind`; FTS `search_chats` | unit reload; iter7 lexical 0/9 → FTS 9/9; **fresh verification lexical 0/6 → FTS 8/8** |
+| 7 | Persist `chatKind` on `sessions.chat_kind`; FTS `search_chats` | unit reload; iter7 lexical 0/9 → FTS 9/9; **2026-09-18 verification lexical 0/6 → FTS 8/8** |
 | 4 | Learned skills match/inject on a **new** session | learning extras 0/6 → 6/6 per model |
 
-**Final sweep (fresh 2026-09-18 verification).** Memory dimension **18/18** on all four models (n=2 × 9 memory scenarios, including FTS). Learning inject **4/4**. Group channel extras **8/8**. Private **prompt** checks always true; private **reply** name-addressing still fails often (see caveats). Prior 2026-09-17 29-scenario sweep was 16/16 memory because `memory_search_chats_fts` was not in that suite.
+**Historical sweep (2026-09-18).** Memory dimension **18/18** on all four models (n=2 × 9 memory scenarios, including FTS). Learning inject **4/4**. Group channel extras **8/8**. Private **prompt** checks passed in these runs; private **reply** name-addressing still fails often (see caveats). Prior 2026-09-17 29-scenario sweep was 16/16 memory because `memory_search_chats_fts` was not in that suite.
 
 **Verdict.**
 
-| vs | equal-or-better? | caveat |
+| reference | quality parity | implementation observation / evidence limit |
 |---|---|---|
-| Nakama | **yes, exceeds** | Nakama dumped MEMORY.md and had `chatKind` in the prompt helper but not plumbed; Atlas bounds, retrieves, summarizes, and fires private/group blocks. |
-| Hermes | **yes** | Over-cap MEMORY.md + FTS fact search + archive **meet or beat** Hermes’ frozen MEMORY.md (Hermes does not auto-summarize). Iter7 closed **session FTS** (`search_chats` lexical 0/9 → FTS 9/9). |
-| OpenClaw | **yes, on this dimension** | Measured retrieval/channel prompts exceed a generic workspace dump. Not a claim about OpenClaw routing/bindings. |
+| Nakama | **unproven** | Atlas adds bounded retrieval and channel plumbing to the shared prompt lineage; the Atlas before/after fixture is not a live Nakama comparison. |
+| Hermes | **unproven** | Both have memory and session-retrieval mechanisms in the prior audit. Atlas's FTS fixture improved from lexical 0/9 to FTS 9/9; Hermes was not run on it. |
+| OpenClaw | **unproven** | Atlas retrieval and channel fixtures passed as recorded; OpenClaw's corresponding behavior was not measured. |
 
-**Still short.** Private replies still name-address (model-limitation; prompts are correct). No remaining context-awareness harness gap vs Hermes session search.
+**Still short.** Private replies still name-address despite the expected prompt being present. These small samples do not isolate model, prompt, or harness causes. Session FTS is implemented, but its presence does not close the comparative context-awareness question.
 
 ---
 
@@ -49,19 +49,19 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 |---|---|---|
 | 2 | `# Assigned tools` roster | 12/12 before **and** after on kimi — **no measured delta** on that strong model |
 | hardening | ablation × weak model + wording trap | allowlist alone = 0 delta; allowlist+work-rules flipped flash absent-web 15/17 → 16/17; wording trap failed **8/8** cells |
-| 6 | purpose: lines + unassigned-decoy extra | unassigned **6/6**; assigned decoy kimi **0/3** (classified model-limit) |
+| 6 | purpose: lines + unassigned-decoy extra | unassigned **6/6**; assigned decoy kimi **0/3** (cause unresolved) |
 
-**Final sweep (fresh 2026-09-18, full harness).** Unassigned decoy **8/8**. Hallucinated `nuke_database` held. Assigned decoy (n=2): kimi **0/2**, glm **0/2**, flash **2/2**, **v4-pro 2/2**. Absent-web substitutes: glm **1/2**, flash **0/2**, both strong models **2/2**. glm extra `write_note`/`search_kb` on channel cells pulls precision down (0.753) with recall 1.000. The 2026-09-17 n=3 noisy cells are historical; this verification used n=2 on the full 30.
+**Historical sweep (2026-09-18, full harness).** Unassigned decoy **8/8**. Hallucinated `nuke_database` held. Assigned decoy (n=2): kimi **0/2**, glm **0/2**, flash **2/2**, **v4-pro 2/2**. Absent-web substitutes: glm **1/2**, flash **0/2**, both strong models **2/2**. glm extra `write_note`/`search_kb` on channel cells pulls precision down (0.753) with recall 1.000. The 2026-09-17 n=3 noisy cells are historical; this verification used n=2 on the full 30.
 
 **Verdict.**
 
-| vs | equal-or-better? | caveat |
+| reference | quality parity | implementation observation / evidence limit |
 |---|---|---|
-| Nakama | **yes, exceeds** | Same unknown-tool recovery; Atlas adds a roster, work-rules, and live unassigned-decoy proof. |
-| Hermes | **matches, not a clean exceed** | Unassigned invention is solved. Assigned user-named decoys still fool kimi (Hermes is not proven better on that exact trap). Hermes always-on learning may reduce repeats over calendar time; Atlas learning is opt-in. |
-| OpenClaw | **partial** | OpenClaw can **omit** a tool from the gateway catalog. Atlas still sends native schemas, so an assigned decoy is callable. Policy breadth is residual (f). |
+| Nakama | **unproven** | Shared unknown-tool recovery; Atlas adds a roster and purpose lines. The recorded passes do not measure Nakama's behavior. |
+| Hermes | **unproven** | Atlas passed the recorded unassigned-decoy cases and failed some assigned-decoy cases. Hermes was not evaluated on those cases or on repeated learning. |
+| OpenClaw | **unproven** | The prior audit identified gateway catalog policies as an implementation difference. Atlas's assigned decoys remain callable; the policy difference does not establish relative response quality. |
 
-**Still short.** Assigned-decoy on kimi is **not** a remaining harness prompt bug (iter6 already tried). Mid-model substitute-tool calls (`tool_avoid_absent_web_search`) are model-limit / work-rules leverage, not a missing allowlist line. Do not lengthen the roster to chase kimi.
+**Still short.** Assigned-decoy and absent-tool substitution failures remain. One unsuccessful prompt intervention and successes on other models do not establish an intrinsic model limit or rule out harness improvements. Any further intervention needs a controlled, repeatable comparison.
 
 ---
 
@@ -71,17 +71,17 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 
 **Harness work that landed.** Iter1 `multi_step_lookup_note` 8/8 after transport. Iter2 `multi_step_ticket_and_kb`. Hardening `multi_step_three_hop`. Iter4 two-phase SOP + unknown-tool recovery.
 
-**Final sweep (fresh 2026-09-18).** Multi-step **6/6** on all four models (n=2). Learning **4/4** on all four with `--skill-learning`. 3-hop **8/8**.
+**Historical sweep (2026-09-18).** Multi-step **6/6** on all four models (n=2). Learning **4/4** on all four with `--skill-learning`. 3-hop **8/8**.
 
 **Verdict.**
 
-| vs | equal-or-better? | caveat |
+| reference | quality parity | implementation observation / evidence limit |
 |---|---|---|
-| Nakama | **yes** | Same tool loop; Atlas adds a live 3-hop + closed learning that Nakama review did not apply by default. |
-| Hermes | **yes, on measured hops** | 3-hop and SOP replay are live-perfect here. Hermes’ always-on skill write may accumulate more procedures in the wild; that was not a failed Atlas yardstick. |
-| OpenClaw | **yes, on measured hops** | No evidence OpenClaw’s loop is stronger on lookup→KB→note. Ecosystem size is not multi-step quality. |
+| Nakama | **unproven** | Shared tool-loop lineage; Atlas's 3-hop and learning fixtures passed. The prior Nakama implementation comparison is not a behavioral baseline. |
+| Hermes | **unproven** | Atlas's 3-hop and SOP replay fixtures passed; Hermes was not tested on the same workflows or learning defaults. |
+| OpenClaw | **unproven** | Atlas's lookup→KB→note fixture passed; no corresponding OpenClaw run was recorded. |
 
-**Still short.** Nothing required on this dimension is failing the live suite. Learning remains opt-in in product (policy residual c).
+**Still short.** These sampled scenarios passed, but do not cover general multi-step reliability or operator journeys. Learning remains opt-in in product (policy residual c).
 
 ---
 
@@ -98,21 +98,21 @@ Sources: `docs/harness/gap-analysis.md`, `docs/harness/eval-results/iter{1,2}-su
 | 7 | FTS5 BM25 `search_chats` over live + compacted archives | `memory_search_chats_fts` lexical 0/9 → FTS 9/9 (n=3 × 3 models) |
 | (pre-existing) | `compactHistory` structured Markdown | now FTS-backed via `conversation_messages_fts` + authorized-candidate ranking |
 
-**Final sweep (fresh 2026-09-18).** All memory long-context cells passed (bounded dump, 90-bin needle, summary needle, archive, recency, search_chats, FTS needle) — **18/18** memory runs per model. Fresh FTS ablation: lexical `--no-fts-chats` **0/6** → FTS **8/8**.
+**Historical sweep (2026-09-18).** All memory long-context cells passed (bounded dump, 90-bin needle, summary needle, archive, recency, search_chats, FTS needle) — **18/18** memory runs per model. FTS ablation: lexical `--no-fts-chats` **0/6** → FTS **8/8**.
 
 **Verdict.**
 
-| vs | equal-or-better? | caveat |
+| reference | quality parity | implementation observation / evidence limit |
 |---|---|---|
-| Nakama | **yes, exceeds** | Dump-only MEMORY.md is the iter3 BEFORE (0/4). Atlas no longer does that. |
-| Hermes | **yes** | MEMORY.md long-context, archive retrieval, and session FTS **match or exceed**. Hermes FTS5 over all session messages is no longer a live residual (iter7 0/9 → 9/9). |
-| OpenClaw | **yes, on measured needles** | Not a claim about OpenClaw session stores. |
+| Nakama | **unproven** | Atlas improved over its dump-only fixture (iter3 0/4 → 4/4); that fixture did not execute Nakama. |
+| Hermes | **unproven** | Atlas now has session FTS and passed the recorded needles. A shared retrieval mechanism does not establish equivalent long-session behavior. |
+| OpenClaw | **unproven** | Only Atlas ran the recorded memory needles; OpenClaw session-store behavior remains unmeasured here. |
 
-**Still short.** Residual (d) and (e) closed in iter7. Summarization cache is in-memory LRU (restart cost, not a failed needle).
+**Still short.** The implementation work in residuals (d) and (e) landed in iter7. Repeated compaction, restart recovery, and corresponding reference journeys are not established by the needle results. Summarization cache is in-memory LRU.
 
 ---
 
-## Cross-cutting live floor (fresh 2026-09-18 verification)
+## Historical live results (2026-09-18 verification)
 
 Full **30** scenarios (21 default + 9 extras including FTS), n=2, skill-learning ON. **240** scenario-runs, **0** transport failures.
 
@@ -131,20 +131,20 @@ Raw: `docs/harness/eval-results/final-verification-summary.md`. The 2026-09-17 2
 
 ## Goal-level verdict
 
-**Nakama: bar met (exceeds).** Atlas is that fork plus allowlist/purpose, bounded+FTS+summary memory, closed skill learning, and plumbed `chatKind`, each with before/after live deltas.
+**Nakama: parity unproven.** The recorded Atlas changes include assigned-tool guidance, bounded memory, summary/retrieval, skill learning, and channel-kind plumbing. Before/after deltas support some Atlas fixture improvements; they do not establish a better Nakama user journey or equivalent product behavior.
 
-**Hermes: bar met on all four quality dimensions; remaining difference is always-on learning policy, not unimplemented session FTS.** Context (MEMORY.md path + session FTS), multi-step, and unassigned-tool hallucination match or exceed measured Hermes analogues. Hermes always-on review is an Atlas policy choice, not a missing loop.
+**OpenClaw: parity unproven.** The Atlas fixtures do not measure OpenClaw's response quality, routing, or gateway policies. The prior audit records policy-scope differences that need a concrete user-journey comparison before deciding what Atlas should retain or simplify.
 
-**OpenClaw: bar met on the four quality dimensions as scored; not met as a gateway-policy product.** Tool-loop, memory needles, multi-step, and channel prompts are live-proven. Residual (f) is explicit: we did not build OpenClaw’s allow/deny/skill-trust/bindings language, and we should not claim it.
+**Hermes: parity unproven.** Session FTS and learning are implemented in Atlas, but shared mechanisms and Atlas-only passes cannot establish equivalent context, learning, or multi-step quality. The consequences of differing learning defaults remain unmeasured.
 
-**Equal-or-better overall?** **Yes for the stated quality bar against Nakama, and yes against Hermes on the four quality dimensions.** **No** if the bar is silently expanded to OpenClaw gateway-policy parity or Hermes always-on defaults.
+**Equal-or-better overall? Unproven against all three references.** Current-goal proof needs pinned reference versions, comparable tasks and configurations, the mandated endpoint for model evaluation, and observed user journeys. The current goal is not complete on the basis of this historical audit.
 
-### Harness work that still remains (only if we keep going)
+### Follow-up evidence needed
 
-1. Persist `chatKind` — **done (iter7)**. Residual (d) closed.
-2. FTS-index conversation / compacted archives for `search_chats` — **done (iter7)**. Residual (e) closed; live lexical 0/9 → FTS 9/9.
-3. Do **not** keep iterating assigned-decoy prompt text — residual (a) is model-limit (`v4-pro` already passes).
-4. Do **not** default skill learning on globally — residual (c) is policy; Super Agent web/cli remains the opt-in.
-5. Do **not** treat OpenClaw policy breadth as a quality iteration — residual (f).
+1. Revalidate the historical fixtures on current Atlas using the mandated endpoint and record exact model/configuration evidence.
+2. Compare pinned reference implementations, starting with Nakama, on corresponding tasks and default user journeys; do not substitute an Atlas ablation for a reference run.
+3. Investigate assigned-decoy and private-reply failures without assuming their cause from these small samples.
+4. Evaluate the journey to enable and use skill learning, and whether it can be shortened, before defending or changing the opt-in default.
+5. Keep the completed `chatKind` persistence and FTS implementation work distinct from unproven cross-system quality claims.
 
-No further prompt-length work is justified by the final sweep. No measurable Hermes **harness-gap** remains on the four quality dimensions.
+This correction changes the interpretation of the historical evidence; it does not report a new product cycle or new model runs.

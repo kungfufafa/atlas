@@ -8,6 +8,8 @@ export const UNIT_TEST_SCOPES = [
   "packages",
   "scripts/e2e-critical-paths.test.ts",
   "scripts/release-gate",
+  "scripts/harness-eval",
+  "scripts/ci-local.test.ts",
   "scripts/pm2-deploy.test.ts",
   "scripts/verify-docker-startup.test.ts",
   "scripts/verify-docker-health.test.ts",

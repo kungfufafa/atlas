@@ -36,6 +36,7 @@ export async function runArtifactFidelitySuite(): Promise<ReleaseGateCheck> {
           title: "Key Deliverables",
         },
       ],
+      themeColor: "2563EB",
       title: "Q3 AI Strategy Deck",
     });
 
@@ -50,8 +51,8 @@ export async function runArtifactFidelitySuite(): Promise<ReleaseGateCheck> {
         sizeBytes: pptxBuffer.length,
       },
       pptxBuffer,
-      mockContext,
-      {}
+      {},
+      mockContext
     );
 
     if (!pptxPreview || pptxPreview.status !== "available") {
@@ -85,8 +86,8 @@ export async function runArtifactFidelitySuite(): Promise<ReleaseGateCheck> {
         sizeBytes: csvBuffer.length,
       },
       csvBuffer,
-      mockContext,
-      {}
+      {},
+      mockContext
     );
 
     if (!csvPreview || csvPreview.status !== "available") {

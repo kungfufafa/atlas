@@ -1,5 +1,51 @@
 # Live harness eval
 
+## Current goal: explicit endpoint with a cycle budget
+
+Use `bun run atlas:harness-live-eval` for current-goal proof. This entry uses
+the production OpenAI-compatible adapter, not the historical OpenCode Go adapter.
+Set these in a private environment file outside the checkout:
+
+```sh
+ATLAS_EVAL_BASE_URL=https://router.rizqis.com/v1
+ATLAS_EVAL_MODEL=fusion
+ATLAS_EVAL_API_KEY=<private credential>
+ATLAS_EVAL_BUDGET_PATH=/absolute/private/path/cycle-000.sqlite
+ATLAS_EVAL_MAX_CALLS=300
+```
+
+Create the ledger's parent directory first. The ledger path must be absolute.
+Every baseline, candidate and repeat in the same cycle must reuse this ledger;
+changing worktrees or restarting the command must not reset it. The ledger
+atomically reserves a slot before every outbound inference attempt, including
+failed requests, retries, summaries and skill reviews. Denied requests also
+fail the run, even when the product swallows an auxiliary review failure.
+The limit counts client HTTP attempts; router-internal requests remain unknown.
+Adapter exceptions also fail the overall live receipt, including malformed HTTP
+200 payloads swallowed by optional product paths. Production output-limit recovery
+still executes; a recovered scenario can pass its own checks while the overall
+receipt remains failed because an incomplete provider response occurred. Reports
+retain only exception categories and operations, not raw error payloads.
+
+Commit the source before running; the command refuses a dirty checkout and
+fails proof if the checkout changes during inference. Keep the ledger, private
+environment file and report outside the checkout while the run is active.
+
+```sh
+bun --env-file=/absolute/private/path/eval.env run atlas:harness-live-eval \
+  --scenario session_transport --scenario tool_select_lookup \
+  --out /absolute/private/path/live-report.json
+```
+
+Reports distinguish this fixture-tool harness from full AgentService/browser
+journeys. They include the configured endpoint/model, source commit, per-run
+attempts, HTTP outcomes and any advertised response model ID. An advertised
+`fusion` alias does not independently establish the backend model. Credentials
+and request bodies are not stored in the ledger; provider errors are sanitized
+before the harness can log them. Do not use a mock pass as live evidence.
+
+## Historical OpenCode Go runner
+
 Drives the real Atlas agent loop:
 
 `createAgentHarness.createChatSession.send` → `buildChatSystemPrompt` + `generateReply` + `executeToolCall`
