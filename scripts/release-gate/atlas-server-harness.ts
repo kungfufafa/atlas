@@ -2,6 +2,12 @@ import { join } from "node:path";
 import { type Subprocess, spawn } from "bun";
 import { ATLAS_API_VERSION } from "../../packages/core/src/contract";
 import { redactStringValue } from "../../packages/core/src/secret-redaction";
+import {
+  assertAutomationWorkerExited,
+  captureOwnedAutomationWorker,
+  type OwnedAutomationWorker,
+  stopOwnedAutomationWorker,
+} from "./automation-worker-cleanup";
 import type { ProvisionedEnvironment } from "./environment-provisioner";
 import { getFreePort, isPortAvailable } from "./free-port";
 
@@ -80,6 +86,7 @@ async function releaseProcess(
 
 export class AtlasServerHarness {
   private process: Subprocess | null = null;
+  private automationWorker: OwnedAutomationWorker | null = null;
   public port = 0;
   public baseUrl = "";
   public logs: string[] = [];
@@ -184,12 +191,36 @@ export class AtlasServerHarness {
     }
   }
 
+  /** Unknown startup ownership fails cleanup; this does not enumerate all descendants. */
   async stop(timeoutMs = 3000): Promise<void> {
     const errors: unknown[] = [];
     if (this.process) {
       try {
+        if (!this.automationWorker) {
+          if (this.process.exitCode !== null) {
+            throw new Error(
+              "Atlas API exited before automation worker ownership was verified"
+            );
+          }
+          this.automationWorker = await captureOwnedAutomationWorker(
+            this.options.env.configDir,
+            this.process.pid
+          );
+        }
+        await stopOwnedAutomationWorker(this.automationWorker, timeoutMs);
+      } catch (error) {
+        errors.push(error);
+      }
+      try {
         await releaseProcess(this.process, timeoutMs);
-        this.process = null;
+      } catch (error) {
+        errors.push(error);
+      }
+      try {
+        await assertAutomationWorkerExited(
+          this.options.env.configDir,
+          this.automationWorker
+        );
       } catch (error) {
         errors.push(error);
       }
@@ -209,5 +240,7 @@ export class AtlasServerHarness {
     if (errors.length > 0) {
       throw new AggregateError(errors, "Atlas server harness cleanup failed");
     }
+    this.process = null;
+    this.automationWorker = null;
   }
 }
